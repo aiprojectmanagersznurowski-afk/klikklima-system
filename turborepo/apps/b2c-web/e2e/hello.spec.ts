@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('homepage has Hello World', async ({ page }) => {
+test('homepage has correct heading', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('h1')).toHaveText('Hello Klik Klima B2C!');
+  await expect(page.locator('h1')).toContainText('Klimatyzacja dobrana do Ciebie');
 });
