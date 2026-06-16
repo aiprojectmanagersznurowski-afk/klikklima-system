@@ -9,18 +9,39 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./turborepo
 
     steps:
       - name: Pobranie kodu
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Instalacja Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
       - name: Instalacja pakietów
         run: npm install
 
+      - name: Linter (Turborepo)
+        run: npm run lint
+        
       - name: Budowanie projektu (Turborepo)
         run: npm run build
+
+      - name: Instalacja przeglądarek dla Playwright
+        run: npx playwright install --with-deps
+        working-directory: ./turborepo/apps/b2c-web
+
+      - name: Testy E2E (Playwright)
+        run: npx playwright test
+        working-directory: ./turborepo/apps/b2c-web
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: turborepo/apps/b2c-web/playwright-report/
+          retention-days: 7
