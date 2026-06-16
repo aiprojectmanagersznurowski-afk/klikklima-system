@@ -1,6 +1,7 @@
 "use client";
 
 import { useTriageStore } from "@/store/triageStore";
+import { AnimatePresence, motion } from "framer-motion";
 import usePlacesAutocomplete, {
   getGeocode,
   getLatLng,
@@ -36,69 +37,78 @@ export default function TriageSteps() {
     }
   };
 
-  // Replace this switch statement with your actual UI components from Figma
+  // Wykorzystujemy framer-motion do płynnego przejścia między krokami
   const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-lg font-medium text-gray-700">Krok 1: Wpisz swój adres</h2>
-            <div className="relative">
-              <input
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                disabled={!ready}
-                placeholder="np. Złota 44, Warszawa"
-                className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-              {status === "OK" && (
-                <ul className="absolute z-10 w-full bg-white border border-gray-200 mt-1 rounded-lg shadow-lg">
-                  {suggestionsData.map(({ place_id, description }) => (
-                    <li
-                      key={place_id}
-                      onClick={() => handleSelectAddress(description)}
-                      className="p-3 hover:bg-gray-50 cursor-pointer text-sm text-gray-700"
-                    >
-                      {description}
-                    </li>
-                  ))}
-                </ul>
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentStep}
+          initial={{ x: 50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -50, opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          {currentStep === 1 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-medium text-gray-700">Krok 1: Wpisz swój adres</h2>
+              <div className="relative">
+                <input
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  disabled={!ready}
+                  placeholder="np. Złota 44, Warszawa"
+                  className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                {status === "OK" && (
+                  <ul className="absolute z-10 w-full bg-white border border-gray-200 mt-1 rounded-lg shadow-lg">
+                    {suggestionsData.map(({ place_id, description }) => (
+                      <li
+                        key={place_id}
+                        onClick={() => handleSelectAddress(description)}
+                        className="p-3 hover:bg-gray-50 cursor-pointer text-sm text-gray-700"
+                      >
+                        {description}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              
+              {data.lat && data.lng && (
+                <p className="text-sm text-emerald-600">
+                  Lokalizacja znaleziona!
+                </p>
               )}
             </div>
-            
-            {/* Przykładowy widok zapisanych danych po wyborze adresu */}
-            {data.lat && data.lng && (
-              <p className="text-sm text-emerald-600">
-                Lokalizacja znaleziona!
-              </p>
-            )}
-          </div>
-        );
-      case 2:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-lg font-medium text-gray-700">Krok 2: Rodzaj budynku</h2>
-            <div className="flex flex-col gap-3">
-              {["Dom", "Mieszkanie", "Lokal komercyjny"].map((type) => (
-                <button
-                  key={type}
-                  onClick={() => updateData({ buildingType: type })}
-                  className={`p-4 border rounded-lg text-left transition-colors ${
-                    data.buildingType === type
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-800"
-                      : "border-gray-200 hover:border-emerald-300 text-gray-700"
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
+          )}
+
+          {currentStep === 2 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-medium text-gray-700">Krok 2: Rodzaj budynku</h2>
+              <div className="flex flex-col gap-3">
+                {["Dom", "Mieszkanie", "Lokal komercyjny"].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => updateData({ buildingType: type })}
+                    className={`p-4 border rounded-lg text-left transition-colors ${
+                      data.buildingType === type
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-800"
+                        : "border-gray-200 hover:border-emerald-300 text-gray-700"
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        );
-      // Dodaj case 3, 4, 5... w zależności od struktury kroków
-      default:
-        return <div>Podsumowanie (Ostatni krok)</div>;
-    }
+          )}
+
+          {currentStep > 2 && (
+            <div>Miejsce na kolejne kroki (Z Figmy)</div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    );
   };
 
   return (
