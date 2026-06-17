@@ -42,6 +42,7 @@ Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs wieloetapoweg
    - Pokaż kartę wybranego urządzenia (np. Zdjęcie klimatyzatora ściennego Fuji Electric, Model: KETA).
    - Jeśli to Multisplit, pokaż ikony 2x Jednostka Wewnętrzna + 1x Jednostka Zewnętrzna.
    - Ogromna, czytelna sekcja "Szacunkowa wycena instalacji wraz z urządzeniem": np. **17 406 PLN brutto**. Dodaj tekst: "Cena zawiera podatek VAT 8% (budownictwo mieszkaniowe) oraz standardowy pakiet usług montażowych".
+   - **BARDZO WAŻNE:** Dodaj interaktywny element (np. ikonę informacyjną "(i)", Modal, Tooltip lub rozwijany Accordion) przy tekście o "standardowym pakiecie usług montażowych". Kliknięcie w niego ma otwierać listę pokazującą zakres prac: montaż jednostki wew i zew do 4m, 3mb instalacji chłodniczej, 3mb odpływu skroplin, 3mb przewodu zasilającego z wpięciem do gniazda. Klient musi mieć absolutną jasność, co kupuje.
    - Przycisk CTA: "Zarezerwuj termin wizyty technicznej" (sticky na dole ekranu mobile).
 
 8. **Ekran Rezerwacji (Kalendarz i Dane)**

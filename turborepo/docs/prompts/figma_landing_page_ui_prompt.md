@@ -1,0 +1,59 @@
+# Prompt do wygenerowania UI Landing Page (Figma AI / v0 / Relume)
+
+Poniżej znajduje się super szczegółowy prompt. Możesz go wkleić do narzędzi typu **v0.dev**, **Figma AI** lub przekazać UX/UI Designerowi w celu zaprojektowania nowoczesnego i wysoce konwertującego Landing Page'a dla Twojej firmy klimatyzacyjnej.
+
+---
+
+**Prompt:**
+
+Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs strony głównej (Landing Page) dla lokalnej, nowoczesnej firmy specjalizującej się w sprzedaży i montażu klimatyzacji. Strona ma być docelowo napisana w React (Next.js, Tailwind CSS, shadcn/ui) z naciskiem na konwersję Leada i design klasy Premium.
+
+**Styl i Estetyka (Apple-like / Premium Home Services):**
+- Przestronne, czyste układy z dużą ilością "white space" (oddechu).
+- Paleta bieli, bardzo jasnych szarości dla tła oraz głęboka, luksusowa zieleń (lub nowoczesny akcent np. indygo/granat) do kluczowych przycisków akcji (CTA).
+- Subtelne "Glassmorphism" (przezroczystości z rozmytym tłem) dla pływających elementów (np. karty korzyści, nagłówki formularzy).
+- Zaokrąglone rogi (border-radius) i gładkie cienie dla kart.
+- Duża, nowoczesna typografia (np. Inter, Outfit lub Plus Jakarta Sans).
+
+**Struktura Strony (Układ "od góry do dołu"):**
+
+1. **Header (Nawigacja)**
+   - Lewa strona: Minimalistyczne, eleganckie Logo firmy.
+   - Środek: Ukryte na mobile, na desktopie odnośniki (Oferta, Proces, Realizacje, Kontakt).
+   - Prawa strona: Przycisk "Wykonaj darmową wycenę" stylizowany jako główny przycisk.
+
+2. **Hero Section (Sekcja Główna - "Above the fold")**
+   - Piękne, wysokiej jakości zdjęcie w tle lub po prawej stronie (nowoczesny, przeszklony salon, w którym niewidocznie, ale elegancko zamontowana jest czarna lub biała klimatyzacja).
+   - Nagłówek H1 (bardzo duży): "Idealna temperatura w Twoim domu. Przez cały rok."
+   - Sub-nagłówek: "Dobierz klimatyzator w 2 minuty. Poznaj szacunkową wycenę z montażem online i umów naszego eksperta na darmowy audyt."
+   - Główny Przycisk CTA: "Odbierz darmową wycenę online". (Ten przycisk uruchomi nasz inteligentny lejek / Triage form).
+   - "Social Proof / Trust Badge" pod przyciskiem: np. ikony z 5 gwiazdkami Google i tekst "Zaufano nam w ponad 500 instalacjach".
+
+3. **Sekcja "Dlaczego My?" (Karty korzyści)**
+   - Nagłówek: "Instalacja bez ukrytych kosztów."
+   - Układ siatki 3 lub 4 kolumn (na mobile przewijane).
+   - Karta 1: "Przejrzysta wycena" (Wycena online bez zobowiązań w 2 minuty).
+   - Karta 2: "Autoryzowany Serwis" (Montaż zgodnie ze sztuką przez wykwalifikowanych inżynierów).
+   - Karta 3: "Gwarancja do 5 lat" (Jesteśmy autoryzowanym partnerem marek Premium: Fuji Electric, Haier, itp.).
+   - Karta 4: "Montaż w 1 dzień" (Minimalizujemy dyskomfort w Twoim domu).
+
+4. **Sekcja Jak działamy? (Proces krok po kroku)**
+   - Nagłówek: "Twoja droga do komfortu."
+   - Krok 1 (Wizualizacja z ikoną telefonu/komputera): "1. Wyceniasz online". (Wypełniasz formularz i od razu widzisz zarys cen).
+   - Krok 2 (Wizualizacja kalendarza): "2. Darmowy Audyt". (Nasz inżynier potwierdza warunki techniczne na miejscu).
+   - Krok 3 (Wizualizacja narzędzi): "3. Profesjonalny Montaż". (Sprawna instalacja, uruchomienie i posprzątanie).
+
+5. **Sekcja Produktowa / Katalogowa (Opcjonalnie)**
+   - "Pracujemy tylko na sprawdzonym sprzęcie."
+   - Karuzela lub kilka kart z logotypami partnerów (Fuji Electric, Haier) oraz miniaturki klimatyzatorów.
+
+6. **Sekcja "Call to Action" przed stopką (Finalne uderzenie)**
+   - Duży banner wyróżniający się kolorem tła.
+   - Tekst: "Gotowy na chłód w upalne lato i darmowe ogrzewanie w zimę?"
+   - Duży przycisk CTA: "Kliknij i oblicz koszty w 2 minuty".
+
+7. **Footer (Stopka)**
+   - Minimalistyczny design. Dane firmy, NIP, Adres e-mail, Numer telefonu, Linki do social mediów, Polityka Prywatności i Regulamin.
+
+Wymagania responsywności: 
+Zaprojektuj główny widok jako Desktop (1440px), ale pamiętaj, by układ był gotowy na łatwe zrolowanie w kolumnę dla ekranu Mobile (390px). Przycisk główny (CTA) na mobile powinien w Hero Section zajmować pełną szerokość ekranu.
