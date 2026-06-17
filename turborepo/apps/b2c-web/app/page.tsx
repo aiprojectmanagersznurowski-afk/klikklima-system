@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getFomoSlots } from "./actions/getFomoSlots";
+import ExitIntentModal from "@/components/triage/ExitIntentModal";
 import {
   Menu,
   X,
@@ -645,6 +646,9 @@ export default function Page() {
           </div>
         </div>
       </footer>
+
+      {/* Wyłapywanie wychodzących użytkowników (Soft Leads) */}
+      <ExitIntentModal />
     </div>
   );
 }
