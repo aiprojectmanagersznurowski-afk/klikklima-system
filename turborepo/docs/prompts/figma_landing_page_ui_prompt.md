@@ -6,11 +6,11 @@ Poniżej znajduje się super szczegółowy prompt. Możesz go wkleić do narzęd
 
 **Prompt:**
 
-Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs strony głównej (Landing Page) dla lokalnej, nowoczesnej firmy specjalizującej się w sprzedaży i montażu klimatyzacji. Strona ma być docelowo napisana w React (Next.js, Tailwind CSS, shadcn/ui) z naciskiem na konwersję Leada i design klasy Premium.
+Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs strony głównej (Landing Page) dla lokalnej, nowoczesnej firmy **Klik Klima**, specjalizującej się w sprzedaży i montażu klimatyzacji. Strona ma być docelowo napisana w React (Next.js, Tailwind CSS, shadcn/ui) z naciskiem na konwersję Leada i design klasy Premium.
 
 **Styl i Estetyka (Apple-like / Premium Home Services):**
 - Przestronne, czyste układy z dużą ilością "white space" (oddechu).
-- Paleta bieli, bardzo jasnych szarości dla tła oraz głęboka, luksusowa zieleń (lub nowoczesny akcent np. indygo/granat) do kluczowych przycisków akcji (CTA).
+- Paleta bieli, bardzo jasnych szarości dla tła oraz **eleganckie odcienie niebieskiego** (np. klasyczny niebieski, błękit lub granat) do kluczowych przycisków akcji (CTA) i akcentów.
 - Subtelne "Glassmorphism" (przezroczystości z rozmytym tłem) dla pływających elementów (np. karty korzyści, nagłówki formularzy).
 - Zaokrąglone rogi (border-radius) i gładkie cienie dla kart.
 - Duża, nowoczesna typografia (np. Inter, Outfit lub Plus Jakarta Sans).
@@ -18,8 +18,8 @@ Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs strony głów
 **Struktura Strony (Układ "od góry do dołu"):**
 
 1. **Header (Nawigacja)**
-   - Lewa strona: Minimalistyczne, eleganckie Logo firmy.
-   - Środek: Ukryte na mobile, na desktopie odnośniki (Oferta, Proces, Realizacje, Kontakt).
+   - Lewa strona: Logo firmy **Klik Klima** (użyj pliku z logo dołączonego w załączniku, lub zrób nowoczesny placeholder).
+   - Środek: Ukryte na mobile, na desktopie odnośniki (Oferta, Proces, Nasze Bestsellery, Kontakt).
    - Prawa strona: Przycisk "Wykonaj darmową wycenę" stylizowany jako główny przycisk.
 
 2. **Hero Section (Sekcja Główna - "Above the fold")**

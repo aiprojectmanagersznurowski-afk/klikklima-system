@@ -9,7 +9,7 @@ Poniżej znajduje się super szczegółowy prompt. Możesz go wkleić do narzęd
 Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs wieloetapowego formularza B2C (tzw. Triage Funnel) dla firmy instalującej klimatyzacje. Interfejs ma być napisany w React (Tailwind CSS, Framer Motion, shadcn/ui) z naciskiem na najwyższą konwersję i design klasy Premium (Apple-like, subtelne cienie, glassmorphism, duże czytelne typografie - np. Inter lub Outfit, płynne przejścia). 
 
 **Wymagania Wizualne:**
-- Design musi budzić ogromne zaufanie. Wykorzystaj paletę bieli, jasnych szarości i akcentów w kolorze głębokiej butelkowej zieleni (lub innego nowoczesnego koloru konwertującego). 
+- Design musi budzić ogromne zaufanie. Wykorzystaj paletę bieli, jasnych szarości i akcentów w kolorze **eleganckiego niebieskiego** (np. klasyczny błękit lub głęboki granat). 
 - Karty odpowiedzi (kafelki) powinny być duże, klikalne (tzw. "tap targets" dopasowane pod mobile), mieć stany hover z płynną animacją (skalowanie + podbicie cienia), a aktywny kafelek powinien mieć obrys z primary color i ewentualnie delikatny badge z haczykiem.
 - W lewym (lub górnym) panelu ma być dyskretny pasek postępu (Progress Bar) oraz przycisk "Wstecz".
 - Formularz działa jak kreator krok po kroku. Tylko jedno kluczowe pytanie na ekran.
