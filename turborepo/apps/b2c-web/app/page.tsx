@@ -271,7 +271,7 @@ export default function Page() {
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
             ? "bg-white/90 backdrop-blur-xl border-b border-border shadow-sm"
-            : "bg-transparent"
+            : "bg-white/40 backdrop-blur-md border-b border-white/30 shadow-sm"
         }`}
       >
         <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 sm:h-20 flex items-center justify-between gap-6">
