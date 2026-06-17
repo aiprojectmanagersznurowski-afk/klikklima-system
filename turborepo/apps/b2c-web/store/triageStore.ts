@@ -15,6 +15,12 @@ export interface TriageStateData {
   address: string | null;
   lat: number | null;
   lng: number | null;
+  // --- Faza 4.5: Dobór klimatyzacji ---
+  selectedDeviceLine: string | null; // np. "KETA", "Flexis"
+  selectedInternalUnits: any[]; // tablica przypisanych jednostek z bazy
+  selectedExternalUnit: any | null; // agregat (jeśli multi)
+  priceDevices: number;
+  priceInstallation: number;
 }
 
 interface TriageStore {
@@ -31,6 +37,9 @@ interface TriageStore {
   
   updateData: (data: Partial<TriageStateData>) => void;
   reset: () => void;
+  
+  // Faza 4.5 helpers
+  calculateRequiredPower: () => number;
 }
 
 const initialState: TriageStateData = {
@@ -43,9 +52,14 @@ const initialState: TriageStateData = {
   address: null,
   lat: null,
   lng: null,
+  selectedDeviceLine: null,
+  selectedInternalUnits: [],
+  selectedExternalUnit: null,
+  priceDevices: 0,
+  priceInstallation: 0,
 };
 
-export const useTriageStore = create<TriageStore>((set) => ({
+export const useTriageStore = create<TriageStore>((set, get) => ({
   currentStep: 1,
   data: initialState,
   
@@ -57,5 +71,17 @@ export const useTriageStore = create<TriageStore>((set) => ({
     data: { ...state.data, ...newData } 
   })),
   
+  calculateRequiredPower: () => {
+    const { rooms } = get().data;
+    let totalKw = 0;
+    rooms.forEach(room => {
+      if (room.area === "Do 25m²") totalKw += 2.5;
+      else if (room.area === "26-35m²") totalKw += 3.5;
+      else if (room.area === "36-50m²") totalKw += 5.0;
+      else if (room.area === "Powyżej 50m²") totalKw += 7.0; // Ekspert
+    });
+    return totalKw;
+  },
+
   reset: () => set({ currentStep: 1, data: initialState }),
 }));

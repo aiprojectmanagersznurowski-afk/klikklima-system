@@ -30,15 +30,40 @@ CREATE TABLE adresy (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 4. Tabela: Leady (Zlecenia, Triage, Exit-Intent)
+-- 4. Tabela: Urządzenia (Katalog klimatyzatorów)
+CREATE TABLE urzadzenia (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    kod_towaru TEXT UNIQUE, -- np. 'ASYG09KETA', 'AS35S2SF1FA'
+    producent TEXT NOT NULL, -- np. 'Fuji Electric', 'Haier'
+    linia TEXT NOT NULL, -- np. 'KETA', 'Flexis'
+    typ TEXT NOT NULL, -- 'wew_single', 'wew_multi', 'zew_multi'
+    moc_chlodnicza_kw NUMERIC NOT NULL,
+    max_powierzchnia_m2 INTEGER, -- określa max zasięg urządzenia, np. 35
+    ilosc_portow INTEGER, -- tylko dla 'zew_multi' (np. 2, 3, 4, 5)
+    cena_katalogowa NUMERIC NOT NULL,
+    obrazek_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 5. Tabela: Cennik Usług (Wzorcowy Montaż)
+CREATE TABLE cennik_uslug (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nazwa_uslugi TEXT NOT NULL UNIQUE,
+    jm TEXT NOT NULL, -- Jednostka Miary: szt, mb, m
+    koszt_b2c NUMERIC NOT NULL, -- Cena dla klienta końcowego
+    koszt_b2b NUMERIC, -- Koszt wewnętrzny dla instalatora
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 6. Tabela: Leady (Zlecenia, Triage, Exit-Intent)
 CREATE TABLE leady (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     klient_id UUID REFERENCES klienci(id) ON DELETE SET NULL,
     adres_id UUID REFERENCES adresy(id) ON DELETE SET NULL,
-    odpowiedzi_triage JSONB, -- Zapis kalkulatora pokoi lub porzuconego koszyka
+    odpowiedzi_triage JSONB, -- Zapis kalkulatora pokoi
+    wybrana_konfiguracja JSONB, -- [NOWE] Konfiguracja urządzeń, cennik montażu
     estymowana_wycena TEXT,
     status status_leada_enum DEFAULT 'Nowy',
-    -- audytor_id korzysta z tabeli auth.users zarządzanej przez Supabase Auth
     audytor_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     data_rezerwacji TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -60,3 +85,41 @@ ALTER TABLE system_config ENABLE ROW LEVEL SECURITY;
 
 -- UWAGA: Aby Twoje aplikacje mogły odczytywać dane, musisz skonfigurować polisy (Policies) 
 -- dla powyższych tabel w panelu Supabase Auth -> Policies, w zależności od potrzeb logiki B2C i B2B.
+
+-- 7. Przykładowe Dane Startowe (Słowniki)
+INSERT INTO cennik_uslug (nazwa_uslugi, jm, koszt_b2c, koszt_b2b) VALUES
+('Podłączenie klimatyzatora ściennego', 'szt', 1000.00, 1000.00),
+('Uruchomienie systemu', 'szt', 400.00, 400.00),
+('Przewiert', 'szt', 300.00, 300.00),
+('Jednostka zewn. na elewacji (do 3m)', 'szt', 170.00, 93.00),
+('Instalacja freonowa 1/4 i 3/8', 'mb', 130.00, 18.72),
+('Koryta na instalację freonową', 'mb', 40.00, 9.00),
+('Skropliny grawitacyjne giętkie', 'mb', 6.00, 2.00),
+('Przewód zasilający', 'mb', 15.00, 4.50),
+('Wpięcie zasilania do gniazda na wtyczkę', 'szt', 60.00, 5.50);
+
+INSERT INTO urzadzenia (kod_towaru, producent, linia, typ, moc_chlodnicza_kw, max_powierzchnia_m2, ilosc_portow, cena_katalogowa) VALUES
+('ASYG07KETA', 'Fuji Electric', 'KETA', 'wew_single', 2.0, 25, NULL, 3000.00),
+('ASYG09KETA', 'Fuji Electric', 'KETA', 'wew_single', 2.5, 35, NULL, 3200.00),
+('ASYG12KETA', 'Fuji Electric', 'KETA', 'wew_single', 3.5, 50, NULL, 3500.00),
+('AS25S2SF1FA', 'Haier', 'Flexis Plus', 'wew_single', 2.5, 25, NULL, 2800.00),
+('AS35S2SF1FA', 'Haier', 'Flexis Plus', 'wew_single', 3.5, 35, NULL, 3100.00),
+('ASYG07KMTA', 'Fuji Electric', 'KMTA', 'wew_multi', 2.0, 25, NULL, 1500.00),
+('ASYG09KMTA', 'Fuji Electric', 'KMTA', 'wew_multi', 2.5, 35, NULL, 1600.00),
+('ASYG12KMTA', 'Fuji Electric', 'KMTA', 'wew_multi', 3.5, 50, NULL, 1800.00),
+('AOYG14KBTA2', 'Fuji Electric', 'Multi Zewnętrzna', 'zew_multi', 4.0, NULL, 2, 4500.00),
+('AOYG18KBTA2', 'Fuji Electric', 'Multi Zewnętrzna', 'zew_multi', 5.4, NULL, 2, 5200.00),
+('AOYG24KBTA3', 'Fuji Electric', 'Multi Zewnętrzna', 'zew_multi', 6.8, NULL, 3, 6500.00),
+('AOYG30KBTA4', 'Fuji Electric', 'Multi Zewnętrzna', 'zew_multi', 8.0, NULL, 4, 8000.00);
+
+
+-- 8. Tabela: Soft Leady (Numery telefonów przed zakończeniem pełnego kalkulatora)
+CREATE TABLE IF NOT EXISTS soft_leady (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dane_kontaktowe TEXT NOT NULL,
+    dane_cząstkowe JSONB,
+    status TEXT DEFAULT 'Nowy',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE soft_leady ENABLE ROW LEVEL SECURITY;
