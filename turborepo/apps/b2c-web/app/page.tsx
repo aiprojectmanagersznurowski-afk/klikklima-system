@@ -595,7 +595,9 @@ export default function Page() {
               </p>
               <div className="flex gap-3 mt-1">
                 <a
-                  href="#"
+                  href="https://www.instagram.com/klikklima"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label="Instagram"
                   className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                 >
