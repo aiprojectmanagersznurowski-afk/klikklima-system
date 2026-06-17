@@ -268,11 +268,10 @@ export default function Page() {
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled || menuOpen
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled || menuOpen
             ? "bg-white/95 backdrop-blur-xl border-b border-border shadow-sm"
             : "bg-transparent"
-        }`}
+          }`}
       >
         <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 sm:h-20 flex items-center justify-between gap-6">
           {/* Logo */}
@@ -280,9 +279,8 @@ export default function Page() {
             <img
               src="/logo.png"
               alt="Klik Klima"
-              className={`h-9 sm:h-11 w-auto transition-all duration-300 ${
-                !scrolled && !menuOpen ? "brightness-0 invert" : ""
-              }`}
+              className={`h-9 sm:h-11 w-auto transition-all duration-300 ${!scrolled && !menuOpen ? "brightness-0 invert" : ""
+                }`}
             />
           </a>
 
@@ -292,11 +290,10 @@ export default function Page() {
               <a
                 key={l.label}
                 href={l.href}
-                className={`text-sm font-medium transition-colors ${
-                  scrolled || menuOpen
+                className={`text-sm font-medium transition-colors ${scrolled || menuOpen
                     ? "text-foreground/70 hover:text-foreground"
                     : "text-white/80 hover:text-white"
-                }`}
+                  }`}
               >
                 {l.label}
               </a>
@@ -313,9 +310,8 @@ export default function Page() {
               <ArrowRight className="w-4 h-4" />
             </a>
             <button
-              className={`md:hidden p-2 rounded-lg transition-colors ${
-                scrolled || menuOpen ? "text-foreground" : "text-white"
-              }`}
+              className={`md:hidden p-2 rounded-lg transition-colors ${scrolled || menuOpen ? "text-foreground" : "text-white"
+                }`}
               onClick={() => setMenuOpen((o) => !o)}
               aria-label="Menu"
             >
@@ -397,15 +393,15 @@ export default function Page() {
                 <br />
                 temperatura
                 <br />
-                <span className="text-[#60a5fa]">przez cały rok.</span>
+                <span className="text-[#60a5fa]">przez cały rok</span>
               </h1>
 
               <p
                 className="text-lg sm:text-xl text-white/80 leading-relaxed mb-9 max-w-lg"
                 style={{ textShadow: "0 1px 8px rgba(0,0,0,0.4)" }}
               >
-                Dobierz klimatyzator w 2 minuty. Poznaj szacunkową wycenę
-                z montażem online i umów naszego eksperta na darmowy audyt.
+                Dobierz klimatyzator w 2 minuty i poznaj szacunkową wycenę
+                z montażem online i umów naszego eksperta na darmowy audyt
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
@@ -451,11 +447,11 @@ export default function Page() {
               Nasze standardy
             </p>
             <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
-              Instalacja bez ukrytych kosztów.
+              Instalacja bez ukrytych kosztów
             </h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
-              Wiemy, że remonty bywają stresujące. Dlatego stawiamy na
-              transparentność i profesjonalizm na każdym etapie.
+              Wiemy, że remonty bywają stresujące, dlatego stawiamy na
+              transparentność i profesjonalizm na każdym etapie
             </p>
           </div>
 
@@ -475,7 +471,7 @@ export default function Page() {
               Jak działamy?
             </p>
             <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
-              Twoja droga do komfortu.
+              Twoja droga do komfortu
             </h2>
           </div>
 
@@ -519,10 +515,10 @@ export default function Page() {
                 Katalog urządzeń
               </p>
               <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
-                Nasze Bestsellery.
+                Nasze Bestsellery
               </h2>
               <p className="mt-3 text-muted-foreground max-w-md">
-                Transparentne ceny z montażem. Bez niespodzianek.
+                Transparentne ceny z montażem i bez niespodzianek
               </p>
             </div>
             <a
@@ -568,8 +564,8 @@ export default function Page() {
             i energooszczędne ciepło zimą
           </h2>
           <p className="text-lg sm:text-xl text-white/70 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Ciesz się idealnym klimatem w swoim domu bez ukrytych kosztów.
-            Przekonaj się, jak łatwo i szybko wycenisz instalację online.
+            Ciesz się idealnym klimatem w swoim domu bez ukrytych kosztów
+            Przekonaj się, jak łatwo i szybko wycenisz instalację online
           </p>
 
           <a
@@ -594,8 +590,8 @@ export default function Page() {
                 className="h-10 w-auto brightness-0 invert opacity-90 self-start"
               />
               <p className="text-sm leading-relaxed text-white/60 max-w-xs">
-                Lokalna firma klimatyzacyjna. Sprzedaż, profesjonalny montaż i serwis urządzeń
-                marek Premium.
+                Lokalna firma klimatyzacyjna Sprzedaż, profesjonalny montaż i serwis urządzeń
+                marek Premium
               </p>
               <div className="flex gap-3 mt-1">
                 <a
