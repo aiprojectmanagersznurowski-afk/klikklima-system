@@ -262,8 +262,8 @@ export default function App() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white/90 backdrop-blur-xl border-b border-border shadow-sm"
+          scrolled || menuOpen
+            ? "bg-white/95 backdrop-blur-xl border-b border-border shadow-sm"
             : "bg-transparent"
         }`}
       >
@@ -273,7 +273,9 @@ export default function App() {
             <img
               src="/src/imports/logo.png"
               alt="Klik Klima"
-              className="h-9 sm:h-11 w-auto"
+              className={`h-9 sm:h-11 w-auto transition-all duration-300 ${
+                !scrolled && !menuOpen ? "brightness-0 invert" : ""
+              }`}
             />
           </a>
 
@@ -283,7 +285,11 @@ export default function App() {
               <a
                 key={l.label}
                 href={l.href}
-                className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
+                className={`text-sm font-medium transition-colors ${
+                  scrolled || menuOpen
+                    ? "text-foreground/70 hover:text-foreground"
+                    : "text-white/80 hover:text-white"
+                }`}
               >
                 {l.label}
               </a>
@@ -300,7 +306,9 @@ export default function App() {
               <ArrowRight className="w-4 h-4" />
             </a>
             <button
-              className="md:hidden p-2 rounded-lg text-foreground"
+              className={`md:hidden p-2 rounded-lg transition-colors ${
+                scrolled || menuOpen ? "text-foreground" : "text-white"
+              }`}
               onClick={() => setMenuOpen((o) => !o)}
               aria-label="Menu"
             >
@@ -334,71 +342,88 @@ export default function App() {
       </header>
 
       {/* ── Hero ───────────────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
-        {/* Background gradient mesh */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#eef2fb] via-background to-[#dde8fa] pointer-events-none" />
-        <div className="absolute top-0 right-0 w-[60%] h-full pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-l from-[#eef2fb]/0 to-[#eef2fb]/60 z-10" />
-          <img
-            src="https://images.unsplash.com/photo-1761330440311-16e160cad236?w=1400&h=1000&fit=crop&auto=format"
-            alt="Nowoczesny salon z elegancko zamontowaną klimatyzacją"
-            className="w-full h-full object-cover object-center"
-          />
-        </div>
+      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden bg-[#0d1b2e]">
+        {/* Full-bleed background photo */}
+        <img
+          src="https://images.unsplash.com/photo-1761330440311-16e160cad236?w=1800&h=1100&fit=crop&auto=format"
+          alt="Nowoczesny salon z elegancko zamontowaną klimatyzacją"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-55"
+        />
+        {/* Gradient vignette — stronger on left for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0d1b2e]/90 via-[#0d1b2e]/55 to-[#0d1b2e]/10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1b2e]/60 via-transparent to-transparent pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 py-24 sm:py-32 w-full">
+          {/* Glassmorphism text panel */}
           <div className="max-w-xl lg:max-w-2xl">
-            {/* FOMO / Scarcity badge */}
-            <div className="inline-flex items-center gap-2.5 bg-white/85 backdrop-blur-sm border border-orange-200/70 rounded-full px-4 py-2.5 mb-8 shadow-sm">
-              <span className="text-base leading-none">🔥</span>
-              <span className="text-sm font-semibold text-orange-700">
-                Zostało{" "}
-                <span className="text-orange-600 font-extrabold">{AVAILABLE_SLOTS}</span>{" "}
-                wolnych terminów w tym tygodniu na darmowy audyt
-              </span>
-            </div>
+            <div
+              className="rounded-3xl p-8 sm:p-10 lg:p-12"
+              style={{
+                background: "rgba(255,255,255,0.07)",
+                backdropFilter: "blur(18px)",
+                WebkitBackdropFilter: "blur(18px)",
+                border: "1px solid rgba(255,255,255,0.13)",
+                boxShadow: "0 8px 48px rgba(0,0,0,0.25)",
+              }}
+            >
+              {/* FOMO / Scarcity badge */}
+              <div className="inline-flex items-center gap-2.5 bg-white/15 backdrop-blur-sm border border-orange-300/40 rounded-full px-4 py-2.5 mb-7 shadow-sm">
+                <span className="text-base leading-none">🔥</span>
+                <span className="text-sm font-semibold text-orange-200">
+                  Zostało{" "}
+                  <span className="text-orange-300 font-extrabold">{AVAILABLE_SLOTS}</span>{" "}
+                  wolnych terminów w tym tygodniu na darmowy audyt
+                </span>
+              </div>
 
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-foreground leading-[1.05] tracking-tight mb-6">
-              Idealna
-              <br />
-              temperatura
-              <br />
-              <span className="text-primary">przez cały rok.</span>
-            </h1>
-
-            <p className="text-lg sm:text-xl text-foreground/65 leading-relaxed mb-10 max-w-lg">
-              Dobierz klimatyzator w 2 minuty. Poznaj szacunkową wycenę
-              z montażem online i umów naszego eksperta na darmowy audyt.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <a
-                href="#wycena"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-base rounded-xl px-8 py-4 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_12px_32px_rgba(23,80,200,0.40)] active:scale-[0.97]"
+              <h1
+                className="text-5xl sm:text-6xl lg:text-[4.5rem] font-extrabold text-white leading-[1.05] tracking-tight mb-5"
+                style={{ textShadow: "0 2px 24px rgba(0,0,0,0.35)" }}
               >
-                Odbierz darmową wycenę online
-                <ArrowRight className="w-5 h-5" />
-              </a>
-              <a
-                href="#bestsellery"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/80 backdrop-blur-sm text-foreground font-semibold text-base rounded-xl px-8 py-4 border border-border transition-all duration-200 hover:bg-white hover:border-primary/30"
-              >
-                Zobacz urządzenia
-              </a>
-            </div>
+                Idealna
+                <br />
+                temperatura
+                <br />
+                <span className="text-[#60a5fa]">przez cały rok.</span>
+              </h1>
 
-            {/* Mini trust badges */}
-            <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-3">
-              {[
-                "Autoryzowany serwis",
-                "Gwarancja do 5 lat",
-                "Montaż w 1 dzień",
-              ].map((b) => (
-                <div key={b} className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
-                  <span className="text-sm font-medium text-foreground/70">{b}</span>
-                </div>
-              ))}
+              <p
+                className="text-lg sm:text-xl text-white/80 leading-relaxed mb-9 max-w-lg"
+                style={{ textShadow: "0 1px 8px rgba(0,0,0,0.4)" }}
+              >
+                Dobierz klimatyzator w 2 minuty. Poznaj szacunkową wycenę
+                z montażem online i umów naszego eksperta na darmowy audyt.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a
+                  href="#wycena"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-base rounded-xl px-8 py-4 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_12px_32px_rgba(23,80,200,0.55)] active:scale-[0.97]"
+                >
+                  Odbierz darmową wycenę online
+                  <ArrowRight className="w-5 h-5" />
+                </a>
+                <a
+                  href="#bestsellery"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm text-white font-semibold text-base rounded-xl px-8 py-4 border border-white/25 transition-all duration-200 hover:bg-white/25"
+                >
+                  Zobacz urządzenia
+                </a>
+              </div>
+
+              {/* Mini trust badges */}
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+                {[
+                  "Autoryzowany serwis",
+                  "Gwarancja do 5 lat",
+                  "Montaż w 1 dzień",
+                ].map((b) => (
+                  <div key={b} className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#60a5fa] flex-shrink-0" />
+                    <span className="text-sm font-medium text-white/70">{b}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
