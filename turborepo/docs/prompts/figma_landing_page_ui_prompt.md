@@ -33,8 +33,8 @@ Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs strony głów
    - Nagłówek: "Instalacja bez ukrytych kosztów."
    - Układ siatki 3 lub 4 kolumn (na mobile przewijane).
    - Karta 1: "Przejrzysta wycena" (Wycena online bez zobowiązań w 2 minuty).
-   - Karta 2: "Autoryzowany Serwis" (Montaż zgodnie ze sztuką przez wykwalifikowanych inżynierów).
-   - Karta 3: "Gwarancja do 5 lat" (Jesteśmy autoryzowanym partnerem marek Premium: Fuji Electric, Haier, itp.).
+   - Karta 2: "Profesjonalny Montaż" (Instalacja zgodnie ze sztuką przez wykwalifikowanych inżynierów).
+   - Karta 3: "Gwarancja do 5 lat" (Wysoka jakość sprzętu marek Premium i profesjonalny montaż dają Ci spokój na lata).
    - Karta 4: "Montaż w 1 dzień" (Minimalizujemy dyskomfort w Twoim domu).
 
 4. **Sekcja Jak działamy? (Proces krok po kroku)**
