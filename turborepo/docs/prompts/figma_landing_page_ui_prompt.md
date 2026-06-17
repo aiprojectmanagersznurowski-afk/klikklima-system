@@ -25,7 +25,7 @@ Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs strony głów
 2. **Hero Section (Sekcja Główna - "Above the fold")**
    - Piękne, wysokiej jakości zdjęcie w tle lub po prawej stronie (nowoczesny, przeszklony salon, w którym niewidocznie, ale elegancko zamontowana jest czarna lub biała klimatyzacja).
    - Nagłówek H1 (bardzo duży): "Idealna temperatura w Twoim domu. Przez cały rok."
-   - Sub-nagłówek: "Dobierz klimatyzator w 2 minuty. Poznaj szacunkową wycenę z montażem online i umów naszego eksperta na darmowy audyt."
+   - Sub-nagłówek: "Dobierz klimatyzator w 2 minuty. Poznaj szacunkową wycenę z montażem online i umów naszego eksperta na darmowy audyt." (WAŻNE: Upewnij się, że tekst jest czytelny na tle zdjęcia – użyj delikatnego rozmycia tła pod tekstem, tzw. 'glassmorphism' lub wyraźnego ciemnego cienia pod tekstem 'text-shadow').
    - Główny Przycisk CTA: "Odbierz darmową wycenę online". (Ten przycisk uruchomi nasz inteligentny lejek / Triage form).
    - Badge "Scarcity / FOMO": Zamiast generycznych tekstów (np. "Montaż w Twoim mieście"), zaprojektuj w pobliżu przycisku CTA nowoczesną etykietę/badge (np. z ikoną ognia lub kalendarza) z tekstem: "🔥 Zostało [X] wolnych terminów w tym tygodniu na darmowy audyt". W kodzie będziemy pobierać ten parametr dynamicznie z bazy danych.
    - UWAGA: Na tym etapie NIE projektuj elementów typu "Social Proof" (np. opinie, gwiazdki z Google, loga z social media), ponieważ firma dopiero startuje.

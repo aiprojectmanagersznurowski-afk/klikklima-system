@@ -1,8 +1,4 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { getFomoSlots } from "./actions/getFomoSlots";
-import ExitIntentModal from "@/components/triage/ExitIntentModal";
 import {
   Menu,
   X,
@@ -19,8 +15,8 @@ import {
   Phone,
   Mail,
   MapPin,
-  Camera,
-  Globe,
+  Instagram,
+  Facebook,
   Star,
 } from "lucide-react";
 
@@ -245,17 +241,14 @@ function GlassCard({
 
 /* ─── Main Component ─────────────────────────────────────────────────────── */
 
-export default function Page() {
+// In production this value is fetched dynamically from Supabase
+const AVAILABLE_SLOTS = 3;
+
+export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [availableSlots, setAvailableSlots] = useState<number | null>(null);
 
   useEffect(() => {
-    // Fetch available slots from Supabase via Server Action
-    getFomoSlots().then((slots) => {
-      setAvailableSlots(slots);
-    });
-
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -278,7 +271,7 @@ export default function Page() {
           {/* Logo */}
           <a href="#" className="flex items-center gap-3 flex-shrink-0">
             <img
-              src="/logo.png"
+              src="/src/imports/logo.png"
               alt="Klik Klima"
               className="h-9 sm:h-11 w-auto"
             />
@@ -360,13 +353,7 @@ export default function Page() {
               <span className="text-base leading-none">🔥</span>
               <span className="text-sm font-semibold text-orange-700">
                 Zostało{" "}
-                <span className="text-orange-600 font-extrabold">
-                  {availableSlots === null ? (
-                    <span className="inline-block w-4 h-4 rounded-full bg-orange-300 animate-pulse align-middle" />
-                  ) : (
-                    availableSlots
-                  )}
-                </span>{" "}
+                <span className="text-orange-600 font-extrabold">{AVAILABLE_SLOTS}</span>{" "}
                 wolnych terminów w tym tygodniu na darmowy audyt
               </span>
             </div>
@@ -379,7 +366,7 @@ export default function Page() {
               <span className="text-primary">przez cały rok.</span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-foreground/80 leading-relaxed mb-10 max-w-lg bg-white/40 backdrop-blur-md p-5 rounded-2xl border border-white/50 shadow-sm font-medium">
+            <p className="text-lg sm:text-xl text-foreground/65 leading-relaxed mb-10 max-w-lg">
               Dobierz klimatyzator w 2 minuty. Poznaj szacunkową wycenę
               z montażem online i umów naszego eksperta na darmowy audyt.
             </p>
@@ -403,7 +390,7 @@ export default function Page() {
             {/* Mini trust badges */}
             <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-3">
               {[
-                "Profesjonalny serwis",
+                "Autoryzowany serwis",
                 "Gwarancja do 5 lat",
                 "Montaż w 1 dzień",
               ].map((b) => (
@@ -564,13 +551,13 @@ export default function Page() {
             {/* Brand */}
             <div className="flex flex-col gap-5">
               <img
-                src="/logo.png"
+                src="/src/imports/logo.png"
                 alt="Klik Klima"
                 className="h-10 w-auto brightness-0 invert opacity-90 self-start"
               />
               <p className="text-sm leading-relaxed text-white/60 max-w-xs">
-                Lokalna firma klimatyzacyjna. Sprzedaż, profesjonalny montaż i serwis urządzeń
-                marek Premium.
+                Lokalna firma klimatyzacyjna. Sprzedaż, montaż i serwis urządzeń
+                marek Premium. Autoryzowany partner Fuji Electric i Haier.
               </p>
               <div className="flex gap-3 mt-1">
                 <a
@@ -578,14 +565,14 @@ export default function Page() {
                   aria-label="Instagram"
                   className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                 >
-                  <Camera className="w-4 h-4" />
+                  <Instagram className="w-4 h-4" />
                 </a>
                 <a
                   href="#"
                   aria-label="Facebook"
                   className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                 >
-                  <Globe className="w-4 h-4" />
+                  <Facebook className="w-4 h-4" />
                 </a>
               </div>
             </div>
@@ -646,9 +633,6 @@ export default function Page() {
           </div>
         </div>
       </footer>
-
-      {/* Wyłapywanie wychodzących użytkowników (Soft Leads) */}
-      <ExitIntentModal />
     </div>
   );
 }
