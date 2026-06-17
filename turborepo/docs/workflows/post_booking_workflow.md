@@ -65,3 +65,16 @@ Poniższe scenariusze BDD definiują weryfikację tego procesu od strony końcow
 
 ## Wizualizacja Diagramu
 ![Diagram Post-Booking](./post_booking_workflow.png)
+
+## Faza Po-Audytowa (Ofertowanie)
+
+Proces ten ma swoją kontynuację po tym, jak inżynier / doradca fizycznie zjawi się na obiekcie u klienta. W trakcie audytu konsultant weryfikuje warunki techniczne.
+
+1. **Wycena Finalna w Panelu B2B**: Doradca loguje się do panelu instalatora, odnajduje konkretnego Leada i zatwierdza ostateczną konfigurację. W tym kroku musi zaktualizować dwa kluczowe pola:
+   - `finalna_wycena_pln`: Kwota ostateczna (może różnić się od estymacji B2C).
+   - `przewidywany_czas_montazu`: Oszacowanie czasu trwania prac (np. "1 dzień roboczy", "około 6 godzin").
+
+2. **Wysyłka Finalnej Oferty**: Po zapisaniu tych danych w bazie, następuje trigger wysyłający do klienta zaktualizowaną ofertę (np. via e-mail lub SMS).
+3. **Kluczowy Wymóg Informacyjny**: Komunikat (e-mail) kierowany do klienta **MUSI** bezwzględnie zawierać informację o przewidywanym czasie montażu, aby klient mógł odpowiednio zaplanować swój czas (np. wziąć urlop w pracy).
+
+*W modelu danych (tabela `leady`), wartości te są przechowywane jako kolumny `finalna_wycena_pln` (NUMERIC) oraz `przewidywany_czas_montazu` (TEXT).*

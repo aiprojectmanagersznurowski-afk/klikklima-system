@@ -61,12 +61,16 @@ CREATE TABLE leady (
     klient_id UUID REFERENCES klienci(id) ON DELETE SET NULL,
     adres_id UUID REFERENCES adresy(id) ON DELETE SET NULL,
     odpowiedzi_triage JSONB, -- Zapis kalkulatora pokoi
-    wybrana_konfiguracja JSONB, -- [NOWE] Konfiguracja urządzeń, cennik montażu
-    estymowana_wycena TEXT,
+    wybrana_konfiguracja JSONB, -- Konfiguracja urządzeń, cennik montażu
+    estymowana_wycena TEXT, -- Wycena pokazana w UI
     status status_leada_enum DEFAULT 'Nowy',
-    audytor_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    audytor_id UUID, -- TODO: docelowo powiązanie z auth.users
     data_rezerwacji TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    finalna_wycena_pln NUMERIC, -- Kwota ustalona PO audycie
+    przewidywany_czas_montazu TEXT, -- Np. "1 dzień roboczy", uzupełniane przez audytora
+    notatki_wewnetrzne TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- 5. Tabela: System Config (Parametryzacja Bookingu i Opóźnień)
