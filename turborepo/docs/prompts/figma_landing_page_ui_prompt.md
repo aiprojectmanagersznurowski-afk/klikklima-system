@@ -55,9 +55,9 @@ Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs strony głów
 
 6. **Sekcja "Call to Action" przed stopką (Finalne uderzenie)**
    - Duży banner wyróżniający się kolorem tła.
-   - Tekst: "Gotowy na przyjemny chłód w upalne lato i energooszczędne ogrzewanie w zimę?"
-   - (UWAGA dla AI/Designera: Klimatyzacja to pompa ciepła, która pobiera prąd. Nie używaj sformułowań typu "darmowe ogrzewanie" czy "zwraca się w pierwszą zimę", aby nie wprowadzać klienta w błąd. Skup się na oszczędności względem pieców elektrycznych, komforcie i szybkości dogrzewania).
-   - Duży przycisk CTA: "Kliknij i oblicz koszty w 2 minuty".
+   - Nagłówek (krótki, bez kropki na końcu!): "Gotowy na przyjemny chłód latem i energooszczędne ciepło zimą"
+   - Sub-nagłówek (skupiony na Unique Value Proposition, BEZ wspominania o pompach ciepła i darmowym ogrzewaniu): "Ciesz się idealnym klimatem w swoim domu bez ukrytych kosztów. Przekonaj się, jak łatwo i szybko wycenisz instalację online."
+   - Duży przycisk CTA: "Oblicz koszty w 2 minuty".
 
 7. **Footer (Stopka)**
    - Minimalistyczny design. Dane firmy, NIP, Adres e-mail, Numer telefonu, Linki do social mediów, Polityka Prywatności i Regulamin.
