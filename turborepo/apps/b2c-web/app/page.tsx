@@ -1,164 +1,640 @@
-import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles, Wind } from "lucide-react";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import {
+  Menu,
+  X,
+  ArrowRight,
+  CheckCircle2,
+  MonitorSmartphone,
+  CalendarCheck,
+  Wrench,
+  ShieldCheck,
+  Clock3,
+  BadgeCheck,
+  Zap,
+  ChevronRight,
+  Phone,
+  Mail,
+  MapPin,
+  Camera,
+  Globe,
+  Star,
+} from "lucide-react";
+
+/* ─── Data ───────────────────────────────────────────────────────────────── */
+
+const navLinks = [
+  { label: "Oferta", href: "#oferta" },
+  { label: "Proces", href: "#proces" },
+  { label: "Bestsellery", href: "#bestsellery" },
+  { label: "Kontakt", href: "#kontakt" },
+];
+
+const benefits = [
+  {
+    icon: MonitorSmartphone,
+    title: "Przejrzysta wycena",
+    desc: "Wycena online bez zobowiązań w 2 minuty. Natychmiast widzisz szacowany koszt urządzenia i montażu.",
+  },
+  {
+    icon: BadgeCheck,
+    title: "Profesjonalny Montaż",
+    desc: "Instalacja zgodnie ze sztuką przez wykwalifikowanych inżynierów z certyfikatami F-gazowymi.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Gwarancja do 5 lat",
+    desc: "Wysoka jakość sprzętu marek Premium i profesjonalny montaż dają Ci spokój na lata.",
+  },
+  {
+    icon: Clock3,
+    title: "Montaż w 1 dzień",
+    desc: "Minimalizujemy dyskomfort. Ekipa przyjeżdża, montuje i sprząta — zazwyczaj w ciągu jednego dnia.",
+  },
+];
+
+const steps = [
+  {
+    number: "01",
+    icon: MonitorSmartphone,
+    title: "Wyceniasz online",
+    desc: "Wypełniasz krótki formularz i od razu widzisz zarys cen z montażem. Zero zobowiązań.",
+  },
+  {
+    number: "02",
+    icon: CalendarCheck,
+    title: "Darmowy Audyt",
+    desc: "Nasz inżynier odwiedza Twój dom, potwierdza warunki techniczne i finalizuje ofertę.",
+  },
+  {
+    number: "03",
+    icon: Wrench,
+    title: "Profesjonalny Montaż",
+    desc: "Sprawna instalacja, uruchomienie, konfiguracja pilota i posprzątanie po sobie.",
+  },
+];
+
+interface Product {
+  id: number;
+  brand: string;
+  brandLogo: string;
+  model: string;
+  power: string;
+  img: string;
+  deviceNettoPrice: number;
+  installNettoPrice: number;
+  tag?: string;
+}
+
+const products: Product[] = [
+  {
+    id: 1,
+    brand: "Fuji Electric",
+    brandLogo: "FE",
+    model: "RSG09KMTA",
+    power: "2.5 kW",
+    img: "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
+    deviceNettoPrice: 2490,
+    installNettoPrice: 1100,
+    tag: "Bestseller",
+  },
+  {
+    id: 2,
+    brand: "Haier",
+    brandLogo: "HA",
+    model: "AS35S2SF1FA-CW",
+    power: "3.5 kW",
+    img: "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
+    deviceNettoPrice: 2190,
+    installNettoPrice: 1100,
+    tag: "Promocja",
+  },
+  {
+    id: 3,
+    brand: "Fuji Electric",
+    brandLogo: "FE",
+    model: "RSG12KMTA",
+    power: "3.5 kW",
+    img: "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
+    deviceNettoPrice: 2990,
+    installNettoPrice: 1100,
+    tag: undefined,
+  },
+  {
+    id: 4,
+    brand: "Haier",
+    brandLogo: "HA",
+    model: "AS50S2SF1FA-CW",
+    power: "5.0 kW",
+    img: "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
+    deviceNettoPrice: 2890,
+    installNettoPrice: 1200,
+    tag: undefined,
+  },
+];
+
+function calcBrutto(deviceNetto: number, installNetto: number): number {
+  return Math.round((deviceNetto + installNetto) * 1.08);
+}
+
+/* ─── Sub-components ────────────────────────────────────────────────────── */
+
+function BrandBadge({ code }: { code: string }) {
+  const colors: Record<string, string> = {
+    FE: "bg-[#0d1b2e] text-white",
+    HA: "bg-[#c8102e] text-white",
+  };
   return (
-    <>
-      <Navbar />
-      
-      <main className="flex-1 pt-20">
-        {/* HERO SECTION */}
-        <section className="relative overflow-hidden bg-white">
-          <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-50"></div>
-          
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative pt-24 pb-32 text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium mb-8">
-              <Sparkles size={16} />
-              <span>Najczystszy montaż w mieście</span>
-            </div>
-            
-            <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tight mb-8 max-w-4xl mx-auto leading-tight">
-              Klimatyzacja dobrana do Ciebie w <span className="text-emerald-600">2 minuty</span>.
-            </h1>
-            
-            <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
-              Przejdź krótki formularz, poznaj szacowaną cenę i zarezerwuj darmowy audyt. 
-              Zero spamu, 100% transparentności.
+    <span
+      className={`inline-flex items-center justify-center w-8 h-8 rounded-md text-xs font-bold tracking-wide ${colors[code] ?? "bg-muted text-foreground"}`}
+    >
+      {code}
+    </span>
+  );
+}
+
+function ProductCard({ product }: { product: Product }) {
+  const brutto = calcBrutto(product.deviceNettoPrice, product.installNettoPrice);
+
+  return (
+    <div className="group relative bg-card rounded-2xl border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_-12px_rgba(23,80,200,0.15)]">
+      {product.tag && (
+        <span className="absolute top-4 left-4 z-10 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
+          {product.tag}
+        </span>
+      )}
+
+      <div className="relative h-52 bg-[#f0f4fb] overflow-hidden">
+        <img
+          src={product.img}
+          alt={`Klimatyzator ${product.brand} ${product.model}`}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+      </div>
+
+      <div className="flex flex-col flex-1 p-6 gap-4">
+        <div className="flex items-center gap-2">
+          <BrandBadge code={product.brandLogo} />
+          <div>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+              {product.brand}
             </p>
-            
-            <Link 
-              href="/triage"
-              className="inline-flex items-center gap-2 bg-gray-900 text-white px-8 py-4 rounded-full text-lg font-medium hover:bg-gray-800 transition-all hover:scale-105 shadow-xl hover:shadow-2xl"
+            <p className="text-sm font-semibold text-foreground font-mono tracking-tight">
+              {product.model}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 bg-secondary text-secondary-foreground text-xs font-semibold px-3 py-1.5 rounded-full">
+            <Zap className="w-3 h-3" />
+            {product.power}
+          </span>
+          <span className="text-xs text-muted-foreground">Moc chłodnicza</span>
+        </div>
+
+        <div className="mt-auto pt-4 border-t border-border">
+          <p className="text-xs text-muted-foreground mb-1">
+            Cena z montażem (brutto)
+          </p>
+          <p className="text-3xl font-bold text-foreground tracking-tight">
+            {brutto.toLocaleString("pl-PL")} zł
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Urządzenie + montaż wzorcowy + VAT 8%
+          </p>
+        </div>
+
+        <button className="mt-2 w-full bg-primary text-primary-foreground font-semibold text-sm rounded-xl py-3 px-4 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[#1244b0] active:scale-[0.98]">
+          Wybierz ten model
+          <ArrowRight className="w-4 h-4" />
+        </button>
+        <button className="w-full text-primary font-semibold text-sm rounded-xl py-2.5 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10">
+          Darmowa wycena
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GlassCard({
+  icon: Icon,
+  title,
+  desc,
+}: {
+  icon: React.ElementType;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="relative bg-white/70 backdrop-blur-md border border-white/80 rounded-2xl p-7 flex flex-col gap-4 shadow-[0_4px_24px_rgba(23,80,200,0.07)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(23,80,200,0.13)]">
+      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+        <Icon className="w-6 h-6 text-primary" strokeWidth={1.75} />
+      </div>
+      <div>
+        <h3 className="font-bold text-foreground text-lg mb-1">{title}</h3>
+        <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main Component ─────────────────────────────────────────────────────── */
+
+// In production this value is fetched dynamically from Supabase
+const AVAILABLE_SLOTS = 3;
+
+export default function Page() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <div
+      className="min-h-screen bg-background text-foreground"
+      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+    >
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-white/90 backdrop-blur-xl border-b border-border shadow-sm"
+            : "bg-transparent"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 sm:h-20 flex items-center justify-between gap-6">
+          {/* Logo */}
+          <a href="#" className="flex items-center gap-3 flex-shrink-0">
+            <img
+              src="/logo.png"
+              alt="Klik Klima"
+              className="h-9 sm:h-11 w-auto"
+            />
+          </a>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-8">
+            {navLinks.map((l) => (
+              <a
+                key={l.label}
+                href={l.href}
+                className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
+              >
+                {l.label}
+              </a>
+            ))}
+          </nav>
+
+          {/* CTA + hamburger */}
+          <div className="flex items-center gap-3">
+            <a
+              href="#wycena"
+              className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold text-sm rounded-xl px-5 py-2.5 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_8px_24px_rgba(23,80,200,0.35)] active:scale-[0.97]"
             >
-              Rozpocznij darmową wycenę
-              <ArrowRight size={20} />
-            </Link>
+              Wykonaj darmową wycenę
+              <ArrowRight className="w-4 h-4" />
+            </a>
+            <button
+              className="md:hidden p-2 rounded-lg text-foreground"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="Menu"
+            >
+              {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
-        </section>
+        </div>
 
-        {/* BRANDS / AUTHORITY SECTION */}
-        <section className="border-y border-gray-100 bg-gray-50 py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-center text-sm font-medium text-gray-500 uppercase tracking-wider mb-8">
-              Pracujemy wyłącznie na sprawdzonych technologiach
+        {/* Mobile menu */}
+        {menuOpen && (
+          <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-border px-5 py-5 flex flex-col gap-4">
+            {navLinks.map((l) => (
+              <a
+                key={l.label}
+                href={l.href}
+                onClick={() => setMenuOpen(false)}
+                className="text-base font-medium text-foreground py-1 border-b border-border/50 last:border-0"
+              >
+                {l.label}
+              </a>
+            ))}
+            <a
+              href="#wycena"
+              className="mt-2 w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl px-5 py-3.5 transition-all hover:bg-[#1244b0]"
+            >
+              Wykonaj darmową wycenę
+              <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
+        )}
+      </header>
+
+      {/* ── Hero ───────────────────────────────────────────────────────── */}
+      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
+        {/* Background gradient mesh */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#eef2fb] via-background to-[#dde8fa] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[60%] h-full pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-l from-[#eef2fb]/0 to-[#eef2fb]/60 z-10" />
+          <img
+            src="https://images.unsplash.com/photo-1761330440311-16e160cad236?w=1400&h=1000&fit=crop&auto=format"
+            alt="Nowoczesny salon z elegancko zamontowaną klimatyzacją"
+            className="w-full h-full object-cover object-center"
+          />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 py-24 sm:py-32 w-full">
+          <div className="max-w-xl lg:max-w-2xl">
+            {/* FOMO / Scarcity badge */}
+            <div className="inline-flex items-center gap-2.5 bg-white/85 backdrop-blur-sm border border-orange-200/70 rounded-full px-4 py-2.5 mb-8 shadow-sm">
+              <span className="text-base leading-none">🔥</span>
+              <span className="text-sm font-semibold text-orange-700">
+                Zostało{" "}
+                <span className="text-orange-600 font-extrabold">{AVAILABLE_SLOTS}</span>{" "}
+                wolnych terminów w tym tygodniu na darmowy audyt
+              </span>
+            </div>
+
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-foreground leading-[1.05] tracking-tight mb-6">
+              Idealna
+              <br />
+              temperatura
+              <br />
+              <span className="text-primary">przez cały rok.</span>
+            </h1>
+
+            <p className="text-lg sm:text-xl text-foreground/65 leading-relaxed mb-10 max-w-lg">
+              Dobierz klimatyzator w 2 minuty. Poznaj szacunkową wycenę
+              z montażem online i umów naszego eksperta na darmowy audyt.
             </p>
-            <div className="flex justify-center items-center gap-12 md:gap-24 grayscale opacity-60">
-              {/* Dummy logos for Fuji Electric and Haier */}
-              <div className="text-2xl font-bold font-serif">Fuji Electric</div>
-              <div className="text-2xl font-black tracking-tighter">Haier</div>
-              <div className="text-2xl font-bold text-gray-800 hidden md:block">DAIKIN</div>
-            </div>
-          </div>
-        </section>
 
-        {/* PROCESS SECTION */}
-        <section id="jak-to-dziala" className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Jak działamy?</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto text-lg">Prosty i przejrzysty proces. Od wyceny do chłodu w zaledwie 3 krokach.</p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href="#wycena"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-base rounded-xl px-8 py-4 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_12px_32px_rgba(23,80,200,0.40)] active:scale-[0.97]"
+              >
+                Odbierz darmową wycenę online
+                <ArrowRight className="w-5 h-5" />
+              </a>
+              <a
+                href="#bestsellery"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/80 backdrop-blur-sm text-foreground font-semibold text-base rounded-xl px-8 py-4 border border-border transition-all duration-200 hover:bg-white hover:border-primary/30"
+              >
+                Zobacz urządzenia
+              </a>
             </div>
-            
-            <div className="grid md:grid-cols-3 gap-12">
+
+            {/* Mini trust badges */}
+            <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-3">
               {[
-                {
-                  step: "01",
-                  title: "Kalkulacja Online",
-                  desc: "Odpowiadasz na kilka pytań w naszym formularzu Triage i od razu poznajesz orientacyjne koszty."
-                },
-                {
-                  step: "02",
-                  title: "Darmowy Audyt",
-                  desc: "Nasz inżynier przyjeżdża do Ciebie, by potwierdzić dobór i omówić szczegóły instalacji."
-                },
-                {
-                  step: "03",
-                  title: "Czysty Montaż",
-                  desc: "Zjawiamy się z uśmiechem, montujemy sprzęt i zostawiamy po sobie absolutny porządek."
-                }
-              ].map((item) => (
-                <div key={item.step} className="relative p-8 rounded-3xl bg-gray-50 border border-gray-100">
-                  <div className="text-5xl font-black text-gray-200 mb-6">{item.step}</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
-                  <p className="text-gray-600">{item.desc}</p>
+                "Profesjonalny serwis",
+                "Gwarancja do 5 lat",
+                "Montaż w 1 dzień",
+              ].map((b) => (
+                <div key={b} className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0" />
+                  <span className="text-sm font-medium text-foreground/70">{b}</span>
                 </div>
               ))}
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* GUARANTEES SECTION */}
-        <section id="gwarancje" className="py-24 bg-gray-900 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid md:grid-cols-2 gap-16 items-center">
-              <div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-6">Instalacja, której możesz zaufać.</h2>
-                <p className="text-gray-400 text-lg mb-8">
-                  Klimatyzacja to inwestycja na lata. Nie pozwól, aby montaż wykonała niesprawdzona ekipa. 
-                  My dajemy Ci pewność na każdym kroku.
-                </p>
-                <div className="space-y-6">
-                  {[
-                    "5 lat pełnej gwarancji na urządzenia i nasz montaż.",
-                    "Autoryzowany partner Fuji Electric i Haier.",
-                    "Zostawiamy idealny porządek po pracy – sprzątamy z odkurzaczem przemysłowym."
-                  ].map((benefit, i) => (
-                    <div key={i} className="flex items-start gap-4">
-                      <div className="mt-1 bg-emerald-500/20 text-emerald-400 rounded-full p-1">
-                        <CheckCircle2 size={20} />
-                      </div>
-                      <p className="text-gray-300">{benefit}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="relative">
-                <div className="aspect-square rounded-3xl bg-gray-800 border border-gray-700 flex items-center justify-center p-12">
-                  <ShieldCheck size={120} className="text-emerald-500 opacity-80" />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-transparent rounded-3xl"></div>
-                </div>
-              </div>
-            </div>
+      {/* ── Dlaczego My ────────────────────────────────────────────────── */}
+      <section id="oferta" className="py-24 sm:py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-[#e8effa] to-background pointer-events-none" />
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="text-center mb-16">
+            <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
+              Nasze standardy
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
+              Instalacja bez ukrytych kosztów.
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
+              Wiemy, że remonty bywają stresujące. Dlatego stawiamy na
+              transparentność i profesjonalizm na każdym etapie.
+            </p>
           </div>
-        </section>
 
-        {/* KNOWLEDGE BASE SECTION */}
-        <section id="baza-wiedzy" className="py-24 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-end mb-12">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">Baza Wiedzy</h2>
-                <p className="text-gray-600">Porady ekspertów przed montażem.</p>
-              </div>
-              <Link href="#" className="hidden md:flex text-emerald-600 font-medium hover:text-emerald-700 items-center gap-2">
-                Wszystkie artykuły <ArrowRight size={16} />
-              </Link>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                "Zgoda spółdzielni na klimatyzator – jak ją uzyskać?",
-                "Dlaczego warto wybrać pompę ciepła powietrze-powietrze?",
-                "Klimatyzacja w bloku z wielkiej płyty – co musisz wiedzieć?"
-              ].map((title, i) => (
-                <Link key={i} href="#" className="group">
-                  <div className="aspect-video bg-gray-100 rounded-2xl mb-4 overflow-hidden relative flex items-center justify-center">
-                    <Wind size={48} className="text-gray-300" />
-                    <div className="absolute inset-0 bg-gray-900/0 group-hover:bg-gray-900/5 transition-colors"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {benefits.map((b) => (
+              <GlassCard key={b.title} icon={b.icon} title={b.title} desc={b.desc} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Proces ─────────────────────────────────────────────────────── */}
+      <section id="proces" className="py-24 sm:py-32">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="text-center mb-16">
+            <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
+              Jak działamy?
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
+              Twoja droga do komfortu.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {/* Connector line (desktop) */}
+            <div className="hidden md:block absolute top-14 left-[calc(33.33%-1px)] right-[calc(33.33%-1px)] h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20" />
+
+            {steps.map((step, i) => (
+              <div
+                key={step.number}
+                className="relative flex flex-col items-center text-center gap-5 group"
+              >
+                <div className="relative">
+                  <div className="w-28 h-28 rounded-full bg-white border-2 border-primary/15 flex items-center justify-center shadow-[0_8px_32px_rgba(23,80,200,0.10)] transition-all duration-300 group-hover:border-primary/40 group-hover:shadow-[0_12px_40px_rgba(23,80,200,0.18)]">
+                    <step.icon className="w-10 h-10 text-primary" strokeWidth={1.5} />
                   </div>
-                  <h3 className="font-bold text-gray-900 group-hover:text-emerald-600 transition-colors line-clamp-2">
-                    {title}
+                  <span className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-black flex items-center justify-center shadow-md">
+                    {i + 1}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">
+                    {step.title}
                   </h3>
-                </Link>
-              ))}
+                  <p className="text-muted-foreground leading-relaxed text-sm max-w-xs mx-auto">
+                    {step.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Bestsellery ────────────────────────────────────────────────── */}
+      <section id="bestsellery" className="py-24 sm:py-32 bg-secondary/40">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-14">
+            <div>
+              <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
+                Katalog urządzeń
+              </p>
+              <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
+                Nasze Bestsellery.
+              </h2>
+              <p className="mt-3 text-muted-foreground max-w-md">
+                Transparentne ceny z montażem. Bez niespodzianek.
+              </p>
+            </div>
+            <a
+              href="#wycena"
+              className="inline-flex items-center gap-2 text-primary font-semibold text-sm hover:underline flex-shrink-0"
+            >
+              Nie widzisz swojego modelu? Zapytaj nas
+              <ChevronRight className="w-4 h-4" />
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {products.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+
+          <p className="mt-8 text-center text-xs text-muted-foreground">
+            * Cena obejmuje urządzenie + wzorcowy montaż (do 3 m trasy freonowej) + VAT 8%.
+            Ostateczna cena zostaje potwierdzona podczas bezpłatnego audytu technicznego.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Final CTA ──────────────────────────────────────────────────── */}
+      <section id="wycena" className="py-24 sm:py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0d1b2e] via-[#1750c8] to-[#0a3fa8]" />
+        {/* Subtle mesh circles */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full bg-accent/10 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 max-w-4xl mx-auto px-5 sm:px-8 text-center">
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-8">
+            <Star className="w-3.5 h-3.5 text-accent" />
+            <span className="text-xs font-semibold text-white/90 tracking-wide uppercase">
+              Darmowa wycena · Bez zobowiązań
+            </span>
+          </div>
+
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight mb-6">
+            Gotowy na przyjemny chłód latem
+            <br />
+            i energooszczędne ciepło zimą
+          </h2>
+          <p className="text-lg sm:text-xl text-white/70 mb-12 max-w-2xl mx-auto leading-relaxed">
+            Ciesz się idealnym klimatem w swoim domu bez ukrytych kosztów.
+            Przekonaj się, jak łatwo i szybko wycenisz instalację online.
+          </p>
+
+          <a
+            href="#"
+            className="inline-flex items-center justify-center gap-3 bg-white text-primary font-bold text-base sm:text-lg rounded-2xl px-10 py-5 transition-all duration-200 hover:bg-[#f0f6ff] hover:shadow-[0_16px_48px_rgba(0,0,0,0.25)] active:scale-[0.97]"
+          >
+            Oblicz koszty w 2 minuty
+            <ArrowRight className="w-5 h-5" />
+          </a>
+        </div>
+      </section>
+
+      {/* ── Footer ─────────────────────────────────────────────────────── */}
+      <footer id="kontakt" className="bg-foreground text-white/80">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
+            {/* Brand */}
+            <div className="flex flex-col gap-5">
+              <img
+                src="/logo.png"
+                alt="Klik Klima"
+                className="h-10 w-auto brightness-0 invert opacity-90 self-start"
+              />
+              <p className="text-sm leading-relaxed text-white/60 max-w-xs">
+                Lokalna firma klimatyzacyjna. Sprzedaż, profesjonalny montaż i serwis urządzeń
+                marek Premium.
+              </p>
+              <div className="flex gap-3 mt-1">
+                <a
+                  href="#"
+                  aria-label="Instagram"
+                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                >
+                  <Camera className="w-4 h-4" />
+                </a>
+                <a
+                  href="#"
+                  aria-label="Facebook"
+                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                >
+                  <Globe className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+
+            {/* Links */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-5">
+                Nawigacja
+              </p>
+              <ul className="flex flex-col gap-3">
+                {navLinks.map((l) => (
+                  <li key={l.label}>
+                    <a
+                      href={l.href}
+                      className="text-sm text-white/70 hover:text-white transition-colors"
+                    >
+                      {l.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-5">
+                Kontakt
+              </p>
+              <ul className="flex flex-col gap-4">
+                <li className="flex items-start gap-3 text-sm text-white/70">
+                  <Phone className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" />
+                  <span>+48 123 456 789</span>
+                </li>
+                <li className="flex items-start gap-3 text-sm text-white/70">
+                  <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" />
+                  <span>kontakt@klikklima.pl</span>
+                </li>
+                <li className="flex items-start gap-3 text-sm text-white/70">
+                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" />
+                  <span>ul. Przykładowa 12, 00-001 Warszawa</span>
+                </li>
+              </ul>
             </div>
           </div>
-        </section>
-      </main>
 
-      <Footer />
-    </>
+          <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/40">
+            <p>
+              © 2025 Klik Klima sp. z o.o. · NIP: 000-000-00-00
+            </p>
+            <div className="flex gap-5">
+              <a href="#" className="hover:text-white/70 transition-colors">
+                Polityka Prywatności
+              </a>
+              <a href="#" className="hover:text-white/70 transition-colors">
+                Regulamin
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }
