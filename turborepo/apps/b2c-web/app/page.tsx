@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getFomoSlots } from "./actions/getFomoSlots";
 import {
   Menu,
   X,
@@ -243,14 +244,17 @@ function GlassCard({
 
 /* ─── Main Component ─────────────────────────────────────────────────────── */
 
-// In production this value is fetched dynamically from Supabase
-const AVAILABLE_SLOTS = 3;
-
 export default function Page() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState<number | null>(null);
 
   useEffect(() => {
+    // Fetch available slots from Supabase via Server Action
+    getFomoSlots().then((slots) => {
+      setAvailableSlots(slots);
+    });
+
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -355,7 +359,13 @@ export default function Page() {
               <span className="text-base leading-none">🔥</span>
               <span className="text-sm font-semibold text-orange-700">
                 Zostało{" "}
-                <span className="text-orange-600 font-extrabold">{AVAILABLE_SLOTS}</span>{" "}
+                <span className="text-orange-600 font-extrabold">
+                  {availableSlots === null ? (
+                    <span className="inline-block w-4 h-4 rounded-full bg-orange-300 animate-pulse align-middle" />
+                  ) : (
+                    availableSlots
+                  )}
+                </span>{" "}
                 wolnych terminów w tym tygodniu na darmowy audyt
               </span>
             </div>

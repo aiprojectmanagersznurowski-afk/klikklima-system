@@ -124,3 +124,44 @@ CREATE TABLE IF NOT EXISTS soft_leady (
 );
 
 ALTER TABLE soft_leady ENABLE ROW LEVEL SECURITY;
+
+-- 9. Domyślne wartości konfiguracji systemu
+INSERT INTO system_config (typ_konfiguracji, konfiguracja) VALUES
+('fomo_config', '{"weekly_audit_limit": 10}'::jsonb)
+ON CONFLICT (typ_konfiguracji) DO NOTHING;
+
+-- 10. Bezpieczna funkcja RPC (zwracająca wolne terminy do UI publicznego)
+CREATE OR REPLACE FUNCTION get_fomo_available_slots()
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_limit integer := 10;
+  v_booked integer := 0;
+  v_start_of_week timestamp with time zone;
+BEGIN
+  SELECT (konfiguracja->>'weekly_audit_limit')::integer
+  INTO v_limit
+  FROM system_config
+  WHERE typ_konfiguracji = 'fomo_config';
+
+  IF v_limit IS NULL THEN
+    v_limit := 10;
+  END IF;
+
+  v_start_of_week := date_trunc('week', now());
+
+  SELECT count(*)
+  INTO v_booked
+  FROM leady
+  WHERE status = 'Umówiony Audyt'
+  AND data_rezerwacji >= v_start_of_week;
+
+  IF v_limit - v_booked < 1 THEN
+    RETURN 1;
+  ELSE
+    RETURN v_limit - v_booked;
+  END IF;
+END;
+$$;
