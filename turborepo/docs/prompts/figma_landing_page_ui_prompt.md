@@ -43,9 +43,15 @@ Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs strony głów
    - Krok 2 (Wizualizacja kalendarza): "2. Darmowy Audyt". (Nasz inżynier potwierdza warunki techniczne na miejscu).
    - Krok 3 (Wizualizacja narzędzi): "3. Profesjonalny Montaż". (Sprawna instalacja, uruchomienie i posprzątanie).
 
-5. **Sekcja Produktowa / Katalogowa (Opcjonalnie)**
-   - "Pracujemy tylko na sprawdzonym sprzęcie."
-   - Karuzela lub kilka kart z logotypami partnerów (Fuji Electric, Haier) oraz miniaturki klimatyzatorów.
+5. **Sekcja "Nasze Bestsellery" (Dynamiczny Katalog Produktów z Wyceną Montażu)**
+   - UWAGA: Ta sekcja będzie docelowo zasilana dynamicznie z bazy danych (Supabase), więc zaprojektuj uniwersalny komponent "Karty Produktu".
+   - Karta produktu powinna zawierać: 
+     - Zdjęcie klimatyzatora na jasnym tle.
+     - Logo producenta (np. Fuji Electric, Haier) oraz Kod Modelu.
+     - Moc chłodniczą (np. 2.5 kW / 3.5 kW).
+     - Najważniejszą część: **Wyraźną cenę Brutto** (która z tyłu w kodzie będzie obliczana jako *Cena Urządzenia Netto + Wzorcowy Montaż Netto + 8% VAT*).
+     - Przycisk na karcie: "Wybierz ten model" (który kieruje od razu do formularza Triage z zapamiętanym modelem) lub "Darmowa wycena".
+   - Zadbaj o to, by sekcja prezentowała asortyment przejrzyście w formie nowoczesnego grida (np. 3 lub 4 karty w rzędzie na desktopie, karuzela na mobile). Klient musi mieć poczucie, że przegląda konkretne, transparentne oferty gotowe do montażu.
 
 6. **Sekcja "Call to Action" przed stopką (Finalne uderzenie)**
    - Duży banner wyróżniający się kolorem tła.
