@@ -138,6 +138,16 @@ Poniższe scenariusze BDD mogą zostać bezpośrednio wykorzystane przy budowie 
 - **Then** użytkownik widzi wyłącznie sloty trwające dokładnie 1h (z uwzględnieniem 45 minut bufora między spotkaniami)
 - **And** sloty mieszczą się w zdefiniowanym oknie godzinowym (np. 08:00 - 15:00)
 
+## Moduł Kalkulatora Wyceny (Netto / Brutto)
+
+Kluczowym elementem formularza jest kalkulator, który po przejściu ścieżki B2C i wybraniu "Mieszkanie" lub "Dom", musi zaprezentować klientowi ostateczną wycenę Brutto.
+
+1. **Baza Danych (Wartości Netto)**: Wszystkie ceny katalogowe urządzeń (`cena_katalogowa_netto`) oraz koszty usług montażu (`koszt_b2c_netto`) przechowywane są w bazie danych jako wartości **NETTO**. 
+2. **Stawka VAT w Triage B2C**: Ponieważ formularz B2C obsługuje klientów indywidualnych w domach i mieszkaniach (ścieżka "Lokal Komercyjny" jest odrzucana do ręcznej wyceny eksperckiej), do obliczeń zautomatyzowanych aplikowany jest zawsze **podatek VAT 8%**.
+   - (Uwaga: Usługa montażu połączona z dostawą sprzętu dla celów mieszkaniowych w Polsce podlega preferencyjnej stawce VAT 8%).
+3. **Wzorcowy Montaż**: Do bazowej ceny instalacji doliczane są standardowe wartości z cennika (np. montaż jednostki, 3 mb instalacji chłodniczej, 3 mb odpływu itp.). Suma tych usług netto tworzy `łączny_koszt_montażu_netto`.
+4. **Prezentacja UI**: Klient na końcu formularza widzi wartość **Brutto** obliczoną jako `(Cena_Urządzeń_Netto + Koszt_Montażu_Netto) * 1.08`.
+
 ## Moduł Rezerwacji Terminu (Booking Module)
 
 Na samym końcu procesu, niezależnie od wybranej ścieżki (Wycena vs Tylko Konsultacja), użytkownik przechodzi do kalendarza rezerwacji. Główne wymagania i reguły biznesowe dla tego modułu to:

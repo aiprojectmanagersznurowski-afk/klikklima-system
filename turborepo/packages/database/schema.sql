@@ -40,7 +40,7 @@ CREATE TABLE urzadzenia (
     moc_chlodnicza_kw NUMERIC NOT NULL,
     max_powierzchnia_m2 INTEGER, -- określa max zasięg urządzenia, np. 35
     ilosc_portow INTEGER, -- tylko dla 'zew_multi' (np. 2, 3, 4, 5)
-    cena_katalogowa NUMERIC NOT NULL,
+    cena_katalogowa_netto NUMERIC NOT NULL,
     obrazek_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -50,8 +50,8 @@ CREATE TABLE cennik_uslug (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nazwa_uslugi TEXT NOT NULL UNIQUE,
     jm TEXT NOT NULL, -- Jednostka Miary: szt, mb, m
-    koszt_b2c NUMERIC NOT NULL, -- Cena dla klienta końcowego
-    koszt_b2b NUMERIC, -- Koszt wewnętrzny dla instalatora
+    koszt_b2c_netto NUMERIC NOT NULL, -- Cena dla klienta końcowego netto
+    koszt_b2b_netto NUMERIC, -- Koszt wewnętrzny dla instalatora netto
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -87,18 +87,15 @@ ALTER TABLE system_config ENABLE ROW LEVEL SECURITY;
 -- dla powyższych tabel w panelu Supabase Auth -> Policies, w zależności od potrzeb logiki B2C i B2B.
 
 -- 7. Przykładowe Dane Startowe (Słowniki)
-INSERT INTO cennik_uslug (nazwa_uslugi, jm, koszt_b2c, koszt_b2b) VALUES
-('Podłączenie klimatyzatora ściennego', 'szt', 1000.00, 1000.00),
-('Uruchomienie systemu', 'szt', 400.00, 400.00),
-('Przewiert', 'szt', 300.00, 300.00),
-('Jednostka zewn. na elewacji (do 3m)', 'szt', 170.00, 93.00),
-('Instalacja freonowa 1/4 i 3/8', 'mb', 130.00, 18.72),
-('Koryta na instalację freonową', 'mb', 40.00, 9.00),
-('Skropliny grawitacyjne giętkie', 'mb', 6.00, 2.00),
+INSERT INTO cennik_uslug (nazwa_uslugi, jm, koszt_b2c_netto, koszt_b2b_netto) VALUES
+('Montaż jednostki wew i zew do 4m', 'kpl', 1600.00, 1000.00),
+('Rozprowadzenie inst chłodniczej', 'mb', 90.00, 50.00),
+('Korytko instalacyjne', 'mb', 30.00, 13.00),
+('Odpływ skroplin', 'mb', 15.00, 4.00),
 ('Przewód zasilający', 'mb', 15.00, 4.50),
 ('Wpięcie zasilania do gniazda na wtyczkę', 'szt', 60.00, 5.50);
 
-INSERT INTO urzadzenia (kod_towaru, producent, linia, typ, moc_chlodnicza_kw, max_powierzchnia_m2, ilosc_portow, cena_katalogowa) VALUES
+INSERT INTO urzadzenia (kod_towaru, producent, linia, typ, moc_chlodnicza_kw, max_powierzchnia_m2, ilosc_portow, cena_katalogowa_netto) VALUES
 ('ASYG07KETA', 'Fuji Electric', 'KETA', 'wew_single', 2.0, 25, NULL, 3000.00),
 ('ASYG09KETA', 'Fuji Electric', 'KETA', 'wew_single', 2.5, 35, NULL, 3200.00),
 ('ASYG12KETA', 'Fuji Electric', 'KETA', 'wew_single', 3.5, 50, NULL, 3500.00),
