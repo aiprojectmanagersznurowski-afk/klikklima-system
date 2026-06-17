@@ -27,7 +27,7 @@ Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs strony głów
    - Nagłówek H1 (bardzo duży): "Idealna temperatura w Twoim domu. Przez cały rok."
    - Sub-nagłówek: "Dobierz klimatyzator w 2 minuty. Poznaj szacunkową wycenę z montażem online i umów naszego eksperta na darmowy audyt."
    - Główny Przycisk CTA: "Odbierz darmową wycenę online". (Ten przycisk uruchomi nasz inteligentny lejek / Triage form).
-   - "Social Proof / Trust Badge" pod przyciskiem: np. ikony z 5 gwiazdkami Google i tekst "Zaufano nam w ponad 500 instalacjach".
+   - UWAGA: Na tym etapie NIE projektuj elementów typu "Social Proof" (np. opinie, gwiazdki z Google, loga z social media), ponieważ firma dopiero startuje.
 
 3. **Sekcja "Dlaczego My?" (Karty korzyści)**
    - Nagłówek: "Instalacja bez ukrytych kosztów."
