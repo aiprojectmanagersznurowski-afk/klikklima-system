@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getFomoSlots } from "./actions/getFomoSlots";
+import { getBestsellers, type BestsellerProduct } from "./actions/getBestsellers";
 import ExitIntentModal from "@/components/triage/ExitIntentModal";
 import { DeviceModal, type DeviceData } from "@/components/ui/DeviceModal";
 import { companyDetails } from "@/config/company";
@@ -79,64 +80,7 @@ const steps = [
   },
 ];
 
-interface Product {
-  id: number;
-  brand: string;
-  brandLogo: string;
-  model: string;
-  power: string;
-  img: string;
-  deviceNettoPrice: number;
-  installNettoPrice: number;
-  tag?: string;
-}
-
-const products: Product[] = [
-  {
-    id: 1,
-    brand: "Fuji Electric",
-    brandLogo: "FE",
-    model: "RSG09KMTA",
-    power: "2.5 kW",
-    img: "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
-    deviceNettoPrice: 2490,
-    installNettoPrice: 1100,
-    tag: "Bestseller",
-  },
-  {
-    id: 2,
-    brand: "Haier",
-    brandLogo: "HA",
-    model: "AS35S2SF1FA-CW",
-    power: "3.5 kW",
-    img: "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
-    deviceNettoPrice: 2190,
-    installNettoPrice: 1100,
-    tag: "Promocja",
-  },
-  {
-    id: 3,
-    brand: "Fuji Electric",
-    brandLogo: "FE",
-    model: "RSG12KMTA",
-    power: "3.5 kW",
-    img: "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
-    deviceNettoPrice: 2990,
-    installNettoPrice: 1100,
-    tag: undefined,
-  },
-  {
-    id: 4,
-    brand: "Haier",
-    brandLogo: "HA",
-    model: "AS50S2SF1FA-CW",
-    power: "5.0 kW",
-    img: "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
-    deviceNettoPrice: 2890,
-    installNettoPrice: 1200,
-    tag: undefined,
-  },
-];
+interface Product extends BestsellerProduct {}
 
 function calcBrutto(deviceNetto: number, installNetto: number): number {
   return Math.round((deviceNetto + installNetto) * 1.08);
@@ -270,11 +214,17 @@ export default function Page() {
   const [scrolled, setScrolled] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<number | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     // Fetch available slots from Supabase via Server Action
     getFomoSlots().then((slots) => {
       setAvailableSlots(slots);
+    });
+
+    // Fetch catalogue from DB
+    getBestsellers().then(devices => {
+      setDbProducts(devices);
     });
 
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -552,9 +502,14 @@ export default function Page() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map((p) => (
+            {dbProducts.map((p) => (
               <ProductCard key={p.id} product={p} onOpenModal={setSelectedProduct} />
             ))}
+            {dbProducts.length === 0 && (
+              <p className="col-span-full text-center text-muted-foreground py-10">
+                Ładowanie urządzeń...
+              </p>
+            )}
           </div>
 
           <p className="mt-8 text-center text-xs text-muted-foreground">
