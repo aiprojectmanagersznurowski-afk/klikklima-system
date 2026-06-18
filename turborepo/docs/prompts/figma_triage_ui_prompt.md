@@ -39,10 +39,14 @@ Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs wieloetapoweg
 
 7. **Ekran Sukcesu (Wybrana Konfiguracja)**
    - Prezentacja dobranego sprzętu. Design jak w sklepie e-commerce premium.
-   - Pokaż kartę wybranego urządzenia (np. Zdjęcie klimatyzatora ściennego Fuji Electric, Model: KETA).
+   - Pokaż kartę wybranego urządzenia (np. Zdjęcie klimatyzatora ściennego Fuji Electric, Model: KETA). **BARDZO WAŻNE:** Karta musi być klikalna!
+   - **Modal / Podstrona Urządzenia:** Po kliknięciu w urządzenie otwiera się elegancki Modal (lub podstrona), w którym znajduje się:
+     - Pełna galeria zdjęć urządzenia.
+     - Opis urządzenia i jego najważniejsze funkcje (np. Jonizator, WiFi).
+     - Dokładny zakres standardowego montażu (montaż do 4m, 3mb instalacji, przewiert przez 1 ścianę itp.).
+     - Dwa główne przyciski CTA: "Dokończ rezerwację z tym urządzeniem" (powrót do Triage) lub "Wróć do strony głównej".
    - Jeśli to Multisplit, pokaż ikony 2x Jednostka Wewnętrzna + 1x Jednostka Zewnętrzna.
-   - Ogromna, czytelna sekcja "Szacunkowa wycena instalacji wraz z urządzeniem": np. **17 406 PLN brutto**. Dodaj tekst: "Cena zawiera podatek VAT 8% (budownictwo mieszkaniowe) oraz standardowy pakiet usług montażowych".
-   - **BARDZO WAŻNE:** Dodaj interaktywny element (np. ikonę informacyjną "(i)", Modal, Tooltip lub rozwijany Accordion) przy tekście o "standardowym pakiecie usług montażowych". Kliknięcie w niego ma otwierać listę pokazującą zakres prac: montaż jednostki wew i zew do 4m, 3mb instalacji chłodniczej, 3mb odpływu skroplin, 3mb przewodu zasilającego z wpięciem do gniazda. Klient musi mieć absolutną jasność, co kupuje.
+   - Ogromna, czytelna sekcja "Szacunkowa wycena instalacji wraz z urządzeniem": np. **17 406 PLN brutto**. Dodaj tekst: "Cena zawiera podatek VAT 8% oraz standardowy pakiet usług montażowych".
    - Przycisk CTA: "Zarezerwuj termin wizyty technicznej" (sticky na dole ekranu mobile).
 
 8. **Ekran Rezerwacji (Kalendarz i Dane)**
