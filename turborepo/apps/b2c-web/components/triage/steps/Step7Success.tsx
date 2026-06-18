@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import * as Accordion from '@radix-ui/react-accordion';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { DeviceModal, type DeviceData } from '../../ui/DeviceModal';
-import { STANDARD_INSTALLATION_ITEMS } from '@/lib/constants';
 import { getRecommendation } from '@/app/actions/getRecommendation';
 
 export const Step7Success = () => {
@@ -58,12 +57,19 @@ export const Step7Success = () => {
 
         setRecommendedDevice(newDeviceData);
       } else {
-        // Fallback jeśli nie pobrano z bazy
+        // Fallback jeśli nie pobrano z bazy (lub brakło w niej odpowiednio dużego agregatu)
+        const fallbackInstall = 1600 * rooms;
+        const fallbackDevice = rooms > 1 ? 4000 + (rooms * 1500) : 3000;
+        const fallbackTotalBrutto = Math.round((fallbackInstall + fallbackDevice) * 1.08);
+        const fallbackPriceFormatted = new Intl.NumberFormat('pl-PL', { 
+          style: 'currency', currency: 'PLN', maximumFractionDigits: 0 
+        }).format(fallbackTotalBrutto);
+
         setRecommendedDevice({
-          name: "Fuji Electric KETA",
-          capacity: rooms > 1 ? "Wielosplit (Multi)" : "2.5 kW / 3.5 kW",
-          price: "od 4 500 zł netto",
-          marketingDescription: "Elegancki design z matowym wykończeniem.",
+          name: rooms > 1 ? "Fuji Electric Multi-Split" : "Fuji Electric KETA",
+          capacity: rooms > 1 ? `Wielosplit (Multi x${rooms})` : "2.5 kW / 3.5 kW",
+          price: `od ${fallbackPriceFormatted}`,
+          marketingDescription: "Niezawodne urządzenia i elastyczność montażu dla Twojego metrażu.",
           images: [
             { id: "1", src: "https://images.unsplash.com/photo-1718203862467-c33159fdc504?q=80&w=1080", alt: "Fuji KETA" }
           ],
@@ -82,6 +88,28 @@ export const Step7Success = () => {
     setIsModalOpen(false);
     nextStep();
   };
+
+  const getInstallationItems = (count: number) => {
+    if (count === 1) {
+      return [
+        "Montaż 1 jednostki wewnętrznej i 1 zewnętrznej (do 4 m wys.)",
+        "Do 3 mb instalacji chłodniczej i przewodu sterującego",
+        "Przewiert przez jedną ścianę (1 szt.)",
+        "Odprowadzenie skroplin grawitacyjnie do 3 mb",
+        "Test szczelności układu i przeszkolenie użytkownika z obsługi"
+      ];
+    } else {
+      return [
+        `Montaż ${count} jednostek wewnętrznych i 1 zewnętrznej (do 4 m wys.)`,
+        `Do 3 mb instalacji chłodniczej dla każdego urządzenia (łącznie do ${count * 3} mb)`,
+        `Przewiert przez ścianę (${count} szt.)`,
+        `Odprowadzenie skroplin grawitacyjnie do 3 mb dla każdej jednostki`,
+        "Test szczelności układu i przeszkolenie użytkownika z obsługi"
+      ];
+    }
+  };
+
+  const currentInstallationItems = getInstallationItems(rooms);
 
   if (isLoading || !recommendedDevice) {
     return (
@@ -191,7 +219,7 @@ export const Step7Success = () => {
                 <Accordion.Content className="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                   <div className="p-4 pt-0 border-t border-border/50 bg-secondary/20">
                     <ul className="space-y-3 mt-4">
-                      {STANDARD_INSTALLATION_ITEMS.map((item, i) => (
+                      {currentInstallationItems.map((item, i) => (
                         <li key={i} className="flex items-start gap-2 text-muted-foreground">
                           <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                           <span>{item}</span>
