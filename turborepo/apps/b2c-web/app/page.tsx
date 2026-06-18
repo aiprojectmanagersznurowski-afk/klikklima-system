@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { getFomoSlots } from "./actions/getFomoSlots";
 import ExitIntentModal from "@/components/triage/ExitIntentModal";
+import { DeviceModal, type DeviceData } from "@/components/ui/DeviceModal";
 import { companyDetails } from "@/config/company";
 import {
   Menu,
@@ -158,7 +159,20 @@ function BrandBadge({ code }: { code: string }) {
 }
 
 function ProductCard({ product }: { product: Product }) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const brutto = calcBrutto(product.deviceNettoPrice, product.installNettoPrice);
+
+  const mockDeviceData: DeviceData = {
+    name: `${product.brand} ${product.model}`,
+    capacity: product.power,
+    price: `od ${brutto.toLocaleString("pl-PL")} zł brutto`,
+    marketingDescription: "Wysokiej klasy klimatyzator zapewniający optymalny komfort cieplny. Charakteryzuje się cichą pracą i wysoką energooszczędnością.",
+    images: [{ id: "1", src: product.img, alt: product.model }],
+    chips: [
+      { iconName: "Wifi", label: "WIFI w standardzie" },
+      { iconName: "Zap", label: "Wysoka klasa energetyczna" }
+    ]
+  };
 
   return (
     <div className="group relative bg-card rounded-2xl border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_-12px_rgba(23,80,200,0.15)]">
@@ -211,12 +225,22 @@ function ProductCard({ product }: { product: Product }) {
         </div>
 
         <a href="/triage" className="mt-2 w-full bg-primary text-primary-foreground font-semibold text-sm rounded-xl py-3 px-4 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[#1244b0] active:scale-[0.98]">
-          Wybierz ten model
+          Darmowa wycena
           <ArrowRight className="w-4 h-4" />
         </a>
-        <a href="/triage" className="w-full text-primary font-semibold text-sm rounded-xl py-2.5 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10">
-          Darmowa wycena
-        </a>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="w-full text-primary font-semibold text-sm rounded-xl py-2.5 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10"
+        >
+          Szczegóły urządzenia
+        </button>
+
+        <DeviceModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          device={mockDeviceData} 
+          onReserveClick={() => window.location.href = '/triage'}
+        />
       </div>
     </div>
   );
