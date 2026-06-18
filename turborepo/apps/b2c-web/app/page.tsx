@@ -210,13 +210,13 @@ function ProductCard({ product }: { product: Product }) {
           </p>
         </div>
 
-        <button className="mt-2 w-full bg-primary text-primary-foreground font-semibold text-sm rounded-xl py-3 px-4 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[#1244b0] active:scale-[0.98]">
+        <a href="/triage" className="mt-2 w-full bg-primary text-primary-foreground font-semibold text-sm rounded-xl py-3 px-4 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[#1244b0] active:scale-[0.98]">
           Wybierz ten model
           <ArrowRight className="w-4 h-4" />
-        </button>
-        <button className="w-full text-primary font-semibold text-sm rounded-xl py-2.5 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10">
+        </a>
+        <a href="/triage" className="w-full text-primary font-semibold text-sm rounded-xl py-2.5 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10">
           Darmowa wycena
-        </button>
+        </a>
       </div>
     </div>
   );
@@ -304,7 +304,7 @@ export default function Page() {
           {/* CTA + hamburger */}
           <div className="flex items-center gap-3">
             <a
-              href="#wycena"
+              href="/triage"
               className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold text-sm rounded-xl px-5 py-2.5 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_8px_24px_rgba(23,80,200,0.35)] active:scale-[0.97]"
             >
               Wykonaj darmową wycenę
@@ -335,7 +335,7 @@ export default function Page() {
               </a>
             ))}
             <a
-              href="#wycena"
+              href="/triage"
               className="mt-2 w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl px-5 py-3.5 transition-all hover:bg-[#1244b0]"
             >
               Wykonaj darmową wycenę
@@ -407,7 +407,7 @@ export default function Page() {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <a
-                  href="#wycena"
+                  href="/triage"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-base rounded-xl px-8 py-4 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_12px_32px_rgba(23,80,200,0.55)] active:scale-[0.97]"
                 >
                   Umów termin i poznaj wstępną wycenę
@@ -523,7 +523,7 @@ export default function Page() {
               </p>
             </div>
             <a
-              href="#wycena"
+              href="/triage"
               className="inline-flex items-center gap-2 text-primary font-semibold text-sm hover:underline flex-shrink-0"
             >
               Nie widzisz swojego modelu? Zapytaj nas
@@ -570,7 +570,7 @@ export default function Page() {
           </p>
 
           <a
-            href="#"
+            href="/triage"
             className="inline-flex items-center justify-center gap-3 bg-white text-primary font-bold text-base sm:text-lg rounded-2xl px-10 py-5 transition-all duration-200 hover:bg-[#f0f6ff] hover:shadow-[0_16px_48px_rgba(0,0,0,0.25)] active:scale-[0.97]"
           >
             Oblicz koszty w 2 minuty

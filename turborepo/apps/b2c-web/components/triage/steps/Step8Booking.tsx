@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTriageStore } from '@/store/triageStore';
 import { StepWrapper } from '../StepWrapper';
@@ -35,6 +36,16 @@ export const Step8Booking = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isSubmitted) {
+      const timer = setTimeout(() => {
+        router.push('/');
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSubmitted, router]);
 
   const today = startOfToday();
   const nextDays = Array.from({ length: 7 }).map((_, i) => addDays(today, i + 1));
