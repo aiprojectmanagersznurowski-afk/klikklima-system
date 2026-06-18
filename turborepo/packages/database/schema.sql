@@ -42,6 +42,10 @@ CREATE TABLE urzadzenia (
     ilosc_portow INTEGER, -- tylko dla 'zew_multi' (np. 2, 3, 4, 5)
     cena_katalogowa_netto NUMERIC NOT NULL,
     obrazek_url TEXT,
+    opis_marketingowy TEXT,
+    cechy_json JSONB,
+    galeria_json JSONB,
+    is_bestseller BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
