@@ -15,8 +15,8 @@ export const ProgressBar = () => {
     if (step === 1) {
       router.back();
     } else if (step === 7) {
-      // User requested to go back to step 6 from step 7
-      goToStep(6);
+      // User requested to go back to step 5 from step 7
+      goToStep(5);
     } else {
       prevStep();
     }
