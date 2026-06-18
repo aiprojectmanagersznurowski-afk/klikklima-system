@@ -3,48 +3,96 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTriageStore } from '@/store/triageStore';
 import { StepWrapper } from '../StepWrapper';
-import { Check, Info, Wind, Settings2, Box, Calendar, ChevronDown } from 'lucide-react';
+import { Check, Info, Wind, Settings2, Box, Calendar, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import * as Accordion from '@radix-ui/react-accordion';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { DeviceModal, type DeviceData } from '../../ui/DeviceModal';
 import { STANDARD_INSTALLATION_ITEMS } from '@/lib/constants';
+import { getRecommendation } from '@/app/actions/getRecommendation';
 
 export const Step7Success = () => {
-  const { data: state, nextStep } = useTriageStore();
+  const { data: state, nextStep, updateData } = useTriageStore();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [recommendedDevice, setRecommendedDevice] = React.useState<DeviceData | null>(null);
 
-  // Basic mock price calculation based on rooms
   const rooms = state.roomCount || 1;
-  const basePrice = rooms === 1 ? 4800 : rooms * 3800 + 2000;
-  const formattedPrice = new Intl.NumberFormat('pl-PL', { 
-    style: 'currency', 
-    currency: 'PLN',
-    maximumFractionDigits: 0 
-  }).format(basePrice);
 
-  // Z czasem będziemy zaciągać te dane z bazy (Supabase) na podstawie rekomendacji
-  const mockDevice: DeviceData = {
-    name: "Fuji Electric KETA",
-    capacity: rooms > 1 ? "Wielosplit (Multi)" : "2.5 kW / 3.5 kW",
-    price: formattedPrice,
-    marketingDescription: "Elegancki design z matowym wykończeniem i technologią jonizacji powietrza. Idealny do nowoczesnych wnętrz. Gwarantuje niezwykle cichą pracę i wysoką oszczędność energii.",
-    images: [
-      { id: "1", src: "https://images.unsplash.com/photo-1718203862467-c33159fdc504?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhaXIlMjBjb25kaXRpb25lciUyMHdhbGwlMjB1bml0fGVufDF8fHx8MTc4MTc3MjY2NHww&ixlib=rb-4.1.0&q=80&w=1080", alt: "Fuji KETA Front" },
-      { id: "2", src: "https://images.unsplash.com/photo-1527689638836-411945a2b57c?w=800&q=80", alt: "Fuji KETA Lifestyle" }
-    ],
-    chips: [
-      { iconName: "Wifi", label: "WIFI w standardzie" },
-      { iconName: "Volume2", label: "Głośność od 20dB" },
-      { iconName: "Zap", label: "Klasa A+++" },
-      { iconName: "Wind", label: "Funkcja Jonizatora" }
-    ]
-  };
+  React.useEffect(() => {
+    async function fetchRecommendation() {
+      setIsLoading(true);
+      const res = await getRecommendation(state.roomCount || 1, state.roomSizes);
+      
+      if (res.success && res.internalUnits && res.internalUnits.length > 0) {
+        
+        updateData({
+          selectedInternalUnits: res.internalUnits,
+          selectedExternalUnit: res.externalUnit,
+          priceDevices: res.totalDevicesPrice,
+        });
+
+        const mainUnit = res.internalUnits[0];
+        const isMulti = res.type === 'multi';
+        const finalPrice = res.totalDevicesPrice + (state.roomCount || 1) * 1500; // Cena za montaż szacunkowa
+        const formattedPrice = new Intl.NumberFormat('pl-PL', { 
+          style: 'currency', currency: 'PLN', maximumFractionDigits: 0 
+        }).format(finalPrice);
+
+        const newDeviceData: DeviceData = {
+          name: `${mainUnit.producent} ${mainUnit.linia}`,
+          capacity: isMulti ? `Wielosplit (x${res.internalUnits.length})` : `${mainUnit.moc_chlodnicza_kw} kW`,
+          price: formattedPrice,
+          marketingDescription: mainUnit.opis_marketingowy || "Elegancki design z matowym wykończeniem i technologią jonizacji powietrza. Idealny do nowoczesnych wnętrz. Gwarantuje niezwykle cichą pracę i wysoką oszczędność energii.",
+          images: mainUnit.obrazek_url ? [{ id: "1", src: mainUnit.obrazek_url, alt: `${mainUnit.producent} ${mainUnit.linia}` }] : [
+            { id: "1", src: "https://images.unsplash.com/photo-1718203862467-c33159fdc504?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080", alt: "Klimatyzator Front" },
+            { id: "2", src: "https://images.unsplash.com/photo-1527689638836-411945a2b57c?w=800&q=80", alt: "Klimatyzator Lifestyle" }
+          ],
+          chips: mainUnit.cechy_json || [
+            { iconName: "Wifi", label: "WIFI w standardzie" },
+            { iconName: "Volume2", label: "Głośność od 20dB" },
+            { iconName: "Zap", label: "Klasa A+++" },
+            { iconName: "Wind", label: "Funkcja Jonizatora" }
+          ]
+        };
+
+        setRecommendedDevice(newDeviceData);
+      } else {
+        // Fallback jeśli nie pobrano z bazy
+        setRecommendedDevice({
+          name: "Fuji Electric KETA",
+          capacity: rooms > 1 ? "Wielosplit (Multi)" : "2.5 kW / 3.5 kW",
+          price: "od 4 500 zł netto",
+          marketingDescription: "Elegancki design z matowym wykończeniem.",
+          images: [
+            { id: "1", src: "https://images.unsplash.com/photo-1718203862467-c33159fdc504?q=80&w=1080", alt: "Fuji KETA" }
+          ],
+          chips: [
+            { iconName: "Wifi", label: "WIFI w standardzie" }
+          ]
+        });
+      }
+      setIsLoading(false);
+    }
+    
+    fetchRecommendation();
+  }, [state.roomCount, state.roomSizes]);
 
   const handleReserveFromModal = (device: DeviceData) => {
     setIsModalOpen(false);
     nextStep();
   };
+
+  if (isLoading || !recommendedDevice) {
+    return (
+      <StepWrapper title="Trwa dobieranie klimatyzatora..." subtitle="Nasz algorytm przelicza zapotrzebowanie na chłód dla Twojego metrażu.">
+        <div className="flex flex-col items-center justify-center py-20 space-y-6">
+           <Loader2 className="w-12 h-12 text-primary animate-spin" />
+           <p className="text-muted-foreground font-medium animate-pulse text-lg">Szukamy najlepszego rozwiązania w katalogu...</p>
+        </div>
+      </StepWrapper>
+    );
+  }
 
   return (
     <StepWrapper 
@@ -60,8 +108,8 @@ export const Step7Success = () => {
           <div className="flex flex-col sm:flex-row gap-8 items-center relative z-10">
             <div className="w-full sm:w-2/5 aspect-[4/3] rounded-2xl bg-secondary flex items-center justify-center p-4">
               <img 
-                src="https://images.unsplash.com/photo-1718203862467-c33159fdc504?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhaXIlMjBjb25kaXRpb25lciUyMHdhbGwlMjB1bml0fGVufDF8fHx8MTc4MTc3MjY2NHww&ixlib=rb-4.1.0&q=80&w=1080" 
-                alt="Klimatyzator Fuji Electric"
+                src={recommendedDevice.images[0].src} 
+                alt={recommendedDevice.images[0].alt}
                 className="w-full h-full object-contain mix-blend-multiply"
               />
             </div>
@@ -71,7 +119,7 @@ export const Step7Success = () => {
                 REKOMENDACJA
               </div>
               <h3 className="text-2xl sm:text-3xl font-bold text-foreground">
-                Fuji Electric <span className="font-light">KETA</span>
+                {recommendedDevice.name}
               </h3>
               
               <div className="flex flex-wrap gap-4 text-sm font-medium text-muted-foreground mt-4">
@@ -114,7 +162,7 @@ export const Step7Success = () => {
         <DeviceModal 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 
-          device={mockDevice} 
+          device={recommendedDevice} 
           onReserveClick={handleReserveFromModal}
         />
 
@@ -122,7 +170,7 @@ export const Step7Success = () => {
         <div className="bg-primary/5 rounded-3xl p-6 sm:p-10 border border-primary/10 text-center">
           <p className="text-muted-foreground font-medium mb-2">Szacunkowa wycena instalacji wraz z urządzeniem</p>
           <h2 className="text-4xl sm:text-6xl font-bold tracking-tight text-primary mb-4">
-            {formattedPrice} <span className="text-xl sm:text-2xl font-semibold text-primary/70">brutto</span>
+            {recommendedDevice.price} <span className="text-xl sm:text-2xl font-semibold text-primary/70">brutto</span>
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto">
             Cena zawiera podatek VAT 8% (budownictwo mieszkaniowe) oraz standardowy pakiet usług montażowych.
