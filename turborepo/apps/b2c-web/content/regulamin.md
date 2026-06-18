@@ -9,5 +9,3 @@ Wyliczona w systemie cena jest kwotą szacunkową i nie stanowi oferty handlowej
 
 ## 3. Realizacja Usług
 Zastrzegamy sobie prawo do anulowania rezerwacji audytu z przyczyn technicznych, z uprzednim poinformowaniem Użytkownika.
-
-*(Powyższy tekst jest wersją testową. Zastąp ten plik pełną treścią dokumentu od swojego prawnika)*

@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
 export const ProgressBar = () => {
-  const { step, prevStep, isExpertScreen } = useTriageStore();
+  const { step, prevStep, goToStep, isExpertScreen } = useTriageStore();
   const router = useRouter();
   const totalSteps = 8;
   const progress = isExpertScreen ? 100 : (step / totalSteps) * 100;
@@ -14,13 +14,16 @@ export const ProgressBar = () => {
   const handleBack = () => {
     if (step === 1) {
       router.back();
+    } else if (step === 7) {
+      // User requested to go back to step 6 from step 7
+      goToStep(6);
     } else {
       prevStep();
     }
   };
 
-  // Hide button entirely on loader (6) or success (7+) or expert screen
-  const isHidden = isExpertScreen || step === 6 || step >= 7;
+  // Hide button entirely on loader (6) or expert screen
+  const isHidden = isExpertScreen || step === 6;
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 relative z-10">

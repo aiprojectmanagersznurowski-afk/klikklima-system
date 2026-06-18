@@ -14,5 +14,3 @@ Dane osobowe (imię, nazwisko, numer telefonu, adres instalacji) są zbierane wy
 
 ## 4. Prawa Użytkownika
 Użytkownik ma prawo do wglądu w swoje dane, ich poprawiania oraz żądania ich usunięcia w każdym czasie.
-
-*(Powyższy tekst jest wersją testową. Zastąp ten plik pełną treścią dokumentu od swojego prawnika)*
