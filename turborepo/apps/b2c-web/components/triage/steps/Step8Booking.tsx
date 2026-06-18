@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTriageStore } from '@/store/triageStore';
 import { StepWrapper } from '../StepWrapper';
+import { saveLead } from '@/app/actions/saveLead';
 import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addDays, startOfToday } from 'date-fns';
@@ -32,7 +33,7 @@ const FloatingInput = ({ label, type = "text", id }: { label: string, type?: str
 };
 
 export const Step8Booking = () => {
-  const { updateData } = useTriageStore();
+  const { data: triageData, updateData } = useTriageStore();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -72,9 +73,27 @@ export const Step8Booking = () => {
     // const { lat, lng } = await getLatLng(results[0]);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitted(true);
+    if (!selectedDate || !selectedSlot) return;
+
+    const formData = new FormData(e.currentTarget);
+    const leadData = {
+      name: formData.get('name') as string,
+      phone: formData.get('phone') as string,
+      email: formData.get('email') as string,
+      address: value,
+      bookingDate: selectedDate.toISOString(),
+      bookingSlot: selectedSlot,
+      triageData: triageData
+    };
+
+    const result = await saveLead(leadData);
+    if (result.success) {
+      setIsSubmitted(true);
+    } else {
+      alert("Wystąpił błąd podczas zapisywania rezerwacji. Spróbuj ponownie.");
+    }
   };
 
   if (isSubmitted) {

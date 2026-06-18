@@ -1,0 +1,66 @@
+"use server";
+
+import { supabase } from "@/lib/supabaseClient";
+
+export interface SaveLeadData {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  bookingDate: string;
+  bookingSlot: string;
+  triageData: any;
+}
+
+export async function saveLead(data: SaveLeadData) {
+  try {
+    // 1. Zapisz klienta
+    const { data: klient, error: klientError } = await supabase
+      .from('klienci')
+      .insert({
+        imie_i_nazwisko: data.name,
+        email: data.email,
+        telefon: data.phone
+      })
+      .select('id')
+      .single();
+
+    if (klientError) throw new Error(`Błąd tworzenia klienta: ${klientError.message}`);
+
+    // 2. Zapisz adres powiązany z klientem
+    const { data: adres, error: adresError } = await supabase
+      .from('adresy')
+      .insert({
+        klient_id: klient.id,
+        ulica_miasto: data.address
+      })
+      .select('id')
+      .single();
+
+    if (adresError) throw new Error(`Błąd tworzenia adresu: ${adresError.message}`);
+
+    // 3. Połącz w pełną datę rezerwacji (Data + Godzina z wybranego slotu)
+    const startTimeStr = data.bookingSlot.split(' - ')[0];
+    const dateObj = new Date(data.bookingDate);
+    const [hours, minutes] = startTimeStr.split(':');
+    dateObj.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+
+    // 4. Utwórz Lead
+    const { error: leadError } = await supabase
+      .from('leady')
+      .insert({
+        klient_id: klient.id,
+        adres_id: adres.id,
+        odpowiedzi_triage: data.triageData,
+        status: 'Umówiony Audyt',
+        data_rezerwacji: dateObj.toISOString()
+      });
+
+    if (leadError) throw new Error(`Błąd tworzenia leada: ${leadError.message}`);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("saveLead Error:", err);
+    return { success: false, error: err.message };
+  }
+}
