@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getFomoSlots } from "./actions/getFomoSlots";
+import { getFomoSlots, type FomoData } from "./actions/getFomoSlots";
 import { getBestsellers, type BestsellerProduct } from "./actions/getBestsellers";
 import ExitIntentModal from "@/components/triage/ExitIntentModal";
 import { DeviceModal, type DeviceData } from "@/components/ui/DeviceModal";
@@ -212,14 +212,14 @@ function GlassCard({
 export default function Page() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [availableSlots, setAvailableSlots] = useState<number | null>(null);
+  const [fomoData, setFomoData] = useState<FomoData | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     // Fetch available slots from Supabase via Server Action
-    getFomoSlots().then((slots) => {
-      setAvailableSlots(slots);
+    getFomoSlots().then((data) => {
+      setFomoData(data);
     });
 
     // Fetch catalogue from DB
@@ -346,13 +346,13 @@ export default function Page() {
                 <span className="text-sm font-semibold text-orange-200">
                   Zostało{" "}
                   <span className="text-orange-300 font-extrabold">
-                    {availableSlots === null ? (
+                    {fomoData === null ? (
                       <span className="inline-block w-4 h-4 rounded-full bg-orange-300 animate-pulse align-middle" />
                     ) : (
-                      availableSlots
+                      fomoData.slots
                     )}
                   </span>{" "}
-                  wolnych terminów w tym tygodniu na darmowy audyt
+                  wolnych terminów {fomoData?.period || "w tym tygodniu"} na darmowy audyt
                 </span>
               </div>
 
