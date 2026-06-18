@@ -6,7 +6,7 @@ import { useTriageStore } from '@/store/triageStore';
 import { StepWrapper } from '../StepWrapper';
 import { saveLead } from '@/app/actions/saveLead';
 import { getAvailableSlots, type AvailableSlot } from '@/app/actions/calendar';
-import { CheckCircle2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -40,6 +40,8 @@ export const Step8Booking = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [availableDays, setAvailableDays] = useState<AvailableSlot[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -81,7 +83,17 @@ export const Step8Booking = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedDateStr || !selectedSlot) return;
+    setError(null);
+    
+    if (!selectedDateStr || !selectedSlot) {
+      setError("Proszę wybrać datę i godzinę wizyty w kalendarzu.");
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setError("Proszę zaakceptować regulamin i politykę prywatności.");
+      return;
+    }
 
     const formData = new FormData(e.currentTarget);
     
@@ -265,17 +277,52 @@ export const Step8Booking = () => {
               </div>
             </div>
 
+            <div className="flex items-start gap-3 mt-6">
+              <input 
+                type="checkbox" 
+                id="terms" 
+                checked={acceptedTerms}
+                onChange={(e) => {
+                  setAcceptedTerms(e.target.checked);
+                  if (e.target.checked && error === "Proszę zaakceptować regulamin i politykę prywatności.") {
+                    setError(null);
+                  }
+                }}
+                className="mt-1 w-5 h-5 rounded border-border text-primary focus:ring-primary cursor-pointer"
+              />
+              <label htmlFor="terms" className="text-sm text-muted-foreground cursor-pointer select-none">
+                Akceptuję <a href="/regulamin" target="_blank" className="text-primary hover:underline">Regulamin</a> oraz <a href="/polityka-prywatnosci" target="_blank" className="text-primary hover:underline">Politykę Prywatności</a>.
+              </label>
+            </div>
+
+            <AnimatePresence>
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }} 
+                  animate={{ opacity: 1, height: 'auto', marginTop: 24 }} 
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-4 bg-rose-50 text-rose-600 rounded-xl text-sm font-medium border border-rose-100 flex items-center gap-2">
+                    <AlertCircle size={18} className="shrink-0" />
+                    {error}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              disabled={!selectedDateStr || !selectedSlot}
               type="submit"
-              className={cn(
-                "w-full py-4 rounded-xl font-bold text-lg transition-all mt-8",
-                selectedDateStr && selectedSlot
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
-              )}
+              onClick={() => {
+                if (!selectedDateStr || !selectedSlot) {
+                  setError("Proszę wybrać datę i godzinę wizyty w kalendarzu po lewej stronie.");
+                } else if (!acceptedTerms) {
+                  setError("Proszę zaakceptować regulamin i politykę prywatności.");
+                }
+              }}
+              className="w-full py-4 rounded-xl font-bold text-lg transition-all mt-6 bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl"
             >
               Potwierdź rezerwację
             </motion.button>

@@ -85,7 +85,7 @@ const steps = [
 
 function buildMockDevice(product: Product): DeviceData {
   const brutto = calcBrutto(product.deviceNettoPrice, product.installNettoPrice);
-  
+
   const fallbackDesc = "Wysokiej klasy klimatyzator zapewniający optymalny komfort cieplny. Charakteryzuje się cichą pracą i wysoką energooszczędnością.";
   const fallbackImages = [{ id: "1", src: product.img, alt: product.model }];
   const fallbackChips = [
@@ -265,11 +265,11 @@ export default function Page() {
                   <span className="text-sm font-semibold text-orange-200">
                     {fomoData.slots === 1 ? (
                       <>
-                        Został <span className="text-orange-300 font-extrabold">1</span> wolny termin {fomoData.period || "w tym tygodniu"} na darmowy audyt.
+                        Został <span className="text-orange-300 font-extrabold">1</span> wolny termin {fomoData.period || "w tym tygodniu"} na darmowy audyt
                       </>
                     ) : (
                       <>
-                        Zostały <span className="text-orange-300 font-extrabold">{fomoData.slots}</span> wolne terminy {fomoData.period || "w tym tygodniu"} na darmowy audyt.
+                        Zostały <span className="text-orange-300 font-extrabold">{fomoData.slots}</span> wolne terminy {fomoData.period || "w tym tygodniu"} na darmowy audyt
                       </>
                     )}
                   </span>
@@ -570,10 +570,10 @@ export default function Page() {
 
       {/* Global Device Modal */}
       {selectedProduct && (
-        <DeviceModal 
-          isOpen={!!selectedProduct} 
-          onClose={() => setSelectedProduct(null)} 
-          device={buildMockDevice(selectedProduct)} 
+        <DeviceModal
+          isOpen={!!selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          device={buildMockDevice(selectedProduct)}
           onReserveClick={() => window.location.href = '/triage'}
         />
       )}
