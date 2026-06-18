@@ -1,5 +1,4 @@
 import TriageFunnel from "@/components/triage/TriageFunnel";
-import ExitIntentModal from "@/components/triage/ExitIntentModal";
 
 export const metadata = {
   title: "Dobierz klimatyzator | Klik Klima",
@@ -10,7 +9,6 @@ export default function TriagePage() {
   return (
     <>
       <TriageFunnel />
-      <ExitIntentModal />
     </>
   );
 }
