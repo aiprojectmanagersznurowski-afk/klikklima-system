@@ -1,7 +1,7 @@
 "use server";
 
 import { google } from 'googleapis';
-import { addDays, isWeekend } from 'date-fns';
+import { addDays } from 'date-fns';
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 
 // Konfiguracja autoryzacji Google
@@ -59,13 +59,14 @@ export async function getAvailableSlots(): Promise<AvailableSlot[]> {
     for (let i = 1; i <= HORIZON_DAYS; i++) { // Zaczynamy od i=1 (czyli od jutra)
       const currentDate = addDays(todayWarsaw, i);
       
-      // Pomijamy weekendy
-      if (isWeekend(currentDate)) {
+      // Bezpieczny string dla daty w strefie czasowej Warszawa
+      const dateStr = formatInTimeZone(currentDate, 'Europe/Warsaw', 'yyyy-MM-dd');
+      
+      // Sprawdzamy czy to weekend w strefie czasowej Warszawa
+      const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'Europe/Warsaw' }).format(currentDate);
+      if (weekday === 'Sat' || weekday === 'Sun') {
         continue;
       }
-
-      // Bezpieczny string dla daty
-      const dateStr = formatInTimeZone(currentDate, 'Europe/Warsaw', 'yyyy-MM-dd');
       const availableSlotsForDay: string[] = [];
 
       for (const slotStr of TIME_SLOTS) {
