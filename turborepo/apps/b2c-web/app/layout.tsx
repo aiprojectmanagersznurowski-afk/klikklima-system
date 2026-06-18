@@ -8,6 +8,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
+import CookieConsent from "@/components/layout/CookieConsent";
 import Script from "next/script";
 
 export const metadata: Metadata = {
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         {children}
         <WhatsAppButton />
+        <CookieConsent />
         
         {/* Google Maps Script (loaded globally for Places API) */}
         <Script
