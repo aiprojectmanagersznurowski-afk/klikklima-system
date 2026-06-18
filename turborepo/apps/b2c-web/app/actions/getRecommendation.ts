@@ -12,7 +12,6 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes)
       throw new Error("Brak danych o pokojach");
     }
 
-    // Funkcja pomocnicza: metraż -> zapotrzebowanie kW
     const getKwForSize = (size: string) => {
       if (size === 'Do 25 m²') return 2.5;
       if (size === '26-35 m²') return 3.5;
@@ -20,6 +19,17 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes)
       if (size === 'Powyżej 50 m²') return 7.0;
       return 2.5;
     };
+
+    // Pobranie ceny montażu z bazy
+    const { data: cennik, error: cennikError } = await supabase
+      .from('cennik_uslug')
+      .select('koszt_b2c_netto')
+      .eq('nazwa_uslugi', 'Montaż jednostki wew i zew do 4m')
+      .limit(1)
+      .single();
+
+    const installPricePerRoomNetto = (cennik && !cennikError) ? Number(cennik.koszt_b2c_netto) : 1500;
+    const totalInstallNetto = installPricePerRoomNetto * roomCount;
 
     if (roomCount === 1) {
       // SCENARIUSZ: SINGLE SPLIT
@@ -37,12 +47,19 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes)
         
       if (error) throw error;
       
+      const totalDevicesPrice = Number(device.cena_katalogowa_netto);
+      const totalNetto = totalDevicesPrice + totalInstallNetto;
+      const totalBrutto = Math.round(totalNetto * 1.08); // VAT 8% na budownictwo mieszkaniowe
+
       return {
         success: true,
         type: 'single',
         internalUnits: [device],
         externalUnit: null,
-        totalDevicesPrice: Number(device.cena_katalogowa_netto)
+        totalDevicesPrice,
+        totalInstallNetto,
+        totalNetto,
+        totalBrutto
       };
       
     } else {
@@ -84,13 +101,18 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes)
       // Sumujemy ceny
       const internalPrice = internalUnits.reduce((sum, d) => sum + Number(d.cena_katalogowa_netto), 0);
       const totalDevicesPrice = internalPrice + Number(zewDevice.cena_katalogowa_netto);
+      const totalNetto = totalDevicesPrice + totalInstallNetto;
+      const totalBrutto = Math.round(totalNetto * 1.08); // VAT 8% na budownictwo mieszkaniowe
       
       return {
         success: true,
         type: 'multi',
         internalUnits,
         externalUnit: zewDevice,
-        totalDevicesPrice
+        totalDevicesPrice,
+        totalInstallNetto,
+        totalNetto,
+        totalBrutto
       };
     }
     

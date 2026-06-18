@@ -34,10 +34,10 @@ export const Step7Success = () => {
 
         const mainUnit = res.internalUnits[0];
         const isMulti = res.type === 'multi';
-        const finalPrice = res.totalDevicesPrice + (state.roomCount || 1) * 1500; // Cena za montaż szacunkowa
+        const finalPriceBrutto = res.totalBrutto; 
         const formattedPrice = new Intl.NumberFormat('pl-PL', { 
           style: 'currency', currency: 'PLN', maximumFractionDigits: 0 
-        }).format(finalPrice);
+        }).format(finalPriceBrutto);
 
         const newDeviceData: DeviceData = {
           name: `${mainUnit.producent} ${mainUnit.linia}`,
