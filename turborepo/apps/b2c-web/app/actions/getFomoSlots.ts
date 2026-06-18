@@ -1,7 +1,8 @@
 "use server";
 
 import { createClient } from '@supabase/supabase-js';
-import { startOfWeek, endOfWeek, addWeeks } from 'date-fns';
+import { startOfWeek, endOfWeek, addWeeks, format } from 'date-fns';
+import { getAvailableSlots } from './calendar';
 
 export interface FomoData {
   slots: number;
@@ -41,7 +42,20 @@ export async function getFomoSlots(): Promise<FomoData> {
     if (errThisWeek) throw errThisWeek;
 
     const bookedThisWeek = countThisWeek || 0;
-    const availableThisWeek = limit - bookedThisWeek;
+    let availableThisWeek = limit - bookedThisWeek;
+
+    // Pobierzmy faktyczne sloty z kalendarza, żeby upewnić się, że nie kłamiemy
+    const allCalendarSlots = await getAvailableSlots();
+    
+    // Zlicz realne sloty w Google Calendar dla tego tygodnia
+    const startOfThisWeekIso = format(startOfThisWeek, 'yyyy-MM-dd');
+    const endOfThisWeekIso = format(endOfThisWeek, 'yyyy-MM-dd');
+    
+    const realSlotsThisWeek = allCalendarSlots
+      .filter(day => day.dateStr >= startOfThisWeekIso && day.dateStr <= endOfThisWeekIso)
+      .reduce((sum, day) => sum + day.slots.length, 0);
+
+    availableThisWeek = Math.min(availableThisWeek, realSlotsThisWeek);
 
     if (availableThisWeek > 0) {
       return { slots: availableThisWeek, period: "w tym tygodniu" };
@@ -61,7 +75,16 @@ export async function getFomoSlots(): Promise<FomoData> {
     if (errNextWeek) throw errNextWeek;
 
     const bookedNextWeek = countNextWeek || 0;
-    const availableNextWeek = limit - bookedNextWeek;
+    let availableNextWeek = limit - bookedNextWeek;
+
+    const startOfNextWeekIso = format(startOfNextWeek, 'yyyy-MM-dd');
+    const endOfNextWeekIso = format(endOfNextWeek, 'yyyy-MM-dd');
+
+    const realSlotsNextWeek = allCalendarSlots
+      .filter(day => day.dateStr >= startOfNextWeekIso && day.dateStr <= endOfNextWeekIso)
+      .reduce((sum, day) => sum + day.slots.length, 0);
+
+    availableNextWeek = Math.min(availableNextWeek, realSlotsNextWeek);
 
     // Nawet jeśli kolejny też by był full, zwracamy minimum 1 żeby podtrzymać FOMO 
     // lub możemy po prostu zwrócić availableNextWeek i jeśli znowu 0 to "w najbliższym czasie"
