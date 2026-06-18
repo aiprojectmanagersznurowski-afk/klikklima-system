@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTriageStore } from '@/store/triageStore';
 import { StepWrapper } from '../StepWrapper';
 import { saveLead } from '@/app/actions/saveLead';
-import { CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getAvailableSlots, type AvailableSlot } from '@/app/actions/calendar';
+import { CheckCircle2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, addDays, startOfToday } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 
@@ -34,10 +35,19 @@ const FloatingInput = ({ label, type = "text", id }: { label: string, type?: str
 
 export const Step8Booking = () => {
   const { data: triageData, updateData } = useTriageStore();
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [availableDays, setAvailableDays] = useState<AvailableSlot[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    getAvailableSlots().then(days => {
+      setAvailableDays(days);
+      setIsLoadingSlots(false);
+    });
+  }, []);
 
   useEffect(() => {
     if (isSubmitted) {
@@ -47,10 +57,6 @@ export const Step8Booking = () => {
       return () => clearTimeout(timer);
     }
   }, [isSubmitted, router]);
-
-  const today = startOfToday();
-  const nextDays = Array.from({ length: 7 }).map((_, i) => addDays(today, i + 1));
-  const timeSlots = ["08:00 - 10:00", "10:00 - 12:00", "12:00 - 14:00", "13:00 - 15:00"];
 
   const {
     ready,
@@ -75,15 +81,19 @@ export const Step8Booking = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedDate || !selectedSlot) return;
+    if (!selectedDateStr || !selectedSlot) return;
 
     const formData = new FormData(e.currentTarget);
+    
+    // Konwersja dateStr na ISO 
+    const dateObj = parseISO(selectedDateStr);
+
     const leadData = {
       name: formData.get('name') as string,
       phone: formData.get('phone') as string,
       email: formData.get('email') as string,
       address: value,
-      bookingDate: selectedDate.toISOString(),
+      bookingDate: dateObj.toISOString(),
       bookingSlot: selectedSlot,
       triageData: triageData
     };
@@ -138,33 +148,48 @@ export const Step8Booking = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-              {nextDays.map((date) => {
-                const isSelected = selectedDate?.getTime() === date.getTime();
-                return (
-                  <button
-                    key={date.toISOString()}
-                    onClick={() => setSelectedDate(date)}
-                    className={cn(
-                      "flex flex-col items-center justify-center py-3 px-1 rounded-2xl transition-all border-2",
-                      isSelected 
-                        ? "bg-primary text-primary-foreground border-primary shadow-md"
-                        : "bg-transparent text-foreground border-transparent hover:bg-secondary hover:border-secondary-foreground/10"
-                    )}
-                  >
-                    <span className="text-xs font-medium uppercase mb-1 opacity-80">
-                      {format(date, 'EEE', { locale: pl }).slice(0, 3)}
-                    </span>
-                    <span className="text-xl font-bold">
-                      {format(date, 'd')}
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-64 overflow-y-auto pr-2 pb-2">
+              {isLoadingSlots ? (
+                <div className="col-span-full flex flex-col items-center justify-center py-10 text-muted-foreground">
+                  <Loader2 className="w-8 h-8 animate-spin mb-2" />
+                  <span className="text-sm">Ładowanie dostępnych terminów z kalendarza...</span>
+                </div>
+              ) : availableDays.length === 0 ? (
+                <div className="col-span-full text-center py-6 text-muted-foreground">
+                  Brak dostępnych terminów.
+                </div>
+              ) : (
+                availableDays.map((day) => {
+                  const dateObj = parseISO(day.dateStr);
+                  const isSelected = selectedDateStr === day.dateStr;
+                  return (
+                    <button
+                      key={day.dateStr}
+                      onClick={() => {
+                        setSelectedDateStr(day.dateStr);
+                        setSelectedSlot(null); // Reset slotu po zmianie dnia
+                      }}
+                      className={cn(
+                        "flex flex-col items-center justify-center py-3 px-1 rounded-2xl transition-all border-2",
+                        isSelected 
+                          ? "bg-primary text-primary-foreground border-primary shadow-md"
+                          : "bg-transparent text-foreground border-transparent hover:bg-secondary hover:border-secondary-foreground/10"
+                      )}
+                    >
+                      <span className="text-xs font-medium uppercase mb-1 opacity-80">
+                        {format(dateObj, 'EEE', { locale: pl }).slice(0, 3)}
+                      </span>
+                      <span className="text-xl font-bold">
+                        {format(dateObj, 'd')}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
             </div>
 
             <AnimatePresence>
-              {selectedDate && (
+              {selectedDateStr && (
                 <motion.div 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -172,7 +197,7 @@ export const Step8Booking = () => {
                 >
                   <h3 className="font-semibold text-lg mb-4">Godzina</h3>
                   <div className="grid grid-cols-2 gap-3">
-                    {timeSlots.map(slot => (
+                    {availableDays.find(d => d.dateStr === selectedDateStr)?.slots.map(slot => (
                       <button
                         key={slot}
                         onClick={() => setSelectedSlot(slot)}
@@ -243,11 +268,11 @@ export const Step8Booking = () => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              disabled={!selectedDate || !selectedSlot}
+              disabled={!selectedDateStr || !selectedSlot}
               type="submit"
               className={cn(
                 "w-full py-4 rounded-xl font-bold text-lg transition-all mt-8",
-                selectedDate && selectedSlot
+                selectedDateStr && selectedSlot
                   ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl"
                   : "bg-muted text-muted-foreground cursor-not-allowed"
               )}

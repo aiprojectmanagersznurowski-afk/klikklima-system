@@ -1,6 +1,7 @@
 "use server";
 
 import { supabase } from "@/lib/supabaseClient";
+import { createCalendarEvent } from "./calendar";
 
 export interface SaveLeadData {
   name: string;
@@ -57,6 +58,20 @@ export async function saveLead(data: SaveLeadData) {
       });
 
     if (leadError) throw new Error(`Błąd tworzenia leada: ${leadError.message}`);
+
+    // 5. Utwórz wydarzenie w kalendarzu Google
+    const calendarResult = await createCalendarEvent(
+      data.name,
+      data.phone,
+      data.address,
+      data.bookingDate,
+      data.bookingSlot
+    );
+
+    if (!calendarResult.success) {
+      console.warn("Rezerwacja zapisana w Supabase, ale wystąpił błąd z Google Calendar:", calendarResult.error);
+      // Opcjonalnie: Nie przerywamy flow klienta z powodu awarii API Google
+    }
 
     return { success: true };
   } catch (err: any) {
