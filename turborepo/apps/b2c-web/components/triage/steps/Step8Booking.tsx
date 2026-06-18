@@ -108,7 +108,7 @@ export const Step8Booking = () => {
 
   if (isSubmitted) {
     return (
-      <StepWrapper title="" subtitle="" showBackButton={false}>
+      <StepWrapper title="" subtitle="">
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

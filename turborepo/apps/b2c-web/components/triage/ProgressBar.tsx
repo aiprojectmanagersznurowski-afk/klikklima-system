@@ -3,19 +3,32 @@ import React from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useTriageStore } from '@/store/triageStore';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 export const ProgressBar = () => {
   const { step, prevStep, isExpertScreen } = useTriageStore();
+  const router = useRouter();
   const totalSteps = 8;
   const progress = isExpertScreen ? 100 : (step / totalSteps) * 100;
+
+  const handleBack = () => {
+    if (step === 1) {
+      router.back();
+    } else {
+      prevStep();
+    }
+  };
+
+  // Hide button entirely on loader (6) or success (7+) or expert screen
+  const isHidden = isExpertScreen || step === 6 || step >= 7;
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 relative z-10">
       <div className="flex items-center justify-between">
         <button 
-          onClick={prevStep}
-          disabled={step === 1 || isExpertScreen || step >= 7}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium disabled:opacity-0"
+          onClick={handleBack}
+          disabled={isHidden}
+          className={`flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium ${isHidden ? 'opacity-0 pointer-events-none' : ''}`}
         >
           <ChevronLeft size={20} />
           Wstecz
