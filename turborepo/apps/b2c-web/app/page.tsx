@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { getFomoSlots, type FomoData } from "./actions/getFomoSlots";
-import { getBestsellers, type BestsellerProduct } from "./actions/getBestsellers";
+import { getBestsellers, type BestsellerProduct as Product } from "./actions/getBestsellers";
 import ExitIntentModal from "@/components/triage/ExitIntentModal";
 import { DeviceModal, type DeviceData } from "@/components/ui/DeviceModal";
+import { ProductCard, calcBrutto } from "@/components/ui/ProductCard";
 import { companyDetails } from "@/config/company";
 import {
   Menu,
@@ -80,109 +81,26 @@ const steps = [
   },
 ];
 
-interface Product extends BestsellerProduct {}
-
-function calcBrutto(deviceNetto: number, installNetto: number): number {
-  return Math.round((deviceNetto + installNetto) * 1.08);
-}
-
 /* ─── Sub-components ────────────────────────────────────────────────────── */
-
-function BrandBadge({ code }: { code: string }) {
-  const colors: Record<string, string> = {
-    FE: "bg-[#0d1b2e] text-white",
-    HA: "bg-[#c8102e] text-white",
-  };
-  return (
-    <span
-      className={`inline-flex items-center justify-center w-8 h-8 rounded-md text-xs font-bold tracking-wide ${colors[code] ?? "bg-muted text-foreground"}`}
-    >
-      {code}
-    </span>
-  );
-}
 
 function buildMockDevice(product: Product): DeviceData {
   const brutto = calcBrutto(product.deviceNettoPrice, product.installNettoPrice);
+  
+  const fallbackDesc = "Wysokiej klasy klimatyzator zapewniający optymalny komfort cieplny. Charakteryzuje się cichą pracą i wysoką energooszczędnością.";
+  const fallbackImages = [{ id: "1", src: product.img, alt: product.model }];
+  const fallbackChips = [
+    { iconName: "Wifi", label: "WIFI w standardzie" },
+    { iconName: "Zap", label: "Wysoka klasa energetyczna" }
+  ];
+
   return {
     name: `${product.brand} ${product.model}`,
     capacity: product.power,
     price: `od ${brutto.toLocaleString("pl-PL")} zł brutto`,
-    marketingDescription: "Wysokiej klasy klimatyzator zapewniający optymalny komfort cieplny. Charakteryzuje się cichą pracą i wysoką energooszczędnością.",
-    images: [{ id: "1", src: product.img, alt: product.model }],
-    chips: [
-      { iconName: "Wifi", label: "WIFI w standardzie" },
-      { iconName: "Zap", label: "Wysoka klasa energetyczna" }
-    ]
+    marketingDescription: product.marketingDesc || fallbackDesc,
+    images: Array.isArray(product.gallery) && product.gallery.length > 0 ? product.gallery : fallbackImages,
+    chips: Array.isArray(product.features) && product.features.length > 0 ? product.features : fallbackChips
   };
-}
-
-function ProductCard({ product, onOpenModal }: { product: Product, onOpenModal: (p: Product) => void }) {
-  const brutto = calcBrutto(product.deviceNettoPrice, product.installNettoPrice);
-
-  return (
-    <div className="group relative bg-card rounded-2xl border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_-12px_rgba(23,80,200,0.15)]">
-      {product.tag && (
-        <span className="absolute top-4 left-4 z-10 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
-          {product.tag}
-        </span>
-      )}
-
-      <div className="relative h-52 bg-[#f0f4fb] overflow-hidden">
-        <img
-          src={product.img}
-          alt={`Klimatyzator ${product.brand} ${product.model}`}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-      </div>
-
-      <div className="flex flex-col flex-1 p-6 gap-4">
-        <div className="flex items-center gap-2">
-          <BrandBadge code={product.brandLogo} />
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-              {product.brand}
-            </p>
-            <p className="text-sm font-semibold text-foreground font-mono tracking-tight">
-              {product.model}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 bg-secondary text-secondary-foreground text-xs font-semibold px-3 py-1.5 rounded-full">
-            <Zap className="w-3 h-3" />
-            {product.power}
-          </span>
-          <span className="text-xs text-muted-foreground">Moc chłodnicza</span>
-        </div>
-
-        <div className="mt-auto pt-4 border-t border-border">
-          <p className="text-xs text-muted-foreground mb-1">
-            Cena z montażem (brutto)
-          </p>
-          <p className="text-3xl font-bold text-foreground tracking-tight">
-            {brutto.toLocaleString("pl-PL")} zł
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Urządzenie + montaż wzorcowy + VAT 8%
-          </p>
-        </div>
-
-        <a href="/triage" className="mt-2 w-full bg-primary text-primary-foreground font-semibold text-sm rounded-xl py-3 px-4 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[#1244b0] active:scale-[0.98]">
-          Darmowa wycena
-          <ArrowRight className="w-4 h-4" />
-        </a>
-        <button 
-          onClick={() => onOpenModal(product)}
-          className="w-full text-primary font-semibold text-sm rounded-xl py-2.5 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10"
-        >
-          Szczegóły urządzenia
-        </button>
-      </div>
-    </div>
-  );
 }
 
 function GlassCard({
@@ -488,17 +406,16 @@ export default function Page() {
               <h2 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
                 Nasze Bestsellery
               </h2>
-              <p className="mt-3 text-muted-foreground max-w-md">
-                Transparentne ceny z montażem i bez niespodzianek
+              <p className="text-muted-foreground mt-8 text-sm">
+                Masz na oku inne urządzenie? Jesteśmy niezależnym instalatorem i mamy w ofercie większość producentów.{" "}
+                <a
+                  href="/katalog"
+                  className="text-primary font-medium hover:underline underline-offset-4"
+                >
+                  Przejdź do pełnego katalogu urządzeń
+                </a>
               </p>
             </div>
-            <a
-              href="/triage"
-              className="inline-flex items-center gap-2 text-primary font-semibold text-sm hover:underline flex-shrink-0"
-            >
-              Nie widzisz swojego modelu? Zapytaj nas
-              <ChevronRight className="w-4 h-4" />
-            </a>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

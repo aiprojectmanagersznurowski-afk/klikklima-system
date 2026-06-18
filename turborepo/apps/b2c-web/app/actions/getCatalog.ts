@@ -1,35 +1,23 @@
 "use server";
 
 import { supabase } from "@/lib/supabaseClient";
+import { BestsellerProduct } from "./getBestsellers";
 
-export interface BestsellerProduct {
-  id: string;
-  brand: string;
-  brandLogo: string;
-  model: string;
-  power: string;
-  img: string;
-  deviceNettoPrice: number;
-  installNettoPrice: number;
-  tag?: string;
-  marketingDesc?: string;
-  features?: any; // parsed JSON
-  gallery?: any; // parsed JSON
+export interface CatalogData {
+  singleSplit: BestsellerProduct[];
+  multiInternal: BestsellerProduct[];
+  multiExternal: BestsellerProduct[];
 }
 
-export async function getBestsellers(): Promise<BestsellerProduct[]> {
+export async function getCatalog(): Promise<CatalogData> {
   try {
-    // 1. Pobieramy urządzenia
-    // Możemy przefiltrować po is_bestseller albo po prostu wziąć kilka pierwszych wew_single
     const { data: devices, error: devError } = await supabase
       .from('urzadzenia')
       .select('*')
-      .eq('typ', 'wew_single')
-      .limit(4);
+      .order('cena_katalogowa_netto', { ascending: true });
 
     if (devError) throw devError;
 
-    // 2. Pobieramy cenę montażu wzorcowego z cennika
     const { data: cennik, error: cenError } = await supabase
       .from('cennik_uslug')
       .select('koszt_b2c_netto')
@@ -38,9 +26,7 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
 
     const installNetto = cennik ? Number(cennik.koszt_b2c_netto) : 1500;
 
-    // 3. Mapujemy do interfejsu BestsellerProduct
-    const products: BestsellerProduct[] = (devices || []).map((d: any) => {
-      // Skrót loga (Fuji Electric -> FE, Haier -> HA)
+    const mapProduct = (d: any): BestsellerProduct => {
       const brandLogo = d.producent === 'Fuji Electric' ? 'FE' 
         : d.producent === 'Haier' ? 'HA' 
         : d.producent.substring(0, 2).toUpperCase();
@@ -59,11 +45,19 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
         features: d.cechy_json || [],
         gallery: d.galeria_json || [],
       };
-    });
+    };
 
-    return products;
+    const singleSplit = (devices || []).filter(d => d.typ === 'wew_single').map(mapProduct);
+    const multiInternal = (devices || []).filter(d => d.typ === 'wew_multi').map(mapProduct);
+    const multiExternal = (devices || []).filter(d => d.typ === 'zew_multi').map(mapProduct);
+
+    return {
+      singleSplit,
+      multiInternal,
+      multiExternal,
+    };
   } catch (err) {
-    console.error("Błąd podczas pobierania urządzeń:", err);
-    return []; // Zwróć pusto lub fallback
+    console.error("Błąd podczas pobierania katalogu:", err);
+    return { singleSplit: [], multiInternal: [], multiExternal: [] };
   }
 }
