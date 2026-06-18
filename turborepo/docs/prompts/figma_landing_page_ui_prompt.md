@@ -51,6 +51,7 @@ Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs strony głów
      - Logo producenta (np. Fuji Electric, Haier) oraz Kod Modelu.
      - Moc chłodniczą (np. 2.5 kW / 3.5 kW).
      - Najważniejszą część: **Wyraźną cenę Brutto** (która z tyłu w kodzie będzie obliczana jako *Cena Urządzenia Netto + Wzorcowy Montaż Netto + 8% VAT*).
+     - **Klikalność karty (Modal / Podstrona):** Po kliknięciu w kartę (zdjęcie, nazwę) otwiera się elegancki Modal lub Podstrona ze szczegółami (identyczny jak na końcu formularza Triage) – zawiera galerię, opis, funkcje, zakres montażu oraz przyciski CTA.
      - Przycisk na karcie: "Wybierz ten model" (który kieruje od razu do formularza Triage z zapamiętanym modelem) lub "Darmowa wycena".
    - Zadbaj o to, by sekcja prezentowała asortyment przejrzyście w formie nowoczesnego grida (np. 3 lub 4 karty w rzędzie na desktopie, karuzela na mobile). Klient musi mieć poczucie, że przegląda konkretne, transparentne oferty gotowe do montażu.
 
