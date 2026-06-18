@@ -410,7 +410,7 @@ export default function Page() {
                   href="#wycena"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-base rounded-xl px-8 py-4 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_12px_32px_rgba(23,80,200,0.55)] active:scale-[0.97]"
                 >
-                  Umów darmową wycenę z konsultantem
+                  Umów termin i poznaj wstępną wycenę
                   <ArrowRight className="w-5 h-5" />
                 </a>
                 <a
