@@ -20,11 +20,10 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes)
       return 2.5;
     };
 
-    // Pobranie ceny montażu z bazy
     const { data: cennik, error: cennikError } = await supabase
       .from('cennik_uslug')
       .select('koszt_b2c_netto')
-      .eq('nazwa_uslugi', 'Montaż jednostki wew i zew do 4m')
+      .eq('nazwa_uslugi', 'Montaż wzorcowy')
       .limit(1)
       .single();
 

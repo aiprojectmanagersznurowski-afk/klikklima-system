@@ -96,7 +96,7 @@ ALTER TABLE system_config ENABLE ROW LEVEL SECURITY;
 
 -- 7. Przykładowe Dane Startowe (Słowniki)
 INSERT INTO cennik_uslug (nazwa_uslugi, jm, koszt_b2c_netto, koszt_b2b_netto) VALUES
-('Montaż jednostki wew i zew do 4m', 'kpl', 1600.00, 1000.00),
+('Montaż wzorcowy', 'kpl', 1600.00, 1000.00),
 ('Rozprowadzenie inst chłodniczej', 'mb', 90.00, 50.00),
 ('Korytko instalacyjne', 'mb', 30.00, 13.00),
 ('Odpływ skroplin', 'mb', 15.00, 4.00),
