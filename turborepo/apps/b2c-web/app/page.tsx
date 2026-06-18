@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { getFomoSlots } from "./actions/getFomoSlots";
 import ExitIntentModal from "@/components/triage/ExitIntentModal";
+import { companyDetails } from "@/config/company";
 import {
   Menu,
   X,
@@ -640,15 +641,15 @@ export default function Page() {
               <ul className="flex flex-col gap-4">
                 <li className="flex items-start gap-3 text-sm text-white/70">
                   <Phone className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" />
-                  <span>+48 123 456 789</span>
+                  <span>{companyDetails.phoneDisplay}</span>
                 </li>
                 <li className="flex items-start gap-3 text-sm text-white/70">
                   <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" />
-                  <span>kontakt@klikklima.pl</span>
+                  <span>{companyDetails.email}</span>
                 </li>
                 <li className="flex items-start gap-3 text-sm text-white/70">
                   <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" />
-                  <span>ul. Przykładowa 12, 00-001 Warszawa</span>
+                  <span>{companyDetails.address}, {companyDetails.city}</span>
                 </li>
               </ul>
             </div>
@@ -656,7 +657,7 @@ export default function Page() {
 
           <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/40">
             <p>
-              © 2025 Klik Klima sp. z o.o. · NIP: 000-000-00-00
+              © {new Date().getFullYear()} {companyDetails.name} {companyDetails.owner} · NIP: {companyDetails.nip}
             </p>
             <div className="flex gap-5">
               <a href="#" className="hover:text-white/70 transition-colors">

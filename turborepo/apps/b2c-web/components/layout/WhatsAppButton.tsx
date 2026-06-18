@@ -1,7 +1,8 @@
 import { MessageCircle } from "lucide-react";
+import { companyDetails } from "@/config/company";
 
 export default function WhatsAppButton() {
-  const phoneNumber = "48600928882"; // Replace with actual number
+  const phoneNumber = companyDetails.phone; // z konfiguracji
   const message = "Cześć! Chcę darmową poradę odnośnie klimatyzacji.";
   const waLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
