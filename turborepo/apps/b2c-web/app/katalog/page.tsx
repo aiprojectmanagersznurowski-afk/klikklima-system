@@ -44,15 +44,16 @@ export default function CatalogPage() {
       <header className="fixed top-0 w-full z-50 transition-all duration-300 bg-white/80 backdrop-blur-md border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <a href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="/#bestsellery" className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </a>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">❄️</span>
-              <span className="text-xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#1244b0] to-blue-600">
-                KlikKlima
-              </span>
-            </div>
+            <a href="/" className="flex items-center gap-3 flex-shrink-0">
+              <img
+                src="/logo.png"
+                alt="Klik Klima"
+                className="h-9 sm:h-11 w-auto"
+              />
+            </a>
           </div>
         </div>
       </header>

@@ -34,7 +34,7 @@ const navLinks = [
   { label: "Oferta", href: "#oferta" },
   { label: "Proces", href: "#proces" },
   { label: "Bestsellery", href: "#bestsellery" },
-  { label: "Kontakt", href: "#kontakt" },
+  { label: "O nas", href: "/o-nas" },
 ];
 
 const benefits = [
@@ -64,8 +64,8 @@ const steps = [
   {
     number: "01",
     icon: MonitorSmartphone,
-    title: "Wyceniasz online",
-    desc: "Wypełniasz krótki formularz i od razu widzisz zarys cen z montażem. Zero zobowiązań.",
+    title: "Wycena online",
+    desc: "Wypełnij formularz i zobacz zakres cen z montażem. Zero zobowiązań.",
   },
   {
     number: "02",
@@ -298,14 +298,14 @@ export default function Page() {
                   href="/triage"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-base rounded-xl px-8 py-4 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_12px_32px_rgba(23,80,200,0.55)] active:scale-[0.97]"
                 >
-                  Umów termin i poznaj wstępną wycenę
+                  Wstępna wycena i termin
                   <ArrowRight className="w-5 h-5" />
                 </a>
                 <a
                   href="#bestsellery"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/15 backdrop-blur-sm text-white font-semibold text-base rounded-xl px-8 py-4 border border-white/25 transition-all duration-200 hover:bg-white/25"
                 >
-                  Zobacz urządzenia
+                  Urządzenia
                 </a>
               </div>
 
@@ -430,7 +430,7 @@ export default function Page() {
           </div>
 
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            * Cena obejmuje urządzenie + wzorcowy montaż (do 3 m trasy freonowej) + VAT 8%.
+            * Cena obejmuje urządzenie + wzorcowy montaż (do 3 metrów instalacji) + VAT 8%.
             Ostateczna cena zostaje potwierdzona podczas bezpłatnego audytu technicznego.
           </p>
         </div>
@@ -483,8 +483,8 @@ export default function Page() {
                 className="h-10 w-auto brightness-0 invert opacity-90 self-start"
               />
               <p className="text-sm leading-relaxed text-white/60 max-w-xs">
-                Lokalna firma klimatyzacyjna Sprzedaż, profesjonalny montaż i serwis urządzeń
-                marek Premium
+                Lokalna firma klimatyzacyjna<br />
+                Sprzedaż, profesjonalny montaż i serwis urządzeń marek premium
               </p>
               <div className="flex gap-3 mt-1">
                 <a
