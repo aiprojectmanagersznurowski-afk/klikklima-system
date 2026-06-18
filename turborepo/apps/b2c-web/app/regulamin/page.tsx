@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 export const metadata = {
-  title: 'Polityka Prywatności | KlikKlima',
-  description: 'Zasady przetwarzania danych osobowych.',
+  title: 'Regulamin | KlikKlima',
+  description: 'Regulamin korzystania z serwisu.',
 };
 
-export default async function PolicyPage() {
-  const filePath = path.join(process.cwd(), 'content', 'polityka-prywatnosci.md');
+export default async function TermsPage() {
+  const filePath = path.join(process.cwd(), 'content', 'regulamin.md');
   const fileContent = await fs.readFile(filePath, 'utf8');
 
   return (
@@ -22,7 +22,6 @@ export default async function PolicyPage() {
         </Link>
         
         <div className="bg-white p-8 sm:p-12 rounded-3xl shadow-sm border border-border">
-          {/* Prosty silnik CSS dla wygenerowanego HTML z Markdowna bez używania tailwind-typography */}
           <div className="markdown-body">
             <style>{`
               .markdown-body h1 { font-size: 2.25rem; font-weight: 800; margin-bottom: 1.5rem; color: #0d1b2e; }

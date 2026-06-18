@@ -158,11 +158,9 @@ function BrandBadge({ code }: { code: string }) {
   );
 }
 
-function ProductCard({ product }: { product: Product }) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+function buildMockDevice(product: Product): DeviceData {
   const brutto = calcBrutto(product.deviceNettoPrice, product.installNettoPrice);
-
-  const mockDeviceData: DeviceData = {
+  return {
     name: `${product.brand} ${product.model}`,
     capacity: product.power,
     price: `od ${brutto.toLocaleString("pl-PL")} zł brutto`,
@@ -173,6 +171,10 @@ function ProductCard({ product }: { product: Product }) {
       { iconName: "Zap", label: "Wysoka klasa energetyczna" }
     ]
   };
+}
+
+function ProductCard({ product, onOpenModal }: { product: Product, onOpenModal: (p: Product) => void }) {
+  const brutto = calcBrutto(product.deviceNettoPrice, product.installNettoPrice);
 
   return (
     <div className="group relative bg-card rounded-2xl border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_-12px_rgba(23,80,200,0.15)]">
@@ -229,18 +231,11 @@ function ProductCard({ product }: { product: Product }) {
           <ArrowRight className="w-4 h-4" />
         </a>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => onOpenModal(product)}
           className="w-full text-primary font-semibold text-sm rounded-xl py-2.5 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10"
         >
           Szczegóły urządzenia
         </button>
-
-        <DeviceModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-          device={mockDeviceData} 
-          onReserveClick={() => window.location.href = '/triage'}
-        />
       </div>
     </div>
   );
@@ -274,6 +269,7 @@ export default function Page() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<number | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     // Fetch available slots from Supabase via Server Action
@@ -557,7 +553,7 @@ export default function Page() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} onOpenModal={setSelectedProduct} />
             ))}
           </div>
 
@@ -684,10 +680,10 @@ export default function Page() {
               © {new Date().getFullYear()} {companyDetails.name} {companyDetails.owner} · NIP: {companyDetails.nip}
             </p>
             <div className="flex gap-5">
-              <a href="#" className="hover:text-white/70 transition-colors">
+              <a href="/polityka-prywatnosci" className="hover:text-white/70 transition-colors">
                 Polityka Prywatności
               </a>
-              <a href="#" className="hover:text-white/70 transition-colors">
+              <a href="/regulamin" className="hover:text-white/70 transition-colors">
                 Regulamin
               </a>
             </div>
@@ -697,6 +693,16 @@ export default function Page() {
 
       {/* Wyłapywanie wychodzących użytkowników (Soft Leads) */}
       <ExitIntentModal />
+
+      {/* Global Device Modal */}
+      {selectedProduct && (
+        <DeviceModal 
+          isOpen={!!selectedProduct} 
+          onClose={() => setSelectedProduct(null)} 
+          device={buildMockDevice(selectedProduct)} 
+          onReserveClick={() => window.location.href = '/triage'}
+        />
+      )}
     </div>
   );
 }
