@@ -20,7 +20,7 @@ export const Step4State = () => {
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <OptionCard
-          title="Wykończony / Zamieszkany"
+          title="Wykończony"
           icon={<Sparkles size={40} strokeWidth={1.5} />}
           selected={state.buildingState === 'Wykończony / Zamieszkany'}
           onClick={() => handleSelect('Wykończony / Zamieszkany')}

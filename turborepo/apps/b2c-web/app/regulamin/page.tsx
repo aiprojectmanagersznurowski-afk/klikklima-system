@@ -1,8 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import ReactMarkdown from 'react-markdown';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { BackButton } from '@/components/ui/BackButton';
 
 export const metadata = {
   title: 'Regulamin | KlikKlima',
@@ -16,10 +15,7 @@ export default async function TermsPage() {
   return (
     <div className="min-h-screen bg-background py-16 px-5 sm:px-8">
       <div className="max-w-3xl mx-auto">
-        <Link href="/" className="inline-flex items-center gap-2 text-primary hover:underline font-medium mb-8 transition-all">
-          <ArrowLeft className="w-4 h-4" />
-          Wróć na stronę główną
-        </Link>
+        <BackButton label="Wstecz" />
         
         <div className="bg-white p-8 sm:p-12 rounded-3xl shadow-sm border border-border">
           <div className="markdown-body">

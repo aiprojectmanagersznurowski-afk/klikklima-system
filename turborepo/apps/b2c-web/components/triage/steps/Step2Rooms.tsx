@@ -48,7 +48,7 @@ export const Step2Rooms = () => {
           onClick={() => handleSelect(3)}
         />
         <OptionCard
-          title="4 i więcej"
+          title="4 pomieszczenia"
           icon={<LayoutDashboard size={40} strokeWidth={1.5} />}
           selected={state.roomCount === 4}
           onClick={() => handleSelect(4)}

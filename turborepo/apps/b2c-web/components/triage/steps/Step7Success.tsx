@@ -125,7 +125,7 @@ export const Step7Success = () => {
   return (
     <StepWrapper 
       title="Oto idealne rozwiązanie dla Ciebie" 
-      subtitle="Na podstawie Twoich odpowiedzi przygotowaliśmy wstępną ofertę."
+      subtitle="Na podstawie Twoich odpowiedzi przygotowaliśmy wstępną ofertę"
     >
       <div className="max-w-3xl mx-auto space-y-8 pb-20 sm:pb-0">
         
@@ -201,7 +201,7 @@ export const Step7Success = () => {
             {recommendedDevice.price} <span className="text-xl sm:text-2xl font-semibold text-primary/70">brutto</span>
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto">
-            Cena zawiera podatek VAT 8% (budownictwo mieszkaniowe) oraz standardowy pakiet usług montażowych.
+            Cena zawiera podatek VAT 8% oraz standardowy pakiet usług montażowych.
           </p>
 
           <div className="mt-8 text-left">
