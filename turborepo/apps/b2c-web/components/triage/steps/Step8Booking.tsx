@@ -6,7 +6,6 @@ import { useTriageStore } from '@/store/triageStore';
 import { StepWrapper } from '../StepWrapper';
 import { saveLead } from '@/app/actions/saveLead';
 import { getAvailableSlots, type AvailableSlot } from '@/app/actions/calendar';
-import { getFomoSlots, type FomoData } from '@/app/actions/getFomoSlots';
 import { CheckCircle2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
@@ -40,7 +39,6 @@ export const Step8Booking = () => {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [availableDays, setAvailableDays] = useState<AvailableSlot[]>([]);
-  const [fomoData, setFomoData] = useState<FomoData | null>(null);
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
   const router = useRouter();
 
@@ -49,7 +47,6 @@ export const Step8Booking = () => {
       setAvailableDays(days);
       setIsLoadingSlots(false);
     });
-    getFomoSlots().then(data => setFomoData(data));
   }, []);
 
   useEffect(() => {
@@ -139,17 +136,6 @@ export const Step8Booking = () => {
         {/* Calendar Side */}
         <div className="w-full lg:w-5/12 space-y-8">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-border/50">
-            {fomoData && fomoData.slots < 5 && (
-              <div className="bg-orange-50 border border-orange-200 text-orange-800 rounded-xl p-4 mb-6 flex items-start gap-3">
-                <span className="text-xl">🔥</span>
-                <p className="font-medium text-sm pt-0.5">
-                  {fomoData.slots === 1 
-                    ? `Został 1 wolny termin w tym tygodniu na darmowy audyt.` 
-                    : `Zostały ${fomoData.slots} wolne terminy w tym tygodniu na darmowy audyt.`}
-                </p>
-              </div>
-            )}
-            
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-lg">Data wizyty</h3>
               <div className="flex gap-2">

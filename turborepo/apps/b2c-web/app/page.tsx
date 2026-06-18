@@ -259,20 +259,22 @@ export default function Page() {
               }}
             >
               {/* FOMO / Scarcity badge */}
-              <div className="inline-flex items-center gap-2.5 bg-white/15 backdrop-blur-sm border border-orange-300/40 rounded-full px-4 py-2.5 mb-7 shadow-sm">
-                <span className="text-base leading-none">🔥</span>
-                <span className="text-sm font-semibold text-orange-200">
-                  Zostało{" "}
-                  <span className="text-orange-300 font-extrabold">
-                    {fomoData === null ? (
-                      <span className="inline-block w-4 h-4 rounded-full bg-orange-300 animate-pulse align-middle" />
+              {fomoData !== null && fomoData.slots < 5 && (
+                <div className="inline-flex items-center gap-2.5 bg-white/15 backdrop-blur-sm border border-orange-300/40 rounded-full px-4 py-2.5 mb-7 shadow-sm">
+                  <span className="text-base leading-none">🔥</span>
+                  <span className="text-sm font-semibold text-orange-200">
+                    {fomoData.slots === 1 ? (
+                      <>
+                        Został <span className="text-orange-300 font-extrabold">1</span> wolny termin {fomoData.period || "w tym tygodniu"} na darmowy audyt.
+                      </>
                     ) : (
-                      fomoData.slots
+                      <>
+                        Zostały <span className="text-orange-300 font-extrabold">{fomoData.slots}</span> wolne terminy {fomoData.period || "w tym tygodniu"} na darmowy audyt.
+                      </>
                     )}
-                  </span>{" "}
-                  wolnych terminów {fomoData?.period || "w tym tygodniu"} na darmowy audyt
-                </span>
-              </div>
+                  </span>
+                </div>
+              )}
 
               <h1
                 className="text-5xl sm:text-6xl lg:text-[4.5rem] font-extrabold text-white leading-[1.05] tracking-tight mb-5"
