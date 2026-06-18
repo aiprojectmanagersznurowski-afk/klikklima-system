@@ -269,8 +269,8 @@ export default function Page() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled || menuOpen
-            ? "bg-white/95 backdrop-blur-xl border-b border-border shadow-sm"
-            : "bg-transparent"
+          ? "bg-white/95 backdrop-blur-xl border-b border-border shadow-sm"
+          : "bg-transparent"
           }`}
       >
         <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 sm:h-20 flex items-center justify-between gap-6">
@@ -291,8 +291,8 @@ export default function Page() {
                 key={l.label}
                 href={l.href}
                 className={`text-sm font-medium transition-colors ${scrolled || menuOpen
-                    ? "text-foreground/70 hover:text-foreground"
-                    : "text-white/80 hover:text-white"
+                  ? "text-foreground/70 hover:text-foreground"
+                  : "text-white/80 hover:text-white"
                   }`}
               >
                 {l.label}
@@ -409,7 +409,7 @@ export default function Page() {
                   href="#wycena"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-base rounded-xl px-8 py-4 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_12px_32px_rgba(23,80,200,0.55)] active:scale-[0.97]"
                 >
-                  Odbierz darmową wycenę online
+                  Umów darmową wycenę z konsultantem
                   <ArrowRight className="w-5 h-5" />
                 </a>
                 <a

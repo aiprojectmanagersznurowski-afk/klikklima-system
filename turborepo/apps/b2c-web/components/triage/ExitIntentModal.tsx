@@ -12,7 +12,7 @@ export default function ExitIntentModal() {
   const [phone, setPhone] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Bezpieczne pobranie danych z Zustand
   // Aby uniknąć błędów hydratacji, czasami używa się useEffect,
   // ale tu można po prostu pobrać store
@@ -32,10 +32,10 @@ export default function ExitIntentModal() {
     setIsSubmitting(true);
     // Wywołanie Server Action do zapisu w Supabase
     await saveSoftLead(phone, triageData);
-    
+
     setIsSubmitting(false);
     setSubmitted(true);
-    
+
     // Auto-zamknięcie po 3 sekundach od sukcesu
     setTimeout(() => setIsOpen(false), 3000);
   };
@@ -86,7 +86,7 @@ export default function ExitIntentModal() {
                 {/* Header z grafiką / kolorem */}
                 <div className="relative bg-gradient-to-br from-[#0d1b2e] to-[#1750c8] pt-10 pb-12 px-8 text-center overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-                  
+
                   <div className="relative z-10 w-16 h-16 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-5 border border-white/20 shadow-lg">
                     <PhoneCall className="w-7 h-7 text-white" />
                   </div>
@@ -98,7 +98,7 @@ export default function ExitIntentModal() {
                 {/* Formularz */}
                 <div className="px-8 pt-8 pb-10 bg-white">
                   <p className="text-gray-600 text-center text-sm leading-relaxed mb-8 max-w-[90%] mx-auto">
-                    Zostaw numer telefonu. Nasz ekspert od klimatyzacji oddzwoni w ciągu 15 minut i doradzi najlepsze rozwiązanie — <span className="font-semibold text-gray-900">całkowicie za darmo.</span>
+                    Zostaw numer telefonu. Nasz ekspert od klimatyzacji oddzwoni do Ciebie i doradzi najlepsze rozwiązanie — <span className="font-semibold text-gray-900">całkowicie za darmo.</span>
                   </p>
 
                   <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -115,7 +115,7 @@ export default function ExitIntentModal() {
                         className="w-full bg-gray-50 border border-gray-200 text-gray-900 font-medium rounded-xl py-4 pl-12 pr-4 outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       />
                     </div>
-                    
+
                     <button
                       type="submit"
                       disabled={isSubmitting || !phone}
@@ -130,9 +130,9 @@ export default function ExitIntentModal() {
                         </>
                       )}
                     </button>
-                    
+
                     <p className="text-[11px] text-center text-gray-400 mt-2">
-                      Klikając przycisk wyrażasz zgodę na kontakt telefoniczny.
+                      Klikając przycisk wyrażasz zgodę na kontakt telefoniczny
                     </p>
                   </form>
                 </div>
@@ -152,7 +152,7 @@ export default function ExitIntentModal() {
                   Dziękujemy!
                 </h3>
                 <p className="text-gray-600 leading-relaxed max-w-sm">
-                  Twój numer został przekazany do inżyniera. Spodziewaj się kontaktu z naszej strony w ciągu kilkunastu minut.
+                  Twój numer został przekazany do inżyniera. Przedzwonimy do Ciebie w wolnej chwili.
                 </p>
               </div>
             )}
