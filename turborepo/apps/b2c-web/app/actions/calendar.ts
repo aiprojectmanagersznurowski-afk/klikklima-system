@@ -1,8 +1,8 @@
 "use server";
 
 import { google } from 'googleapis';
-import { addDays, startOfToday, endOfDay, parse, isWithinInterval, isWeekend } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { addDays, isWeekend } from 'date-fns';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 
 // Konfiguracja autoryzacji Google
 const getGoogleAuth = () => {
@@ -34,13 +34,17 @@ export async function getAvailableSlots(): Promise<AvailableSlot[]> {
     const auth = getGoogleAuth();
     const calendar = google.calendar({ version: 'v3', auth });
 
-    const today = startOfToday();
-    const endDate = addDays(today, HORIZON_DAYS);
+    const now = new Date();
+    // Pobierzmy dzisiejszą datę jako string z perspektywy Warszawy
+    const todayStr = formatInTimeZone(now, 'Europe/Warsaw', 'yyyy-MM-dd');
+    const todayWarsaw = fromZonedTime(`${todayStr} 00:00`, 'Europe/Warsaw');
+
+    const endDate = addDays(todayWarsaw, HORIZON_DAYS);
 
     // Pobranie zablokowanych (busy) przedziałów z Google Calendar
     const response = await calendar.freebusy.query({
       requestBody: {
-        timeMin: today.toISOString(),
+        timeMin: todayWarsaw.toISOString(),
         timeMax: endDate.toISOString(),
         timeZone: 'Europe/Warsaw',
         items: [{ id: CALENDAR_ID }]
@@ -53,22 +57,23 @@ export async function getAvailableSlots(): Promise<AvailableSlot[]> {
 
     // Generujemy dostępne dni i sprawdzamy kolizje w każdym dniu
     for (let i = 1; i <= HORIZON_DAYS; i++) { // Zaczynamy od i=1 (czyli od jutra)
-      const currentDate = addDays(today, i);
+      const currentDate = addDays(todayWarsaw, i);
       
       // Pomijamy weekendy
       if (isWeekend(currentDate)) {
         continue;
       }
 
-      const dateStr = currentDate.toISOString().split('T')[0];
+      // Bezpieczny string dla daty
+      const dateStr = formatInTimeZone(currentDate, 'Europe/Warsaw', 'yyyy-MM-dd');
       const availableSlotsForDay: string[] = [];
 
       for (const slotStr of TIME_SLOTS) {
         const [startStr, endStr] = slotStr.split(' - ');
         
-        // Tworzymy obiekty dat dla początku i końca sprawdzanego slotu
-        const slotStart = parse(`${dateStr} ${startStr}`, 'yyyy-MM-dd HH:mm', new Date());
-        const slotEnd = parse(`${dateStr} ${endStr}`, 'yyyy-MM-dd HH:mm', new Date());
+        // Tworzymy obiekty dat w strefie czasowej Warszawa
+        const slotStart = fromZonedTime(`${dateStr} ${startStr}`, 'Europe/Warsaw');
+        const slotEnd = fromZonedTime(`${dateStr} ${endStr}`, 'Europe/Warsaw');
 
         // Sprawdzamy czy slot nakłada się z jakimkolwiek wydarzeniem "busy" z kalendarza
         const isConflict = busyIntervals.some(busy => {
@@ -110,8 +115,8 @@ export async function createCalendarEvent(leadName: string, phone: string, addre
     const dateOnlyStr = bookingDateStr.split('T')[0]; // "yyyy-MM-dd"
     const [startStr, endStr] = bookingSlotStr.split(' - ');
     
-    const startDateTime = parse(`${dateOnlyStr} ${startStr}`, 'yyyy-MM-dd HH:mm', new Date());
-    const endDateTime = parse(`${dateOnlyStr} ${endStr}`, 'yyyy-MM-dd HH:mm', new Date());
+    const startDateTime = fromZonedTime(`${dateOnlyStr} ${startStr}`, 'Europe/Warsaw');
+    const endDateTime = fromZonedTime(`${dateOnlyStr} ${endStr}`, 'Europe/Warsaw');
 
     const event = {
       summary: `Audyt KlikKlima: ${leadName}`,
