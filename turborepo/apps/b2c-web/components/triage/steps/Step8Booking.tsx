@@ -12,23 +12,37 @@ import { format, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 
-const FloatingInput = ({ label, type = "text", id }: { label: string, type?: string, id: string }) => {
+const FloatingInput = ({ label, type = "text", id, error, value, onChange }: { label: string, type?: string, id: string, error?: string, value?: string, onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void }) => {
   return (
     <div className="relative z-0 w-full mb-6 group">
       <input 
         type={type} 
         name={id} 
         id={id} 
-        className="block py-3.5 px-0 w-full text-base text-foreground bg-transparent border-0 border-b-2 border-border appearance-none focus:outline-none focus:ring-0 focus:border-primary peer transition-colors" 
+        value={value}
+        onChange={onChange}
+        className={cn(
+          "block py-3.5 px-0 w-full text-base bg-transparent border-0 border-b-2 appearance-none focus:outline-none focus:ring-0 peer transition-colors",
+          error ? "border-rose-500 text-rose-600 focus:border-rose-500" : "border-border text-foreground focus:border-primary"
+        )}
         placeholder=" " 
-        required 
       />
       <label 
         htmlFor={id} 
-        className="peer-focus:font-medium absolute text-base text-muted-foreground duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-primary peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+        className={cn(
+          "peer-focus:font-medium absolute text-base duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6",
+          error ? "text-rose-500 peer-focus:text-rose-500" : "text-muted-foreground peer-focus:text-primary"
+        )}
       >
         {label}
       </label>
+      <AnimatePresence>
+        {error && (
+          <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="text-xs text-rose-500 font-medium mt-1">
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -40,8 +54,11 @@ export const Step8Booking = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [availableDays, setAvailableDays] = useState<AvailableSlot[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<'date' | 'terms' | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [formDataState, setFormDataState] = useState({ name: '', phone: '', email: '' });
+  const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -76,37 +93,78 @@ export const Step8Booking = () => {
   const handleSelect = async (address: string) => {
     setValue(address, false);
     clearSuggestions();
-    // Tutaj w przyszlosci mozna pobrac dokladne wspolrzedne:
-    // const results = await getGeocode({ address });
-    // const { lat, lng } = await getLatLng(results[0]);
+    setFieldErrors(prev => ({ ...prev, address: '' }));
+    try {
+      const results = await getGeocode({ address });
+      const { lat, lng } = await getLatLng(results[0]);
+      setCoordinates({ lat, lng });
+    } catch (err) {
+      console.error("Geocoding error: ", err);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormDataState(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     
+    let hasErrors = false;
+    const newFieldErrors: Record<string, string> = {};
+
+    if (!formDataState.name || formDataState.name.trim().length < 3) {
+      newFieldErrors.name = "Podaj poprawne imię i nazwisko";
+      hasErrors = true;
+    }
+    
+    // Prosta walidacja telefonu (minimum 9 cyfr, mogą być spacje, plus)
+    if (!formDataState.phone || formDataState.phone.replace(/[^0-9]/g, '').length < 9) {
+      newFieldErrors.phone = "Podaj poprawny numer telefonu";
+      hasErrors = true;
+    }
+
+    if (!formDataState.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formDataState.email)) {
+      newFieldErrors.email = "Podaj poprawny adres e-mail";
+      hasErrors = true;
+    }
+
+    if (!value || value.trim().length < 5) {
+      newFieldErrors.address = "Podaj dokładny adres montażu";
+      hasErrors = true;
+    }
+
+    setFieldErrors(newFieldErrors);
+
     if (!selectedDateStr || !selectedSlot) {
-      setError("Proszę wybrać datę i godzinę wizyty w kalendarzu.");
-      return;
+      setError('date');
+      hasErrors = true;
     }
 
     if (!acceptedTerms) {
-      setError("Proszę zaakceptować regulamin i politykę prywatności.");
-      return;
+      setError('terms');
+      hasErrors = true;
     }
 
-    const formData = new FormData(e.currentTarget);
-    
+    if (hasErrors) return;
+
     // Konwersja dateStr na ISO 
-    const dateObj = parseISO(selectedDateStr);
+    const dateObj = parseISO(selectedDateStr as string);
 
     const leadData = {
-      name: formData.get('name') as string,
-      phone: formData.get('phone') as string,
-      email: formData.get('email') as string,
+      name: formDataState.name,
+      phone: formDataState.phone,
+      email: formDataState.email,
       address: value,
+      lat: coordinates?.lat,
+      lng: coordinates?.lng,
       bookingDate: dateObj.toISOString(),
-      bookingSlot: selectedSlot,
+      bookingSlot: selectedSlot as string,
       triageData: triageData
     };
 
@@ -143,10 +201,10 @@ export const Step8Booking = () => {
       title="Wybierz termin darmowej wyceny" 
       subtitle="Nasz ekspert przyjedzie na miejsce i potwierdzi techniczne możliwości montażu"
     >
-      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-10">
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 xl:gap-12">
         
         {/* Calendar Side */}
-        <div className="w-full lg:w-5/12 space-y-8">
+        <div className="w-full lg:w-[45%] xl:w-5/12 space-y-8">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-border/50">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-lg">Data wizyty</h3>
@@ -227,19 +285,55 @@ export const Step8Booking = () => {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            <AnimatePresence>
+              {error === 'date' && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }} 
+                  animate={{ opacity: 1, height: 'auto', marginTop: 24 }} 
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-4 bg-rose-50 text-rose-600 rounded-xl text-sm font-medium border border-rose-100 flex items-center gap-2">
+                    <AlertCircle size={18} className="shrink-0" />
+                    Proszę wybrać datę i godzinę wizyty w powyższym kalendarzu.
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
         {/* Form Side */}
-        <div className="w-full lg:w-7/12">
-          <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-8 shadow-sm border border-border/50 h-full flex flex-col">
+        <div className="w-full lg:w-[55%] xl:w-7/12">
+          <form onSubmit={handleSubmit} noValidate className="bg-white rounded-3xl p-8 shadow-sm border border-border/50 h-full flex flex-col">
             <h3 className="font-semibold text-2xl mb-8">Twoje dane</h3>
             
             <div className="flex-1 space-y-6">
-              <FloatingInput id="name" label="Imię i nazwisko" />
+              <FloatingInput 
+                id="name" 
+                label="Imię i nazwisko" 
+                value={formDataState.name}
+                onChange={handleInputChange}
+                error={fieldErrors.name}
+              />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <FloatingInput id="phone" label="Telefon" type="tel" />
-                <FloatingInput id="email" label="Adres E-mail" type="email" />
+                <FloatingInput 
+                  id="phone" 
+                  label="Telefon" 
+                  type="tel" 
+                  value={formDataState.phone}
+                  onChange={handleInputChange}
+                  error={fieldErrors.phone}
+                />
+                <FloatingInput 
+                  id="email" 
+                  label="Adres E-mail" 
+                  type="email" 
+                  value={formDataState.email}
+                  onChange={handleInputChange}
+                  error={fieldErrors.email}
+                />
               </div>
               <div className="relative">
                 <div className="relative z-0 w-full mb-6 group">
@@ -248,18 +342,33 @@ export const Step8Booking = () => {
                     name="address" 
                     id="address" 
                     value={value}
-                    onChange={(e) => setValue(e.target.value)}
+                    onChange={(e) => {
+                      setValue(e.target.value);
+                      if (fieldErrors.address) setFieldErrors(prev => ({ ...prev, address: '' }));
+                    }}
                     disabled={!ready}
-                    className="block py-3.5 px-0 w-full text-base text-foreground bg-transparent border-0 border-b-2 border-border appearance-none focus:outline-none focus:ring-0 focus:border-primary peer transition-colors" 
+                    className={cn(
+                      "block py-3.5 px-0 w-full text-base bg-transparent border-0 border-b-2 appearance-none focus:outline-none focus:ring-0 peer transition-colors",
+                      fieldErrors.address ? "border-rose-500 text-rose-600 focus:border-rose-500" : "border-border text-foreground focus:border-primary"
+                    )}
                     placeholder=" " 
-                    required 
                   />
                   <label 
                     htmlFor="address" 
-                    className="peer-focus:font-medium absolute text-base text-muted-foreground duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-primary peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                    className={cn(
+                      "peer-focus:font-medium absolute text-base duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6",
+                      fieldErrors.address ? "text-rose-500 peer-focus:text-rose-500" : "text-muted-foreground peer-focus:text-primary"
+                    )}
                   >
                     Dokładny adres montażu (ulica, miasto)
                   </label>
+                  <AnimatePresence>
+                    {fieldErrors.address && (
+                      <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="text-xs text-rose-500 font-medium mt-1">
+                        {fieldErrors.address}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                 </div>
                 {status === "OK" && (
                   <ul className="absolute z-10 w-full bg-white border border-border rounded-xl shadow-lg mt-1 overflow-hidden">
@@ -277,50 +386,52 @@ export const Step8Booking = () => {
               </div>
             </div>
 
-            <div className="flex items-start gap-3 mt-6">
-              <input 
-                type="checkbox" 
-                id="terms" 
-                checked={acceptedTerms}
-                onChange={(e) => {
-                  setAcceptedTerms(e.target.checked);
-                  if (e.target.checked && error === "Proszę zaakceptować regulamin i politykę prywatności.") {
-                    setError(null);
-                  }
-                }}
-                className="mt-1 w-5 h-5 rounded border-border text-primary focus:ring-primary cursor-pointer"
-              />
-              <label htmlFor="terms" className="text-sm text-muted-foreground cursor-pointer select-none">
-                Akceptuję <a href="/regulamin" target="_blank" className="text-primary hover:underline">Regulamin</a> oraz <a href="/polityka-prywatnosci" target="_blank" className="text-primary hover:underline">Politykę Prywatności</a>.
-              </label>
+            <div className="mt-8 flex flex-col items-start">
+              <div className="flex items-start gap-3">
+                <input 
+                  type="checkbox" 
+                  id="terms" 
+                  checked={acceptedTerms}
+                  onChange={(e) => {
+                    setAcceptedTerms(e.target.checked);
+                    if (e.target.checked && error === 'terms') {
+                      setError(null);
+                    }
+                  }}
+                  className={cn(
+                    "mt-1 w-5 h-5 rounded focus:ring-2 cursor-pointer transition-colors outline-none",
+                    error === 'terms' ? "border-rose-500 text-rose-500 focus:ring-rose-500 ring-2 ring-rose-500" : "border-border text-primary focus:ring-primary"
+                  )}
+                />
+                <label htmlFor="terms" className="text-sm text-muted-foreground cursor-pointer select-none">
+                  Akceptuję <a href="/regulamin" target="_blank" className="text-primary hover:underline">Regulamin</a> oraz <a href="/polityka-prywatnosci" target="_blank" className="text-primary hover:underline">Politykę Prywatności</a>.
+                </label>
+              </div>
+              <AnimatePresence>
+                {error === 'terms' && (
+                  <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="text-xs text-rose-500 font-medium mt-2 pl-8">
+                    Zgoda jest wymagana.
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
-
-            <AnimatePresence>
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0, marginTop: 0 }} 
-                  animate={{ opacity: 1, height: 'auto', marginTop: 24 }} 
-                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="p-4 bg-rose-50 text-rose-600 rounded-xl text-sm font-medium border border-rose-100 flex items-center gap-2">
-                    <AlertCircle size={18} className="shrink-0" />
-                    {error}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
               onClick={() => {
+                let hasLocalErr = false;
                 if (!selectedDateStr || !selectedSlot) {
-                  setError("Proszę wybrać datę i godzinę wizyty w kalendarzu po lewej stronie.");
+                  setError('date');
+                  hasLocalErr = true;
                 } else if (!acceptedTerms) {
-                  setError("Proszę zaakceptować regulamin i politykę prywatności.");
+                  setError('terms');
+                  hasLocalErr = true;
                 }
+                
+                // Form HTML5 validations are bypassed by noValidate, 
+                // so handleSubmit will be called and our custom JS validation will run.
               }}
               className="w-full py-4 rounded-xl font-bold text-lg transition-all mt-6 bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl"
             >

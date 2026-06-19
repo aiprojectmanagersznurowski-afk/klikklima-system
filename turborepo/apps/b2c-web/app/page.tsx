@@ -315,7 +315,7 @@ export default function Page() {
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
                 {[
                   "Profesjonalny serwis",
-                  "Gwarancja do 5 lat",
+                  "Gwarancja 5 lat",
                   "Montaż w 1 dzień",
                 ].map((b) => (
                   <div key={b} className="flex items-center gap-2">
