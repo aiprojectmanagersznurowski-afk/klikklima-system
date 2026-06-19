@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export type LocationType = 'Mieszkanie' | 'Dom' | 'Lokal komercyjny' | null;
-export type RoomCount = 1 | 2 | 3 | 4 | null;
+export type RoomCount = 1 | 2 | 3 | 4 | 5 | null;
 export type RoomSize = 'Do 25 m²' | '26-35 m²' | '36-50 m²' | 'Powyżej 50 m²';
 export type BuildingState = 'Wykończony / Zamieszkany' | 'W trakcie remontu' | 'Stan deweloperski' | null;
 
@@ -80,7 +80,7 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
   
   get isExpertScreen() {
     const { location, roomCount } = get().data;
-    return location === 'Lokal komercyjny' || roomCount === 4;
+    return location === 'Lokal komercyjny';
   },
 
   goToStep: (stepNumber) => set((state) => ({ 

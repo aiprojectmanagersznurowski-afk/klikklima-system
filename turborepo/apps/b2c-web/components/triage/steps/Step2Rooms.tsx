@@ -28,7 +28,7 @@ export const Step2Rooms = () => {
       title="W ilu pomieszczeniach?" 
       subtitle="Określ, ile pomieszczeń wymaga klimatyzacji."
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
         <OptionCard
           title="1 pomieszczenie"
           icon={<LayoutPanelLeft size={40} strokeWidth={1.5} />}
@@ -52,6 +52,12 @@ export const Step2Rooms = () => {
           icon={<LayoutDashboard size={40} strokeWidth={1.5} />}
           selected={state.roomCount === 4}
           onClick={() => handleSelect(4)}
+        />
+        <OptionCard
+          title="5 pomieszczeń"
+          icon={<Layers size={40} strokeWidth={1.5} />}
+          selected={state.roomCount === 5}
+          onClick={() => handleSelect(5)}
         />
       </div>
     </StepWrapper>
