@@ -10,6 +10,7 @@ import { X, Phone, ArrowRight, CheckCircle2, PhoneCall } from "lucide-react";
 export default function ExitIntentModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [phone, setPhone] = useState("");
+  const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,9 +26,20 @@ export default function ExitIntentModal() {
     }
   });
 
+  const validatePhone = (p: string) => {
+    const cleaned = p.replace(/[\s\-\(\)]/g, "");
+    const regex = /^(?:\+?48)?\d{9}$/;
+    return regex.test(cleaned);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone) return;
+
+    if (!validatePhone(phone)) {
+      setError("Wprowadź poprawny 9-cyfrowy numer telefonu.");
+      return;
+    }
 
     setIsSubmitting(true);
     // Wywołanie Server Action do zapisu w Supabase
@@ -102,18 +114,26 @@ export default function ExitIntentModal() {
                   </p>
 
                   <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Phone className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <Phone className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => {
+                            setPhone(e.target.value);
+                            setError("");
+                          }}
+                          placeholder="Twój numer telefonu"
+                          required
+                          className={`w-full bg-gray-50 border ${error ? "border-red-500 focus:ring-red-500/20" : "border-gray-200 focus:ring-primary/20 focus:border-primary"} text-gray-900 font-medium rounded-xl py-4 pl-12 pr-4 outline-none focus:bg-white focus:ring-2 transition-all`}
+                        />
                       </div>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="Twój numer telefonu"
-                        required
-                        className="w-full bg-gray-50 border border-gray-200 text-gray-900 font-medium rounded-xl py-4 pl-12 pr-4 outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      />
+                      {error && (
+                        <p className="text-red-500 text-xs mt-2 ml-1 font-medium">{error}</p>
+                      )}
                     </div>
 
                     <button
