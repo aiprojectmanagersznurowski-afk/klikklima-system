@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { getFomoSlots, type FomoData } from "./actions/getFomoSlots";
 import { getBestsellers, type BestsellerProduct as Product } from "./actions/getBestsellers";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import ExitIntentModal from "@/components/triage/ExitIntentModal";
 import { DeviceModal, type DeviceData } from "@/components/ui/DeviceModal";
 import { ProductCard, calcBrutto } from "@/components/ui/ProductCard";
 import { companyDetails } from "@/config/company";
 import {
-  Menu,
-  X,
   ArrowRight,
   CheckCircle2,
   MonitorSmartphone,
@@ -20,20 +20,15 @@ import {
   BadgeCheck,
   Zap,
   ChevronRight,
-  Phone,
-  Mail,
-  MapPin,
-  Camera,
-  Globe,
   Star,
 } from "lucide-react";
 
 /* ─── Data ───────────────────────────────────────────────────────────────── */
 
 const navLinks = [
-  { label: "Oferta", href: "#oferta" },
-  { label: "Proces", href: "#proces" },
-  { label: "Bestsellery", href: "#bestsellery" },
+  { label: "Oferta", href: "/#oferta" },
+  { label: "Proces", href: "/#proces" },
+  { label: "Bestsellery", href: "/#bestsellery" },
   { label: "Baza wiedzy", href: "/baza-wiedzy" },
   { label: "O nas", href: "/o-nas" },
 ];
@@ -129,8 +124,6 @@ function GlassCard({
 /* ─── Main Component ─────────────────────────────────────────────────────── */
 
 export default function Page() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [fomoData, setFomoData] = useState<FomoData | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
@@ -146,9 +139,6 @@ export default function Page() {
       setDbProducts(devices);
     });
 
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
@@ -157,82 +147,7 @@ export default function Page() {
       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled || menuOpen
-          ? "bg-white/95 backdrop-blur-xl border-b border-border shadow-sm"
-          : "bg-transparent"
-          }`}
-      >
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 sm:h-20 flex items-center justify-between gap-6">
-          {/* Logo */}
-          <a href="#" className="flex items-center gap-3 flex-shrink-0">
-            <img
-              src="/logo.png"
-              alt="Klik Klima"
-              className={`h-9 sm:h-11 w-auto transition-all duration-300 ${!scrolled && !menuOpen ? "brightness-0 invert" : ""
-                }`}
-            />
-          </a>
-
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((l) => (
-              <a
-                key={l.label}
-                href={l.href}
-                className={`text-sm font-medium transition-colors ${scrolled || menuOpen
-                  ? "text-foreground/70 hover:text-foreground"
-                  : "text-white/80 hover:text-white"
-                  }`}
-              >
-                {l.label}
-              </a>
-            ))}
-          </nav>
-
-          {/* CTA + hamburger */}
-          <div className="flex items-center gap-3">
-            <a
-              href="/triage"
-              className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold text-sm rounded-xl px-5 py-2.5 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_8px_24px_rgba(23,80,200,0.35)] active:scale-[0.97]"
-            >
-              Wykonaj darmową wycenę
-              <ArrowRight className="w-4 h-4" />
-            </a>
-            <button
-              className={`md:hidden p-2 rounded-lg transition-colors ${scrolled || menuOpen ? "text-foreground" : "text-white"
-                }`}
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-label="Menu"
-            >
-              {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        {menuOpen && (
-          <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-border px-5 py-5 flex flex-col gap-4">
-            {navLinks.map((l) => (
-              <a
-                key={l.label}
-                href={l.href}
-                onClick={() => setMenuOpen(false)}
-                className="text-base font-medium text-foreground py-1 border-b border-border/50 last:border-0"
-              >
-                {l.label}
-              </a>
-            ))}
-            <a
-              href="/triage"
-              className="mt-2 w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl px-5 py-3.5 transition-all hover:bg-[#1244b0]"
-            >
-              Wykonaj darmową wycenę
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </div>
-        )}
-      </header>
+      <Navbar />
 
       {/* ── Hero ───────────────────────────────────────────────────────── */}
       <section className="relative min-h-screen flex items-center pt-16 overflow-hidden bg-[#0d1b2e]">
@@ -475,96 +390,7 @@ export default function Page() {
       </section>
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
-      <footer id="kontakt" className="bg-foreground text-white/80">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
-            {/* Brand */}
-            <div className="flex flex-col gap-5">
-              <img
-                src="/logo.png"
-                alt="Klik Klima"
-                className="h-10 w-auto brightness-0 invert opacity-90 self-start"
-              />
-              <p className="text-sm leading-relaxed text-white/60 max-w-xs">
-                Lokalna firma klimatyzacyjna<br />
-                Sprzedaż, profesjonalny montaż i serwis urządzeń marek premium
-              </p>
-              <div className="flex gap-3 mt-1">
-                <a
-                  href="https://www.instagram.com/klikklima"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                >
-                  <Camera className="w-4 h-4" />
-                </a>
-                <a
-                  href="#"
-                  aria-label="Facebook"
-                  className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                >
-                  <Globe className="w-4 h-4" />
-                </a>
-              </div>
-            </div>
-
-            {/* Links */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-5">
-                Nawigacja
-              </p>
-              <ul className="flex flex-col gap-3">
-                {navLinks.map((l) => (
-                  <li key={l.label}>
-                    <a
-                      href={l.href}
-                      className="text-sm text-white/70 hover:text-white transition-colors"
-                    >
-                      {l.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-5">
-                Kontakt
-              </p>
-              <ul className="flex flex-col gap-4">
-                <li className="flex items-start gap-3 text-sm text-white/70">
-                  <Phone className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" />
-                  <span>{companyDetails.phoneDisplay}</span>
-                </li>
-                <li className="flex items-start gap-3 text-sm text-white/70">
-                  <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" />
-                  <span>{companyDetails.email}</span>
-                </li>
-                <li className="flex items-start gap-3 text-sm text-white/70">
-                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" />
-                  <span>{companyDetails.address}, {companyDetails.city}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/40">
-            <p>
-              © {new Date().getFullYear()} {companyDetails.name} {companyDetails.owner} · NIP: {companyDetails.nip}
-            </p>
-            <div className="flex gap-5">
-              <a href="/polityka-prywatnosci" className="hover:text-white/70 transition-colors">
-                Polityka Prywatności
-              </a>
-              <a href="/regulamin" className="hover:text-white/70 transition-colors">
-                Regulamin
-              </a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Wyłapywanie wychodzących użytkowników (Soft Leads) */}
       <ExitIntentModal />

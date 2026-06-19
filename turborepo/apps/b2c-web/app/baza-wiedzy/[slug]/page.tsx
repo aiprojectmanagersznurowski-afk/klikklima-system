@@ -4,6 +4,9 @@ import { ChevronLeft, Calendar } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { articles } from '@/lib/articles';
+import fs from 'fs/promises';
+import path from 'path';
+import ReactMarkdown from 'react-markdown';
 
 // Static params for static site generation
 export function generateStaticParams() {
@@ -12,11 +15,19 @@ export function generateStaticParams() {
   }));
 }
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
+export default async function ArticlePage({ params }: { params: { slug: string } }) {
   const article = articles.find((a) => a.slug === params.slug);
 
   if (!article) {
     notFound();
+  }
+
+  let fileContent = '';
+  try {
+    const filePath = path.join(process.cwd(), 'content', 'articles', `${params.slug}.md`);
+    fileContent = await fs.readFile(filePath, 'utf8');
+  } catch (error) {
+    console.error("Brak pliku MD dla tego artykułu.");
   }
 
   return (
@@ -42,7 +53,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               <Calendar className="w-4 h-4" />
               {article.date}
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1] mb-8">
+            <h1 className="text-5xl sm:text-6xl lg:text-8xl font-bold tracking-tight text-foreground leading-[1.05] mb-8">
               {article.title}
             </h1>
             <p className="text-xl sm:text-2xl text-muted-foreground leading-relaxed font-medium">
@@ -74,8 +85,13 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               [&_em]:italic
               [&_a]:text-primary hover:[&_a]:text-primary/80
             "
-            dangerouslySetInnerHTML={{ __html: article.content }}
-          />
+          >
+            {fileContent ? (
+              <ReactMarkdown>{fileContent}</ReactMarkdown>
+            ) : (
+              <div dangerouslySetInnerHTML={{ __html: article.content }} />
+            )}
+          </div>
         </article>
       </main>
 

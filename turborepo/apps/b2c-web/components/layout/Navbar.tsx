@@ -1,51 +1,116 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Phone } from "lucide-react";
-import { companyDetails } from "@/config/company";
+import { usePathname } from "next/navigation";
+import { Menu, X, ArrowRight } from "lucide-react";
+
+const navLinks = [
+  { label: "Oferta", href: "/#oferta" },
+  { label: "Proces", href: "/#proces" },
+  { label: "Bestsellery", href: "/#bestsellery" },
+  { label: "Baza wiedzy", href: "/baza-wiedzy" },
+  { label: "O nas", href: "/o-nas" },
+];
 
 export default function Navbar() {
-  return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="flex items-center gap-2">
-              <img
-                src="/logo.png"
-                alt="Klik Klima"
-                className="h-9 sm:h-10 w-auto"
-              />
-            </Link>
-          </div>
-          
-          <div className="hidden md:flex space-x-8 items-center">
-            <Link href="/#jak-to-dziala" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
-              Jak to działa?
-            </Link>
-            <Link href="/#gwarancje" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
-              Gwarancje
-            </Link>
-            <Link href="/baza-wiedzy" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
-              Baza wiedzy
-            </Link>
-          </div>
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
-          <div className="flex items-center gap-4">
-            <a 
-              href={`tel:${companyDetails.phone}`} 
-              className="hidden md:flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-emerald-600 transition-colors"
+  const isHomePage = pathname === "/";
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    // Check initial scroll
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const isSolid = !isHomePage || scrolled || menuOpen;
+
+  return (
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isSolid
+          ? "bg-white/95 backdrop-blur-xl border-b border-border shadow-sm"
+          : "bg-transparent"
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 sm:h-20 flex items-center justify-between gap-6">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3 flex-shrink-0">
+          <img
+            src="/logo.png"
+            alt="Klik Klima"
+            className={`h-9 sm:h-11 w-auto transition-all duration-300 ${
+              !isSolid ? "brightness-0 invert" : ""
+            }`}
+          />
+        </Link>
+
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-8">
+          {navLinks.map((l) => (
+            <Link
+              key={l.label}
+              href={l.href}
+              className={`text-sm font-medium transition-colors ${
+                isSolid
+                  ? "text-foreground/70 hover:text-foreground"
+                  : "text-white/80 hover:text-white"
+              }`}
             >
-              <Phone className="w-4 h-4" />
-              <span>{companyDetails.phoneDisplay}</span>
-            </a>
-            <Link 
-              href="/triage"
-              className="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2.5 rounded-full text-sm font-medium transition-colors"
-            >
-              Darmowa wycena
+              {l.label}
             </Link>
-          </div>
+          ))}
+        </nav>
+
+        {/* CTA + hamburger */}
+        <div className="flex items-center gap-3">
+          <Link
+            href="/triage"
+            className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold text-sm rounded-xl px-5 py-2.5 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_8px_24px_rgba(23,80,200,0.35)] active:scale-[0.97]"
+          >
+            Wykonaj darmową wycenę
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <button
+            className={`md:hidden p-2 rounded-lg transition-colors ${
+              isSolid ? "text-foreground" : "text-white"
+            }`}
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Menu"
+          >
+            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
       </div>
-    </nav>
+
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-border px-5 py-5 flex flex-col gap-4 shadow-xl">
+          {navLinks.map((l) => (
+            <Link
+              key={l.label}
+              href={l.href}
+              onClick={() => setMenuOpen(false)}
+              className="text-base font-medium text-foreground py-2 border-b border-border/50 last:border-0"
+            >
+              {l.label}
+            </Link>
+          ))}
+          <Link
+            href="/triage"
+            onClick={() => setMenuOpen(false)}
+            className="mt-2 w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl px-5 py-3.5 transition-all hover:bg-[#1244b0]"
+          >
+            Wykonaj darmową wycenę
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+    </header>
   );
 }
