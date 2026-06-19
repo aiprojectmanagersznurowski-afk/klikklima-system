@@ -15,8 +15,9 @@ export function generateStaticParams() {
   }));
 }
 
-export default async function ArticlePage({ params }: { params: { slug: string } }) {
-  const article = articles.find((a) => a.slug === params.slug);
+export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const article = articles.find((a) => a.slug === slug);
 
   if (!article) {
     notFound();
@@ -24,7 +25,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
 
   let fileContent = '';
   try {
-    const filePath = path.join(process.cwd(), 'content', 'articles', `${params.slug}.md`);
+    const filePath = path.join(process.cwd(), 'content', 'articles', `${slug}.md`);
     fileContent = await fs.readFile(filePath, 'utf8');
   } catch (error) {
     console.error("Brak pliku MD dla tego artykułu.");
