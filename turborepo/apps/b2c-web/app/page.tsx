@@ -179,15 +179,28 @@ export default function Page() {
                 <div className="inline-flex items-center gap-2.5 bg-white/15 backdrop-blur-sm border border-orange-300/40 rounded-full px-4 py-2.5 mb-7 shadow-sm">
                   <span className="text-base leading-none">🔥</span>
                   <span className="text-sm font-semibold text-orange-200">
-                    {fomoData.slots === 1 ? (
-                      <>
-                        Został <span className="text-orange-300 font-extrabold">1</span> wolny termin {fomoData.period || "w tym tygodniu"} na darmowy audyt
-                      </>
-                    ) : (
-                      <>
-                        Zostały <span className="text-orange-300 font-extrabold">{fomoData.slots}</span> wolne terminy {fomoData.period || "w tym tygodniu"} na darmowy audyt
-                      </>
-                    )}
+                    {(() => {
+                      const count = fomoData.slots;
+                      const lastDigit = count % 10;
+                      const lastTwoDigits = count % 100;
+                      
+                      let verb = "Zostało";
+                      let noun = "wolnych terminów";
+                      
+                      if (count === 1) {
+                        verb = "Został";
+                        noun = "wolny termin";
+                      } else if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 12 || lastTwoDigits > 14)) {
+                        verb = "Zostały";
+                        noun = "wolne terminy";
+                      }
+
+                      return (
+                        <>
+                          {verb} <span className="text-orange-300 font-extrabold">{count}</span> {noun} {fomoData.period || "w tym tygodniu"} na darmowy audyt
+                        </>
+                      );
+                    })()}
                   </span>
                 </div>
               )}
