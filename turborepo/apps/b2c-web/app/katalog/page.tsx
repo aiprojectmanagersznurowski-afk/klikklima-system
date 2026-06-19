@@ -5,7 +5,10 @@ import { getCatalog, type CatalogData } from "../actions/getCatalog";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { DeviceModal, type DeviceData } from "@/components/ui/DeviceModal";
 import { type BestsellerProduct as Product } from "../actions/getBestsellers";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
+import { useRouter } from 'next/navigation';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 import { calcBrutto } from "@/components/ui/ProductCard";
 
 function buildMockDevice(product: Product): DeviceData {
@@ -29,6 +32,7 @@ function buildMockDevice(product: Product): DeviceData {
 }
 
 export default function CatalogPage() {
+  const router = useRouter();
   const [catalog, setCatalog] = useState<CatalogData | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -39,37 +43,35 @@ export default function CatalogPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#fafbfc] pb-24 font-sans text-foreground">
-      {/* Header */}
-      <header className="fixed top-0 w-full z-50 transition-all duration-300 bg-white/80 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <a href="/#bestsellery" className="text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </a>
-            <a href="/" className="flex items-center gap-3 flex-shrink-0">
-              <img
-                src="/logo.png"
-                alt="Klik Klima"
-                className="h-9 sm:h-11 w-auto"
-              />
-            </a>
-          </div>
+    <div className="min-h-screen bg-white">
+      <Navbar />
+
+      <main className="pt-32 pb-24 sm:pt-40 sm:pb-32">
+        <div className="px-6 lg:px-12 max-w-7xl mx-auto mb-8">
+          <button 
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium"
+          >
+            <ChevronLeft size={20} />
+            Wstecz
+          </button>
         </div>
-      </header>
 
-      {/* Hero */}
-      <div className="pt-32 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
-          Katalog Urządzeń
-        </h1>
-        <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
-          Poznaj naszą ofertę klimatyzatorów ściennych oraz systemów Multi-Split. Transparentne ceny z montażem, bez niespodzianek.
-        </p>
-      </div>
+        {/* Hero */}
+        <section className="px-6 lg:px-12 max-w-7xl mx-auto mb-32">
+          <div className="max-w-4xl">
+            <h1 className="text-5xl sm:text-6xl lg:text-8xl font-bold tracking-tight text-foreground leading-[1.05] mb-8">
+              Katalog <br className="hidden sm:block" />
+              <span className="text-primary">Urządzeń.</span>
+            </h1>
+            <p className="text-xl sm:text-2xl text-muted-foreground leading-relaxed max-w-2xl font-medium">
+              Poznaj naszą ofertę klimatyzatorów ściennych oraz systemów Multi-Split. Transparentne ceny z montażem, bez niespodzianek.
+            </p>
+          </div>
+        </section>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
+        {/* Content */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 space-y-24">
         
         {/* Single Split */}
         <section>
@@ -139,12 +141,15 @@ export default function CatalogPage() {
 
       </div>
 
-      {/* Modal Device */}
-      <DeviceModal
-        isOpen={selectedProduct !== null}
-        onClose={() => setSelectedProduct(null)}
-        device={selectedProduct ? buildMockDevice(selectedProduct) : null}
-      />
+        {/* Modal Device */}
+        <DeviceModal
+          isOpen={selectedProduct !== null}
+          onClose={() => setSelectedProduct(null)}
+          device={selectedProduct ? buildMockDevice(selectedProduct) : null}
+        />
+      </main>
+
+      <Footer />
     </div>
   );
 }
