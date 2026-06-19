@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import { ChevronLeft, Calendar } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { articles } from '@/lib/articles';
@@ -26,13 +26,15 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       <main className="pt-32 pb-24 sm:pt-40 sm:pb-32">
         <article className="max-w-4xl mx-auto px-6 lg:px-12">
           {/* Back button */}
-          <Link 
-            href="/baza-wiedzy"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors mb-12"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Wróć do bazy wiedzy
-          </Link>
+          <div className="mb-12">
+            <Link 
+              href="/baza-wiedzy"
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium"
+            >
+              <ChevronLeft size={20} />
+              Wstecz
+            </Link>
+          </div>
 
           {/* Article Header */}
           <header className="mb-12">

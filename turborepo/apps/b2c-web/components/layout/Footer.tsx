@@ -8,9 +8,9 @@ export default function Footer() {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center mb-6">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png"
+                src="/logo.png"
                 alt="Klik Klima"
-                className="h-9 w-auto brightness-0"
+                className="h-10 w-auto brightness-0 invert opacity-90"
               />
             </div>
             <p className="text-gray-500 text-sm max-w-sm mb-6">

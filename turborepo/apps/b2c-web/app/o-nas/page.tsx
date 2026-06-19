@@ -1,16 +1,30 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, Smartphone, Wrench, Megaphone, CheckCircle2, Server, ThermometerSnowflake, Workflow, Layers, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Smartphone, Wrench, Megaphone, CheckCircle2, Server, ThermometerSnowflake, Workflow, Layers, ShieldCheck, ChevronLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
 export default function AboutPage() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
       <main className="pt-32 pb-24 sm:pt-40 sm:pb-32">
-        
+        <div className="px-6 lg:px-12 max-w-7xl mx-auto mb-8">
+          <button 
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium"
+          >
+            <ChevronLeft size={20} />
+            Wstecz
+          </button>
+        </div>
+
         {/* HERO SECTION */}
         <section className="px-6 lg:px-12 max-w-7xl mx-auto mb-32">
           <div className="max-w-4xl">

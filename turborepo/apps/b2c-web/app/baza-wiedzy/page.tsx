@@ -1,27 +1,42 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, BookOpen } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { articles } from '@/lib/articles';
 
 export default function KnowledgeBasePage() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
       <main className="pt-32 pb-24 sm:pt-40 sm:pb-32">
+        <div className="px-6 lg:px-12 max-w-7xl mx-auto mb-8">
+          <button 
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium"
+          >
+            <ChevronLeft size={20} />
+            Wstecz
+          </button>
+        </div>
+
         {/* Header */}
-        <section className="px-6 lg:px-12 max-w-7xl mx-auto mb-20 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl mb-6">
-            <BookOpen className="w-8 h-8" strokeWidth={1.5} />
+        <section className="px-6 lg:px-12 max-w-7xl mx-auto mb-32">
+          <div className="max-w-4xl">
+            <h1 className="text-5xl sm:text-6xl lg:text-8xl font-bold tracking-tight text-foreground leading-[1.05] mb-8">
+              Baza wiedzy <br className="hidden sm:block" />
+              <span className="text-primary">Ekspertów.</span>
+            </h1>
+            <p className="text-xl sm:text-2xl text-muted-foreground leading-relaxed max-w-2xl font-medium">
+              Praktyczne porady, ciekawostki i ekspertyzy ze świata klimatyzacji i pomp ciepła.
+            </p>
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6">
-            Baza wiedzy
-          </h1>
-          <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium">
-            Praktyczne porady, ciekawostki i ekspertyzy ze świata klimatyzacji i pomp ciepła.
-          </p>
         </section>
 
         {/* Articles Grid */}

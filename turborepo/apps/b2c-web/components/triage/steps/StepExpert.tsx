@@ -2,8 +2,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTriageStore } from '@/store/triageStore';
+import { companyDetails } from '@/config/company';
 import { StepWrapper } from '../StepWrapper';
-import { PhoneCall, Building } from 'lucide-react';
+import { PhoneCall, Building, Phone } from 'lucide-react';
 
 export const StepExpert = () => {
   const { prevStep } = useTriageStore();
@@ -25,11 +26,11 @@ export const StepExpert = () => {
         </p>
 
         <a 
-          href="tel:+48123456789" 
-          className="inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground py-4 px-8 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:shadow-xl transition-all mb-6"
+          href={`tel:${companyDetails.phone}`} 
+          className="inline-flex items-center justify-center gap-3 w-full bg-secondary text-foreground font-bold text-lg rounded-xl px-8 py-4 transition-all hover:bg-secondary/80 mb-6"
         >
-          <PhoneCall size={22} />
-          +48 123 456 789
+          <Phone className="w-5 h-5 text-primary" />
+          {companyDetails.phoneDisplay}
         </a>
 
         <div className="mt-8 pt-8 border-t border-border">

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { PhoneCall } from "lucide-react";
+import { Phone } from "lucide-react";
+import { companyDetails } from "@/config/company";
 
 export default function Navbar() {
   return (
@@ -9,9 +10,9 @@ export default function Navbar() {
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="flex items-center gap-2">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png"
+                src="/logo.png"
                 alt="Klik Klima"
-                className="h-9 sm:h-10 w-auto brightness-0"
+                className="h-9 sm:h-10 w-auto"
               />
             </Link>
           </div>
@@ -30,11 +31,11 @@ export default function Navbar() {
 
           <div className="flex items-center gap-4">
             <a 
-              href="tel:+48123456789" 
-              className="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-emerald-600 transition-colors"
+              href={`tel:${companyDetails.phone}`} 
+              className="hidden md:flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-emerald-600 transition-colors"
             >
-              <PhoneCall size={16} />
-              <span>+48 123 456 789</span>
+              <Phone className="w-4 h-4" />
+              <span>{companyDetails.phoneDisplay}</span>
             </a>
             <Link 
               href="/triage"
