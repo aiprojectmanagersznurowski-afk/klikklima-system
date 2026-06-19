@@ -20,7 +20,7 @@ export default function Footer() {
             <img
               src="/logo.png"
               alt="Klik Klima"
-              className="h-10 w-auto brightness-0 invert opacity-90 self-start"
+              className="h-[66px] sm:h-[80px] w-auto brightness-0 invert opacity-90 self-start"
             />
             <p className="text-sm leading-relaxed text-white/60 max-w-xs">
               Lokalna firma klimatyzacyjna<br />
