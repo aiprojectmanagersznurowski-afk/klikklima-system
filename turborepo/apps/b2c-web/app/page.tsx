@@ -175,7 +175,7 @@ export default function Page() {
               }}
             >
               {/* FOMO / Scarcity badge */}
-              {fomoData !== null && fomoData.slots < 5 && (
+              {fomoData !== null && (
                 <div className="inline-flex items-center gap-2.5 bg-white/15 backdrop-blur-sm border border-orange-300/40 rounded-full px-4 py-2.5 mb-7 shadow-sm">
                   <span className="text-base leading-none">🔥</span>
                   <span className="text-sm font-semibold text-orange-200">
