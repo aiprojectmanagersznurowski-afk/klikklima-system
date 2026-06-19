@@ -296,7 +296,7 @@ export const Step8Booking = () => {
                 >
                   <div className="p-4 bg-rose-50 text-rose-600 rounded-xl text-sm font-medium border border-rose-100 flex items-center gap-2">
                     <AlertCircle size={18} className="shrink-0" />
-                    Proszę wybrać datę i godzinę wizyty w powyższym kalendarzu.
+                    Wybierz datę i godzinę wizyty.
                   </div>
                 </motion.div>
               )}
