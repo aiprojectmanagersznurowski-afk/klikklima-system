@@ -34,6 +34,7 @@ const navLinks = [
   { label: "Oferta", href: "#oferta" },
   { label: "Proces", href: "#proces" },
   { label: "Bestsellery", href: "#bestsellery" },
+  { label: "Baza wiedzy", href: "/baza-wiedzy" },
   { label: "O nas", href: "/o-nas" },
 ];
 

@@ -8,13 +8,11 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-20">
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="flex items-center gap-2">
-              {/* Minimalist Logo Icon */}
-              <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center transform rotate-3">
-                <div className="w-4 h-4 border-2 border-white rounded-full"></div>
-              </div>
-              <span className="font-bold text-xl tracking-tight text-gray-900">
-                KlikKlima
-              </span>
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png"
+                alt="Klik Klima"
+                className="h-9 sm:h-10 w-auto brightness-0"
+              />
             </Link>
           </div>
           
@@ -25,7 +23,7 @@ export default function Navbar() {
             <Link href="/#gwarancje" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
               Gwarancje
             </Link>
-            <Link href="/#baza-wiedzy" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+            <Link href="/baza-wiedzy" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
               Baza wiedzy
             </Link>
           </div>
