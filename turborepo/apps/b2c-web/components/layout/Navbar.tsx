@@ -44,7 +44,7 @@ export default function Navbar() {
           <img
             src="/logo.png"
             alt="Klik Klima"
-            className={`h-12 sm:h-14 w-auto transition-all duration-300 ${
+            className={`h-[60px] sm:h-[72px] w-auto transition-all duration-300 ${
               !isSolid ? "brightness-0 invert" : ""
             }`}
           />
