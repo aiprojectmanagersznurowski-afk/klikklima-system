@@ -1,12 +1,18 @@
 "use server";
 
-import { createSupabaseClient } from "@repo/database";
+import { createClient } from "@supabase/supabase-js";
+
+function getAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
 
 export async function saveSoftLead(contactInfo: string, partialData: any) {
   try {
-    const supabase = createSupabaseClient();
+    const supabaseAdmin = getAdminClient();
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("soft_leady")
       .insert([
         {
@@ -26,10 +32,10 @@ export async function saveSoftLead(contactInfo: string, partialData: any) {
 
 export async function submitFinalTriage(triageData: any, contactData: any, addressData: any) {
   try {
-    const supabase = createSupabaseClient();
+    const supabaseAdmin = getAdminClient();
     
     // First save the main lead
-    const { data: leadData, error: leadError } = await supabase
+    const { data: leadData, error: leadError } = await supabaseAdmin
       .from("leady")
       .insert([
         {
@@ -47,7 +53,7 @@ export async function submitFinalTriage(triageData: any, contactData: any, addre
     const leadId = leadData.id;
 
     // Then save the client info
-    const { data: clientData, error: clientError } = await supabase
+    const { data: clientData, error: clientError } = await supabaseAdmin
       .from("klienci")
       .insert([
         {
@@ -64,7 +70,7 @@ export async function submitFinalTriage(triageData: any, contactData: any, addre
     const clientId = clientData.id;
 
     // Then save the address
-    const { error: addressError } = await supabase
+    const { error: addressError } = await supabaseAdmin
       .from("adresy")
       .insert([
         {
@@ -78,7 +84,7 @@ export async function submitFinalTriage(triageData: any, contactData: any, addre
     if (addressError) throw addressError;
 
     // Also link the client to the lead (requires updating the lead)
-    const { error: linkError } = await supabase
+    const { error: linkError } = await supabaseAdmin
       .from("leady")
       .update({ klient_id: clientId })
       .eq("id", leadId);
