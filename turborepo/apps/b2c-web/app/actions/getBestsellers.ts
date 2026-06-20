@@ -2,6 +2,11 @@
 
 import { supabase } from "@/lib/supabaseClient";
 
+export interface Feature {
+  iconName: string;
+  label: string;
+}
+
 export interface BestsellerProduct {
   id: string;
   brand: string;
@@ -13,8 +18,9 @@ export interface BestsellerProduct {
   installNettoPrice: number;
   tag?: string;
   marketingDesc?: string;
-  features?: any; // parsed JSON
-  gallery?: any; // parsed JSON
+  features?: Feature[];
+  gallery?: { id: string; src: string; alt: string }[];
+  _raw?: any;
 }
 
 export async function getBestsellers(): Promise<BestsellerProduct[]> {
@@ -49,7 +55,7 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
         d.has_wifi ? { iconName: "Wifi", label: "WIFI w standardzie" } : null,
         d.has_presence_sensor ? { iconName: "Eye", label: "Czujnik obecności" } : null,
         d.is_silent_mode ? { iconName: "Wind", label: "Tryb cichy" } : null,
-      ].filter(Boolean);
+      ].filter(Boolean) as Feature[];
 
       return {
         id: d.id,

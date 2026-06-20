@@ -50,6 +50,8 @@ CREATE TABLE indoor_units (
     price_netto NUMERIC,
     image_url TEXT,
     marketing_description TEXT,
+    color TEXT DEFAULT 'Biały',
+    recommended_area_m2 INTEGER,
     is_bestseller BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

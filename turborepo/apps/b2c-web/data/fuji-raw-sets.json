@@ -1,0 +1,973 @@
+{
+    "Zestawy Single (Klimatyzatory Ścienne)": [
+        {
+            "indoorModelCode": "ASHH07KGTG",
+            "outdoorModelCode": "AOHH07KGCG",
+            "hasWifi": true,
+            "hasPresenceSensor": true,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH09KGTG",
+            "outdoorModelCode": "AOHH09KGCG",
+            "hasWifi": true,
+            "hasPresenceSensor": true,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH12KGTG",
+            "outdoorModelCode": "AOHH12KGCG",
+            "hasWifi": true,
+            "hasPresenceSensor": true,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH14KGTG",
+            "outdoorModelCode": "AOHH14KGCG",
+            "hasWifi": true,
+            "hasPresenceSensor": true,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH07KJCAL",
+            "outdoorModelCode": "AOHH07KJCA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH07KJCAL-B",
+            "outdoorModelCode": "AOHH07KJCA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH09KJCAL",
+            "outdoorModelCode": "AOHH09KJCA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH09KJCAL-B",
+            "outdoorModelCode": "AOHH09KJCA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH12KJCAL",
+            "outdoorModelCode": "AOHH12KJCA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH12KJCAL-B",
+            "outdoorModelCode": "AOHH12KJCA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH14KJCAL",
+            "outdoorModelCode": "AOHH14KJCA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH14KJCAL-B",
+            "outdoorModelCode": "AOHH14KJCA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG07KETF",
+            "outdoorModelCode": "AOHG07KETA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG07KETF-B",
+            "outdoorModelCode": "AOHG07KETA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG09KETF",
+            "outdoorModelCode": "AOHG09KETA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG09KETF-B",
+            "outdoorModelCode": "AOHG09KETA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG12KETF",
+            "outdoorModelCode": "AOHG12KETA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG12KETF-B",
+            "outdoorModelCode": "AOHG12KETA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG14KETF",
+            "outdoorModelCode": "AOHG14KETA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG14KETF-B",
+            "outdoorModelCode": "AOHG14KETA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH07KMCG",
+            "outdoorModelCode": "AOHH07KMCG",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH07KMCG-B",
+            "outdoorModelCode": "AOHH07KMCG",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH09KMCG",
+            "outdoorModelCode": "AOHH09KMCG",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH09KMCG-B",
+            "outdoorModelCode": "AOHH09KMCG",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH12KMCG",
+            "outdoorModelCode": "AOHH12KMCG",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH12KMCG-B",
+            "outdoorModelCode": "AOHH12KMCG",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH14KMCG",
+            "outdoorModelCode": "AOHH14KMCG",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH14KMCG-B",
+            "outdoorModelCode": "AOHH14KMCG",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG07KMCC",
+            "outdoorModelCode": "AOHG07KMCC",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG09KMCC",
+            "outdoorModelCode": "AOHG09KMCC",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG12KMCC",
+            "outdoorModelCode": "AOHG12KMCC",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG14KMCC",
+            "outdoorModelCode": "AOHG14KMCC",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG18KMTA",
+            "outdoorModelCode": "AOHG18KMTA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG24KMTA",
+            "outdoorModelCode": "AOHG24KMTA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG30KMTA",
+            "outdoorModelCode": "AOHG30KMTA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG36KMTA",
+            "outdoorModelCode": "AOHG36KMTA",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG09KMCEN",
+            "outdoorModelCode": "AOHG09KMCE",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG09KMCEN-B",
+            "outdoorModelCode": "AOHG09KMCE",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG12KMCEN",
+            "outdoorModelCode": "AOHG12KMCE",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG12KMCEN-B",
+            "outdoorModelCode": "AOHG12KMCE",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG14KMCEN",
+            "outdoorModelCode": "AOHG14KMCE",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG14KMCEN-B",
+            "outdoorModelCode": "AOHG14KMCE",
+            "hasWifi": true,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH05KNCA",
+            "outdoorModelCode": "AOHH05KNCA",
+            "hasWifi": false,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH07KNCA",
+            "outdoorModelCode": "AOHH07KNCA",
+            "hasWifi": false,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH09KNCA",
+            "outdoorModelCode": "AOHH09KNCA",
+            "hasWifi": false,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHH12KNCA",
+            "outdoorModelCode": "AOHH12KNCA",
+            "hasWifi": false,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG18KLCA",
+            "outdoorModelCode": "AOHG18KLCA",
+            "hasWifi": false,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG24KLCA",
+            "outdoorModelCode": "AOHG24KLCA",
+            "hasWifi": false,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG07KPCA",
+            "outdoorModelCode": "AOHG07KPCA",
+            "hasWifi": false,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG09KPCA",
+            "outdoorModelCode": "AOHG09KPCA",
+            "hasWifi": false,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        },
+        {
+            "indoorModelCode": "ASHG12KPCA",
+            "outdoorModelCode": "AOHG12KPCA",
+            "hasWifi": false,
+            "hasPresenceSensor": false,
+            "isSilentMode": true
+        }
+    ],
+    "Zestawy MultiSplit (Kombinacje)": [
+        {
+            "outdoorModelCode": "AOHG14KBTA2",
+            "indoorModelCodes": ["07", "07"],
+            "totalCapacitykBtu": 14
+        },
+        {
+            "outdoorModelCode": "AOHG14KBTA2",
+            "indoorModelCodes": ["07", "09"],
+            "totalCapacitykBtu": 16
+        },
+        {
+            "outdoorModelCode": "AOHG14KBTA2",
+            "indoorModelCodes": ["07", "12"],
+            "totalCapacitykBtu": 19
+        },
+        {
+            "outdoorModelCode": "AOHG14KBTA2",
+            "indoorModelCodes": ["07", "14"],
+            "totalCapacitykBtu": 21
+        },
+        {
+            "outdoorModelCode": "AOHG14KBTA2",
+            "indoorModelCodes": ["09", "09"],
+            "totalCapacitykBtu": 18
+        },
+        {
+            "outdoorModelCode": "AOHG14KBTA2",
+            "indoorModelCodes": ["09", "12"],
+            "totalCapacitykBtu": 21
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA2",
+            "indoorModelCodes": ["07", "07"],
+            "totalCapacitykBtu": 14
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA2",
+            "indoorModelCodes": ["07", "09"],
+            "totalCapacitykBtu": 16
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA2",
+            "indoorModelCodes": ["07", "12"],
+            "totalCapacitykBtu": 19
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA2",
+            "indoorModelCodes": ["07", "14"],
+            "totalCapacitykBtu": 21
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA2",
+            "indoorModelCodes": ["07", "18"],
+            "totalCapacitykBtu": 25
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA2",
+            "indoorModelCodes": ["09", "09"],
+            "totalCapacitykBtu": 18
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA2",
+            "indoorModelCodes": ["09", "12"],
+            "totalCapacitykBtu": 21
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA2",
+            "indoorModelCodes": ["09", "14"],
+            "totalCapacitykBtu": 23
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA2",
+            "indoorModelCodes": ["12", "12"],
+            "totalCapacitykBtu": 24
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA2",
+            "indoorModelCodes": ["12", "14"],
+            "totalCapacitykBtu": 26
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA3",
+            "indoorModelCodes": ["07", "07", "07"],
+            "totalCapacitykBtu": 21
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA3",
+            "indoorModelCodes": ["07", "07", "09"],
+            "totalCapacitykBtu": 23
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA3",
+            "indoorModelCodes": ["07", "07", "12"],
+            "totalCapacitykBtu": 26
+        },
+        {
+            "outdoorModelCode": "AOHG18KBTA3",
+            "indoorModelCodes": ["07", "09", "09"],
+            "totalCapacitykBtu": 25
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "07"],
+            "totalCapacitykBtu": 14
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "09"],
+            "totalCapacitykBtu": 16
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "12"],
+            "totalCapacitykBtu": 19
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "14"],
+            "totalCapacitykBtu": 21
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "18"],
+            "totalCapacitykBtu": 25
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "24"],
+            "totalCapacitykBtu": 31
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["09", "09"],
+            "totalCapacitykBtu": 18
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["09", "12"],
+            "totalCapacitykBtu": 21
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["09", "14"],
+            "totalCapacitykBtu": 23
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["09", "18"],
+            "totalCapacitykBtu": 27
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["09", "24"],
+            "totalCapacitykBtu": 33
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["12", "12"],
+            "totalCapacitykBtu": 24
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["12", "14"],
+            "totalCapacitykBtu": 26
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["12", "18"],
+            "totalCapacitykBtu": 30
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["12", "24"],
+            "totalCapacitykBtu": 36
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["14", "14"],
+            "totalCapacitykBtu": 28
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["14", "18"],
+            "totalCapacitykBtu": 32
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["18", "18"],
+            "totalCapacitykBtu": 36
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "07", "07"],
+            "totalCapacitykBtu": 21
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "07", "09"],
+            "totalCapacitykBtu": 23
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "07", "12"],
+            "totalCapacitykBtu": 26
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "07", "14"],
+            "totalCapacitykBtu": 28
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "07", "18"],
+            "totalCapacitykBtu": 32
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "09", "09"],
+            "totalCapacitykBtu": 25
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "09", "12"],
+            "totalCapacitykBtu": 28
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "09", "14"],
+            "totalCapacitykBtu": 30
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "09", "18"],
+            "totalCapacitykBtu": 34
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "12", "12"],
+            "totalCapacitykBtu": 31
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "12", "14"],
+            "totalCapacitykBtu": 33
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["07", "14", "14"],
+            "totalCapacitykBtu": 35
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["09", "09", "09"],
+            "totalCapacitykBtu": 27
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["09", "09", "12"],
+            "totalCapacitykBtu": 30
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["09", "09", "14"],
+            "totalCapacitykBtu": 32
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["09", "09", "18"],
+            "totalCapacitykBtu": 36
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["09", "12", "12"],
+            "totalCapacitykBtu": 33
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["09", "12", "14"],
+            "totalCapacitykBtu": 35
+        },
+        {
+            "outdoorModelCode": "AOHG24KBTA3",
+            "indoorModelCodes": ["12", "12", "12"],
+            "totalCapacitykBtu": 36
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "07", "07"],
+            "totalCapacitykBtu": 28
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "07", "09"],
+            "totalCapacitykBtu": 30
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "07", "12"],
+            "totalCapacitykBtu": 33
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "07", "14"],
+            "totalCapacitykBtu": 35
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "07", "18"],
+            "totalCapacitykBtu": 39
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "07", "24"],
+            "totalCapacitykBtu": 45
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "09", "09"],
+            "totalCapacitykBtu": 32
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "09", "12"],
+            "totalCapacitykBtu": 35
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "09", "14"],
+            "totalCapacitykBtu": 37
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "09", "18"],
+            "totalCapacitykBtu": 41
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "09", "24"],
+            "totalCapacitykBtu": 47
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "12", "12"],
+            "totalCapacitykBtu": 38
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "12", "14"],
+            "totalCapacitykBtu": 40
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "12", "18"],
+            "totalCapacitykBtu": 44
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "14", "14"],
+            "totalCapacitykBtu": 42
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "07", "14", "18"],
+            "totalCapacitykBtu": 46
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "09", "09", "09"],
+            "totalCapacitykBtu": 34
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "09", "09", "12"],
+            "totalCapacitykBtu": 37
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "09", "09", "14"],
+            "totalCapacitykBtu": 39
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "09", "09", "18"],
+            "totalCapacitykBtu": 43
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "09", "09", "24"],
+            "totalCapacitykBtu": 49
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "09", "12", "12"],
+            "totalCapacitykBtu": 40
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "09", "12", "14"],
+            "totalCapacitykBtu": 42
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "09", "12", "18"],
+            "totalCapacitykBtu": 46
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "09", "14", "14"],
+            "totalCapacitykBtu": 44
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "09", "14", "18"],
+            "totalCapacitykBtu": 48
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "12", "12", "12"],
+            "totalCapacitykBtu": 43
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "12", "12", "14"],
+            "totalCapacitykBtu": 45
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "12", "12", "18"],
+            "totalCapacitykBtu": 49
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "12", "14", "14"],
+            "totalCapacitykBtu": 47
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["07", "14", "14", "14"],
+            "totalCapacitykBtu": 49
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["09", "09", "09", "09"],
+            "totalCapacitykBtu": 36
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["09", "09", "09", "12"],
+            "totalCapacitykBtu": 39
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["09", "09", "09", "14"],
+            "totalCapacitykBtu": 41
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["09", "09", "09", "18"],
+            "totalCapacitykBtu": 45
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["09", "09", "12", "12"],
+            "totalCapacitykBtu": 42
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["09", "09", "12", "14"],
+            "totalCapacitykBtu": 44
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["09", "09", "12", "18"],
+            "totalCapacitykBtu": 48
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["09", "09", "14", "14"],
+            "totalCapacitykBtu": 46
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["09", "12", "12", "12"],
+            "totalCapacitykBtu": 45
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["09", "12", "12", "14"],
+            "totalCapacitykBtu": 47
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["09", "12", "14", "14"],
+            "totalCapacitykBtu": 49
+        },
+        {
+            "outdoorModelCode": "AOHG30KBTA4",
+            "indoorModelCodes": ["12", "12", "12", "12"],
+            "totalCapacitykBtu": 48
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "07", "07", "07"],
+            "totalCapacitykBtu": 35
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "07", "07", "09"],
+            "totalCapacitykBtu": 37
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "07", "07", "12"],
+            "totalCapacitykBtu": 40
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "07", "07", "14"],
+            "totalCapacitykBtu": 42
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "07", "07", "18"],
+            "totalCapacitykBtu": 46
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "07", "09", "09"],
+            "totalCapacitykBtu": 39
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "07", "09", "12"],
+            "totalCapacitykBtu": 42
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "07", "09", "14"],
+            "totalCapacitykBtu": 44
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "07", "09", "18"],
+            "totalCapacitykBtu": 48
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "07", "12", "12"],
+            "totalCapacitykBtu": 45
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "07", "12", "14"],
+            "totalCapacitykBtu": 47
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "09", "09", "09"],
+            "totalCapacitykBtu": 41
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "09", "09", "12"],
+            "totalCapacitykBtu": 44
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "09", "09", "14"],
+            "totalCapacitykBtu": 46
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "09", "12", "12"],
+            "totalCapacitykBtu": 47
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "07", "09", "12", "14"],
+            "totalCapacitykBtu": 49
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "09", "09", "09", "09"],
+            "totalCapacitykBtu": 43
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "09", "09", "09", "12"],
+            "totalCapacitykBtu": 46
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "09", "09", "09", "14"],
+            "totalCapacitykBtu": 48
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["07", "09", "09", "12", "12"],
+            "totalCapacitykBtu": 49
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["09", "09", "09", "09", "09"],
+            "totalCapacitykBtu": 45
+        },
+        {
+            "outdoorModelCode": "AOHG36KBTA5",
+            "indoorModelCodes": ["09", "09", "09", "09", "12"],
+            "totalCapacitykBtu": 48
+        }
+    ]
+}

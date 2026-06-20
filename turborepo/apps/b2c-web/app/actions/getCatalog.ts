@@ -4,9 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { BestsellerProduct } from "./getBestsellers";
 
 export interface CatalogData {
-  singleSplit: BestsellerProduct[];
-  multiInternal: BestsellerProduct[];
-  multiExternal: BestsellerProduct[];
+  products: BestsellerProduct[];
 }
 
 export async function getCatalog(): Promise<CatalogData> {
@@ -17,13 +15,6 @@ export async function getCatalog(): Promise<CatalogData> {
       .order('price_netto', { ascending: true });
 
     if (indoorError) throw indoorError;
-
-    const { data: outdoorDevices, error: outdoorError } = await supabase
-      .from('outdoor_units')
-      .select('*')
-      .order('price_netto', { ascending: true });
-
-    if (outdoorError) throw outdoorError;
 
     const { data: cennik, error: cenError } = await supabase
       .from('cennik_uslug')
@@ -42,13 +33,13 @@ export async function getCatalog(): Promise<CatalogData> {
         d.has_wifi ? { iconName: "Wifi", label: "WIFI w standardzie" } : null,
         d.has_presence_sensor ? { iconName: "Eye", label: "Czujnik obecności" } : null,
         d.is_silent_mode ? { iconName: "Wind", label: "Tryb cichy" } : null,
-      ].filter(Boolean);
+      ].filter(Boolean) as any;
 
       return {
         id: d.id,
         brand: d.brand,
         brandLogo: brandLogo,
-        model: d.model_code,
+        model: d.series_name || d.model_code, // Używamy series_name zamiast model_code, jeśli dostępne
         power: `${d.cooling_capacity_kw} kW`,
         img: d.image_url || "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
         deviceNettoPrice: Number(d.price_netto),
@@ -57,20 +48,18 @@ export async function getCatalog(): Promise<CatalogData> {
         marketingDesc: d.marketing_description || "",
         features: features,
         gallery: [],
+        // Dodatkowe pola do filtrowania zachowujemy w obiekcie (musimy rozszerzyć interfejs w BestsellerProduct)
+        _raw: d
       };
     };
 
-    const singleSplit = (indoorDevices || []).filter(d => d.is_single_compatible).map(mapProduct);
-    const multiInternal = (indoorDevices || []).filter(d => d.is_multi_compatible).map(mapProduct);
-    const multiExternal = (outdoorDevices || []).filter(d => d.type === 'MULTI').map(mapProduct);
+    const products = (indoorDevices || []).map(mapProduct);
 
     return {
-      singleSplit,
-      multiInternal,
-      multiExternal,
+      products
     };
   } catch (err) {
     console.error("Błąd podczas pobierania katalogu:", err);
-    return { singleSplit: [], multiInternal: [], multiExternal: [] };
+    return { products: [] };
   }
 }

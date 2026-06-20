@@ -385,7 +385,7 @@ export default function Page() {
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight mb-6">
             Gotowy na przyjemny chłód latem
             <br />
-            i energooszczędne ciepło zimą
+            i energooszczędne ciepło zimą?
           </h2>
           <p className="text-lg sm:text-xl text-white/70 mb-12 max-w-2xl mx-auto leading-relaxed">
             Ciesz się idealnym klimatem w swoim domu bez ukrytych kosztów
