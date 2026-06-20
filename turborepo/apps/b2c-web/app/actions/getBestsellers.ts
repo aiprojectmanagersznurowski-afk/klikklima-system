@@ -22,9 +22,9 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
     // 1. Pobieramy urządzenia
     // Możemy przefiltrować po is_bestseller albo po prostu wziąć kilka pierwszych wew_single
     const { data: devices, error: devError } = await supabase
-      .from('urzadzenia')
+      .from('indoor_units')
       .select('*')
-      .eq('typ', 'wew_single')
+      .eq('is_single_compatible', true)
       .limit(4);
 
     if (devError) throw devError;
@@ -41,23 +41,29 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
     // 3. Mapujemy do interfejsu BestsellerProduct
     const products: BestsellerProduct[] = (devices || []).map((d: any) => {
       // Skrót loga (Fuji Electric -> FE, Haier -> HA)
-      const brandLogo = d.producent === 'Fuji Electric' ? 'FE' 
-        : d.producent === 'Haier' ? 'HA' 
-        : d.producent.substring(0, 2).toUpperCase();
+      const brandLogo = d.brand === 'Fuji Electric' ? 'FE' 
+        : d.brand === 'Haier' ? 'HA' 
+        : d.brand.substring(0, 2).toUpperCase();
+
+      const features = [
+        d.has_wifi ? { iconName: "Wifi", label: "WIFI w standardzie" } : null,
+        d.has_presence_sensor ? { iconName: "Eye", label: "Czujnik obecności" } : null,
+        d.is_silent_mode ? { iconName: "Wind", label: "Tryb cichy" } : null,
+      ].filter(Boolean);
 
       return {
         id: d.id,
-        brand: d.producent,
+        brand: d.brand,
         brandLogo: brandLogo,
-        model: d.kod_towaru,
-        power: `${d.moc_chlodnicza_kw} kW`,
-        img: d.obrazek_url || "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
-        deviceNettoPrice: Number(d.cena_katalogowa_netto),
+        model: d.model_code,
+        power: `${d.cooling_capacity_kw} kW`,
+        img: d.image_url || "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
+        deviceNettoPrice: Number(d.price_netto),
         installNettoPrice: installNetto,
         tag: d.is_bestseller ? "Bestseller" : undefined,
-        marketingDesc: d.opis_marketingowy || "",
-        features: d.cechy_json || [],
-        gallery: d.galeria_json || [],
+        marketingDesc: d.marketing_description || "",
+        features: features,
+        gallery: [],
       };
     });
 

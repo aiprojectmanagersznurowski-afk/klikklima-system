@@ -35,18 +35,18 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes)
       const neededKw = getKwForSize(roomSizes[1]);
       
       const { data: device, error } = await supabase
-        .from('urzadzenia')
+        .from('indoor_units')
         .select('*')
-        .eq('typ', 'wew_single')
-        .gte('moc_chlodnicza_kw', neededKw)
-        .order('moc_chlodnicza_kw', { ascending: true })
-        .order('cena_katalogowa_netto', { ascending: true })
+        .eq('is_single_compatible', true)
+        .gte('cooling_capacity_kw', neededKw)
+        .order('cooling_capacity_kw', { ascending: true })
+        .order('price_netto', { ascending: true })
         .limit(1)
         .single();
         
       if (error) throw error;
       
-      const totalDevicesPrice = Number(device.cena_katalogowa_netto);
+      const totalDevicesPrice = Number(device.price_netto) || 3000; // Zabezpieczenie dla 0 zł
       const totalNetto = totalDevicesPrice + totalInstallNetto;
       const totalBrutto = Math.round(totalNetto * 1.08); // VAT 8% na budownictwo mieszkaniowe
 
@@ -72,11 +72,11 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes)
         totalNeededKw += neededKw;
         
         const { data: wewDevice, error: wewError } = await supabase
-          .from('urzadzenia')
+          .from('indoor_units')
           .select('*')
-          .eq('typ', 'wew_multi')
-          .gte('moc_chlodnicza_kw', neededKw)
-          .order('moc_chlodnicza_kw', { ascending: true })
+          .eq('is_multi_compatible', true)
+          .gte('cooling_capacity_kw', neededKw)
+          .order('cooling_capacity_kw', { ascending: true })
           .limit(1)
           .single();
           
@@ -86,20 +86,20 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes)
       
       // Dobieramy jednostkę zewnętrzną multi (agregat)
       const { data: zewDevice, error: zewError } = await supabase
-        .from('urzadzenia')
+        .from('outdoor_units')
         .select('*')
-        .eq('typ', 'zew_multi')
-        .gte('ilosc_portow', roomCount)
-        .gte('moc_chlodnicza_kw', totalNeededKw * 0.8) // Współczynnik jednoczesności dla multi (80%)
-        .order('moc_chlodnicza_kw', { ascending: true })
+        .eq('type', 'MULTI')
+        .gte('max_indoor_units', roomCount)
+        .gte('cooling_capacity_kw', totalNeededKw * 0.8) // Współczynnik jednoczesności dla multi (80%)
+        .order('cooling_capacity_kw', { ascending: true })
         .limit(1)
         .single();
         
       if (zewError) throw zewError;
       
       // Sumujemy ceny
-      const internalPrice = internalUnits.reduce((sum, d) => sum + Number(d.cena_katalogowa_netto), 0);
-      const totalDevicesPrice = internalPrice + Number(zewDevice.cena_katalogowa_netto);
+      const internalPrice = internalUnits.reduce((sum, d) => sum + (Number(d.price_netto) || 1500), 0);
+      const totalDevicesPrice = internalPrice + (Number(zewDevice.price_netto) || 4500);
       const totalNetto = totalDevicesPrice + totalInstallNetto;
       const totalBrutto = Math.round(totalNetto * 1.08); // VAT 8% na budownictwo mieszkaniowe
       

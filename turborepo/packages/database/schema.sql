@@ -30,22 +30,68 @@ CREATE TABLE adresy (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 4. Tabela: Urządzenia (Katalog klimatyzatorów)
-CREATE TABLE urzadzenia (
+-- 4a. Tabela: Jednostki Wewnętrzne (Indoor Units)
+CREATE TABLE indoor_units (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    kod_towaru TEXT UNIQUE, -- np. 'ASYG09KETA', 'AS35S2SF1FA'
-    producent TEXT NOT NULL, -- np. 'Fuji Electric', 'Haier'
-    linia TEXT NOT NULL, -- np. 'KETA', 'Flexis'
-    typ TEXT NOT NULL, -- 'wew_single', 'wew_multi', 'zew_multi'
-    moc_chlodnicza_kw NUMERIC NOT NULL,
-    max_powierzchnia_m2 INTEGER, -- określa max zasięg urządzenia, np. 35
-    ilosc_portow INTEGER, -- tylko dla 'zew_multi' (np. 2, 3, 4, 5)
-    cena_katalogowa_netto NUMERIC NOT NULL,
-    obrazek_url TEXT,
-    opis_marketingowy TEXT,
-    cechy_json JSONB,
-    galeria_json JSONB,
-    is_bestseller BOOLEAN DEFAULT FALSE,
+    model_code TEXT NOT NULL UNIQUE,
+    series_name TEXT NOT NULL,
+    brand TEXT NOT NULL,
+    is_single_compatible BOOLEAN DEFAULT false,
+    is_multi_compatible BOOLEAN DEFAULT false,
+    cooling_capacity_kw NUMERIC,
+    heating_capacity_kw NUMERIC,
+    power_consumption_cooling_kw NUMERIC,
+    power_consumption_heating_kw NUMERIC,
+    dimensions TEXT,
+    noise_level_min_db INTEGER,
+    has_wifi BOOLEAN DEFAULT false,
+    has_presence_sensor BOOLEAN DEFAULT false,
+    is_silent_mode BOOLEAN DEFAULT false,
+    price_netto NUMERIC,
+    image_url TEXT,
+    marketing_description TEXT,
+    is_bestseller BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 4b. Tabela: Jednostki Zewnętrzne / Agregaty (Outdoor Units)
+CREATE TABLE outdoor_units (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    model_code TEXT NOT NULL UNIQUE,
+    brand TEXT NOT NULL,
+    type TEXT NOT NULL, -- 'SINGLE' | 'MULTI'
+    max_indoor_units INTEGER DEFAULT 1,
+    cooling_capacity_kw NUMERIC,
+    heating_capacity_kw NUMERIC,
+    max_total_indoor_capacity_kw NUMERIC,
+    dimensions TEXT,
+    price_netto NUMERIC,
+    image_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 4c. Tabela: Zestawy Single-Split (Gotowe Komplety)
+CREATE TABLE single_split_sets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    indoor_unit_id UUID NOT NULL REFERENCES indoor_units(id) ON DELETE CASCADE,
+    outdoor_unit_id UUID NOT NULL REFERENCES outdoor_units(id) ON DELETE CASCADE,
+    seer NUMERIC,
+    scop NUMERIC,
+    energy_class_cooling TEXT,
+    energy_class_heating TEXT,
+    set_price_netto NUMERIC,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(indoor_unit_id, outdoor_unit_id)
+);
+
+-- 4d. Tabela: Zestawy Multi-Split (Predefiniowane warianty B2C)
+CREATE TABLE multi_split_sets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    outdoor_unit_id UUID NOT NULL REFERENCES outdoor_units(id) ON DELETE CASCADE,
+    indoor_units_json JSONB NOT NULL, -- [{ "indoorUnitId": "uuid", "count": 1 }]
+    supported_rooms_count INTEGER,
+    set_price_netto NUMERIC,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -103,19 +149,8 @@ INSERT INTO cennik_uslug (nazwa_uslugi, jm, koszt_b2c_netto, koszt_b2b_netto) VA
 ('Przewód zasilający', 'mb', 15.00, 4.50),
 ('Wpięcie zasilania do gniazda na wtyczkę', 'szt', 60.00, 5.50);
 
-INSERT INTO urzadzenia (kod_towaru, producent, linia, typ, moc_chlodnicza_kw, max_powierzchnia_m2, ilosc_portow, cena_katalogowa_netto) VALUES
-('ASYG07KETA', 'Fuji Electric', 'KETA', 'wew_single', 2.0, 25, NULL, 3000.00),
-('ASYG09KETA', 'Fuji Electric', 'KETA', 'wew_single', 2.5, 35, NULL, 3200.00),
-('ASYG12KETA', 'Fuji Electric', 'KETA', 'wew_single', 3.5, 50, NULL, 3500.00),
-('AS25S2SF1FA', 'Haier', 'Flexis Plus', 'wew_single', 2.5, 25, NULL, 2800.00),
-('AS35S2SF1FA', 'Haier', 'Flexis Plus', 'wew_single', 3.5, 35, NULL, 3100.00),
-('ASYG07KMTA', 'Fuji Electric', 'KMTA', 'wew_multi', 2.0, 25, NULL, 1500.00),
-('ASYG09KMTA', 'Fuji Electric', 'KMTA', 'wew_multi', 2.5, 35, NULL, 1600.00),
-('ASYG12KMTA', 'Fuji Electric', 'KMTA', 'wew_multi', 3.5, 50, NULL, 1800.00),
-('AOYG14KBTA2', 'Fuji Electric', 'Multi Zewnętrzna', 'zew_multi', 4.0, NULL, 2, 4500.00),
-('AOYG18KBTA2', 'Fuji Electric', 'Multi Zewnętrzna', 'zew_multi', 5.4, NULL, 2, 5200.00),
-('AOYG24KBTA3', 'Fuji Electric', 'Multi Zewnętrzna', 'zew_multi', 6.8, NULL, 3, 6500.00),
-('AOYG30KBTA4', 'Fuji Electric', 'Multi Zewnętrzna', 'zew_multi', 8.0, NULL, 4, 8000.00);
+-- Usunięto stare dane testowe urządzeń. 
+-- Nowe dane urządzeń zostaną zaimportowane za pomocą skryptu migracyjnego.
 
 
 -- 8. Tabela: Soft Leady (Numery telefonów przed zakończeniem pełnego kalkulatora)
