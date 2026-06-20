@@ -46,7 +46,7 @@ const benefits = [
   },
   {
     icon: ShieldCheck,
-    title: "Gwarancja do 5 lat",
+    title: "Gwarancja 5 lat",
     desc: "Wysoka jakość sprzętu marek Premium i profesjonalny montaż dają Ci spokój na lata.",
   },
   {
@@ -183,10 +183,10 @@ export default function Page() {
                       const count = fomoData.slots;
                       const lastDigit = count % 10;
                       const lastTwoDigits = count % 100;
-                      
+
                       let verb = "Zostało";
                       let noun = "wolnych terminów";
-                      
+
                       if (count === 1) {
                         verb = "Został";
                         noun = "wolny termin";
