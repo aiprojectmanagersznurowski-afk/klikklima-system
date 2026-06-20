@@ -12,8 +12,8 @@ export const articles: Article[] = [
     slug: 'klimatyzacja-jako-tanie-ogrzewanie',
     title: 'Klimatyzacja jako tanie ogrzewanie zimą',
     excerpt: 'Nowoczesne klimatyzatory to pełnoprawne pompy ciepła powietrze-powietrze. Dowiedz się, dlaczego ogrzewanie klimatyzacją jest opłacalne.',
-    date: '15.11.2023',
-    imageUrl: 'https://images.unsplash.com/photo-1545459720-aac8509eb02c?auto=format&fit=crop&w=800&q=80',
+    date: '15.11.2025',
+    imageUrl: 'https://txaizdqdpxpvodmkagqn.supabase.co/storage/v1/object/sign/bazawiedzy/ogrzewanie.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85ODk1ZWUxMS0zNmVmLTQyMTctYjJiOS1mNWI1OTA4Y2Y2ZmQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiYXphd2llZHp5L29ncnpld2FuaWUucG5nIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc4MTkzNzEyMCwiZXhwIjoyMDk3Mjk3MTIwfQ._FOfsbtsMZgh5lvDRWRS-3O2TcgoYGfoE89RkLMpRew',
     content: `
 <h2>Dlaczego ogrzewanie klimatyzacją się opłaca?</h2>
 <p>Kluczem do zrozumienia opłacalności tego rozwiązania jest współczynnik <strong>SCOP</strong> (Seasonal Coefficient of Performance). Określa on, ile energii cieplnej urządzenie jest w stanie wyprodukować z 1 kW pobranej energii elektrycznej. W przypadku nowoczesnych urządzeń SCOP często przekracza wartość 4.0. Oznacza to, że pobierając 1 kW prądu, klimatyzator oddaje do pomieszczenia ponad 4 kW ciepła!</p>
@@ -36,8 +36,8 @@ export const articles: Article[] = [
     slug: 'warunki-utrzymania-gwarancji-i-serwis',
     title: 'Utrzymanie gwarancji a regularny serwis klimatyzacji',
     excerpt: 'Dlaczego coroczny przegląd klimatyzacji to nie tylko wymóg gwarancyjny, ale też inwestycja w zdrowie i dłuższą żywotność sprzętu.',
-    date: '02.04.2024',
-    imageUrl: 'https://images.unsplash.com/photo-1581092921461-7d627fb33f7c?auto=format&fit=crop&w=800&q=80',
+    date: '02.04.2026',
+    imageUrl: 'https://txaizdqdpxpvodmkagqn.supabase.co/storage/v1/object/sign/bazawiedzy/serwis.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85ODk1ZWUxMS0zNmVmLTQyMTctYjJiOS1mNWI1OTA4Y2Y2ZmQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiYXphd2llZHp5L3Nlcndpcy5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzgxOTM3MTAyLCJleHAiOjIwOTcyOTcxMDJ9.knPrTygLi2tQxVlPngl25FfK0Rd3hqah30AQT3vo90k',
     content: `
 <h2>Warunek gwarancji: Przegląd co najmniej raz w roku</h2>
 <p>Większość renomowanych producentów (w tym Fuji Electric, Haier czy Mitsubishi) uzależnia utrzymanie gwarancji (zazwyczaj od 3 do 5 lat) od wykonywania autoryzowanych przeglądów. Standardowo wymaga się wykonania serwisu <strong>co najmniej raz w roku</strong>, a w przypadku klimatyzatorów pracujących ciągle w trudnych warunkach (np. serwerownie, sklepy) – nawet dwa razy do roku.</p>
@@ -68,8 +68,8 @@ export const articles: Article[] = [
     slug: 'historia-fuji-electric-i-klimatyzatory',
     title: 'Historia marki Fuji: Od przemysłu do chłodu w Twoim domu',
     excerpt: 'Poznaj fascynującą historię giganta japońskiego przemysłu – firmy Fuji, oraz jej drogę do stworzenia niezawodnych klimatyzatorów do mieszkań.',
-    date: '10.05.2024',
-    imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80',
+    date: '10.05.2026',
+    imageUrl: 'https://txaizdqdpxpvodmkagqn.supabase.co/storage/v1/object/sign/bazawiedzy/fuji.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV85ODk1ZWUxMS0zNmVmLTQyMTctYjJiOS1mNWI1OTA4Y2Y2ZmQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJiYXphd2llZHp5L2Z1amkuanBnIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc4MTkzNzE0NSwiZXhwIjoyMDk3Mjk3MTQ1fQ.ayzGLR_EWZEdE26a5kV_Ly41G7K7azsr_yH7sTLX36U',
     content: `
 <h2>Początki giganta: Narodziny Fuji Electric</h2>
 <p>Historia marki rozpoczyna się w 1923 roku w Japonii. Firma Fuji Electric Company została założona jako spółka joint-venture między japońskim <em>Furukawa Electric</em>, a niemieckim gigantem przemysłowym <em>Siemens AG</em>. Samo słowo "Fuji" wzięło się z połączenia pierwszej litery obu firm: "Fu" (Furukawa) oraz "Ji" (japońska wymowa litery "S" od Siemens: <em>jiimensu</em>). Oczywiście nazwa kojarzyła się również ze świętą japońską górą – symbolem siły i doskonałości.</p>

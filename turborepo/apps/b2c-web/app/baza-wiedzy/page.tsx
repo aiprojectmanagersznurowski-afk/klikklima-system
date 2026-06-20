@@ -17,7 +17,7 @@ export default function KnowledgeBasePage() {
 
       <main className="pt-32 pb-24 sm:pt-40 sm:pb-32">
         <div className="px-6 lg:px-12 max-w-7xl mx-auto mb-8">
-          <button 
+          <button
             onClick={() => router.back()}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-medium"
           >
@@ -31,7 +31,7 @@ export default function KnowledgeBasePage() {
           <div className="max-w-4xl">
             <h1 className="text-5xl sm:text-6xl lg:text-8xl font-bold tracking-tight text-foreground leading-[1.05] mb-8">
               Baza wiedzy <br className="hidden sm:block" />
-              <span className="text-primary">Ekspertów.</span>
+              <span className="text-primary">Ekspertów</span>
             </h1>
             <p className="text-xl sm:text-2xl text-muted-foreground leading-relaxed max-w-2xl font-medium">
               Praktyczne porady, ciekawostki i ekspertyzy ze świata klimatyzacji i pomp ciepła.
@@ -43,14 +43,14 @@ export default function KnowledgeBasePage() {
         <section className="px-6 lg:px-12 max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {articles.map((article) => (
-              <Link 
-                key={article.slug} 
+              <Link
+                key={article.slug}
                 href={`/baza-wiedzy/${article.slug}`}
                 className="group flex flex-col bg-white rounded-3xl border border-border/50 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="aspect-[16/10] overflow-hidden relative">
-                  <img 
-                    src={article.imageUrl} 
+                  <img
+                    src={article.imageUrl}
                     alt={article.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
