@@ -47,9 +47,30 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
         query = query.eq('series_name', seriesLine);
       }
         
-      const { data: device, error } = await query.single();
+      let { data: devices, error } = await query;
         
       if (error) throw error;
+      
+      // Jeśli nie znaleziono dla danej serii, szukamy dowolnej
+      if ((!devices || devices.length === 0) && seriesLine) {
+        const { data: fallbackDevices, error: fallbackError } = await supabase
+          .from('indoor_units')
+          .select('*')
+          .eq('is_single_compatible', true)
+          .gte('cooling_capacity_kw', neededKw)
+          .order('cooling_capacity_kw', { ascending: true })
+          .order('price_netto', { ascending: true })
+          .limit(1);
+          
+        if (fallbackError) throw fallbackError;
+        devices = fallbackDevices;
+      }
+
+      if (!devices || devices.length === 0) {
+        throw new Error("Nie znaleziono pasującej jednostki");
+      }
+
+      const device = devices[0];
       
       const totalDevicesPrice = Number(device.price_netto) || 3000; // Zabezpieczenie dla 0 zł
       const totalNetto = totalDevicesPrice + totalInstallNetto;
@@ -88,24 +109,48 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
           wewQuery = wewQuery.eq('series_name', seriesLine);
         }
           
-        const { data: wewDevice, error: wewError } = await wewQuery.single();
+        let { data: wewDevices, error: wewError } = await wewQuery;
           
         if (wewError) throw wewError;
-        internalUnits.push(wewDevice);
+        
+        // Fallback do dowolnej serii jeśli w wybranej brakuje mocy
+        if ((!wewDevices || wewDevices.length === 0) && seriesLine) {
+          const { data: fallbackWewDevices, error: fallbackWewError } = await supabase
+            .from('indoor_units')
+            .select('*')
+            .eq('is_multi_compatible', true)
+            .gte('cooling_capacity_kw', neededKw)
+            .order('cooling_capacity_kw', { ascending: true })
+            .limit(1);
+            
+          if (fallbackWewError) throw fallbackWewError;
+          wewDevices = fallbackWewDevices;
+        }
+
+        if (!wewDevices || wewDevices.length === 0) {
+          throw new Error("Nie znaleziono pasującej jednostki wewnętrznej");
+        }
+
+        internalUnits.push(wewDevices[0]);
       }
       
       // Dobieramy jednostkę zewnętrzną multi (agregat)
-      const { data: zewDevice, error: zewError } = await supabase
+      const { data: zewDevices, error: zewError } = await supabase
         .from('outdoor_units')
         .select('*')
         .eq('type', 'MULTI')
         .gte('max_indoor_units', roomCount)
         .gte('cooling_capacity_kw', totalNeededKw * 0.8) // Współczynnik jednoczesności dla multi (80%)
         .order('cooling_capacity_kw', { ascending: true })
-        .limit(1)
-        .single();
+        .limit(1);
         
       if (zewError) throw zewError;
+
+      if (!zewDevices || zewDevices.length === 0) {
+        throw new Error("Nie znaleziono pasującego agregatu");
+      }
+
+      const zewDevice = zewDevices[0];
       
       // Sumujemy ceny
       const internalPrice = internalUnits.reduce((sum, d) => sum + (Number(d.price_netto) || 1500), 0);
