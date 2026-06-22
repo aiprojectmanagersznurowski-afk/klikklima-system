@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import TriageFunnel from "@/components/triage/TriageFunnel";
 
 export const metadata = {
@@ -7,8 +8,8 @@ export const metadata = {
 
 export default function TriagePage() {
   return (
-    <>
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center">Ładowanie formularza...</div>}>
       <TriageFunnel />
-    </>
+    </Suspense>
   );
 }

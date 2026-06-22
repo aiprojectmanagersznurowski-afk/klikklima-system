@@ -1,7 +1,8 @@
 "use client";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
-import { useTriageStore } from '@/store/triageStore';
+import { useTriageStore, type RoomCount, type RoomSize } from '@/store/triageStore';
 import { ProgressBar } from './ProgressBar';
 
 import { Step1Location } from './steps/Step1Location';
@@ -15,7 +16,38 @@ import { Step8Booking } from './steps/Step8Booking';
 import { StepExpert } from './steps/StepExpert';
 
 const FunnelContent = () => {
-  const { step, direction, isExpertScreen } = useTriageStore();
+  const searchParams = useSearchParams();
+  const { step, direction, isExpertScreen, updateData } = useTriageStore();
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (initialized) return;
+
+    const series = searchParams.get('series');
+    const roomsCountStr = searchParams.get('roomsCount');
+
+    if (series && roomsCountStr) {
+      const count = parseInt(roomsCountStr, 10) as RoomCount;
+      const sizes: Record<number, RoomSize> = {};
+
+      for (let i = 1; i <= (count || 1); i++) {
+        const areaCode = searchParams.get(`area_${i}`);
+        if (areaCode === 'S') sizes[i] = 'Do 25 m²';
+        else if (areaCode === 'M') sizes[i] = '26-35 m²';
+        else if (areaCode === 'L') sizes[i] = '36-50 m²';
+        else if (areaCode === 'XL') sizes[i] = 'Powyżej 50 m²';
+        else sizes[i] = 'Do 25 m²'; // fallback
+      }
+
+      updateData({
+        roomCount: count,
+        roomSizes: sizes,
+        selectedDeviceLine: series
+      });
+    }
+
+    setInitialized(true);
+  }, [searchParams, updateData, initialized]);
 
   const renderStep = () => {
     if (isExpertScreen) {

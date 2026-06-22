@@ -88,15 +88,30 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
     direction: stepNumber > state.step ? 1 : -1 
   })),
   
-  nextStep: () => set((state) => ({ 
-    step: state.step + 1, 
-    direction: 1 
-  })),
+  nextStep: () => set((state) => {
+    // Jeżeli użytkownik przyszedł z modala, to `selectedDeviceLine` nie jest nullem
+    // oraz z Kroku 1 przechodzi od razu do Kroku 4 (Stan budynku), omijając Pokoje (2) i Metraż (3).
+    let next = state.step + 1;
+    if (state.step === 1 && state.data.selectedDeviceLine) {
+      next = 4;
+    }
+    
+    return { 
+      step: next, 
+      direction: 1 
+    };
+  }),
   
-  prevStep: () => set((state) => ({ 
-    step: Math.max(1, state.step - 1), 
-    direction: -1 
-  })),
+  prevStep: () => set((state) => {
+    let prev = state.step - 1;
+    if (state.step === 4 && state.data.selectedDeviceLine) {
+      prev = 1;
+    }
+    return { 
+      step: Math.max(1, prev), 
+      direction: -1 
+    };
+  }),
   
   updateData: (newData) => set((state) => ({ 
     data: { ...state.data, ...newData } 
