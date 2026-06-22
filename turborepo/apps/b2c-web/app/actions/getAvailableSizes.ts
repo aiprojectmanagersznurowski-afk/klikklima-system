@@ -6,7 +6,7 @@ export async function getAvailableSizes(seriesName: string): Promise<string[]> {
   try {
     const { data: indoors } = await supabase
       .from('indoor_units')
-      .select('model_code')
+      .select('model_code, cooling_capacity_kw')
       .eq('series_name', seriesName);
 
     if (!indoors || indoors.length === 0) {
@@ -15,15 +15,13 @@ export async function getAvailableSizes(seriesName: string): Promise<string[]> {
 
     const availableSizes: Set<string> = new Set();
     
-    // Na podstawie kodów oceniamy dostępne wielkości
+    // Zgodnie z zasadą 0.1 kW na 1 m2
     for (const unit of indoors) {
-      if (unit.model_code.includes('07')) availableSizes.add('S');
-      if (unit.model_code.includes('09')) availableSizes.add('M');
-      if (unit.model_code.includes('12')) availableSizes.add('L');
-      if (unit.model_code.includes('14')) availableSizes.add('L'); // 14 to też często traktowane jako L
-      if (unit.model_code.includes('18')) availableSizes.add('XL');
-      if (unit.model_code.includes('24')) availableSizes.add('XL');
-      if (unit.model_code.includes('30')) availableSizes.add('XL');
+      const kw = Number(unit.cooling_capacity_kw);
+      if (kw >= 2.0 && kw < 2.6) availableSizes.add('S'); // Do 25 m2 (2.0kW, 2.5kW)
+      if (kw >= 2.6 && kw < 3.6) availableSizes.add('M'); // 26-35 m2 (np. 3.4kW)
+      if (kw >= 3.6 && kw < 5.1) availableSizes.add('L'); // 36-50 m2 (np. 4.2kW, 5.0kW)
+      if (kw >= 5.1) availableSizes.add('XL'); // Powyżej 50 m2 (np. 7.1kW)
     }
 
     // Jeśli nic nie dopasowano z kodów (np inna konwencja nazewnictwa), zwróć wszystko

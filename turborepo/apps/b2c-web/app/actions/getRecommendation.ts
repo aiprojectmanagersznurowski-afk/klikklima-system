@@ -13,10 +13,11 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
     }
 
     const getKwForSize = (size: string) => {
-      if (size === 'Do 25 m²') return 2.0; // Kod 07 zaczyna się od 2.0
-      if (size === '26-35 m²') return 2.5; // Kod 09 to 2.5
-      if (size === '36-50 m²') return 3.4; // Kod 12 to 3.4
-      if (size === 'Powyżej 50 m²') return 5.0; // Kod 18 to 5.0
+      // Reguła 0.1 kW / 1 m2 dla minimalnej mocy wymaganej w danym przedziale:
+      if (size === 'Do 25 m²') return 2.0; // Wystarczy 2.0 kW (np. kod 07)
+      if (size === '26-35 m²') return 2.6; // Wymaga co najmniej 2.6 kW, idealnie "12-tki" (3.4 kW)
+      if (size === '36-50 m²') return 3.6; // Wymaga co najmniej 3.6 kW, idealnie "14-tki" (4.2 kW) lub "18-tki" (5.0 kW)
+      if (size === 'Powyżej 50 m²') return 5.1; // Wymaga co najmniej 5.1 kW, np. "24-tki" (7.1 kW)
       return 2.0;
     };
 
