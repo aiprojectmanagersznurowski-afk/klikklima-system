@@ -251,6 +251,10 @@ export const Step7Success = () => {
             isOpen={isModalOpen} 
             onClose={() => setIsModalOpen(false)} 
             device={selectedProduct} 
+            initialRooms={Array.from({ length: state.roomCount || 1 }).map((_, index) => ({
+              id: `room-triage-${index}`,
+              size: (state.roomSizes[index] || 'M') as 'S' | 'M' | 'L' | 'XL'
+            }))}
             onReserveClick={() => {
               const recItem = recommendedDevices.find(r => r.product.id === selectedProduct.id);
               if (recItem) handleSelectRecommendation(recItem);

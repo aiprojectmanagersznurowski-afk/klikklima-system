@@ -31,6 +31,7 @@ export interface DeviceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onReserveClick?: () => void;
+  initialRooms?: Room[];
 }
 
 const INDOOR_IMAGE = "https://images.unsplash.com/photo-1711873315178-ee7de0b2ea5d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3YWxsJTIwbW91bnRlZCUyMGFpciUyMGNvbmRpdGlvbmVyJTIwaW5kb29yJTIwd2hpdGUlMjBtaW5pbWFsfGVufDF8fHx8MTc4MjEwNzU5N3ww&ixlib=rb-4.1.0&q=80&w=1080";
@@ -51,10 +52,20 @@ const iconMap: Record<string, any> = {
   Wind: Wind,
 };
 
-export function DeviceModal({ device, isOpen, onClose, onReserveClick }: DeviceModalProps) {
+export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRooms }: DeviceModalProps) {
   const [rooms, setRooms] = useState<Room[]>([{ id: 'room-1', size: 'M' }]);
   const [matchedSet, setMatchedSet] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialRooms && initialRooms.length > 0) {
+        setRooms(initialRooms);
+      } else {
+        setRooms([{ id: 'room-1', size: 'M' }]);
+      }
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && device) {
