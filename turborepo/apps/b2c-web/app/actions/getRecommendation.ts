@@ -34,139 +34,154 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
       // SCENARIUSZ: SINGLE SPLIT
       const neededKw = getKwForSize(roomSizes[1]);
       
-      let query = supabase
+      let { data: allDevices, error } = await supabase
         .from('indoor_units')
         .select('*')
         .eq('is_single_compatible', true)
         .gte('cooling_capacity_kw', neededKw)
-        .order('cooling_capacity_kw', { ascending: true })
-        .order('price_netto', { ascending: true })
-        .limit(1);
-
-      if (seriesLine) {
-        query = query.eq('series_name', seriesLine);
-      }
-        
-      let { data: devices, error } = await query;
+        .order('price_netto', { ascending: true });
         
       if (error) throw error;
       
-      // Jeśli nie znaleziono dla danej serii, szukamy dowolnej
-      if ((!devices || devices.length === 0) && seriesLine) {
-        const { data: fallbackDevices, error: fallbackError } = await supabase
-          .from('indoor_units')
-          .select('*')
-          .eq('is_single_compatible', true)
-          .gte('cooling_capacity_kw', neededKw)
-          .order('cooling_capacity_kw', { ascending: true })
-          .order('price_netto', { ascending: true })
-          .limit(1);
-          
-        if (fallbackError) throw fallbackError;
-        devices = fallbackDevices;
+      const distinctSeriesMap = new Map();
+      for (const d of (allDevices || [])) {
+        const series = d.series_name || d.model_code || d.brand;
+        if (!distinctSeriesMap.has(series)) {
+          distinctSeriesMap.set(series, d);
+        }
       }
 
-      if (!devices || devices.length === 0) {
+      let distinctDevices = Array.from(distinctSeriesMap.values());
+
+      if (seriesLine) {
+        const preferredIdx = distinctDevices.findIndex(d => d.series_name === seriesLine);
+        if (preferredIdx > 0) {
+          const pref = distinctDevices.splice(preferredIdx, 1)[0];
+          distinctDevices.unshift(pref);
+        } else if (preferredIdx === -1) {
+          // Spróbujmy znaleźć by częściowej nazwie, gdyby coś poszło nie tak
+          const partialIdx = distinctDevices.findIndex(d => (d.series_name || '').includes(seriesLine));
+          if (partialIdx > 0) {
+            const pref = distinctDevices.splice(partialIdx, 1)[0];
+            distinctDevices.unshift(pref);
+          }
+        }
+      }
+
+      const top3 = distinctDevices.slice(0, 3);
+      
+      if (top3.length === 0) {
         throw new Error("Nie znaleziono pasującej jednostki");
       }
 
-      const device = devices[0];
-      
-      const totalDevicesPrice = Number(device.price_netto) || 3000; // Zabezpieczenie dla 0 zł
-      const totalNetto = totalDevicesPrice + totalInstallNetto;
-      const totalBrutto = Math.round(totalNetto * 1.08); // VAT 8% na budownictwo mieszkaniowe
+      const recommendations = top3.map(device => {
+        const totalDevicesPrice = Number(device.price_netto) || 3000;
+        const totalNetto = totalDevicesPrice + totalInstallNetto;
+        const totalBrutto = Math.round(totalNetto * 1.08);
+
+        return {
+          type: 'single',
+          internalUnits: [device],
+          externalUnit: null,
+          totalDevicesPrice,
+          totalInstallNetto,
+          totalNetto,
+          totalBrutto
+        };
+      });
 
       return {
         success: true,
-        type: 'single',
-        internalUnits: [device],
-        externalUnit: null,
-        totalDevicesPrice,
-        totalInstallNetto,
-        totalNetto,
-        totalBrutto
+        recommendations
       };
       
     } else {
       // SCENARIUSZ: MULTI SPLIT
-      const internalUnits = [];
       let totalNeededKw = 0;
-      
-      // Dla każdego pokoju dobieramy jednostkę wewnętrzną multi
       for (let i = 1; i <= roomCount; i++) {
-        const neededKw = getKwForSize(roomSizes[i]);
-        totalNeededKw += neededKw;
-        
-        let wewQuery = supabase
-          .from('indoor_units')
-          .select('*')
-          .eq('is_multi_compatible', true)
-          .gte('cooling_capacity_kw', neededKw)
-          .order('cooling_capacity_kw', { ascending: true })
-          .limit(1);
-
-        if (seriesLine) {
-          wewQuery = wewQuery.eq('series_name', seriesLine);
-        }
-          
-        let { data: wewDevices, error: wewError } = await wewQuery;
-          
-        if (wewError) throw wewError;
-        
-        // Fallback do dowolnej serii jeśli w wybranej brakuje mocy
-        if ((!wewDevices || wewDevices.length === 0) && seriesLine) {
-          const { data: fallbackWewDevices, error: fallbackWewError } = await supabase
-            .from('indoor_units')
-            .select('*')
-            .eq('is_multi_compatible', true)
-            .gte('cooling_capacity_kw', neededKw)
-            .order('cooling_capacity_kw', { ascending: true })
-            .limit(1);
-            
-          if (fallbackWewError) throw fallbackWewError;
-          wewDevices = fallbackWewDevices;
-        }
-
-        if (!wewDevices || wewDevices.length === 0) {
-          throw new Error("Nie znaleziono pasującej jednostki wewnętrznej");
-        }
-
-        internalUnits.push(wewDevices[0]);
+        totalNeededKw += getKwForSize(roomSizes[i]);
       }
       
-      // Dobieramy jednostkę zewnętrzną multi (agregat)
+      // Pobieramy wszystkie możliwe jednostki wewnętrzne (multi)
+      let { data: allWew, error: wewError } = await supabase
+        .from('indoor_units')
+        .select('*')
+        .eq('is_multi_compatible', true)
+        .order('cooling_capacity_kw', { ascending: true })
+        .order('price_netto', { ascending: true });
+        
+      if (wewError) throw wewError;
+
+      // Unikalne serie wew
+      let seriesCandidates = Array.from(new Set((allWew || []).map(d => d.series_name))).filter(Boolean);
+      
+      if (seriesLine) {
+        seriesCandidates = [seriesLine, ...seriesCandidates.filter(s => s !== seriesLine)];
+      }
+
+      // Pobieramy agregaty
       const { data: zewDevices, error: zewError } = await supabase
         .from('outdoor_units')
         .select('*')
         .eq('type', 'MULTI')
         .gte('max_indoor_units', roomCount)
-        .gte('cooling_capacity_kw', totalNeededKw * 0.8) // Współczynnik jednoczesności dla multi (80%)
+        .gte('cooling_capacity_kw', totalNeededKw * 0.8) // Współczynnik 80%
         .order('cooling_capacity_kw', { ascending: true })
-        .limit(1);
+        .order('price_netto', { ascending: true });
         
       if (zewError) throw zewError;
-
       if (!zewDevices || zewDevices.length === 0) {
-        throw new Error("Nie znaleziono pasującego agregatu");
+        throw new Error("Nie znaleziono pasującego agregatu o wymaganej mocy.");
       }
 
-      const zewDevice = zewDevices[0];
-      
-      // Sumujemy ceny
-      const internalPrice = internalUnits.reduce((sum, d) => sum + (Number(d.price_netto) || 1500), 0);
-      const totalDevicesPrice = internalPrice + (Number(zewDevice.price_netto) || 4500);
-      const totalNetto = totalDevicesPrice + totalInstallNetto;
-      const totalBrutto = Math.round(totalNetto * 1.08); // VAT 8% na budownictwo mieszkaniowe
-      
+      const recommendations = [];
+
+      for (const series of seriesCandidates) {
+        if (recommendations.length >= 3) break;
+
+        const internalUnits = [];
+        let valid = true;
+        for (let i = 1; i <= roomCount; i++) {
+          const neededKw = getKwForSize(roomSizes[i]);
+          const matching = (allWew || []).find(d => d.series_name === series && d.cooling_capacity_kw >= neededKw);
+          
+          if (matching) {
+            internalUnits.push(matching);
+          } else {
+            valid = false;
+            break;
+          }
+        }
+
+        if (valid && internalUnits.length > 0) {
+          // Próbujemy dobrać agregat tej samej marki (jeśli jest info w DB), jeśli nie - pierwszy z brzegu o wystarczającej mocy
+          const brand = internalUnits[0].brand;
+          let zewDevice = zewDevices.find(z => z.brand === brand) || zewDevices[0];
+
+          const internalPrice = internalUnits.reduce((sum, d) => sum + (Number(d.price_netto) || 1500), 0);
+          const totalDevicesPrice = internalPrice + (Number(zewDevice.price_netto) || 4500);
+          const totalNetto = totalDevicesPrice + totalInstallNetto;
+          const totalBrutto = Math.round(totalNetto * 1.08);
+          
+          recommendations.push({
+            type: 'multi',
+            internalUnits,
+            externalUnit: zewDevice,
+            totalDevicesPrice,
+            totalInstallNetto,
+            totalNetto,
+            totalBrutto
+          });
+        }
+      }
+
+      if (recommendations.length === 0) {
+        throw new Error("Żadna z serii nie była w stanie pokryć wymogów dla wszystkich pomieszczeń.");
+      }
+
       return {
         success: true,
-        type: 'multi',
-        internalUnits,
-        externalUnit: zewDevice,
-        totalDevicesPrice,
-        totalInstallNetto,
-        totalNetto,
-        totalBrutto
+        recommendations
       };
     }
     

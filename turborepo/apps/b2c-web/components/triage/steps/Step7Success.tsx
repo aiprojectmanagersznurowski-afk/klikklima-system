@@ -15,8 +15,8 @@ export const Step7Success = () => {
   const { data: state, nextStep, updateData } = useTriageStore();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [recommendedDevice, setRecommendedDevice] = React.useState<BestsellerProduct | null>(null);
-  const [displayPrice, setDisplayPrice] = React.useState("");
+  const [recommendedDevices, setRecommendedDevices] = React.useState<any[]>([]);
+  const [selectedProduct, setSelectedProduct] = React.useState<BestsellerProduct | null>(null);
 
   const rooms = state.roomCount || 1;
 
@@ -25,85 +25,93 @@ export const Step7Success = () => {
       setIsLoading(true);
       const res = await getRecommendation(state.roomCount || 1, state.roomSizes, state.selectedDeviceLine);
       
-      if (res.success && res.internalUnits && res.internalUnits.length > 0) {
-        
-        updateData({
-          selectedInternalUnits: res.internalUnits,
-          selectedExternalUnit: res.externalUnit,
-          priceDevices: res.totalDevicesPrice,
+      if (res.success && res.recommendations && res.recommendations.length > 0) {
+        const mappedRecs = res.recommendations.map((rec: any, idx: number) => {
+          const mainUnit = rec.internalUnits[0];
+          const isMulti = rec.type === 'multi';
+          const finalPriceBrutto = rec.totalBrutto; 
+
+          const brandLogo = mainUnit.brand === 'Fuji Electric' ? 'FE' 
+            : mainUnit.brand === 'Haier' ? 'HA' 
+            : (mainUnit.brand || "UN").substring(0, 2).toUpperCase();
+
+          const features = [
+            mainUnit.has_wifi ? { iconName: "Wifi", label: "WIFI w standardzie" } : null,
+            mainUnit.has_presence_sensor ? { iconName: "Eye", label: "Czujnik obecności" } : null,
+            mainUnit.is_silent_mode ? { iconName: "Wind", label: "Tryb cichy" } : null,
+          ].filter(Boolean) as any;
+
+          const fallbackFeatures = [
+            { iconName: "Wifi", label: "WIFI w standardzie" },
+            { iconName: "Volume2", label: "Głośność od 20dB" },
+            { iconName: "Zap", label: "Klasa A+++" },
+            { iconName: "Wind", label: "Funkcja Jonizatora" }
+          ];
+
+          const newDeviceData: BestsellerProduct = {
+            id: mainUnit.id + "-" + idx,
+            brand: mainUnit.brand || "Nieznana",
+            brandLogo: brandLogo,
+            model: mainUnit.series_name || mainUnit.model_code || "Klimatyzator",
+            power: isMulti ? `Wielosplit (x${rec.internalUnits.length})` : `${mainUnit.cooling_capacity_kw || '2.5'} kW`,
+            deviceNettoPrice: rec.totalDevicesPrice,
+            installNettoPrice: 1500 * rooms,
+            marketingDesc: mainUnit.marketing_description || "Elegancki design z matowym wykończeniem i technologią jonizacji powietrza. Idealny do nowoczesnych wnętrz. Gwarantuje niezwykle cichą pracę i wysoką oszczędność energii.",
+            img: mainUnit.image_url || "https://images.unsplash.com/photo-1718203862467-c33159fdc504?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+            features: features.length > 0 ? features : fallbackFeatures
+          };
+
+          return {
+            product: newDeviceData,
+            rawRec: rec
+          };
         });
 
-        const mainUnit = res.internalUnits[0];
-        const isMulti = res.type === 'multi';
-        const finalPriceBrutto = res.totalBrutto; 
-        const formattedPrice = new Intl.NumberFormat('pl-PL', { 
-          style: 'currency', currency: 'PLN', maximumFractionDigits: 0 
-        }).format(finalPriceBrutto);
-
-        setDisplayPrice(formattedPrice);
-
-        const brandLogo = mainUnit.brand === 'Fuji Electric' ? 'FE' 
-          : mainUnit.brand === 'Haier' ? 'HA' 
-          : (mainUnit.brand || "UN").substring(0, 2).toUpperCase();
-
-        const features = [
-          mainUnit.has_wifi ? { iconName: "Wifi", label: "WIFI w standardzie" } : null,
-          mainUnit.has_presence_sensor ? { iconName: "Eye", label: "Czujnik obecności" } : null,
-          mainUnit.is_silent_mode ? { iconName: "Wind", label: "Tryb cichy" } : null,
-        ].filter(Boolean) as any;
-
-        const fallbackFeatures = [
-          { iconName: "Wifi", label: "WIFI w standardzie" },
-          { iconName: "Volume2", label: "Głośność od 20dB" },
-          { iconName: "Zap", label: "Klasa A+++" },
-          { iconName: "Wind", label: "Funkcja Jonizatora" }
-        ];
-
-        const newDeviceData: BestsellerProduct = {
-          id: mainUnit.id,
-          brand: mainUnit.brand || "Nieznana",
-          brandLogo: brandLogo,
-          model: mainUnit.series_name || mainUnit.model_code || "Klimatyzator",
-          power: isMulti ? `Wielosplit (x${res.internalUnits.length})` : `${mainUnit.cooling_capacity_kw || '2.5'} kW`,
-          deviceNettoPrice: res.totalDevicesPrice,
-          installNettoPrice: 1500,
-          marketingDesc: mainUnit.marketing_description || "Elegancki design z matowym wykończeniem i technologią jonizacji powietrza. Idealny do nowoczesnych wnętrz. Gwarantuje niezwykle cichą pracę i wysoką oszczędność energii.",
-          img: mainUnit.image_url || "https://images.unsplash.com/photo-1718203862467-c33159fdc504?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-          features: features.length > 0 ? features : fallbackFeatures
-        };
-
-        setRecommendedDevice(newDeviceData);
+        setRecommendedDevices(mappedRecs);
       } else {
-        // Fallback jeśli nie pobrano z bazy (lub brakło w niej odpowiednio dużego agregatu)
+        // Fallback jeśli nie pobrano z bazy
         const fallbackInstall = 1600 * rooms;
         const fallbackDevice = rooms > 1 ? 4000 + (rooms * 1500) : 3000;
-        const fallbackTotalBrutto = Math.round((fallbackInstall + fallbackDevice) * 1.08);
-        const fallbackPriceFormatted = new Intl.NumberFormat('pl-PL', { 
-          style: 'currency', currency: 'PLN', maximumFractionDigits: 0 
-        }).format(fallbackTotalBrutto);
-
-        setDisplayPrice(`od ${fallbackPriceFormatted}`);
-
-        setRecommendedDevice({
-          id: 'fallback',
-          brand: 'Fuji Electric',
-          brandLogo: 'FE',
-          model: rooms > 1 ? "Multi-Split" : "KETA",
-          power: rooms > 1 ? `Wielosplit (Multi x${rooms})` : "2.5 kW / 3.5 kW",
-          deviceNettoPrice: fallbackDevice,
-          installNettoPrice: fallbackInstall,
-          marketingDesc: "Niezawodne urządzenia i elastyczność montażu dla Twojego metrażu.",
-          img: "https://images.unsplash.com/photo-1718203862467-c33159fdc504?q=80&w=1080",
-          features: [
-            { iconName: "Wifi", label: "WIFI w standardzie" }
-          ]
-        });
+        
+        setRecommendedDevices([
+          {
+            rawRec: {
+              internalUnits: [],
+              externalUnit: null,
+              totalDevicesPrice: fallbackDevice,
+              totalBrutto: Math.round((fallbackInstall + fallbackDevice) * 1.08)
+            },
+            product: {
+              id: 'fallback',
+              brand: 'Fuji Electric',
+              brandLogo: 'FE',
+              model: rooms > 1 ? "Multi-Split" : "KETA",
+              power: rooms > 1 ? `Wielosplit (Multi x${rooms})` : "2.5 kW / 3.5 kW",
+              deviceNettoPrice: fallbackDevice,
+              installNettoPrice: fallbackInstall,
+              marketingDesc: "Niezawodne urządzenia i elastyczność montażu dla Twojego metrażu.",
+              img: "https://images.unsplash.com/photo-1718203862467-c33159fdc504?q=80&w=1080",
+              features: [
+                { iconName: "Wifi", label: "WIFI w standardzie" }
+              ]
+            }
+          }
+        ]);
       }
       setIsLoading(false);
     }
     
     fetchRecommendation();
   }, [state.roomCount, state.roomSizes]);
+
+  const handleSelectRecommendation = (recItem: any) => {
+    updateData({
+      selectedInternalUnits: recItem.rawRec.internalUnits,
+      selectedExternalUnit: recItem.rawRec.externalUnit,
+      priceDevices: recItem.rawRec.totalDevicesPrice,
+    });
+    nextStep();
+  };
 
   const handleReserveFromModal = () => {
     setIsModalOpen(false);
@@ -132,7 +140,7 @@ export const Step7Success = () => {
 
   const currentInstallationItems = getInstallationItems(rooms);
 
-  if (isLoading || !recommendedDevice) {
+  if (isLoading || recommendedDevices.length === 0) {
     return (
       <StepWrapper title="Trwa dobieranie klimatyzatora..." subtitle="Nasz algorytm przelicza zapotrzebowanie na chłód dla Twojego metrażu.">
         <div className="flex flex-col items-center justify-center py-20 space-y-6">
@@ -145,126 +153,142 @@ export const Step7Success = () => {
 
   return (
     <StepWrapper 
-      title="Oto idealne rozwiązanie dla Ciebie" 
-      subtitle="Na podstawie Twoich odpowiedzi przygotowaliśmy wstępną ofertę"
+      title="Znaleźliśmy 3 świetne warianty" 
+      subtitle="Oto propozycje zestawów dobranych specjalnie do Twojego zapotrzebowania"
     >
-      <div className="max-w-3xl mx-auto space-y-8 pb-20 sm:pb-0">
+      <div className="max-w-6xl mx-auto space-y-12 pb-20 sm:pb-0">
         
-        {/* Product Card */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-border/50 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-          
-          <div className="flex flex-col sm:flex-row gap-8 items-center relative z-10">
-            <div className="w-full sm:w-2/5 aspect-[4/3] rounded-2xl bg-secondary flex items-center justify-center p-4">
-              <img 
-                src={recommendedDevice.img} 
-                alt={`${recommendedDevice.brand} ${recommendedDevice.model}`}
-                className="w-full h-full object-contain mix-blend-multiply"
-              />
-            </div>
-            
-            <div className="w-full sm:w-3/5 space-y-4">
-              <div className="inline-flex px-3 py-1 bg-primary/10 text-primary text-sm font-semibold rounded-full mb-2">
-                REKOMENDACJA
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-foreground">
-                {recommendedDevice.brand} {recommendedDevice.model}
-              </h3>
-              
-              <div className="flex flex-wrap gap-4 text-sm font-medium text-muted-foreground mt-4">
-                {rooms > 1 ? (
-                  <>
-                    <div className="flex items-center gap-2 bg-secondary px-3 py-1.5 rounded-lg text-secondary-foreground">
-                      <Wind size={18} /> {rooms}x Jednostka Wewnętrzna
-                    </div>
-                    <div className="flex items-center gap-2 bg-secondary px-3 py-1.5 rounded-lg text-secondary-foreground">
-                      <Box size={18} /> 1x Jednostka Zewnętrzna
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2 bg-secondary px-3 py-1.5 rounded-lg text-secondary-foreground">
-                      <Wind size={18} /> 1x Jednostka Wewnętrzna
-                    </div>
-                    <div className="flex items-center gap-2 bg-secondary px-3 py-1.5 rounded-lg text-secondary-foreground">
-                      <Box size={18} /> 1x Jednostka Zewnętrzna
-                    </div>
-                  </>
+        {/* Grid of Recommendation Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {recommendedDevices.map((item, index) => {
+            const product = item.product;
+            const isFirst = index === 0;
+            const brutto = Math.round((product.deviceNettoPrice + product.installNettoPrice) * 1.08);
+
+            return (
+              <div key={product.id} className="group relative bg-card rounded-2xl border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_-12px_rgba(23,80,200,0.15)]">
+                {isFirst && state.selectedDeviceLine && (
+                  <span className="absolute top-4 left-4 z-10 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
+                    Twój wybór z katalogu
+                  </span>
                 )}
-                <div className="flex items-center gap-2 bg-secondary px-3 py-1.5 rounded-lg text-secondary-foreground">
-                  <Settings2 size={18} /> Czynnik R32
+                {!isFirst && index === 1 && (
+                  <span className="absolute top-4 left-4 z-10 bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                    Alternatywa
+                  </span>
+                )}
+
+                <div className="relative h-48 bg-[#f0f4fb] overflow-hidden flex items-center justify-center p-4">
+                  <img
+                    src={product.img}
+                    alt={`Klimatyzator ${product.brand} ${product.model}`}
+                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 mix-blend-multiply"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent" />
+                </div>
+
+                <div className="flex flex-col flex-1 p-6 gap-4">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn("inline-flex items-center justify-center w-8 h-8 rounded-md text-xs font-bold tracking-wide text-white", 
+                        product.brand === "Fuji Electric" ? "bg-[#0d1b2e]" : product.brand === "Haier" ? "bg-[#c8102e]" : "bg-primary"
+                      )}
+                    >
+                      {product.brandLogo}
+                    </span>
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                        {product.brand}
+                      </p>
+                      <p className="text-sm font-semibold text-foreground font-mono tracking-tight">
+                        {product.model}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 bg-secondary text-secondary-foreground text-xs font-semibold px-3 py-1.5 rounded-full">
+                        <Wind className="w-3 h-3" />
+                        {product.power}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto pt-4 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Cena z montażem (brutto)
+                    </p>
+                    <p className="text-3xl font-bold text-foreground tracking-tight">
+                      {brutto.toLocaleString("pl-PL")} zł
+                    </p>
+                  </div>
+
+                  <button 
+                    onClick={() => handleSelectRecommendation(item)}
+                    className="mt-2 w-full bg-primary text-primary-foreground font-semibold text-sm rounded-xl py-3 px-4 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[#1244b0] active:scale-[0.98]"
+                  >
+                    Wybieram ten zestaw
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setIsModalOpen(true);
+                    }}
+                    className="w-full text-primary font-semibold text-sm rounded-xl py-2.5 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10"
+                  >
+                    <Info className="w-4 h-4" /> Szczegóły urządzenia
+                  </button>
                 </div>
               </div>
-
-              <div className="mt-6 pt-4 border-t border-border/40">
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
-                >
-                  <Info size={16} /> Zobacz pełną specyfikację urządzenia
-                </button>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
 
-        <DeviceModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-          device={recommendedDevice} 
-          onReserveClick={handleReserveFromModal}
-        />
+        {selectedProduct && (
+          <DeviceModal 
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+            device={selectedProduct} 
+            onReserveClick={() => {
+              const recItem = recommendedDevices.find(r => r.product.id === selectedProduct.id);
+              if (recItem) handleSelectRecommendation(recItem);
+            }}
+          />
+        )}
 
-        {/* Pricing Section */}
-        <div className="bg-primary/5 rounded-3xl p-6 sm:p-10 border border-primary/10 text-center">
-          <p className="text-muted-foreground font-medium mb-2">Szacunkowa wycena instalacji wraz z urządzeniem</p>
-          <h2 className="text-4xl sm:text-6xl font-bold tracking-tight text-primary mb-4">
-            {displayPrice} <span className="text-xl sm:text-2xl font-semibold text-primary/70">brutto</span>
-          </h2>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto">
-            Cena zawiera podatek VAT 8% oraz standardowy pakiet usług montażowych.
+        {/* Pricing Info Section */}
+        <div className="bg-primary/5 rounded-3xl p-6 border border-primary/10 text-center max-w-3xl mx-auto mt-12">
+          <p className="text-sm sm:text-base text-muted-foreground mb-4">
+            Podane wyżej ceny zawierają podatek VAT 8% oraz standardowy pakiet usług montażowych.
           </p>
 
-          <div className="mt-8 text-left">
-            <Accordion.Root type="single" collapsible className="w-full max-w-xl mx-auto bg-white rounded-xl shadow-sm border border-border/50">
-              <Accordion.Item value="item-1" className="overflow-hidden rounded-xl">
-                <Accordion.Header className="flex">
-                  <Accordion.Trigger className="flex flex-1 items-center justify-between p-4 font-medium transition-all hover:bg-secondary/50 group text-foreground">
-                    <span className="flex items-center gap-2">
-                      <Info className="w-5 h-5 text-primary" />
-                      Co zawiera standardowy pakiet montażowy?
-                    </span>
-                    <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-300 group-data-[state=open]:rotate-180 text-muted-foreground" />
-                  </Accordion.Trigger>
-                </Accordion.Header>
-                <Accordion.Content className="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                  <div className="p-4 pt-0 border-t border-border/50 bg-secondary/20">
-                    <ul className="space-y-3 mt-4">
-                      {currentInstallationItems.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-muted-foreground">
-                          <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </Accordion.Content>
-              </Accordion.Item>
-            </Accordion.Root>
-          </div>
-        </div>
-
-        {/* Action button - sticky on mobile */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-lg border-t border-border sm:static sm:bg-transparent sm:border-0 sm:p-0 z-50">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={nextStep}
-            className="w-full sm:max-w-md sm:mx-auto flex items-center justify-center gap-3 bg-primary text-primary-foreground py-4 px-8 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:shadow-xl transition-all"
-          >
-            <Calendar size={22} />
-            Zarezerwuj darmową wizytę technika
-          </motion.button>
+          <Accordion.Root type="single" collapsible className="w-full bg-white rounded-xl shadow-sm border border-border/50 text-left">
+            <Accordion.Item value="item-1" className="overflow-hidden rounded-xl">
+              <Accordion.Header className="flex">
+                <Accordion.Trigger className="flex flex-1 items-center justify-between p-4 font-medium transition-all hover:bg-secondary/50 group text-foreground">
+                  <span className="flex items-center gap-2">
+                    <Info className="w-5 h-5 text-primary" />
+                    Co zawiera standardowy pakiet montażowy?
+                  </span>
+                  <ChevronDown className="h-5 w-5 shrink-0 transition-transform duration-300 group-data-[state=open]:rotate-180 text-muted-foreground" />
+                </Accordion.Trigger>
+              </Accordion.Header>
+              <Accordion.Content className="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                <div className="p-4 pt-0 border-t border-border/50 bg-secondary/20">
+                  <ul className="space-y-3 mt-4">
+                    {currentInstallationItems.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-muted-foreground">
+                        <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Accordion.Content>
+            </Accordion.Item>
+          </Accordion.Root>
         </div>
       </div>
     </StepWrapper>
