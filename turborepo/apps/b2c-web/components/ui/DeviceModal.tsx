@@ -65,7 +65,7 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
         setRooms([{ id: 'room-1', size: 'M' }]);
       }
     }
-  }, [isOpen]);
+  }, [isOpen, initialRooms]);
 
   useEffect(() => {
     if (isOpen && device) {
