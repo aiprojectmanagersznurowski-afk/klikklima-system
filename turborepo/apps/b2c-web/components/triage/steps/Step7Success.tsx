@@ -94,6 +94,34 @@ export const Step7Success = () => {
     nextStep();
   };
 
+  const handleReserveFromModal = () => {
+    setIsModalOpen(false);
+    nextStep();
+  };
+
+
+  const getInstallationItems = (count: number) => {
+    if (count === 1) {
+      return [
+        "Montaż 1 jednostki wewnętrznej i 1 zewnętrznej (do 4 m wys.)",
+        "Do 3 mb instalacji chłodniczej i przewodu sterującego",
+        "Przewiert przez jedną ścianę (1 szt.)",
+        "Odprowadzenie skroplin grawitacyjnie do 3 mb",
+        "Test szczelności układu i przeszkolenie użytkownika z obsługi"
+      ];
+    } else {
+      return [
+        `Montaż ${count} jednostek wewnętrznych i 1 zewnętrznej (do 4 m wys.)`,
+        `Do 3 mb instalacji chłodniczej dla każdego urządzenia (łącznie do ${count * 3} mb)`,
+        `Przewiert przez ścianę (${count} szt.)`,
+        `Odprowadzenie skroplin grawitacyjnie do 3 mb dla każdej jednostki`,
+        "Test szczelności układu i przeszkolenie użytkownika z obsługi"
+      ];
+    }
+  };
+
+  const currentInstallationItems = getInstallationItems(rooms);
+
   const memoizedInitialRooms = useMemo(() => {
     return Array.from({ length: state.roomCount || 1 }).map((_, index) => {
       const rawSize = state.roomSizes[index + 1] || '26-35 m²';
@@ -136,6 +164,14 @@ export const Step7Success = () => {
           </div>
         )}
         {selectedProduct && (
+          <DeviceModal 
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+            device={selectedProduct} 
+            initialRooms={memoizedInitialRooms}
+            onReserveClick={() => {
+              const recItem = recommendedDevices.find(r => r.product.id === selectedProduct.id);
+              if (recItem) handleSelectRecommendation(recItem);
             }}
           />
         )}
