@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { X, Info, Check, Wifi, Wind, Shield, Zap, ChevronDown } from "lucide-react";
+import { X, Info, Check, Wifi, Wind, Shield, Zap, ChevronDown, Palette } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -204,6 +204,9 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
                             <FeatureChip key={i} icon={IconComp}>{feat.label}</FeatureChip>
                          )
                       })}
+                      {device._raw?.color && (
+                        <FeatureChip icon={Palette}>Kolor: {device._raw.color}</FeatureChip>
+                      )}
                     </div>
                   </div>
                 </section>
