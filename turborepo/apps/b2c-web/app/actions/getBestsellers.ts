@@ -28,7 +28,6 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
     const { data: indoorDevices, error: indoorError } = await supabase
       .from('indoor_units')
       .select('*')
-      .eq('is_bestseller', true)
       .order('price_netto', { ascending: true });
 
     if (indoorError) throw indoorError;
@@ -101,7 +100,7 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
     const products = Array.from(groupedData.values())
       .map(mapGroupToProduct)
       .sort((a, b) => a.deviceNettoPrice - b.deviceNettoPrice)
-      .slice(0, 4); // Pobieramy maksymalnie 4 unikalne bestsellery dla strony głównej
+      .slice(0, 4); // Pobieramy 4 najtańsze/najpopularniejsze
 
     return products;
   } catch (err) {

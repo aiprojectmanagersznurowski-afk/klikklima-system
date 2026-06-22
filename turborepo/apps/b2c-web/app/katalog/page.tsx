@@ -76,13 +76,13 @@ export default function CatalogPage() {
     // Powierzchnia
     if (filterArea !== 'all') {
       result = result.filter(p => {
-        const area = p._raw?.recommended_area_m2;
-        if (!area) return false;
+        const areas = p._raw?.all_areas || [];
+        if (areas.length === 0) return false;
         
-        if (filterArea === 'Do 25 m²') return area <= 25;
-        if (filterArea === '26-35 m²') return area > 25 && area <= 35;
-        if (filterArea === '36-50 m²') return area > 35 && area <= 50;
-        if (filterArea === 'Powyżej 50 m²') return area > 50;
+        if (filterArea === 'Do 25 m²') return areas.some((a: number) => a <= 25);
+        if (filterArea === '26-35 m²') return areas.some((a: number) => a > 25 && a <= 35);
+        if (filterArea === '36-50 m²') return areas.some((a: number) => a > 35 && a <= 50);
+        if (filterArea === 'Powyżej 50 m²') return areas.some((a: number) => a > 50);
         return true;
       });
     }

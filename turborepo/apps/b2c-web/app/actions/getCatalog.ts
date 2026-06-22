@@ -40,6 +40,8 @@ export async function getCatalog(): Promise<CatalogData> {
       const hasSilent = devices.some(d => d.is_silent_mode);
       const isSingle = devices.some(d => d.is_single_compatible);
       const isMulti = devices.some(d => d.is_multi_compatible);
+      
+      const allAreas = devices.map(d => Number(d.recommended_area_m2) || (Number(d.cooling_capacity_kw) * 10)).filter(Boolean);
 
       const features = [
         hasWifi ? { iconName: "Wifi", label: "WIFI w standardzie" } : null,
@@ -55,6 +57,7 @@ export async function getCatalog(): Promise<CatalogData> {
         is_silent_mode: hasSilent,
         is_single_compatible: isSingle,
         is_multi_compatible: isMulti,
+        all_areas: allAreas
       };
 
       return {
