@@ -42,22 +42,34 @@ export const Step7Success = () => {
 
         setDisplayPrice(formattedPrice);
 
+        const brandLogo = mainUnit.brand === 'Fuji Electric' ? 'FE' 
+          : mainUnit.brand === 'Haier' ? 'HA' 
+          : (mainUnit.brand || "UN").substring(0, 2).toUpperCase();
+
+        const features = [
+          mainUnit.has_wifi ? { iconName: "Wifi", label: "WIFI w standardzie" } : null,
+          mainUnit.has_presence_sensor ? { iconName: "Eye", label: "Czujnik obecności" } : null,
+          mainUnit.is_silent_mode ? { iconName: "Wind", label: "Tryb cichy" } : null,
+        ].filter(Boolean) as any;
+
+        const fallbackFeatures = [
+          { iconName: "Wifi", label: "WIFI w standardzie" },
+          { iconName: "Volume2", label: "Głośność od 20dB" },
+          { iconName: "Zap", label: "Klasa A+++" },
+          { iconName: "Wind", label: "Funkcja Jonizatora" }
+        ];
+
         const newDeviceData: BestsellerProduct = {
           id: mainUnit.id,
-          brand: mainUnit.producent,
-          brandLogo: mainUnit.producent.substring(0, 2).toUpperCase(),
-          model: mainUnit.linia,
-          power: isMulti ? `Wielosplit (x${res.internalUnits.length})` : `${mainUnit.moc_chlodnicza_kw} kW`,
+          brand: mainUnit.brand || "Nieznana",
+          brandLogo: brandLogo,
+          model: mainUnit.series_name || mainUnit.model_code || "Klimatyzator",
+          power: isMulti ? `Wielosplit (x${res.internalUnits.length})` : `${mainUnit.cooling_capacity_kw || '2.5'} kW`,
           deviceNettoPrice: res.totalDevicesPrice,
           installNettoPrice: 1500,
-          marketingDesc: mainUnit.opis_marketingowy || "Elegancki design z matowym wykończeniem i technologią jonizacji powietrza. Idealny do nowoczesnych wnętrz. Gwarantuje niezwykle cichą pracę i wysoką oszczędność energii.",
-          img: mainUnit.obrazek_url || "https://images.unsplash.com/photo-1718203862467-c33159fdc504?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
-          features: mainUnit.cechy_json || [
-            { iconName: "Wifi", label: "WIFI w standardzie" },
-            { iconName: "Volume2", label: "Głośność od 20dB" },
-            { iconName: "Zap", label: "Klasa A+++" },
-            { iconName: "Wind", label: "Funkcja Jonizatora" }
-          ]
+          marketingDesc: mainUnit.marketing_description || "Elegancki design z matowym wykończeniem i technologią jonizacji powietrza. Idealny do nowoczesnych wnętrz. Gwarantuje niezwykle cichą pracę i wysoką oszczędność energii.",
+          img: mainUnit.image_url || "https://images.unsplash.com/photo-1718203862467-c33159fdc504?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+          features: features.length > 0 ? features : fallbackFeatures
         };
 
         setRecommendedDevice(newDeviceData);
