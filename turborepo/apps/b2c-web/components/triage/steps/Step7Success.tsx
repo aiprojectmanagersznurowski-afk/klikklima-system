@@ -151,9 +151,15 @@ export const Step7Success = () => {
     );
   }
 
+  const getTitle = (count: number) => {
+    if (count === 1) return "Znaleźliśmy idealny wariant";
+    if (count >= 2 && count <= 4) return `Znaleźliśmy ${count} świetne warianty`;
+    return `Znaleźliśmy ${count} świetnych wariantów`;
+  };
+
   return (
     <StepWrapper 
-      title="Znaleźliśmy 3 świetne warianty" 
+      title={getTitle(recommendedDevices.length)}
       subtitle="Oto propozycje zestawów dobranych specjalnie do Twojego zapotrzebowania"
     >
       <div className="max-w-6xl mx-auto space-y-12 pb-20 sm:pb-0">
@@ -251,10 +257,19 @@ export const Step7Success = () => {
             isOpen={isModalOpen} 
             onClose={() => setIsModalOpen(false)} 
             device={selectedProduct} 
-            initialRooms={Array.from({ length: state.roomCount || 1 }).map((_, index) => ({
-              id: `room-triage-${index}`,
-              size: (state.roomSizes[index] || 'M') as 'S' | 'M' | 'L' | 'XL'
-            }))}
+            initialRooms={Array.from({ length: state.roomCount || 1 }).map((_, index) => {
+              const rawSize = state.roomSizes[index + 1] || '26-35 m²';
+              let mappedSize: 'S' | 'M' | 'L' | 'XL' = 'M';
+              if (rawSize === 'Do 25 m²') mappedSize = 'S';
+              else if (rawSize === '26-35 m²') mappedSize = 'M';
+              else if (rawSize === '36-50 m²') mappedSize = 'L';
+              else if (rawSize === 'Powyżej 50 m²') mappedSize = 'XL';
+
+              return {
+                id: `room-triage-${index}`,
+                size: mappedSize
+              };
+            })}
             onReserveClick={() => {
               const recItem = recommendedDevices.find(r => r.product.id === selectedProduct.id);
               if (recItem) handleSelectRecommendation(recItem);
