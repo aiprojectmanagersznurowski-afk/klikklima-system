@@ -224,15 +224,22 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
                         Liczba pomieszczeń do schłodzenia
                       </label>
                       <div className="flex flex-wrap sm:flex-nowrap gap-2 p-1 bg-zinc-100/80 rounded-xl w-fit ring-1 ring-zinc-200/50">
-                        {[1, 2, 3, 4, 5].map(num => (
+                        {[1, 2, 3, 4, 5].map(num => {
+                          const isMulti = device._raw?.is_multi_compatible ?? true; // fallback to true if no raw data
+                          const isDisabled = !isMulti && num > 1;
+                          return (
                           <button
                             key={num}
-                            onClick={() => updateRoomCount(num)}
+                            onClick={() => !isDisabled && updateRoomCount(num)}
+                            disabled={isDisabled}
+                            title={isDisabled ? "Ten model występuje tylko jako pojedynczy układ (Split)" : undefined}
                             className={cn(
                               "relative px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2",
                               rooms.length === num 
                                 ? "text-blue-700 shadow-sm" 
-                                : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50"
+                                : isDisabled
+                                  ? "text-zinc-400 opacity-50 cursor-not-allowed bg-transparent"
+                                  : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50"
                             )}
                           >
                             {rooms.length === num && (
@@ -245,7 +252,7 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
                             )}
                             <span className="relative z-10">{num}</span>
                           </button>
-                        ))}
+                        )})}
                       </div>
                     </div>
 
@@ -354,10 +361,16 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
                 <div className="sticky bottom-0 mt-auto bg-white border-t border-zinc-200/60 p-6 md:px-10 md:py-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.05)] rounded-b-3xl">
                   <div className="flex flex-col text-center md:text-left">
                     <span className="text-sm font-medium text-zinc-500 mb-0.5">Szacowany koszt zestawu (z montażem)</span>
-                    <div className="text-3xl font-bold text-zinc-900 tracking-tight flex items-center gap-2 justify-center md:justify-start">
+                    <div className="text-3xl font-bold text-zinc-900 tracking-tight flex items-center gap-2 justify-center md:justify-start h-9">
                       <span className="text-xl font-medium text-zinc-500 mr-1">od</span>
-                      {matchedSet ? (matchedSet.totalPrice * 1.08).toLocaleString('pl-PL', { maximumFractionDigits: 0 }) : "---"} zł
-                      <span className="text-xs font-normal text-zinc-400 self-end mb-1">brutto</span>
+                      {isLoading ? (
+                        <div className="h-8 w-28 bg-zinc-200 animate-pulse rounded-md" />
+                      ) : (
+                        <>
+                          {matchedSet ? (matchedSet.totalPrice * 1.08).toLocaleString('pl-PL', { maximumFractionDigits: 0 }) : "---"} zł
+                          <span className="text-xs font-normal text-zinc-400 self-end mb-1">brutto</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   
