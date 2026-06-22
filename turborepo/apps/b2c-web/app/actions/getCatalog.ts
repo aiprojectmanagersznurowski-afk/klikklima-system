@@ -24,48 +24,66 @@ export async function getCatalog(): Promise<CatalogData> {
 
     const installNetto = cennik ? Number(cennik.koszt_b2c_netto) : 1500;
 
-    const mapProduct = (d: any): BestsellerProduct => {
-      const brandLogo = d.brand === 'Fuji Electric' ? 'FE' 
-        : d.brand === 'Haier' ? 'HA' 
-        : d.brand.substring(0, 2).toUpperCase();
+    const mapGroupToProduct = (devices: any[]): BestsellerProduct => {
+      // Znajdź najtańsze urządzenie w grupie
+      const cheapest = devices.reduce((prev, curr) => 
+        (Number(curr.price_netto) < Number(prev.price_netto)) ? curr : prev
+      , devices[0]);
+
+      const brandLogo = cheapest.brand === 'Fuji Electric' ? 'FE' 
+        : cheapest.brand === 'Haier' ? 'HA' 
+        : cheapest.brand.substring(0, 2).toUpperCase();
+
+      // Agregacja cech z całej serii
+      const hasWifi = devices.some(d => d.has_wifi);
+      const hasPresence = devices.some(d => d.has_presence_sensor);
+      const hasSilent = devices.some(d => d.is_silent_mode);
+      const isSingle = devices.some(d => d.is_single_compatible);
+      const isMulti = devices.some(d => d.is_multi_compatible);
 
       const features = [
-        d.has_wifi ? { iconName: "Wifi", label: "WIFI w standardzie" } : null,
-        d.has_presence_sensor ? { iconName: "Eye", label: "Czujnik obecności" } : null,
-        d.is_silent_mode ? { iconName: "Wind", label: "Tryb cichy" } : null,
+        hasWifi ? { iconName: "Wifi", label: "WIFI w standardzie" } : null,
+        hasPresence ? { iconName: "Eye", label: "Czujnik obecności" } : null,
+        hasSilent ? { iconName: "Wind", label: "Tryb cichy" } : null,
       ].filter(Boolean) as any;
 
+      // Zbuduj surowy obiekt z zagregowanymi cechami
+      const rawAggregated = {
+        ...cheapest,
+        has_wifi: hasWifi,
+        has_presence_sensor: hasPresence,
+        is_silent_mode: hasSilent,
+        is_single_compatible: isSingle,
+        is_multi_compatible: isMulti,
+      };
+
       return {
-        id: d.id,
-        brand: d.brand,
+        id: cheapest.id,
+        brand: cheapest.brand,
         brandLogo: brandLogo,
-        model: d.series_name || d.model_code, // Używamy series_name zamiast model_code, jeśli dostępne
-        power: `${d.cooling_capacity_kw} kW`,
-        img: d.image_url || "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
-        deviceNettoPrice: Number(d.price_netto),
+        model: cheapest.series_name || cheapest.model_code, 
+        power: `${cheapest.cooling_capacity_kw} kW`,
+        img: cheapest.image_url || "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
+        deviceNettoPrice: Number(cheapest.price_netto),
         installNettoPrice: installNetto,
-        tag: d.is_bestseller ? "Bestseller" : undefined,
-        marketingDesc: d.marketing_description || "",
+        tag: cheapest.is_bestseller ? "Bestseller" : undefined,
+        marketingDesc: cheapest.marketing_description || "",
         features: features,
         gallery: [],
-        _raw: d
+        _raw: rawAggregated
       };
     };
 
-    const allProducts = (indoorDevices || []).map(mapProduct);
-
-    // Grupowanie po series_name aby ograniczyć liczbę kafelków
-    const grouped = new Map<string, BestsellerProduct>();
-    
-    for (const p of allProducts) {
-      const key = `${p.brand}-${p.model}`; // p.model to series_name
-      const existing = grouped.get(key);
-      if (!existing || p.deviceNettoPrice < existing.deviceNettoPrice) {
-        grouped.set(key, p);
-      }
+    const groupedData = new Map<string, any[]>();
+    for (const d of indoorDevices || []) {
+      const key = `${d.brand}-${d.series_name || d.model_code}`;
+      if (!groupedData.has(key)) groupedData.set(key, []);
+      groupedData.get(key)!.push(d);
     }
 
-    const products = Array.from(grouped.values()).sort((a, b) => a.deviceNettoPrice - b.deviceNettoPrice);
+    const products = Array.from(groupedData.values())
+      .map(mapGroupToProduct)
+      .sort((a, b) => a.deviceNettoPrice - b.deviceNettoPrice);
 
     return {
       products
