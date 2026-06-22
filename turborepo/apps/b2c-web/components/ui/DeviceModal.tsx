@@ -7,6 +7,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { BestsellerProduct } from "@/app/actions/getBestsellers";
 import { getSetForConfig } from "@/app/actions/getSetForConfig";
+import { getAvailableSizes } from "@/app/actions/getAvailableSizes";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -56,6 +57,15 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
   const [rooms, setRooms] = useState<Room[]>([{ id: 'room-1', size: 'M' }]);
   const [matchedSet, setMatchedSet] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [supportedSizes, setSupportedSizes] = useState<string[]>(['S', 'M', 'L', 'XL']);
+
+  useEffect(() => {
+    if (isOpen && device) {
+      getAvailableSizes(device.model).then(sizes => {
+        setSupportedSizes(sizes);
+      });
+    }
+  }, [isOpen, device]);
 
   useEffect(() => {
     if (isOpen) {
@@ -259,33 +269,40 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
                                 Pokój {index + 1}
                               </div>
                               
-                              <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                {ROOM_SIZES.map(size => (
-                                  <button
-                                    key={size.value}
-                                    onClick={() => updateRoomSize(room.id, size.value)}
-                                    className={cn(
-                                      "flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200",
-                                      room.size === size.value
-                                        ? "bg-blue-50/50 border-blue-600 ring-1 ring-blue-600/20"
-                                        : "bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
-                                    )}
-                                  >
-                                    <span className={cn(
-                                      "text-sm font-semibold mb-0.5",
-                                      room.size === size.value ? "text-blue-700" : "text-zinc-700"
-                                    )}>
-                                      {size.label}
-                                    </span>
-                                    <span className={cn(
-                                      "text-xs",
-                                      room.size === size.value ? "text-blue-600/80" : "text-zinc-500"
-                                    )}>
-                                      {size.desc}
-                                    </span>
-                                  </button>
-                                ))}
-                              </div>
+                                         <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2 relative group">
+                                  {ROOM_SIZES.map(size => {
+                                    const isSupported = supportedSizes.includes(size.value);
+                                    return (
+                                    <button
+                                      key={size.value}
+                                      disabled={!isSupported}
+                                      onClick={() => updateRoomSize(room.id, size.value)}
+                                      className={cn(
+                                        "flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 relative",
+                                        room.size === size.value
+                                          ? "bg-blue-50/50 border-blue-600 ring-1 ring-blue-600/20"
+                                          : isSupported 
+                                            ? "bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50" 
+                                            : "bg-zinc-50 border-zinc-100 opacity-50 cursor-not-allowed",
+                                        !isSupported && "group-hover:opacity-60"
+                                      )}
+                                      title={!isSupported ? "Ta seria nie obsługuje tego metrażu" : undefined}
+                                    >
+                                      <span className={cn(
+                                        "text-sm font-semibold mb-0.5",
+                                        room.size === size.value ? "text-blue-700" : isSupported ? "text-zinc-700" : "text-zinc-400"
+                                      )}>
+                                        {size.label}
+                                      </span>
+                                      <span className={cn(
+                                        "text-xs",
+                                        room.size === size.value ? "text-blue-600/80" : isSupported ? "text-zinc-500" : "text-zinc-400"
+                                      )}>
+                                        {size.desc}
+                                      </span>
+                                    </button>
+                                  )})}
+                                </div>
                             </div>
                           </motion.div>
                         ))}
