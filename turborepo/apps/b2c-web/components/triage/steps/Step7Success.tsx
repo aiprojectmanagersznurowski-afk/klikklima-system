@@ -147,22 +147,17 @@ export const Step7Success = () => {
   return (
     <StepWrapper title={getTitle(recommendedDevices.length)} subtitle="Oto propozycje zestawów dobranych specjalnie do Twojego zapotrzebowania">
       <div className="max-w-6xl mx-auto space-y-12 pb-20">
-        {recommendedDevices.length > 0 && (
-          <div className="space-y-6">
-            <h3 className="text-xl font-bold text-zinc-900 px-2 flex items-center gap-2"><span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">1</span> Twój wybrany zestaw</h3>
-            <DeviceCard product={recommendedDevices[0].product} isBestMatch onDetails={() => { setSelectedProduct(recommendedDevices[0].product); setIsModalOpen(true); }} onSelect={() => handleSelectRecommendation(recommendedDevices[0])} />
-          </div>
-        )}
-        {recommendedDevices.length > 1 && (
-          <div className="space-y-6">
-            <h3 className="text-xl font-bold text-zinc-900 px-2 flex items-center gap-2"><span className="w-8 h-8 rounded-full bg-zinc-100 text-zinc-600 flex items-center justify-center text-sm">2</span> Alternatywne opcje</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {recommendedDevices.slice(1).map((rec, i) => (
-                <DeviceCard key={i} product={rec.product} onDetails={() => { setSelectedProduct(rec.product); setIsModalOpen(true); }} onSelect={() => handleSelectRecommendation(rec)} />
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {recommendedDevices.map((rec, i) => (
+             <DeviceCard 
+               key={i} 
+               product={rec.product} 
+               isBestMatch={i === 0} 
+               onDetails={() => { setSelectedProduct(rec.product); setIsModalOpen(true); }} 
+               onSelect={() => handleSelectRecommendation(rec)} 
+             />
+          ))}
+        </div>
         {selectedProduct && (
           <DeviceModal 
             isOpen={isModalOpen} 

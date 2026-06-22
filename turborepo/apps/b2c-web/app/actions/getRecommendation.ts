@@ -13,11 +13,11 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
     }
 
     const getKwForSize = (size: string) => {
-      if (size === 'Do 25 m²') return 2.5;
-      if (size === '26-35 m²') return 3.5;
-      if (size === '36-50 m²') return 5.0;
-      if (size === 'Powyżej 50 m²') return 7.0;
-      return 2.5;
+      if (size === 'Do 25 m²') return 2.0; // Kod 07 zaczyna się od 2.0
+      if (size === '26-35 m²') return 2.5; // Kod 09 to 2.5
+      if (size === '36-50 m²') return 3.4; // Kod 12 to 3.4
+      if (size === 'Powyżej 50 m²') return 5.0; // Kod 18 to 5.0
+      return 2.0;
     };
 
     const { data: cennik, error: cennikError } = await supabase
