@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { getCatalog, type CatalogData } from "../actions/getCatalog";
 import { ProductCard } from "@/components/ui/ProductCard";
-import { DeviceModal, type DeviceData } from "@/components/ui/DeviceModal";
+import { DeviceModal } from "@/components/ui/DeviceModal";
 import { type BestsellerProduct as Product } from "../actions/getBestsellers";
 import { ChevronLeft, SlidersHorizontal } from "lucide-react";
 import { useRouter } from 'next/navigation';
@@ -11,25 +11,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { calcBrutto } from "@/components/ui/ProductCard";
 
-function buildMockDevice(product: Product): DeviceData {
-  const brutto = calcBrutto(product.deviceNettoPrice, product.installNettoPrice);
 
-  const fallbackDesc = "Wysokiej klasy klimatyzator zapewniający optymalny komfort cieplny. Charakteryzuje się cichą pracą i wysoką energooszczędnością.";
-  const fallbackImages = [{ id: "1", src: product.img, alt: product.model }];
-  const fallbackChips = [
-    { iconName: "Wifi", label: "WIFI w standardzie" },
-    { iconName: "Zap", label: "Wysoka klasa energetyczna" }
-  ];
-
-  return {
-    name: `${product.brand} ${product.model}`,
-    capacity: product.power,
-    price: `od ${brutto.toLocaleString("pl-PL")} zł brutto`,
-    marketingDescription: product.marketingDesc || fallbackDesc,
-    images: Array.isArray(product.gallery) && product.gallery.length > 0 ? product.gallery : fallbackImages,
-    chips: Array.isArray(product.features) && product.features.length > 0 ? product.features : fallbackChips
-  };
-}
 
 export default function CatalogPage() {
   const router = useRouter();
@@ -49,9 +31,12 @@ export default function CatalogPage() {
   });
 
   useEffect(() => {
-    getCatalog().then((data) => {
-      setCatalog(data);
-    });
+    const fetchCatalog = async () => {
+      getCatalog().then((data) => {
+        setCatalog(data);
+      });
+    };
+    fetchCatalog();
   }, []);
 
   const allProducts = catalog?.products || [];
@@ -314,7 +299,7 @@ export default function CatalogPage() {
         <DeviceModal
           isOpen={selectedProduct !== null}
           onClose={() => setSelectedProduct(null)}
-          device={selectedProduct ? buildMockDevice(selectedProduct) : null}
+          device={selectedProduct}
         />
       </main>
 

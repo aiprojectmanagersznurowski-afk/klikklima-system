@@ -6,8 +6,8 @@ import { getBestsellers, type BestsellerProduct as Product } from "./actions/get
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ExitIntentModal from "@/components/triage/ExitIntentModal";
-import { DeviceModal, type DeviceData } from "@/components/ui/DeviceModal";
 import { ProductCard, calcBrutto } from "@/components/ui/ProductCard";
+import { DeviceModal } from "@/components/ui/DeviceModal";
 import { companyDetails } from "@/config/company";
 import {
   ArrowRight,
@@ -78,26 +78,6 @@ const steps = [
 ];
 
 /* ─── Sub-components ────────────────────────────────────────────────────── */
-
-function buildMockDevice(product: Product): DeviceData {
-  const brutto = calcBrutto(product.deviceNettoPrice, product.installNettoPrice);
-
-  const fallbackDesc = "Wysokiej klasy klimatyzator zapewniający optymalny komfort cieplny. Charakteryzuje się cichą pracą i wysoką energooszczędnością.";
-  const fallbackImages = [{ id: "1", src: product.img, alt: product.model }];
-  const fallbackChips = [
-    { iconName: "Wifi", label: "WIFI w standardzie" },
-    { iconName: "Zap", label: "Wysoka klasa energetyczna" }
-  ];
-
-  return {
-    name: `${product.brand} ${product.model}`,
-    capacity: product.power,
-    price: `od ${brutto.toLocaleString("pl-PL")} zł brutto`,
-    marketingDescription: product.marketingDesc || fallbackDesc,
-    images: Array.isArray(product.gallery) && product.gallery.length > 0 ? product.gallery : fallbackImages,
-    chips: Array.isArray(product.features) && product.features.length > 0 ? product.features : fallbackChips
-  };
-}
 
 function GlassCard({
   icon: Icon,
@@ -413,8 +393,7 @@ export default function Page() {
         <DeviceModal
           isOpen={!!selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          device={buildMockDevice(selectedProduct)}
-          onReserveClick={() => window.location.href = '/triage'}
+          device={selectedProduct}
         />
       )}
     </div>

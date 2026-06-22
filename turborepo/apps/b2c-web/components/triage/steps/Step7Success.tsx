@@ -7,14 +7,16 @@ import { Check, Info, Wind, Settings2, Box, Calendar, ChevronDown, Loader2 } fro
 import { cn } from '@/lib/utils';
 import * as Accordion from '@radix-ui/react-accordion';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { DeviceModal, type DeviceData } from '../../ui/DeviceModal';
+import { DeviceModal } from '../../ui/DeviceModal';
 import { getRecommendation } from '@/app/actions/getRecommendation';
+import type { BestsellerProduct } from '@/app/actions/getBestsellers';
 
 export const Step7Success = () => {
   const { data: state, nextStep, updateData } = useTriageStore();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [recommendedDevice, setRecommendedDevice] = React.useState<DeviceData | null>(null);
+  const [recommendedDevice, setRecommendedDevice] = React.useState<BestsellerProduct | null>(null);
+  const [displayPrice, setDisplayPrice] = React.useState("");
 
   const rooms = state.roomCount || 1;
 
@@ -38,16 +40,19 @@ export const Step7Success = () => {
           style: 'currency', currency: 'PLN', maximumFractionDigits: 0 
         }).format(finalPriceBrutto);
 
-        const newDeviceData: DeviceData = {
-          name: `${mainUnit.producent} ${mainUnit.linia}`,
-          capacity: isMulti ? `Wielosplit (x${res.internalUnits.length})` : `${mainUnit.moc_chlodnicza_kw} kW`,
-          price: formattedPrice,
-          marketingDescription: mainUnit.opis_marketingowy || "Elegancki design z matowym wykończeniem i technologią jonizacji powietrza. Idealny do nowoczesnych wnętrz. Gwarantuje niezwykle cichą pracę i wysoką oszczędność energii.",
-          images: mainUnit.obrazek_url ? [{ id: "1", src: mainUnit.obrazek_url, alt: `${mainUnit.producent} ${mainUnit.linia}` }] : [
-            { id: "1", src: "https://images.unsplash.com/photo-1718203862467-c33159fdc504?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080", alt: "Klimatyzator Front" },
-            { id: "2", src: "https://images.unsplash.com/photo-1527689638836-411945a2b57c?w=800&q=80", alt: "Klimatyzator Lifestyle" }
-          ],
-          chips: mainUnit.cechy_json || [
+        setDisplayPrice(formattedPrice);
+
+        const newDeviceData: BestsellerProduct = {
+          id: mainUnit.id,
+          brand: mainUnit.producent,
+          brandLogo: mainUnit.producent.substring(0, 2).toUpperCase(),
+          model: mainUnit.linia,
+          power: isMulti ? `Wielosplit (x${res.internalUnits.length})` : `${mainUnit.moc_chlodnicza_kw} kW`,
+          deviceNettoPrice: res.totalDevicesPrice,
+          installNettoPrice: 1500,
+          marketingDesc: mainUnit.opis_marketingowy || "Elegancki design z matowym wykończeniem i technologią jonizacji powietrza. Idealny do nowoczesnych wnętrz. Gwarantuje niezwykle cichą pracę i wysoką oszczędność energii.",
+          img: mainUnit.obrazek_url || "https://images.unsplash.com/photo-1718203862467-c33159fdc504?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+          features: mainUnit.cechy_json || [
             { iconName: "Wifi", label: "WIFI w standardzie" },
             { iconName: "Volume2", label: "Głośność od 20dB" },
             { iconName: "Zap", label: "Klasa A+++" },
@@ -65,15 +70,19 @@ export const Step7Success = () => {
           style: 'currency', currency: 'PLN', maximumFractionDigits: 0 
         }).format(fallbackTotalBrutto);
 
+        setDisplayPrice(`od ${fallbackPriceFormatted}`);
+
         setRecommendedDevice({
-          name: rooms > 1 ? "Fuji Electric Multi-Split" : "Fuji Electric KETA",
-          capacity: rooms > 1 ? `Wielosplit (Multi x${rooms})` : "2.5 kW / 3.5 kW",
-          price: `od ${fallbackPriceFormatted}`,
-          marketingDescription: "Niezawodne urządzenia i elastyczność montażu dla Twojego metrażu.",
-          images: [
-            { id: "1", src: "https://images.unsplash.com/photo-1718203862467-c33159fdc504?q=80&w=1080", alt: "Fuji KETA" }
-          ],
-          chips: [
+          id: 'fallback',
+          brand: 'Fuji Electric',
+          brandLogo: 'FE',
+          model: rooms > 1 ? "Multi-Split" : "KETA",
+          power: rooms > 1 ? `Wielosplit (Multi x${rooms})` : "2.5 kW / 3.5 kW",
+          deviceNettoPrice: fallbackDevice,
+          installNettoPrice: fallbackInstall,
+          marketingDesc: "Niezawodne urządzenia i elastyczność montażu dla Twojego metrażu.",
+          img: "https://images.unsplash.com/photo-1718203862467-c33159fdc504?q=80&w=1080",
+          features: [
             { iconName: "Wifi", label: "WIFI w standardzie" }
           ]
         });
@@ -84,7 +93,7 @@ export const Step7Success = () => {
     fetchRecommendation();
   }, [state.roomCount, state.roomSizes]);
 
-  const handleReserveFromModal = (device: DeviceData) => {
+  const handleReserveFromModal = () => {
     setIsModalOpen(false);
     nextStep();
   };
@@ -136,8 +145,8 @@ export const Step7Success = () => {
           <div className="flex flex-col sm:flex-row gap-8 items-center relative z-10">
             <div className="w-full sm:w-2/5 aspect-[4/3] rounded-2xl bg-secondary flex items-center justify-center p-4">
               <img 
-                src={recommendedDevice.images[0].src} 
-                alt={recommendedDevice.images[0].alt}
+                src={recommendedDevice.img} 
+                alt={`${recommendedDevice.brand} ${recommendedDevice.model}`}
                 className="w-full h-full object-contain mix-blend-multiply"
               />
             </div>
@@ -147,7 +156,7 @@ export const Step7Success = () => {
                 REKOMENDACJA
               </div>
               <h3 className="text-2xl sm:text-3xl font-bold text-foreground">
-                {recommendedDevice.name}
+                {recommendedDevice.brand} {recommendedDevice.model}
               </h3>
               
               <div className="flex flex-wrap gap-4 text-sm font-medium text-muted-foreground mt-4">
@@ -198,7 +207,7 @@ export const Step7Success = () => {
         <div className="bg-primary/5 rounded-3xl p-6 sm:p-10 border border-primary/10 text-center">
           <p className="text-muted-foreground font-medium mb-2">Szacunkowa wycena instalacji wraz z urządzeniem</p>
           <h2 className="text-4xl sm:text-6xl font-bold tracking-tight text-primary mb-4">
-            {recommendedDevice.price} <span className="text-xl sm:text-2xl font-semibold text-primary/70">brutto</span>
+            {displayPrice} <span className="text-xl sm:text-2xl font-semibold text-primary/70">brutto</span>
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto">
             Cena zawiera podatek VAT 8% oraz standardowy pakiet usług montażowych.

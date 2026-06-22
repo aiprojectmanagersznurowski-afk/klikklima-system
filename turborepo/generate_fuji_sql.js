@@ -85,7 +85,7 @@ function generateSQL() {
         
         if (indoorId && outdoorId) {
             const id = generateUUID();
-            sql += `INSERT INTO single_split_sets (id, indoor_unit_id, outdoor_unit_id, seer, scop, energy_class_cooling, energy_class_heating, set_price_netto) VALUES ('${id}', '${indoorId}', '${outdoorId}', NULL, NULL, NULL, NULL, 0);\n`;
+            sql += `INSERT INTO single_split_sets (id, indoor_unit_id, outdoor_unit_id, seer, scop, energy_class_cooling, energy_class_heating, set_price_netto, is_bestseller) VALUES ('${id}', '${indoorId}', '${outdoorId}', NULL, NULL, NULL, NULL, 0, false);\n`;
         }
     }
     
@@ -95,7 +95,7 @@ function generateSQL() {
         if (outdoorId) {
             const id = generateUUID();
             const jsonArr = JSON.stringify(set.indoorModelCodes.map(code => { return { code: code } }));
-            sql += `INSERT INTO multi_split_sets (id, name, outdoor_unit_id, indoor_units_json, supported_rooms_count, set_price_netto) VALUES ('${id}', 'Zestaw Multi ${set.outdoorModelCode}', '${outdoorId}', '${jsonArr}'::jsonb, ${set.indoorModelCodes.length}, 0);\n`;
+            sql += `INSERT INTO multi_split_sets (id, name, outdoor_unit_id, indoor_units_json, supported_rooms_count, set_price_netto, is_bestseller) VALUES ('${id}', 'Zestaw Multi ${set.outdoorModelCode}', '${outdoorId}', '${jsonArr}'::jsonb, ${set.indoorModelCodes.length}, 0, false);\n`;
         }
     }
     

@@ -25,12 +25,15 @@ export interface BestsellerProduct {
 
 export async function getBestsellers(): Promise<BestsellerProduct[]> {
   try {
-    // 1. Pobieramy urządzenia
-    // Możemy przefiltrować po is_bestseller albo po prostu wziąć kilka pierwszych wew_single
-    const { data: devices, error: devError } = await supabase
-      .from('indoor_units')
-      .select('*')
-      .eq('is_single_compatible', true)
+    // 1. Pobieramy zestawy single_split, które są oznaczone jako bestseller
+    const { data: sets, error: devError } = await supabase
+      .from('single_split_sets')
+      .select(`
+        *,
+        indoor_units!inner(*),
+        outdoor_units!inner(*)
+      `)
+      .eq('is_bestseller', true)
       .limit(4);
 
     if (devError) throw devError;
@@ -45,7 +48,10 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
     const installNetto = cennik ? Number(cennik.koszt_b2c_netto) : 1500;
 
     // 3. Mapujemy do interfejsu BestsellerProduct
-    const products: BestsellerProduct[] = (devices || []).map((d: any) => {
+    const products: BestsellerProduct[] = (sets || []).map((s: any) => {
+      const d = s.indoor_units;
+      const out = s.outdoor_units;
+
       // Skrót loga (Fuji Electric -> FE, Haier -> HA)
       const brandLogo = d.brand === 'Fuji Electric' ? 'FE' 
         : d.brand === 'Haier' ? 'HA' 
@@ -58,18 +64,19 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
       ].filter(Boolean) as Feature[];
 
       return {
-        id: d.id,
+        id: s.id, // ID Zestawu
         brand: d.brand,
         brandLogo: brandLogo,
-        model: d.model_code,
+        model: d.series_name, // Na froncie bestsellerów wyświetlamy serię!
         power: `${d.cooling_capacity_kw} kW`,
         img: d.image_url || "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
-        deviceNettoPrice: Number(d.price_netto),
+        deviceNettoPrice: Number(s.set_price_netto) || Number(d.price_netto) || 0, // Fallback dla wygody
         installNettoPrice: installNetto,
-        tag: d.is_bestseller ? "Bestseller" : undefined,
+        tag: s.is_bestseller ? "Bestseller" : undefined,
         marketingDesc: d.marketing_description || "",
         features: features,
         gallery: [],
+        _raw: s // Zwracamy całego seta do Modala!
       };
     });
 

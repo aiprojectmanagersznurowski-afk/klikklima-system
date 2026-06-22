@@ -52,7 +52,6 @@ CREATE TABLE indoor_units (
     marketing_description TEXT,
     color TEXT DEFAULT 'Biały',
     recommended_area_m2 INTEGER,
-    is_bestseller BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -82,6 +81,7 @@ CREATE TABLE single_split_sets (
     energy_class_cooling TEXT,
     energy_class_heating TEXT,
     set_price_netto NUMERIC,
+    is_bestseller BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE(indoor_unit_id, outdoor_unit_id)
 );
@@ -94,6 +94,7 @@ CREATE TABLE multi_split_sets (
     indoor_units_json JSONB NOT NULL, -- [{ "indoorUnitId": "uuid", "count": 1 }]
     supported_rooms_count INTEGER,
     set_price_netto NUMERIC,
+    is_bestseller BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
