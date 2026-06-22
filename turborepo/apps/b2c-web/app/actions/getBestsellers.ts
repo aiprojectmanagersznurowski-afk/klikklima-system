@@ -25,20 +25,14 @@ export interface BestsellerProduct {
 
 export async function getBestsellers(): Promise<BestsellerProduct[]> {
   try {
-    // 1. Pobieramy zestawy single_split, które są oznaczone jako bestseller
-    const { data: sets, error: devError } = await supabase
-      .from('single_split_sets')
-      .select(`
-        *,
-        indoor_units!inner(*),
-        outdoor_units!inner(*)
-      `)
+    const { data: indoorDevices, error: indoorError } = await supabase
+      .from('indoor_units')
+      .select('*')
       .eq('is_bestseller', true)
-      .limit(4);
+      .order('price_netto', { ascending: true });
 
-    if (devError) throw devError;
+    if (indoorError) throw indoorError;
 
-    // 2. Pobieramy cenę montażu wzorcowego z cennika
     const { data: cennik, error: cenError } = await supabase
       .from('cennik_uslug')
       .select('koszt_b2c_netto')
@@ -47,12 +41,7 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
 
     const installNetto = cennik ? Number(cennik.koszt_b2c_netto) : 1500;
 
-    // 3. Mapujemy do interfejsu BestsellerProduct
-    const products: BestsellerProduct[] = (sets || []).map((s: any) => {
-      const d = s.indoor_units;
-      const out = s.outdoor_units;
-
-      // Skrót loga (Fuji Electric -> FE, Haier -> HA)
+    const mapProduct = (d: any): BestsellerProduct => {
       const brandLogo = d.brand === 'Fuji Electric' ? 'FE' 
         : d.brand === 'Haier' ? 'HA' 
         : d.brand.substring(0, 2).toUpperCase();
@@ -61,24 +50,41 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
         d.has_wifi ? { iconName: "Wifi", label: "WIFI w standardzie" } : null,
         d.has_presence_sensor ? { iconName: "Eye", label: "Czujnik obecności" } : null,
         d.is_silent_mode ? { iconName: "Wind", label: "Tryb cichy" } : null,
-      ].filter(Boolean) as Feature[];
+      ].filter(Boolean) as any;
 
       return {
-        id: s.id, // ID Zestawu
+        id: d.id,
         brand: d.brand,
         brandLogo: brandLogo,
-        model: d.series_name, // Na froncie bestsellerów wyświetlamy serię!
+        model: d.series_name || d.model_code, // Używamy series_name zamiast model_code, jeśli dostępne
         power: `${d.cooling_capacity_kw} kW`,
         img: d.image_url || "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
-        deviceNettoPrice: Number(s.set_price_netto) || Number(d.price_netto) || 0, // Fallback dla wygody
+        deviceNettoPrice: Number(d.price_netto),
         installNettoPrice: installNetto,
-        tag: s.is_bestseller ? "Bestseller" : undefined,
+        tag: "Bestseller",
         marketingDesc: d.marketing_description || "",
         features: features,
         gallery: [],
-        _raw: s // Zwracamy całego seta do Modala!
+        _raw: d
       };
-    });
+    };
+
+    const allProducts = (indoorDevices || []).map(mapProduct);
+
+    // Grupowanie po series_name aby ograniczyć liczbę kafelków
+    const grouped = new Map<string, BestsellerProduct>();
+    
+    for (const p of allProducts) {
+      const key = `${p.brand}-${p.model}`; // p.model to series_name
+      const existing = grouped.get(key);
+      if (!existing || p.deviceNettoPrice < existing.deviceNettoPrice) {
+        grouped.set(key, p);
+      }
+    }
+
+    const products = Array.from(grouped.values())
+      .sort((a, b) => a.deviceNettoPrice - b.deviceNettoPrice)
+      .slice(0, 4); // Pobieramy maksymalnie 4 unikalne bestsellery dla strony głównej
 
     return products;
   } catch (err) {
