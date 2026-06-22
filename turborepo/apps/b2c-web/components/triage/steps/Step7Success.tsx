@@ -23,7 +23,7 @@ export const Step7Success = () => {
   React.useEffect(() => {
     async function fetchRecommendation() {
       setIsLoading(true);
-      const res = await getRecommendation(state.roomCount || 1, state.roomSizes);
+      const res = await getRecommendation(state.roomCount || 1, state.roomSizes, state.selectedDeviceLine);
       
       if (res.success && res.internalUnits && res.internalUnits.length > 0) {
         

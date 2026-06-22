@@ -6,7 +6,7 @@ export interface RoomSizes {
   [key: number]: string;
 }
 
-export async function getRecommendation(roomCount: number, roomSizes: RoomSizes) {
+export async function getRecommendation(roomCount: number, roomSizes: RoomSizes, seriesLine?: string | null) {
   try {
     if (!roomCount || roomCount < 1) {
       throw new Error("Brak danych o pokojach");
@@ -34,15 +34,20 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes)
       // SCENARIUSZ: SINGLE SPLIT
       const neededKw = getKwForSize(roomSizes[1]);
       
-      const { data: device, error } = await supabase
+      let query = supabase
         .from('indoor_units')
         .select('*')
         .eq('is_single_compatible', true)
         .gte('cooling_capacity_kw', neededKw)
         .order('cooling_capacity_kw', { ascending: true })
         .order('price_netto', { ascending: true })
-        .limit(1)
-        .single();
+        .limit(1);
+
+      if (seriesLine) {
+        query = query.eq('series_name', seriesLine);
+      }
+        
+      const { data: device, error } = await query.single();
         
       if (error) throw error;
       
@@ -71,14 +76,19 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes)
         const neededKw = getKwForSize(roomSizes[i]);
         totalNeededKw += neededKw;
         
-        const { data: wewDevice, error: wewError } = await supabase
+        let wewQuery = supabase
           .from('indoor_units')
           .select('*')
           .eq('is_multi_compatible', true)
           .gte('cooling_capacity_kw', neededKw)
           .order('cooling_capacity_kw', { ascending: true })
-          .limit(1)
-          .single();
+          .limit(1);
+
+        if (seriesLine) {
+          wewQuery = wewQuery.eq('series_name', seriesLine);
+        }
+          
+        const { data: wewDevice, error: wewError } = await wewQuery.single();
           
         if (wewError) throw wewError;
         internalUnits.push(wewDevice);

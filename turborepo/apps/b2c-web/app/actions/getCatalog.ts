@@ -48,12 +48,24 @@ export async function getCatalog(): Promise<CatalogData> {
         marketingDesc: d.marketing_description || "",
         features: features,
         gallery: [],
-        // Dodatkowe pola do filtrowania zachowujemy w obiekcie (musimy rozszerzyć interfejs w BestsellerProduct)
         _raw: d
       };
     };
 
-    const products = (indoorDevices || []).map(mapProduct);
+    const allProducts = (indoorDevices || []).map(mapProduct);
+
+    // Grupowanie po series_name aby ograniczyć liczbę kafelków
+    const grouped = new Map<string, BestsellerProduct>();
+    
+    for (const p of allProducts) {
+      const key = `${p.brand}-${p.model}`; // p.model to series_name
+      const existing = grouped.get(key);
+      if (!existing || p.deviceNettoPrice < existing.deviceNettoPrice) {
+        grouped.set(key, p);
+      }
+    }
+
+    const products = Array.from(grouped.values()).sort((a, b) => a.deviceNettoPrice - b.deviceNettoPrice);
 
     return {
       products
