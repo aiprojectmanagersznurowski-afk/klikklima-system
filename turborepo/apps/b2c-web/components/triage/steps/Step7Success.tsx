@@ -142,10 +142,15 @@ export const Step7Success = () => {
     );
   }
 
-  const getTitle = (count: number) => count === 1 ? "Znaleźliśmy idealny wariant" : `Znaleźliśmy ${count} świetnych wariantów`;
+  const getTitle = (count: number) => {
+    if (count === 0) return "Niestety, nie znaleźliśmy wariantów dla tej konfiguracji";
+    if (count === 1) return "Znaleźliśmy świetny wariant dla Ciebie";
+    if (count > 1 && count < 5) return `Znaleźliśmy ${count} świetne warianty`;
+    return `Znaleźliśmy ${count} świetnych wariantów`;
+  };
 
   return (
-    <StepWrapper title={getTitle(recommendedDevices.length)} subtitle="Oto propozycje zestawów dobranych specjalnie do Twojego zapotrzebowania">
+    <StepWrapper title={getTitle(recommendedDevices.length)} subtitle={recommendedDevices.length > 0 ? "Oto propozycje zestawów dobranych specjalnie do Twojego zapotrzebowania" : "Zmień parametry w poprzednich krokach lub skontaktuj się z nami, abyśmy mogli doradzić Ci indywidualnie."}>
       <div className="max-w-6xl mx-auto space-y-12 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {recommendedDevices.map((rec, i) => (

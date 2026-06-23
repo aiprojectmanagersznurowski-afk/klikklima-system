@@ -188,9 +188,14 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
                       Jednostka Wewnętrzna
                     </div>
                     
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 mb-4">
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-zinc-900 mb-1">
                       {device.brand} Seria {device.model}
                     </h1>
+                    {device._raw?.model_code && (
+                      <p className="text-xs text-zinc-400 mb-4 font-mono">
+                        Model JW: {device._raw.model_code}
+                      </p>
+                    )}
                     
                     <p className="text-zinc-500 text-base md:text-lg leading-relaxed mb-6">
                       {device.marketingDesc || "Elegancki, matowy panel frontowy idealnie wpisujący się w nowoczesne wnętrza. Cicha praca i najwyższa wydajność energetyczna dla Twojego komfortu."}
@@ -343,9 +348,14 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
                       <div className="h-px flex-1 bg-zinc-100" />
                     </div>
                     
-                    <h3 className="text-xl font-bold text-zinc-900">
-                      {matchedSet ? (matchedSet.type === 'SINGLE' ? 'Agregat Split ' : 'Agregat Multi-Split ') + matchedSet.outdoorModel : "Szukam..."}
+                    <h3 className="text-xl font-bold text-zinc-900 mb-0.5">
+                      {matchedSet ? (matchedSet.type === 'SINGLE' ? 'Agregat Split ' : 'Agregat Multi-Split ') : "Szukam..."}
                     </h3>
+                    {matchedSet?.outdoorModel && (
+                      <p className="text-xs text-zinc-400 mb-2 font-mono">
+                        Model JZ: {matchedSet.outdoorModel}
+                      </p>
+                    )}
                     
                     <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-zinc-600">
                       <div className="flex items-center gap-2">
