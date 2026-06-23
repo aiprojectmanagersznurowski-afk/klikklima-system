@@ -16,6 +16,11 @@ export async function getCatalog(): Promise<CatalogData> {
 
     if (indoorError) throw indoorError;
 
+    const { data: outdoorDevices } = await supabase
+      .from('outdoor_units')
+      .select('*')
+      .eq('type', 'SINGLE');
+
     const { data: cennik, error: cenError } = await supabase
       .from('cennik_uslug')
       .select('koszt_b2c_netto')
@@ -60,6 +65,11 @@ export async function getCatalog(): Promise<CatalogData> {
         all_areas: allAreas
       };
 
+      // Dopasuj agregat dla najtańszej jednostki
+      const outDevice = outdoorDevices?.find(o => o.brand === cheapest.brand && o.cooling_capacity_kw >= cheapest.cooling_capacity_kw) || outdoorDevices?.[0];
+      const outPrice = outDevice ? Number(outDevice.price_netto) : 0;
+      const deviceTotalNetto = Number(cheapest.price_netto) + outPrice;
+
       return {
         id: cheapest.id,
         brand: cheapest.brand,
@@ -67,7 +77,7 @@ export async function getCatalog(): Promise<CatalogData> {
         model: cheapest.series_name || cheapest.model_code, 
         power: `${cheapest.cooling_capacity_kw} kW`,
         img: cheapest.image_url || "https://images.unsplash.com/photo-1572081790780-1a7739896259?w=600&h=400&fit=crop&auto=format",
-        deviceNettoPrice: Number(cheapest.price_netto),
+        deviceNettoPrice: deviceTotalNetto,
         installNettoPrice: installNetto,
         tag: cheapest.is_bestseller ? "Bestseller" : undefined,
         marketingDesc: cheapest.marketing_description || "",

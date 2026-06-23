@@ -43,6 +43,11 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
         .order('price_netto', { ascending: true });
         
       if (error) throw error;
+
+      let { data: outDevices } = await supabase
+        .from('outdoor_units')
+        .select('*')
+        .eq('type', 'SINGLE');
       
       const distinctSeriesMap = new Map();
       for (const d of (allDevices || [])) {
@@ -76,7 +81,10 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
       }
 
       const recommendations = top3.map(device => {
-        const totalDevicesPrice = Number(device.price_netto) || 3000;
+        const outDevice = outDevices?.find(o => o.brand === device.brand && o.cooling_capacity_kw >= device.cooling_capacity_kw) || outDevices?.[0];
+        const outPrice = outDevice ? Number(outDevice.price_netto) : 0;
+        
+        const totalDevicesPrice = (Number(device.price_netto) || 1000) + outPrice;
         const totalNetto = totalDevicesPrice + totalInstallNetto;
         const totalBrutto = Math.round(totalNetto * 1.08);
 
