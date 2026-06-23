@@ -71,13 +71,17 @@ export async function getSetForConfig(seriesName: string, rooms: RoomConfig[]) {
         .single();
       const installNetto = cennik ? Number(cennik.koszt_b2c_netto) : 1500;
 
+      const setPrice = Number(set.set_price_netto) > 0 
+        ? Number(set.set_price_netto) 
+        : (Number(targetIndoor.price_netto) + Number(set.outdoor_units.price_netto));
+
       return {
         type: 'SINGLE',
         outdoorModel: set.outdoor_units.model_code,
         capacity: Number(targetIndoor.cooling_capacity_kw).toFixed(1),
-        priceNetto: Number(set.set_price_netto) || Number(targetIndoor.price_netto),
+        priceNetto: setPrice,
         installPrice: installNetto,
-        totalPrice: (Number(set.set_price_netto) || Number(targetIndoor.price_netto)) + installNetto
+        totalPrice: setPrice + installNetto
       };
     } else {
       // Multi split - find a combination that matches our codes
@@ -128,7 +132,7 @@ export async function getSetForConfig(seriesName: string, rooms: RoomConfig[]) {
         .eq('nazwa_uslugi', 'Montaż wzorcowy')
         .single();
       const baseInstall = cennik ? Number(cennik.koszt_b2c_netto) : 1500;
-      const installNetto = baseInstall + ((rooms.length - 1) * 800); // Rough estimation for multi install
+      const installNetto = baseInstall * rooms.length;
 
       return {
         type: 'MULTI',
