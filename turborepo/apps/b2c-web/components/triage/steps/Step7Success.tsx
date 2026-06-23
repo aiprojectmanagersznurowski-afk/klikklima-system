@@ -71,7 +71,7 @@ export const Step7Success = () => {
             model: mainUnit.series_name || mainUnit.model_code || "Klimatyzator",
             power: isMulti ? `Dla ${rec.internalUnits.length} pomieszczeń` : `${mainUnit.cooling_capacity_kw || '2.5'} kW`,
             deviceNettoPrice: rec.totalDevicesPrice,
-            installNettoPrice: 1500 * rooms,
+            installNettoPrice: rec.totalInstallNetto,
             marketingDesc: mainUnit.marketing_description || "Elegancki design.",
             img: mainUnit.image_url || "https://images.unsplash.com/photo-1718203862467-c33159fdc504?q=80&w=1080",
             features: []

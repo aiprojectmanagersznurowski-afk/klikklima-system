@@ -96,7 +96,9 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
                 .from('indoor_units')
                 .select('*')
                 .eq('series_name', combo.series_name)
+                .eq('brand', combo.brand)
                 .like('model_code', `%${code}%`)
+                .order('price_netto', { ascending: true })
                 .limit(1)
                 .single();
                 
