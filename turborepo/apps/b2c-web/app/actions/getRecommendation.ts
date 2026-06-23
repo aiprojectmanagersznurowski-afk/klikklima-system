@@ -13,12 +13,19 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
     }
 
     const getKwForSize = (size: string) => {
-      // Reguła 0.1 kW / 1 m2 dla minimalnej mocy wymaganej w danym przedziale:
-      if (size === 'Do 25 m²') return 2.0; // Wystarczy 2.0 kW (np. kod 07)
-      if (size === '26-35 m²') return 2.6; // Wymaga co najmniej 2.6 kW, idealnie "12-tki" (3.4 kW)
-      if (size === '36-50 m²') return 3.6; // Wymaga co najmniej 3.6 kW, idealnie "14-tki" (4.2 kW) lub "18-tki" (5.0 kW)
-      if (size === 'Powyżej 50 m²') return 5.1; // Wymaga co najmniej 5.1 kW, np. "24-tki" (7.1 kW)
-      return 2.0;
+      if (size === 'Do 25 m²') return 2.0;
+      if (size === '26-35 m²') return 2.5;
+      if (size === '36-50 m²') return 3.4;
+      if (size === 'Powyżej 50 m²') return 5.0;
+      return 2.5;
+    };
+
+    const getCodeForSize = (size: string) => {
+      if (size === 'Do 25 m²') return "07";
+      if (size === '26-35 m²') return "09";
+      if (size === '36-50 m²') return "12";
+      if (size === 'Powyżej 50 m²') return "18";
+      return "09";
     };
 
     const { data: cennik, error: cennikError } = await supabase
@@ -128,20 +135,21 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
         seriesCandidates = [seriesLine, ...seriesCandidates.filter(s => s !== seriesLine)];
       }
 
-      // Pobieramy agregaty
+      // Pobieramy agregaty bez mocnego filtrowania mocy tutaj, aby dać szansę multi_split_sets
       const { data: zewDevices, error: zewError } = await supabase
         .from('outdoor_units')
         .select('*')
         .eq('type', 'MULTI')
         .gte('max_indoor_units', roomCount)
-        .gte('cooling_capacity_kw', totalNeededKw * 0.8) // Współczynnik 80%
         .order('cooling_capacity_kw', { ascending: true })
         .order('price_netto', { ascending: true });
         
       if (zewError) throw zewError;
-      if (!zewDevices || zewDevices.length === 0) {
-        throw new Error("Nie znaleziono pasującego agregatu o wymaganej mocy.");
-      }
+
+      const { data: multiSets } = await supabase
+        .from('multi_split_sets')
+        .select('*, outdoor_units!inner(*)')
+        .eq('supported_rooms_count', roomCount);
 
       const recommendations = [];
 
@@ -163,24 +171,61 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
         }
 
         if (valid && internalUnits.length > 0) {
-          // Próbujemy dobrać agregat tej samej marki (jeśli jest info w DB), jeśli nie - pierwszy z brzegu o wystarczającej mocy
           const brand = internalUnits[0].brand;
-          let zewDevice = zewDevices.find(z => z.brand === brand) || zewDevices[0];
+          let zewDevice = null;
+          let setPriceNetto = 0;
 
-          const internalPrice = internalUnits.reduce((sum, d) => sum + (Number(d.price_netto) || 1500), 0);
-          const totalDevicesPrice = internalPrice + (Number(zewDevice.price_netto) || 4500);
-          const totalNetto = totalDevicesPrice + totalInstallNetto;
-          const totalBrutto = Math.round(totalNetto * 1.08);
-          
-          recommendations.push({
-            type: 'multi',
-            internalUnits,
-            externalUnit: zewDevice,
-            totalDevicesPrice,
-            totalInstallNetto,
-            totalNetto,
-            totalBrutto
-          });
+          // 1. Sprawdzamy czy jest zdefiniowany multi_split_set dla tych kodów
+          const requiredCodes = [];
+          for (let i = 1; i <= roomCount; i++) {
+             requiredCodes.push(getCodeForSize(roomSizes[i]));
+          }
+          requiredCodes.sort();
+
+          const brandMultiSets = (multiSets || []).filter(s => s.outdoor_units.brand === brand);
+          let bestMatch = null;
+          for (const set of brandMultiSets) {
+            const setCodes = (set.indoor_units_json as any[]).map((i) => i.code).sort();
+            let isMatch = true;
+            for (let j = 0; j < requiredCodes.length; j++) {
+              if (setCodes[j] !== requiredCodes[j]) {
+                isMatch = false;
+                break;
+              }
+            }
+            if (isMatch) {
+              bestMatch = set;
+              break;
+            }
+          }
+
+          const combinedInternalPrice = internalUnits.reduce((sum, d) => sum + (Number(d.price_netto) || 1500), 0);
+
+          if (bestMatch) {
+            zewDevice = bestMatch.outdoor_units;
+            setPriceNetto = Number(bestMatch.set_price_netto) > 0 ? Number(bestMatch.set_price_netto) : (combinedInternalPrice + Number(zewDevice.price_netto));
+          } else {
+            // 2. Fallback: znajdujemy najmniejszy agregat o wymaganej mocy (totalNeededKw * 0.8)
+            zewDevice = (zewDevices || []).find(z => z.brand === brand && z.cooling_capacity_kw >= totalNeededKw * 0.8);
+            if (zewDevice) {
+               setPriceNetto = combinedInternalPrice + Number(zewDevice.price_netto);
+            }
+          }
+
+          if (zewDevice) {
+            const totalNetto = setPriceNetto + totalInstallNetto;
+            const totalBrutto = Math.round(totalNetto * 1.08);
+            
+            recommendations.push({
+              type: 'multi',
+              internalUnits,
+              externalUnit: zewDevice,
+              totalDevicesPrice: setPriceNetto,
+              totalInstallNetto,
+              totalNetto,
+              totalBrutto
+            });
+          }
         }
       }
 
