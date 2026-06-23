@@ -349,7 +349,7 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
                     </div>
                     
                     <h3 className="text-xl font-bold text-zinc-900 mb-0.5">
-                      {matchedSet ? (matchedSet.type === 'SINGLE' ? 'Agregat Split ' : 'Agregat Multi-Split ') : "Szukam..."}
+                      {isLoading ? "Szukam..." : matchedSet ? (matchedSet.type === 'SINGLE' ? 'Agregat Split ' : 'Agregat Multi-Split ') : "Brak agregatu"}
                     </h3>
                     {matchedSet?.outdoorModel && (
                       <p className="text-xs text-zinc-400 mb-2 font-mono">
