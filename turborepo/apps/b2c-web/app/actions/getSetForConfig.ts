@@ -9,7 +9,7 @@ interface RoomConfig {
 }
 
 // Convert room size to cooling capacity code
-export function sizeToCode(size: "S" | "M" | "L" | "XL"): string {
+function sizeToCode(size: "S" | "M" | "L" | "XL"): string {
   switch (size) {
     case "S": return "07"; // Do 25m2 -> ~2.0kW
     case "M": return "09"; // 26-35m2 -> ~2.5kW

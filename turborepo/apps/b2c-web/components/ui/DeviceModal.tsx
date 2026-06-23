@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { BestsellerProduct } from "@/app/actions/getBestsellers";
-import { getSetForConfig, sizeToCode } from "@/app/actions/getSetForConfig";
+import { getSetForConfig } from "@/app/actions/getSetForConfig";
 import { getAvailableSizes } from "@/app/actions/getAvailableSizes";
 import { getValidConfigurations } from "@/app/actions/getValidConfigurations";
 
@@ -27,6 +27,16 @@ const ROOM_SIZES: { value: RoomSize; label: string; desc: string }[] = [
   { value: 'L', label: '36-50 m²', desc: 'Duży salon' },
   { value: 'XL', label: 'Powyżej 50 m²', desc: 'Otwarta przestrzeń' },
 ];
+
+function sizeToCode(size: RoomSize): string {
+  switch (size) {
+    case "S": return "07";
+    case "M": return "09";
+    case "L": return "12";
+    case "XL": return "18";
+    default: return "09";
+  }
+}
 
 export interface DeviceModalProps {
   device: BestsellerProduct | null;
