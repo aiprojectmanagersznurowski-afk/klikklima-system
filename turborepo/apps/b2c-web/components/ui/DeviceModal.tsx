@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { BestsellerProduct } from "@/app/actions/getBestsellers";
-import { getSetForConfig } from "@/app/actions/getSetForConfig";
+import { getSetForConfig, sizeToCode } from "@/app/actions/getSetForConfig";
 import { getAvailableSizes } from "@/app/actions/getAvailableSizes";
+import { getValidConfigurations } from "@/app/actions/getValidConfigurations";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -58,6 +59,7 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
   const [matchedSet, setMatchedSet] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [supportedSizes, setSupportedSizes] = useState<string[]>(['S', 'M', 'L', 'XL']);
+  const [validHashes, setValidHashes] = useState<string[] | null>(null);
 
   const [maxSupportedRooms, setMaxSupportedRooms] = useState<number>(5);
 
@@ -69,6 +71,15 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
       });
     }
   }, [isOpen, device]);
+
+  useEffect(() => {
+    if (isOpen && device) {
+      setValidHashes(null); // Reset during fetch
+      getValidConfigurations(device.model, rooms.length).then(res => {
+        setValidHashes(res);
+      });
+    }
+  }, [isOpen, device, rooms.length]);
 
   useEffect(() => {
     if (isOpen) {
@@ -289,7 +300,16 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
                               
                                          <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2 relative group">
                                   {ROOM_SIZES.map(size => {
-                                    const isSupported = supportedSizes.includes(size.value);
+                                    const isSizeSupported = supportedSizes.includes(size.value);
+                                    
+                                    // Sprawdzamy czy ta kombinacja w ogóle występuje w bazie
+                                    const hypotheticalRooms = rooms.map(r => r.id === room.id ? { ...r, size: size.value } : r);
+                                    const requiredCodes = hypotheticalRooms.map(r => sizeToCode(r.size as any)).sort();
+                                    const hypotheticalHash = requiredCodes.join('-');
+                                    
+                                    const isValidCombination = validHashes === null || validHashes.includes(hypotheticalHash);
+                                    const isSupported = isSizeSupported && isValidCombination;
+
                                     return (
                                     <button
                                       key={size.value}
