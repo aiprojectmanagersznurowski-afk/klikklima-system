@@ -1,5 +1,7 @@
 "use server";
 
+import { unstable_noStore as noStore } from 'next/cache';
+
 import { supabase } from "@/lib/supabaseClient";
 
 interface RoomConfig {
@@ -29,6 +31,7 @@ function sizeToKw(size: "S" | "M" | "L" | "XL"): number {
 }
 
 export async function getSetForConfig(seriesName: string, rooms: RoomConfig[]) {
+  noStore();
   try {
     const requiredCodes = rooms.map((r) => sizeToCode(r.size)).sort();
     const totalKw = rooms.reduce((acc, r) => acc + sizeToKw(r.size), 0);
@@ -84,19 +87,27 @@ export async function getSetForConfig(seriesName: string, rooms: RoomConfig[]) {
         totalPrice: setPrice + installNetto
       };
     } else {
-      // Multi split - find a combination that matches our codes
+      // Multi split - calculate combined indoor units price
+      let combinedPrice = 0;
+      const brand = indoors[0].brand;
+      for (const code of requiredCodes) {
+        const targetIndoor = indoors.find((u) => u.model_code.includes(code));
+        if (targetIndoor) {
+           combinedPrice += Number(targetIndoor.price_netto);
+        }
+      }
+
       const { data: multiSets } = await supabase
         .from('multi_split_sets')
         .select('*, outdoor_units!inner(*)')
         .eq('supported_rooms_count', rooms.length);
 
-      if (!multiSets || multiSets.length === 0) return null;
+      const brandMultiSets = (multiSets || []).filter(s => s.outdoor_units.brand === brand);
 
       // Find best match based on indoor_units_json
       let bestMatch = null;
-      for (const set of multiSets) {
+      for (const set of brandMultiSets) {
         const setCodes = (set.indoor_units_json as any[]).map((i) => i.code).sort();
-        // Check if codes match
         let isMatch = true;
         for (let i = 0; i < requiredCodes.length; i++) {
           if (setCodes[i] !== requiredCodes[i]) {
@@ -110,21 +121,33 @@ export async function getSetForConfig(seriesName: string, rooms: RoomConfig[]) {
         }
       }
 
-      if (!bestMatch) {
-        // Fallback: get the first multi set for that room count
-        bestMatch = multiSets[0];
+      let outdoorUnit = null;
+      let setPriceNetto = 0;
+
+      if (bestMatch) {
+         outdoorUnit = bestMatch.outdoor_units;
+         setPriceNetto = Number(bestMatch.set_price_netto) > 0 ? Number(bestMatch.set_price_netto) : (combinedPrice + Number(outdoorUnit.price_netto));
+      } else {
+         // Fallback to raw outdoor units
+         const { data: rawOutdoors } = await supabase
+           .from('outdoor_units')
+           .select('*')
+           .eq('type', 'MULTI')
+           .eq('brand', brand)
+           .gte('max_indoor_units', rooms.length)
+           .gte('cooling_capacity_kw', totalKw * 0.8)
+           .order('price_netto', { ascending: true })
+           .limit(1);
+
+         if (rawOutdoors && rawOutdoors.length > 0) {
+            outdoorUnit = rawOutdoors[0];
+            setPriceNetto = combinedPrice + Number(outdoorUnit.price_netto);
+         }
       }
 
-      // Calculate combined indoor units price
-      let combinedPrice = 0;
-      for (const code of requiredCodes) {
-        const targetIndoor = indoors.find((u) => u.model_code.includes(code));
-        if (targetIndoor) {
-           combinedPrice += Number(targetIndoor.price_netto);
-        }
+      if (!outdoorUnit) {
+         return null; // Could not find any matching outdoor unit!
       }
-      
-      const setPrice = Number(bestMatch.set_price_netto) > 0 ? Number(bestMatch.set_price_netto) : (combinedPrice + Number(bestMatch.outdoor_units.price_netto));
 
       const { data: cennik } = await supabase
         .from('cennik_uslug')
@@ -136,11 +159,11 @@ export async function getSetForConfig(seriesName: string, rooms: RoomConfig[]) {
 
       return {
         type: 'MULTI',
-        outdoorModel: bestMatch.outdoor_units.model_code,
-        capacity: Number(bestMatch.outdoor_units.cooling_capacity_kw || totalKw).toFixed(1),
-        priceNetto: setPrice,
+        outdoorModel: outdoorUnit.model_code,
+        capacity: Number(outdoorUnit.cooling_capacity_kw || totalKw).toFixed(1),
+        priceNetto: setPriceNetto,
         installPrice: installNetto,
-        totalPrice: setPrice + installNetto
+        totalPrice: setPriceNetto + installNetto
       };
     }
 

@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_noStore as noStore } from 'next/cache';
 import { supabase } from "@/lib/supabaseClient";
 
 export interface RoomSizes {
@@ -7,6 +8,7 @@ export interface RoomSizes {
 }
 
 export async function getRecommendation(roomCount: number, roomSizes: RoomSizes, seriesLine?: string | null) {
+  noStore(); // Zapobiega cachowaniu wyników (np. is_multi_compatible=true)
   try {
     if (!roomCount || roomCount < 1) {
       throw new Error("Brak danych o pokojach");
