@@ -59,10 +59,13 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
   const [isLoading, setIsLoading] = useState(false);
   const [supportedSizes, setSupportedSizes] = useState<string[]>(['S', 'M', 'L', 'XL']);
 
+  const [maxSupportedRooms, setMaxSupportedRooms] = useState<number>(5);
+
   useEffect(() => {
     if (isOpen && device) {
-      getAvailableSizes(device.model).then(sizes => {
-        setSupportedSizes(sizes);
+      getAvailableSizes(device.model).then(res => {
+        setSupportedSizes(res.sizes);
+        setMaxSupportedRooms(res.maxRooms);
       });
     }
   }, [isOpen, device]);
@@ -234,13 +237,13 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
                       <div className="flex flex-wrap sm:flex-nowrap gap-2 p-1 bg-zinc-100/80 rounded-xl w-fit ring-1 ring-zinc-200/50">
                         {[1, 2, 3, 4, 5].map(num => {
                           const isMulti = device._raw?.is_multi_compatible ?? true; // fallback to true if no raw data
-                          const isDisabled = !isMulti && num > 1;
+                          const isDisabled = (!isMulti && num > 1) || num > maxSupportedRooms;
                           return (
                           <button
                             key={num}
                             onClick={() => !isDisabled && updateRoomCount(num)}
                             disabled={isDisabled}
-                            title={isDisabled ? "Ten model występuje tylko jako pojedynczy układ (Split)" : undefined}
+                            title={isDisabled ? (!isMulti ? "Ten model występuje tylko jako pojedynczy układ (Split)" : "Producent nie posiada agregatu dla tylu pomieszczeń") : undefined}
                             className={cn(
                               "relative px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2",
                               rooms.length === num 
