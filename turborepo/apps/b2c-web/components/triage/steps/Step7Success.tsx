@@ -144,9 +144,9 @@ export const Step7Success = () => {
 
   const getTitle = (count: number) => {
     if (count === 0) return "Niestety, nie znaleźliśmy wariantów dla tej konfiguracji";
-    if (count === 1) return "Znaleźliśmy świetny wariant dla Ciebie";
-    if (count > 1 && count < 5) return `Znaleźliśmy ${count} świetne warianty`;
-    return `Znaleźliśmy ${count} świetnych wariantów`;
+    if (count === 1) return "Znaleźliśmy wariant dla Ciebie";
+    if (count > 1 && count < 5) return `Znaleźliśmy ${count} warianty`;
+    return `Znaleźliśmy ${count} wariantów`;
   };
 
   return (

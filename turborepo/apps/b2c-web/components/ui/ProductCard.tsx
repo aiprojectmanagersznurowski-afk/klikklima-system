@@ -80,13 +80,9 @@ export function ProductCard({ product, onOpenModal, showPricing = true }: { prod
            </div>
         )}
 
-        <a href="/triage" className="mt-2 w-full bg-primary text-primary-foreground font-semibold text-sm rounded-xl py-3 px-4 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[#1244b0] active:scale-[0.98]">
-          Darmowa wycena
-          <ArrowRight className="w-4 h-4" />
-        </a>
         <button 
           onClick={() => onOpenModal(product)}
-          className="w-full text-primary font-semibold text-sm rounded-xl py-2.5 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10"
+          className="w-full text-primary font-semibold text-sm rounded-xl py-3 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10"
         >
           Szczegóły urządzenia
         </button>
