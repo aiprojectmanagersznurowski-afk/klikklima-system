@@ -47,6 +47,7 @@ CREATE TABLE indoor_units (
     has_wifi BOOLEAN DEFAULT false,
     has_presence_sensor BOOLEAN DEFAULT false,
     is_silent_mode BOOLEAN DEFAULT false,
+    features JSONB,
     price_netto NUMERIC,
     image_url TEXT,
     marketing_description TEXT,
