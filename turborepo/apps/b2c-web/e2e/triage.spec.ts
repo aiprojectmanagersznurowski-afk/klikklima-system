@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 const combinations = [
-  { location: 'Mieszkanie', rooms: 1, sizes: ['Do 25 m²'], state: 'Wykończony / Zamieszkany', balcony: 'Tak' },
-  { location: 'Mieszkanie', rooms: 2, sizes: ['26-35 m²', 'Do 25 m²'], state: 'W trakcie remontu', balcony: 'Nie', floor: 'Parter, 1 lub 2' },
-  { location: 'Dom', rooms: 3, sizes: ['36-50 m²', '26-35 m²', 'Do 25 m²'], state: 'Stan deweloperski' },
-  { location: 'Lokal komercyjny', rooms: 1, sizes: ['Powyżej 50 m²'], state: 'W trakcie remontu' }
+  { location: 'Mieszkanie', rooms: 1, sizes: ['Do 20 m²'], state: 'Wykończony / Zamieszkany', balcony: 'Tak' },
+  { location: 'Mieszkanie', rooms: 2, sizes: ['21-25 m²', 'Do 20 m²'], state: 'W trakcie remontu', balcony: 'Nie', floor: 'Parter, 1 lub 2' },
+  { location: 'Dom', rooms: 3, sizes: ['26-35 m²', '21-25 m²', 'Do 20 m²'], state: 'Stan deweloperski' },
+  { location: 'Lokal komercyjny', rooms: 1, sizes: ['Powyżej 35 m²'], state: 'W trakcie remontu' }
 ];
 
 test.describe('Triage Flow Combinations', () => {

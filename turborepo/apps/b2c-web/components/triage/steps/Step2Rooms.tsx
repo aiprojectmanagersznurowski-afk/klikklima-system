@@ -14,7 +14,7 @@ export const Step2Rooms = () => {
     if (roomCount) {
       for (let i = 1; i <= roomCount; i++) {
         if (!newRoomSizes[i]) {
-          newRoomSizes[i] = 'Do 25 m²';
+          newRoomSizes[i] = 'Do 20 m²';
         }
       }
     }

@@ -7,7 +7,7 @@ import { OptionCard } from '../OptionCard';
 import { StepWrapper } from '../StepWrapper';
 import { cn } from '@/lib/utils';
 
-const sizeOptions: RoomSize[] = ['Do 25 m²', '26-35 m²', '36-50 m²', 'Powyżej 50 m²'];
+const sizeOptions: RoomSize[] = ['Do 20 m²', '21-25 m²', '26-35 m²', 'Powyżej 35 m²'];
 
 export const Step3Sizes = () => {
   const { data: state, updateData, nextStep } = useTriageStore();

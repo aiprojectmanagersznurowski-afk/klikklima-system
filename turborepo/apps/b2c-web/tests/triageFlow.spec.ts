@@ -4,9 +4,9 @@ test.describe('B2C Catalog & Triage Flow', () => {
 
   // Definiujemy przypadki testowe dla różnych ilości pomieszczeń
   const testCases = [
-    { rooms: 1, sizes: ['26-35 m²'], shouldHaveMatch: true },
-    { rooms: 3, sizes: ['26-35 m²', '36-50 m²', 'Do 25 m²'], shouldHaveMatch: true },
-    { rooms: 5, sizes: ['26-35 m²', '26-35 m²', '26-35 m²', '26-35 m²', '26-35 m²'], shouldHaveMatch: true }
+    { rooms: 1, sizes: ['21-25 m²'], shouldHaveMatch: true },
+    { rooms: 3, sizes: ['21-25 m²', '26-35 m²', 'Do 20 m²'], shouldHaveMatch: true },
+    { rooms: 5, sizes: ['21-25 m²', '21-25 m²', '21-25 m²', '21-25 m²', '21-25 m²'], shouldHaveMatch: true }
   ];
 
   for (const { rooms, sizes, shouldHaveMatch } of testCases) {

@@ -79,10 +79,10 @@ export default function CatalogPage() {
         const areas = p._raw?.all_areas || [];
         if (areas.length === 0) return false;
         
-        if (filterArea === 'Do 25 m²') return areas.some((a: number) => a <= 25);
-        if (filterArea === '26-35 m²') return areas.some((a: number) => a > 25 && a <= 35);
-        if (filterArea === '36-50 m²') return areas.some((a: number) => a > 35 && a <= 50);
-        if (filterArea === 'Powyżej 50 m²') return areas.some((a: number) => a > 50);
+        if (filterArea === 'Do 20 m²') return areas.some((a: number) => a <= 25);
+        if (filterArea === '21-25 m²') return areas.some((a: number) => a > 25 && a <= 35);
+        if (filterArea === '26-35 m²') return areas.some((a: number) => a > 35 && a <= 50);
+        if (filterArea === 'Powyżej 35 m²') return areas.some((a: number) => a > 50);
         return true;
       });
     }
@@ -180,7 +180,7 @@ export default function CatalogPage() {
             <div>
               <h3 className="text-sm font-bold uppercase text-foreground mb-4 tracking-wider">Powierzchnia</h3>
               <div className="space-y-3">
-                {['all', 'Do 25 m²', '26-35 m²', '36-50 m²', 'Powyżej 50 m²'].map(area => (
+                {['all', 'Do 20 m²', '21-25 m²', '26-35 m²', 'Powyżej 35 m²'].map(area => (
                   <label key={area} className="flex items-center gap-3 cursor-pointer">
                     <input type="radio" name="area" className="w-4 h-4 accent-primary" 
                       checked={filterArea === area} onChange={() => setFilterArea(area)} />

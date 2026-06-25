@@ -1,16 +1,16 @@
-const SIZES = ['Do 25 m²', '26-35 m²', '36-50 m²', 'Powyżej 50 m²'];
+const SIZES = ['Do 20 m²', '21-25 m²', '26-35 m²', 'Powyżej 35 m²'];
 const getKwForSize = (size) => {
-  if (size === 'Do 25 m²') return 2.0;
-  if (size === '26-35 m²') return 2.5;
-  if (size === '36-50 m²') return 3.4;
-  if (size === 'Powyżej 50 m²') return 5.0;
+  if (size === 'Do 20 m²') return 2.0;
+  if (size === '21-25 m²') return 2.5;
+  if (size === '26-35 m²') return 3.4;
+  if (size === 'Powyżej 35 m²') return 5.0;
   return 2.5;
 };
 const getCodeForSize = (size) => {
-  if (size === 'Do 25 m²') return "07";
-  if (size === '26-35 m²') return "09";
-  if (size === '36-50 m²') return "12";
-  if (size === 'Powyżej 50 m²') return "18";
+  if (size === 'Do 20 m²') return "07";
+  if (size === '21-25 m²') return "09";
+  if (size === '26-35 m²') return "12";
+  if (size === 'Powyżej 35 m²') return "18";
   return "09";
 };
 

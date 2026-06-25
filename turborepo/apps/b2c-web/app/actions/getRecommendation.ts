@@ -15,10 +15,10 @@ export async function getRecommendation(roomCount: number, roomSizes: RoomSizes,
     }
 
     const getCodeForSize = (size: string) => {
-      if (size === 'Do 25 m²') return "07";
-      if (size === '26-35 m²') return "09";
-      if (size === '36-50 m²') return "12";
-      if (size === 'Powyżej 50 m²') return "18";
+      if (size === 'Do 20 m²') return "07";
+      if (size === '21-25 m²') return "09";
+      if (size === '26-35 m²') return "12";
+      if (size === 'Powyżej 35 m²') return "18";
       return "09";
     };
 

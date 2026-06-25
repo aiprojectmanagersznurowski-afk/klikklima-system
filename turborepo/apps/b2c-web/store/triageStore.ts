@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 export type LocationType = 'Mieszkanie' | 'Dom' | 'Lokal komercyjny' | null;
 export type RoomCount = 1 | 2 | 3 | 4 | 5 | null;
-export type RoomSize = 'Do 25 m²' | '26-35 m²' | '36-50 m²' | 'Powyżej 50 m²';
+export type RoomSize = 'Do 20 m²' | '21-25 m²' | '26-35 m²' | 'Powyżej 35 m²';
 export type BuildingState = 'Wykończony / Zamieszkany' | 'W trakcie remontu' | 'Stan deweloperski' | null;
 
 export interface TriageStateData {
@@ -54,7 +54,7 @@ interface TriageStore {
 const initialState: TriageStateData = {
   location: null,
   roomCount: null,
-  roomSizes: { 1: 'Do 25 m²' },
+  roomSizes: { 1: 'Do 20 m²' },
   buildingState: null,
   hasBalcony: null,
   floor: null,
@@ -128,10 +128,10 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
     if (roomCount) {
       for (let i = 1; i <= roomCount; i++) {
         const size = roomSizes[i];
-        if (size === 'Do 25 m²') totalKw += 2.5;
-        else if (size === '26-35 m²') totalKw += 3.5;
-        else if (size === '36-50 m²') totalKw += 5.0;
-        else if (size === 'Powyżej 50 m²') totalKw += 7.0;
+        if (size === 'Do 20 m²') totalKw += 2.5;
+        else if (size === '21-25 m²') totalKw += 3.5;
+        else if (size === '26-35 m²') totalKw += 5.0;
+        else if (size === 'Powyżej 35 m²') totalKw += 7.0;
       }
     }
     return totalKw;

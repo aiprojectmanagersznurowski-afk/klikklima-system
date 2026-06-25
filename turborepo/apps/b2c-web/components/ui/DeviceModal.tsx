@@ -22,10 +22,10 @@ interface Room {
 }
 
 const ROOM_SIZES: { value: RoomSize; label: string; desc: string }[] = [
-  { value: 'S', label: 'Do 25 m²', desc: 'Mały pokój' },
-  { value: 'M', label: '26-35 m²', desc: 'Średni salon' },
-  { value: 'L', label: '36-50 m²', desc: 'Duży salon' },
-  { value: 'XL', label: 'Powyżej 50 m²', desc: 'Otwarta przestrzeń' },
+  { value: 'S', label: 'Do 20 m²', desc: 'Mały pokój' },
+  { value: 'M', label: '21-25 m²', desc: 'Średni salon' },
+  { value: 'L', label: '26-35 m²', desc: 'Duży salon' },
+  { value: 'XL', label: 'Powyżej 35 m²', desc: 'Otwarta przestrzeń' },
 ];
 
 function sizeToCode(size: RoomSize): string {

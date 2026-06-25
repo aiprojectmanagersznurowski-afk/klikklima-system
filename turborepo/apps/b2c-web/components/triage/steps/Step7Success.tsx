@@ -124,12 +124,12 @@ export const Step7Success = () => {
 
   const memoizedInitialRooms = useMemo(() => {
     return Array.from({ length: state.roomCount || 1 }).map((_, index) => {
-      const rawSize = state.roomSizes[index + 1] || '26-35 m²';
+      const rawSize = state.roomSizes[index + 1] || '21-25 m²';
       let mappedSize: 'S' | 'M' | 'L' | 'XL' = 'M';
-      if (rawSize === 'Do 25 m²') mappedSize = 'S';
-      else if (rawSize === '26-35 m²') mappedSize = 'M';
-      else if (rawSize === '36-50 m²') mappedSize = 'L';
-      else if (rawSize === 'Powyżej 50 m²') mappedSize = 'XL';
+      if (rawSize === 'Do 20 m²') mappedSize = 'S';
+      else if (rawSize === '21-25 m²') mappedSize = 'M';
+      else if (rawSize === '26-35 m²') mappedSize = 'L';
+      else if (rawSize === 'Powyżej 35 m²') mappedSize = 'XL';
       return { id: `room-triage-${index}`, size: mappedSize };
     });
   }, [state.roomCount, state.roomSizes]);

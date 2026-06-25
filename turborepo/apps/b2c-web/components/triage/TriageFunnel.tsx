@@ -32,11 +32,11 @@ const FunnelContent = () => {
 
       for (let i = 1; i <= (count || 1); i++) {
         const areaCode = searchParams.get(`area_${i}`);
-        if (areaCode === 'S') sizes[i] = 'Do 25 m²';
-        else if (areaCode === 'M') sizes[i] = '26-35 m²';
-        else if (areaCode === 'L') sizes[i] = '36-50 m²';
-        else if (areaCode === 'XL') sizes[i] = 'Powyżej 50 m²';
-        else sizes[i] = 'Do 25 m²'; // fallback
+        if (areaCode === 'S') sizes[i] = 'Do 20 m²';
+        else if (areaCode === 'M') sizes[i] = '21-25 m²';
+        else if (areaCode === 'L') sizes[i] = '26-35 m²';
+        else if (areaCode === 'XL') sizes[i] = 'Powyżej 35 m²';
+        else sizes[i] = 'Do 20 m²'; // fallback
       }
 
       updateData({

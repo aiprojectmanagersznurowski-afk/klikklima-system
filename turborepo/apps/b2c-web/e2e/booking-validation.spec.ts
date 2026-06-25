@@ -15,7 +15,7 @@ test.describe('Booking Form Validations', () => {
     // Fast path triage
     await clickOption('Mieszkanie');
     await clickOption('1 pomieszczenie');
-    await clickOption('Do 25 m²');
+    await clickOption('Do 20 m²');
     await clickOption('Wykończony / Zamieszkany');
     await clickOption('Tak');
 
