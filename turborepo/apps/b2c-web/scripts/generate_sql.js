@@ -7,8 +7,12 @@ const data = JSON.parse(rawData);
 
 let sql = `-- Wygenerowany skrypt migracyjny dla danych Fuji Electric (Single & Multi)\n\n`;
 
-sql += `-- 0. Dodaj kolumne features jesli nie istnieje\n`;
-sql += `ALTER TABLE public.indoor_units ADD COLUMN IF NOT EXISTS features JSONB;\n\n`;
+sql += `-- 0. Dodaj kolumne features jesli nie istnieje i Wyczyść starą bazę\n`;
+sql += `ALTER TABLE public.indoor_units ADD COLUMN IF NOT EXISTS features JSONB;\n`;
+sql += `DELETE FROM public.single_split_sets;\n`;
+sql += `DELETE FROM public.multi_split_sets;\n`;
+sql += `DELETE FROM public.indoor_units WHERE brand IN ('Fuji Electric', 'GENERAL');\n`;
+sql += `DELETE FROM public.outdoor_units WHERE brand IN ('Fuji Electric', 'GENERAL');\n\n`;
 
 sql += `-- 1. Insert Indoor Units\n`;
 for (const unit of data.indoor_units) {

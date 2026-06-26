@@ -1,7 +1,11 @@
 -- Wygenerowany skrypt migracyjny dla danych Fuji Electric (Single & Multi)
 
--- 0. Dodaj kolumne features jesli nie istnieje
+-- 0. Dodaj kolumne features jesli nie istnieje i Wyczyść starą bazę
 ALTER TABLE public.indoor_units ADD COLUMN IF NOT EXISTS features JSONB;
+DELETE FROM public.single_split_sets;
+DELETE FROM public.multi_split_sets;
+DELETE FROM public.indoor_units WHERE brand IN ('Fuji Electric', 'GENERAL');
+DELETE FROM public.outdoor_units WHERE brand IN ('Fuji Electric', 'GENERAL');
 
 -- 1. Insert Indoor Units
 INSERT INTO public.indoor_units (model_code, series_name, brand, cooling_capacity_kw, is_single_compatible, is_multi_compatible, price_netto, features)
