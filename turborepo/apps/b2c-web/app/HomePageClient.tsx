@@ -382,8 +382,8 @@ export default function HomePageClient({
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <Footer />
 
-      {/* Wyłapywanie wychodzących użytkowników (Soft Leads) */}
-      <ExitIntentModal />
+      {/* Wyłapywanie wychodzących użytkowników (Soft Leads) - ukryte gdy otwarty Modal */}
+      {!selectedProduct && <ExitIntentModal />}
 
       {/* Global Device Modal */}
       {selectedProduct && (

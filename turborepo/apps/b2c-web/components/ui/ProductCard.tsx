@@ -19,8 +19,9 @@ function BrandBadge({ code }: { code: string }) {
   );
 }
 
-export function ProductCard({ product, onOpenModal, showPricing = true }: { product: BestsellerProduct, onOpenModal: (p: BestsellerProduct) => void, showPricing?: boolean }) {
-  const brutto = calcBrutto(product.deviceNettoPrice, product.installNettoPrice);
+export function ProductCard({ product, onOpenModal, showPricing = true, exactPriceBrutto }: { product: BestsellerProduct, onOpenModal: (p: BestsellerProduct) => void, showPricing?: boolean, exactPriceBrutto?: number }) {
+  const defaultBrutto = product.startingPriceBrutto || calcBrutto(product.deviceNettoPrice, product.installNettoPrice);
+  const displayPrice = exactPriceBrutto || defaultBrutto;
 
   return (
     <div className="group relative bg-card rounded-2xl border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_-12px_rgba(23,80,200,0.15)]">
@@ -63,13 +64,13 @@ export function ProductCard({ product, onOpenModal, showPricing = true }: { prod
         {showPricing && (
           <div className="mt-auto pt-4 border-t border-border">
             <p className="text-xs text-muted-foreground mb-1">
-              Cena z montażem (brutto)
+              {exactPriceBrutto ? "Cena za proponowany zestaw (brutto)" : "Cena zaczyna się od (brutto)"}
             </p>
             <p className="text-3xl font-bold text-foreground tracking-tight">
-              {brutto.toLocaleString("pl-PL")} zł
+              {displayPrice.toLocaleString("pl-PL")} zł
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Urządzenie + montaż wzorcowy + VAT 8%
+              Urządzenie + montaż podstawowy + VAT 8%
             </p>
           </div>
         )}

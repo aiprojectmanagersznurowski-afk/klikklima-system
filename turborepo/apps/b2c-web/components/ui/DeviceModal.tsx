@@ -50,7 +50,6 @@ export interface DeviceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onReserveClick?: () => void;
-  initialRooms?: { id: string; size: RoomSize }[];
 }
 
 const INDOOR_IMAGE = "https://images.unsplash.com/photo-1711873315178-ee7de0b2ea5d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3YWxsJTIwbW91bnRlZCUyMGFpciUyMGNvbmRpdGlvbmVyJTIwaW5kb29yJTIwd2hpdGUlMjBtaW5pbWFsfGVufDF8fHx8MTc4MjEwNzU5N3ww&ixlib=rb-4.1.0&q=80&w=1080";
@@ -71,35 +70,36 @@ const iconMap: Record<string, any> = {
   Wind: Wind,
 };
 
-export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRooms }: DeviceModalProps) {
+export function DeviceModal({ device, isOpen, onClose, onReserveClick }: DeviceModalProps) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [matchedSet, setMatchedSet] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [supportedSizes, setSupportedSizes] = useState<string[]>(['S', 'M', 'L', 'XL']);
   const [validHashes, setValidHashes] = useState<string[] | null>(null);
   const [maxSupportedRooms, setMaxSupportedRooms] = useState<number>(5);
-  const [basePrice, setBasePrice] = useState<number | null>(null);
+  const [basePrice, setBasePrice] = useState<number | null>(device?.startingPriceBrutto || null);
 
   const isFullyConfigured = rooms.length > 0 && rooms.every((r) => r.size !== null);
 
   useEffect(() => {
     if (isOpen && device) {
-      if (initialRooms && initialRooms.length > 0) {
-        setRooms(initialRooms);
+      setRooms([]);
+      if (device.startingPriceBrutto) {
+        setBasePrice(device.startingPriceBrutto);
       } else {
-        setRooms([]);
+        setBasePrice(null);
+        getLowestPriceForIndoorUnit(device.model).then(price => {
+          if (price) setBasePrice(Math.round(price * 1.08));
+        });
       }
     }
-  }, [isOpen, device, initialRooms]);
+  }, [isOpen, device]);
 
   useEffect(() => {
     if (isOpen && device) {
       getAvailableSizes(device.model).then(res => {
         setSupportedSizes(res.sizes);
         setMaxSupportedRooms(res.maxRooms);
-      });
-      getLowestPriceForIndoorUnit(device.model).then(price => {
-        setBasePrice(price);
       });
     }
   }, [isOpen, device]);
@@ -409,7 +409,7 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
                       animate={{ opacity: 1, y: 0 }}
                       className="text-4xl md:text-5xl font-extrabold text-slate-900"
                     >
-                      {formatPrice(Math.round((isFullyConfigured && matchedSet ? matchedSet.totalPrice * 1.08 : (basePrice || 0) * 1.08)))} <span className="text-2xl font-bold">zł</span>
+                      {formatPrice(isFullyConfigured && matchedSet ? Math.round(matchedSet.totalPrice * 1.08) : (basePrice || 0))} <span className="text-2xl font-bold">zł</span>
                     </motion.div>
                   )}
                 </div>

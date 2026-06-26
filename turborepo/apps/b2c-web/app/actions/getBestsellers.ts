@@ -21,6 +21,7 @@ export interface BestsellerProduct {
   features?: Feature[];
   gallery?: { id: string; src: string; alt: string }[];
   _raw?: any;
+  startingPriceBrutto?: number;
 }
 
 export async function getBestsellers(): Promise<BestsellerProduct[]> {
@@ -107,10 +108,21 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
       groupedData.get(key)!.push(d);
     }
 
-    const products = Array.from(groupedData.values())
+    const productsRaw = Array.from(groupedData.values())
       .map(mapGroupToProduct)
       .sort((a, b) => a.deviceNettoPrice - b.deviceNettoPrice)
       .slice(0, 4); // Pobieramy 4 najtańsze/najpopularniejsze
+
+    const { getLowestPriceForIndoorUnit } = await import('./getLowestPriceForIndoorUnit');
+    const products = await Promise.all(productsRaw.map(async (p) => {
+      const minNetto = await getLowestPriceForIndoorUnit(p._raw.series_name || p._raw.model_code);
+      if (minNetto) {
+        p.startingPriceBrutto = Math.round(minNetto * 1.08);
+      } else {
+        p.startingPriceBrutto = Math.round((p.deviceNettoPrice + p.installNettoPrice) * 1.08);
+      }
+      return p;
+    }));
 
     return products;
   } catch (err) {
