@@ -122,17 +122,7 @@ export const Step7Success = () => {
 
   const currentInstallationItems = getInstallationItems(rooms);
 
-  const memoizedInitialRooms = useMemo(() => {
-    return Array.from({ length: state.roomCount || 1 }).map((_, index) => {
-      const rawSize = state.roomSizes[index + 1] || '21-25 m²';
-      let mappedSize: 'S' | 'M' | 'L' | 'XL' = 'M';
-      if (rawSize === 'Do 20 m²') mappedSize = 'S';
-      else if (rawSize === '21-25 m²') mappedSize = 'M';
-      else if (rawSize === '26-35 m²') mappedSize = 'L';
-      else if (rawSize === 'Powyżej 35 m²') mappedSize = 'XL';
-      return { id: `room-triage-${index}`, size: mappedSize };
-    });
-  }, [state.roomCount, state.roomSizes]);
+
 
   if (isLoading) {
     return (
@@ -168,7 +158,6 @@ export const Step7Success = () => {
             isOpen={isModalOpen} 
             onClose={() => setIsModalOpen(false)} 
             device={selectedProduct} 
-            initialRooms={memoizedInitialRooms}
             onReserveClick={() => {
               const recItem = recommendedDevices.find(r => r.product.id === selectedProduct.id);
               if (recItem) handleSelectRecommendation(recItem);
