@@ -180,7 +180,7 @@ export function DeviceModal({ device, isOpen, onClose, onReserveClick, initialRo
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-5xl h-[90vh] md:h-[80vh] flex flex-col p-0 overflow-hidden rounded-3xl">
+      <DialogContent className="max-w-5xl sm:max-w-5xl h-[90vh] md:h-[80vh] flex flex-col p-0 overflow-hidden rounded-3xl">
         <DialogHeader className="p-6 pb-4 border-b border-slate-100 flex-shrink-0 bg-white z-10">
           <DialogTitle className="text-2xl font-bold">Konfiguracja zestawu</DialogTitle>
         </DialogHeader>
