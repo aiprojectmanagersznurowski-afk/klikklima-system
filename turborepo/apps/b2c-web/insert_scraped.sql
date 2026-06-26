@@ -987,3 +987,158 @@ ON CONFLICT ON CONSTRAINT single_split_sets_indoor_unit_id_outdoor_unit_id_key D
     set_price_netto = EXCLUDED.set_price_netto;
 
 -- 4. Insert Multi Split Sets
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (AOHG14KBTA2)', o.id, 2, '[{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG14KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (AOHG14KBTA2)', o.id, 2, '[{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG14KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (AOHG14KBTA2)', o.id, 2, '[{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG14KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (AOHG14KBTA2)', o.id, 2, '[{"code":"07"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG14KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"07"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"09"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"12"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (AOHG18KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG18KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (AOHG18KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG18KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"09"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"09"},{"code":"09"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"09"},{"code":"12"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 4-pokojowy (AOHG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG30KBTA4';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 4-pokojowy (AOHG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG30KBTA4';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 4-pokojowy (AOHG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"07"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG30KBTA4';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 4-pokojowy (AOHG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG30KBTA4';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 4-pokojowy (AOHG30KBTA4)', o.id, 4, '[{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG30KBTA4';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG36KBTA5';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG36KBTA5';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG36KBTA5';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG36KBTA5';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG36KBTA5';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'AOHG36KBTA5';

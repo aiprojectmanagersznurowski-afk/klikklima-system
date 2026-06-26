@@ -1,1657 +1,2144 @@
 {
-"indoor_units": [
-{
-"brand": "GENERAL",
-"series_name": "KJCAL",
-"model_code": "ASHH05KJCAL",
-"cooling_capacity_kw": 1.5,
-"price_netto": 1700,
-"is_single_compatible": false,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "GENERAL",
-"series_name": "KJCAL",
-"model_code": "ASHH07KJCAL",
-"cooling_capacity_kw": 2.0,
-"price_netto": 1800,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "GENERAL",
-"series_name": "KJCAL",
-"model_code": "ASHH09KJCAL",
-"cooling_capacity_kw": 2.5,
-"price_netto": 1900,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "GENERAL",
-"series_name": "KJCAL",
-"model_code": "ASHH12KJCAL",
-"cooling_capacity_kw": 3.4,
-"price_netto": 2100,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "GENERAL",
-"series_name": "KJCAL",
-"model_code": "ASHH14KJCAL",
-"cooling_capacity_kw": 4.2,
-"price_netto": 3200,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "GENERAL",
-"series_name": "KJCAL-B",
-"model_code": "ASHH05KJCAL-B",
-"cooling_capacity_kw": 1.5,
-"price_netto": 1900,
-"is_single_compatible": false,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "GENERAL",
-"series_name": "KJCAL-B",
-"model_code": "ASHH07KJCAL-B",
-"cooling_capacity_kw": 2.0,
-"price_netto": 1990,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "GENERAL",
-"series_name": "KJCAL-B",
-"model_code": "ASHH09KJCAL-B",
-"cooling_capacity_kw": 2.5,
-"price_netto": 2100,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "GENERAL",
-"series_name": "KJCAL-B",
-"model_code": "ASHH12KJCAL-B",
-"cooling_capacity_kw": 3.4,
-"price_netto": 2300,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "GENERAL",
-"series_name": "KJCAL-B",
-"model_code": "ASHH14KJCAL-B",
-"cooling_capacity_kw": 4.2,
-"price_netto": 3400,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KETF White",
-"model_code": "RSG07KETF",
-"cooling_capacity_kw": 2.0,
-"price_netto": 2120,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KETF White",
-"model_code": "RSG09KETF",
-"cooling_capacity_kw": 2.5,
-"price_netto": 2220,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KETF White",
-"model_code": "RSG12KETF",
-"cooling_capacity_kw": 3.4,
-"price_netto": 2540,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KETF White",
-"model_code": "RSG14KETF",
-"cooling_capacity_kw": 4.2,
-"price_netto": 3560,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KETF-B Graphite",
-"model_code": "RSG07KETF-B",
-"cooling_capacity_kw": 2.0,
-"price_netto": 2120,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KETF-B Graphite",
-"model_code": "RSG09KETF-B",
-"cooling_capacity_kw": 2.5,
-"price_netto": 2220,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KETF-B Graphite",
-"model_code": "RSG12KETF-B",
-"cooling_capacity_kw": 3.4,
-"price_netto": 2540,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KETF-B Graphite",
-"model_code": "RSG14KETF-B",
-"cooling_capacity_kw": 4.2,
-"price_netto": 3560,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KGTG",
-"model_code": "RSH07KGTG",
-"cooling_capacity_kw": 2.0,
-"price_netto": 2280,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Czujnik obecności",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KGTG",
-"model_code": "RSH09KGTG",
-"cooling_capacity_kw": 2.5,
-"price_netto": 2390,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Czujnik obecności",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KGTG",
-"model_code": "RSH12KGTG",
-"cooling_capacity_kw": 3.4,
-"price_netto": 2590,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Czujnik obecności",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KGTG",
-"model_code": "RSH14KGTG",
-"cooling_capacity_kw": 4.2,
-"price_netto": 3630,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Czujnik obecności",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCG",
-"model_code": "RSH07KMCG",
-"cooling_capacity_kw": 2.0,
-"price_netto": 1550,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCG",
-"model_code": "RSH09KMCG",
-"cooling_capacity_kw": 2.5,
-"price_netto": 1900,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCG",
-"model_code": "RSH12KMCG",
-"cooling_capacity_kw": 3.4,
-"price_netto": 2100,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCG",
-"model_code": "RSH14KMCG",
-"cooling_capacity_kw": 4.2,
-"price_netto": 2800,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCG-B",
-"model_code": "RSH07KMCG-B",
-"cooling_capacity_kw": 2.0,
-"price_netto": 1950,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCG-B",
-"model_code": "RSH09KMCG-B",
-"cooling_capacity_kw": 2.5,
-"price_netto": 2300,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCG-B",
-"model_code": "RSH12KMCG-B",
-"cooling_capacity_kw": 3.4,
-"price_netto": 2500,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCG-B",
-"model_code": "RSH14KMCG-B",
-"cooling_capacity_kw": 4.2,
-"price_netto": 3200,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"GOOD DESIGN",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCEN NORDIC",
-"model_code": "RSG09KMCEN",
-"cooling_capacity_kw": 2.5,
-"price_netto": 2240,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Bardzo cicha praca",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Wskaźnik LED czyszczenia filtra",
-"Filtr jonowy o wydłużonej żywotności",
-"Elektrostatyczny filtr polifenolowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCEN NORDIC",
-"model_code": "RSG12KMCEN",
-"cooling_capacity_kw": 3.4,
-"price_netto": 2660,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Bardzo cicha praca",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Wskaźnik LED czyszczenia filtra",
-"Filtr jonowy o wydłużonej żywotności",
-"Elektrostatyczny filtr polifenolowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCEN NORDIC",
-"model_code": "RSG14KMCEN",
-"cooling_capacity_kw": 4.2,
-"price_netto": 3620,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Bardzo cicha praca",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Wskaźnik LED czyszczenia filtra",
-"Filtr jonowy o wydłużonej żywotności",
-"Elektrostatyczny filtr polifenolowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCEN-B Black NORDIC",
-"model_code": "RSG09KMCEN-B",
-"cooling_capacity_kw": 2.5,
-"price_netto": 2640,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Bardzo cicha praca",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Wskaźnik LED czyszczenia filtra",
-"Filtr jonowy o wydłużonej żywotności",
-"Elektrostatyczny filtr polifenolowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCEN-B Black NORDIC",
-"model_code": "RSG12KMCEN-B",
-"cooling_capacity_kw": 3.4,
-"price_netto": 3060,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Bardzo cicha praca",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Wskaźnik LED czyszczenia filtra",
-"Filtr jonowy o wydłużonej żywotności",
-"Elektrostatyczny filtr polifenolowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMCEN-B Black NORDIC",
-"model_code": "RSG14KMCEN-B",
-"cooling_capacity_kw": 4.2,
-"price_netto": 4020,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Bardzo cicha praca",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Wskaźnik LED czyszczenia filtra",
-"Filtr jonowy o wydłużonej żywotności",
-"Elektrostatyczny filtr polifenolowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMTE",
-"model_code": "RSG18KMTE",
-"cooling_capacity_kw": 5.2,
-"price_netto": 3730,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Bardzo cicha praca",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe i poziome",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMTE",
-"model_code": "RSG24KMTE",
-"cooling_capacity_kw": 7.1,
-"price_netto": 4470,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Bardzo cicha praca",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe i poziome",
-"Program nocny",
-"Programator dobowy",
-"Programator tygodniowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMTA",
-"model_code": "RSG30KMTA",
-"cooling_capacity_kw": 8.0,
-"price_netto": 6070,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KMTA",
-"model_code": "RSG36KMTA",
-"cooling_capacity_kw": 9.4,
-"price_netto": 6600,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Bardzo cicha praca",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia",
-"Funkcja 10°C Heat",
-"Program nocny",
-"Programator dobowy"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KNCA",
-"model_code": "RSH05KNCA",
-"cooling_capacity_kw": 1.5,
-"price_netto": 1300,
-"is_single_compatible": false,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KNCA",
-"model_code": "RSH07KNCA",
-"cooling_capacity_kw": 2.0,
-"price_netto": 1500,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KNCA",
-"model_code": "RSH09KNCA",
-"cooling_capacity_kw": 2.5,
-"price_netto": 1600,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KNCA",
-"model_code": "RSH12KNCA",
-"cooling_capacity_kw": 3.4,
-"price_netto": 1750,
-"is_single_compatible": true,
-"is_multi_compatible": true,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KLTA",
-"model_code": "RSH07KLTA",
-"cooling_capacity_kw": 2.0,
-"price_netto": 1200,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KLTA",
-"model_code": "RSH09KLTA",
-"cooling_capacity_kw": 2.5,
-"price_netto": 1400,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KLTA",
-"model_code": "RSH12KLTA",
-"cooling_capacity_kw": 3.4,
-"price_netto": 1700,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"AIRSTAGE - aplikacja do sterowania Wi-Fi",
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KLCA",
-"model_code": "RSG18KLCA",
-"cooling_capacity_kw": 5.2,
-"price_netto": 2880,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia"
-]
-},
-{
-"brand": "Fuji Electric",
-"series_name": "KLCA",
-"model_code": "RSG24KLCA",
-"cooling_capacity_kw": 7.1,
-"price_netto": 3830,
-"is_single_compatible": true,
-"is_multi_compatible": false,
-"features": [
-"Zmywalny panel obudowy",
-"Tryb ekonomiczny",
-"Tryb pełnej mocy",
-"Autom. zmiana trybu pracy",
-"Autom. regulacja siły nawiewu",
-"Autom. żaluzje pionowe",
-"Auto Restart",
-"Powrót ustawień po zaniku napięcia"
-]
-}
-],
-"outdoor_units": [
-{
-"brand": "GENERAL",
-"model_code": "AOHH07KJCA",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.0,
-"max_indoor_units": 1,
-"price_netto": 2700
-},
-{
-"brand": "GENERAL",
-"model_code": "AOHH09KJCA",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.5,
-"max_indoor_units": 1,
-"price_netto": 3000
-},
-{
-"brand": "GENERAL",
-"model_code": "AOHH12KJCA",
-"type": "SINGLE",
-"cooling_capacity_kw": 3.4,
-"max_indoor_units": 1,
-"price_netto": 3400
-},
-{
-"brand": "GENERAL",
-"model_code": "AOHH14KJCA",
-"type": "SINGLE",
-"cooling_capacity_kw": 4.2,
-"max_indoor_units": 1,
-"price_netto": 4100
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG07KETA",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.0,
-"max_indoor_units": 1,
-"price_netto": 2450
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG09KETA",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.5,
-"max_indoor_units": 1,
-"price_netto": 3040
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG12KETA",
-"type": "SINGLE",
-"cooling_capacity_kw": 3.4,
-"max_indoor_units": 1,
-"price_netto": 3090
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG14KETA",
-"type": "SINGLE",
-"cooling_capacity_kw": 4.2,
-"max_indoor_units": 1,
-"price_netto": 4100
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH07KGCG",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.0,
-"max_indoor_units": 1,
-"price_netto": 2920
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH09KGCG",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.5,
-"max_indoor_units": 1,
-"price_netto": 3500
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH12KGCG",
-"type": "SINGLE",
-"cooling_capacity_kw": 3.4,
-"max_indoor_units": 1,
-"price_netto": 3650
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH14KGCG",
-"type": "SINGLE",
-"cooling_capacity_kw": 4.2,
-"max_indoor_units": 1,
-"price_netto": 4670
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH07KMCG",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.0,
-"max_indoor_units": 1,
-"price_netto": 2100
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH09KMCG",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.5,
-"max_indoor_units": 1,
-"price_netto": 2300
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH12KMCG",
-"type": "SINGLE",
-"cooling_capacity_kw": 3.4,
-"max_indoor_units": 1,
-"price_netto": 2700
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH14KMCG",
-"type": "SINGLE",
-"cooling_capacity_kw": 4.2,
-"max_indoor_units": 1,
-"price_netto": 3800
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG09KMCEN",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.5,
-"max_indoor_units": 1,
-"price_netto": 3300
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG12KMCEN",
-"type": "SINGLE",
-"cooling_capacity_kw": 3.4,
-"max_indoor_units": 1,
-"price_netto": 3730
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG14KMCEN",
-"type": "SINGLE",
-"cooling_capacity_kw": 4.2,
-"max_indoor_units": 1,
-"price_netto": 5330
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG18KMTA",
-"type": "SINGLE",
-"cooling_capacity_kw": 5.2,
-"max_indoor_units": 1,
-"price_netto": 4360
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG24KMTA",
-"type": "SINGLE",
-"cooling_capacity_kw": 7.1,
-"max_indoor_units": 1,
-"price_netto": 6280
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG30KMTA",
-"type": "SINGLE",
-"cooling_capacity_kw": 8.0,
-"max_indoor_units": 1,
-"price_netto": 9050
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG36KMTA",
-"type": "SINGLE",
-"cooling_capacity_kw": 9.4,
-"max_indoor_units": 1,
-"price_netto": 9800
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH07KNCA",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.0,
-"max_indoor_units": 1,
-"price_netto": 2400
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH09KNCA",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.5,
-"max_indoor_units": 1,
-"price_netto": 2500
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH12KNCA",
-"type": "SINGLE",
-"cooling_capacity_kw": 3.4,
-"max_indoor_units": 1,
-"price_netto": 2600
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH07KLTA",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.0,
-"max_indoor_units": 1,
-"price_netto": 1900
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH09KLTA",
-"type": "SINGLE",
-"cooling_capacity_kw": 2.5,
-"max_indoor_units": 1,
-"price_netto": 2200
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROH12KLTA",
-"type": "SINGLE",
-"cooling_capacity_kw": 3.4,
-"max_indoor_units": 1,
-"price_netto": 2400
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG18KLCA",
-"type": "SINGLE",
-"cooling_capacity_kw": 5.2,
-"max_indoor_units": 1,
-"price_netto": 4150
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG24KLCA",
-"type": "SINGLE",
-"cooling_capacity_kw": 7.1,
-"max_indoor_units": 1,
-"price_netto": 5750
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG14KBTA2",
-"type": "MULTI",
-"cooling_capacity_kw": 4.0,
-"max_indoor_units": 2,
-"price_netto": 6100
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG18KBTA2",
-"type": "MULTI",
-"cooling_capacity_kw": 5.0,
-"max_indoor_units": 2,
-"price_netto": 7100
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG18KBTA3",
-"type": "MULTI",
-"cooling_capacity_kw": 5.4,
-"max_indoor_units": 3,
-"price_netto": 9100
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG24KBTA3",
-"type": "MULTI",
-"cooling_capacity_kw": 6.8,
-"max_indoor_units": 3,
-"price_netto": 9800
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG30KBTA4",
-"type": "MULTI",
-"cooling_capacity_kw": 8.0,
-"max_indoor_units": 4,
-"price_netto": 11800
-},
-{
-"brand": "Fuji Electric",
-"model_code": "ROG36KBTA5",
-"type": "MULTI",
-"cooling_capacity_kw": 9.5,
-"max_indoor_units": 5,
-"price_netto": 14700
-}
-],
-"single_split_sets": [
-{
-"indoor_model": "ASHH07KJCAL",
-"outdoor_model": "AOHH07KJCA",
-"set_price_netto": 4500
-},
-{
-"indoor_model": "ASHH09KJCAL",
-"outdoor_model": "AOHH09KJCA",
-"set_price_netto": 4900
-},
-{
-"indoor_model": "ASHH12KJCAL",
-"outdoor_model": "AOHH12KJCA",
-"set_price_netto": 5500
-},
-{
-"indoor_model": "ASHH14KJCAL",
-"outdoor_model": "AOHH14KJCA",
-"set_price_netto": 7300
-},
-{
-"indoor_model": "ASHH07KJCAL-B",
-"outdoor_model": "AOHH07KJCA",
-"set_price_netto": 4690
-},
-{
-"indoor_model": "ASHH09KJCAL-B",
-"outdoor_model": "AOHH09KJCA",
-"set_price_netto": 4900
-},
-{
-"indoor_model": "ASHH12KJCAL-B",
-"outdoor_model": "AOHH12KJCA",
-"set_price_netto": 5700
-},
-{
-"indoor_model": "ASHH14KJCAL-B",
-"outdoor_model": "AOHH14KJCA",
-"set_price_netto": 7500
-},
-{
-"indoor_model": "RSG07KETF",
-"outdoor_model": "ROG07KETA",
-"set_price_netto": 4570
-},
-{
-"indoor_model": "RSG09KETF",
-"outdoor_model": "ROG09KETA",
-"set_price_netto": 5260
-},
-{
-"indoor_model": "RSG12KETF",
-"outdoor_model": "ROG12KETA",
-"set_price_netto": 5630
-},
-{
-"indoor_model": "RSG14KETF",
-"outdoor_model": "ROG14KETA",
-"set_price_netto": 7660
-},
-{
-"indoor_model": "RSG07KETF-B",
-"outdoor_model": "ROG07KETA",
-"set_price_netto": 4570
-},
-{
-"indoor_model": "RSG09KETF-B",
-"outdoor_model": "ROG09KETA",
-"set_price_netto": 5260
-},
-{
-"indoor_model": "RSG12KETF-B",
-"outdoor_model": "ROG12KETA",
-"set_price_netto": 5630
-},
-{
-"indoor_model": "RSG14KETF-B",
-"outdoor_model": "ROG14KETA",
-"set_price_netto": 7660
-},
-{
-"indoor_model": "RSH07KGTG",
-"outdoor_model": "ROH07KGCG",
-"set_price_netto": 5200
-},
-{
-"indoor_model": "RSH09KGTG",
-"outdoor_model": "ROH09KGCG",
-"set_price_netto": 5890
-},
-{
-"indoor_model": "RSH12KGTG",
-"outdoor_model": "ROH12KGCG",
-"set_price_netto": 6240
-},
-{
-"indoor_model": "RSH14KGTG",
-"outdoor_model": "ROH14KGCG",
-"set_price_netto": 8300
-},
-{
-"indoor_model": "RSH07KMCG",
-"outdoor_model": "ROH07KMCG",
-"set_price_netto": 3650
-},
-{
-"indoor_model": "RSH09KMCG",
-"outdoor_model": "ROH09KMCG",
-"set_price_netto": 4200
-},
-{
-"indoor_model": "RSH12KMCG",
-"outdoor_model": "ROH12KMCG",
-"set_price_netto": 4800
-},
-{
-"indoor_model": "RSH14KMCG",
-"outdoor_model": "ROH14KMCG",
-"set_price_netto": 6600
-},
-{
-"indoor_model": "RSH07KMCG-B",
-"outdoor_model": "ROH07KMCG",
-"set_price_netto": 4050
-},
-{
-"indoor_model": "RSH09KMCG-B",
-"outdoor_model": "ROH09KMCG",
-"set_price_netto": 4600
-},
-{
-"indoor_model": "RSH12KMCG-B",
-"outdoor_model": "ROH12KMCG",
-"set_price_netto": 5200
-},
-{
-"indoor_model": "RSH14KMCG-B",
-"outdoor_model": "ROH14KMCG",
-"set_price_netto": 7000
-},
-{
-"indoor_model": "RSG09KMCEN",
-"outdoor_model": "ROG09KMCEN",
-"set_price_netto": 5540
-},
-{
-"indoor_model": "RSG12KMCEN",
-"outdoor_model": "ROG12KMCEN",
-"set_price_netto": 6390
-},
-{
-"indoor_model": "RSG14KMCEN",
-"outdoor_model": "ROG14KMCEN",
-"set_price_netto": 8950
-},
-{
-"indoor_model": "RSG09KMCEN-B",
-"outdoor_model": "ROG09KMCEN",
-"set_price_netto": 5940
-},
-{
-"indoor_model": "RSG12KMCEN-B",
-"outdoor_model": "ROG12KMCEN",
-"set_price_netto": 6790
-},
-{
-"indoor_model": "RSG14KMCEN-B",
-"outdoor_model": "ROG14KMCEN",
-"set_price_netto": 9350
-},
-{
-"indoor_model": "RSG18KMTE",
-"outdoor_model": "ROG18KMTA",
-"set_price_netto": 8090
-},
-{
-"indoor_model": "RSG24KMTE",
-"outdoor_model": "ROG24KMTA",
-"set_price_netto": 10750
-},
-{
-"indoor_model": "RSG30KMTA",
-"outdoor_model": "ROG30KMTA",
-"set_price_netto": 15120
-},
-{
-"indoor_model": "RSG36KMTA",
-"outdoor_model": "ROG36KMTA",
-"set_price_netto": 16400
-},
-{
-"indoor_model": "RSH07KNCA",
-"outdoor_model": "ROH07KNCA",
-"set_price_netto": 3900
-},
-{
-"indoor_model": "RSH09KNCA",
-"outdoor_model": "ROH09KNCA",
-"set_price_netto": 4100
-},
-{
-"indoor_model": "RSH12KNCA",
-"outdoor_model": "ROH12KNCA",
-"set_price_netto": 4350
-},
-{
-"indoor_model": "RSH07KLTA",
-"outdoor_model": "ROH07KLTA",
-"set_price_netto": 3100
-},
-{
-"indoor_model": "RSH09KLTA",
-"outdoor_model": "ROH09KLTA",
-"set_price_netto": 3600
-},
-{
-"indoor_model": "RSH12KLTA",
-"outdoor_model": "ROH12KLTA",
-"set_price_netto": 4100
-},
-{
-"indoor_model": "RSG18KLCA",
-"outdoor_model": "ROG18KLCA",
-"set_price_netto": 7030
-},
-{
-"indoor_model": "RSG24KLCA",
-"outdoor_model": "ROG24KLCA",
-"set_price_netto": 9580
-}
-],
-"multi_split_sets": []
+  "indoor_units": [
+    {
+      "brand": "GENERAL",
+      "series_name": "KJCAL",
+      "model_code": "ASHH05KJCAL",
+      "cooling_capacity_kw": 1.5,
+      "price_netto": 1700,
+      "is_single_compatible": false,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "GENERAL",
+      "series_name": "KJCAL",
+      "model_code": "ASHH07KJCAL",
+      "cooling_capacity_kw": 2,
+      "price_netto": 1800,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "GENERAL",
+      "series_name": "KJCAL",
+      "model_code": "ASHH09KJCAL",
+      "cooling_capacity_kw": 2.5,
+      "price_netto": 1900,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "GENERAL",
+      "series_name": "KJCAL",
+      "model_code": "ASHH12KJCAL",
+      "cooling_capacity_kw": 3.4,
+      "price_netto": 2100,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "GENERAL",
+      "series_name": "KJCAL",
+      "model_code": "ASHH14KJCAL",
+      "cooling_capacity_kw": 4.2,
+      "price_netto": 3200,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "GENERAL",
+      "series_name": "KJCAL-B",
+      "model_code": "ASHH05KJCAL-B",
+      "cooling_capacity_kw": 1.5,
+      "price_netto": 1900,
+      "is_single_compatible": false,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "GENERAL",
+      "series_name": "KJCAL-B",
+      "model_code": "ASHH07KJCAL-B",
+      "cooling_capacity_kw": 2,
+      "price_netto": 1990,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "GENERAL",
+      "series_name": "KJCAL-B",
+      "model_code": "ASHH09KJCAL-B",
+      "cooling_capacity_kw": 2.5,
+      "price_netto": 2100,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "GENERAL",
+      "series_name": "KJCAL-B",
+      "model_code": "ASHH12KJCAL-B",
+      "cooling_capacity_kw": 3.4,
+      "price_netto": 2300,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "GENERAL",
+      "series_name": "KJCAL-B",
+      "model_code": "ASHH14KJCAL-B",
+      "cooling_capacity_kw": 4.2,
+      "price_netto": 3400,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KETF White",
+      "model_code": "RSG07KETF",
+      "cooling_capacity_kw": 2,
+      "price_netto": 2120,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KETF White",
+      "model_code": "RSG09KETF",
+      "cooling_capacity_kw": 2.5,
+      "price_netto": 2220,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KETF White",
+      "model_code": "RSG12KETF",
+      "cooling_capacity_kw": 3.4,
+      "price_netto": 2540,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KETF White",
+      "model_code": "RSG14KETF",
+      "cooling_capacity_kw": 4.2,
+      "price_netto": 3560,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KETF-B Graphite",
+      "model_code": "RSG07KETF-B",
+      "cooling_capacity_kw": 2,
+      "price_netto": 2120,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KETF-B Graphite",
+      "model_code": "RSG09KETF-B",
+      "cooling_capacity_kw": 2.5,
+      "price_netto": 2220,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KETF-B Graphite",
+      "model_code": "RSG12KETF-B",
+      "cooling_capacity_kw": 3.4,
+      "price_netto": 2540,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KETF-B Graphite",
+      "model_code": "RSG14KETF-B",
+      "cooling_capacity_kw": 4.2,
+      "price_netto": 3560,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KGTG",
+      "model_code": "RSH07KGTG",
+      "cooling_capacity_kw": 2,
+      "price_netto": 2280,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Czujnik obecności",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KGTG",
+      "model_code": "RSH09KGTG",
+      "cooling_capacity_kw": 2.5,
+      "price_netto": 2390,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Czujnik obecności",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KGTG",
+      "model_code": "RSH12KGTG",
+      "cooling_capacity_kw": 3.4,
+      "price_netto": 2590,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Czujnik obecności",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KGTG",
+      "model_code": "RSH14KGTG",
+      "cooling_capacity_kw": 4.2,
+      "price_netto": 3630,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Czujnik obecności",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCG",
+      "model_code": "RSH07KMCG",
+      "cooling_capacity_kw": 2,
+      "price_netto": 1550,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCG",
+      "model_code": "RSH09KMCG",
+      "cooling_capacity_kw": 2.5,
+      "price_netto": 1900,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCG",
+      "model_code": "RSH12KMCG",
+      "cooling_capacity_kw": 3.4,
+      "price_netto": 2100,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCG",
+      "model_code": "RSH14KMCG",
+      "cooling_capacity_kw": 4.2,
+      "price_netto": 2800,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCG-B",
+      "model_code": "RSH07KMCG-B",
+      "cooling_capacity_kw": 2,
+      "price_netto": 1950,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCG-B",
+      "model_code": "RSH09KMCG-B",
+      "cooling_capacity_kw": 2.5,
+      "price_netto": 2300,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCG-B",
+      "model_code": "RSH12KMCG-B",
+      "cooling_capacity_kw": 3.4,
+      "price_netto": 2500,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCG-B",
+      "model_code": "RSH14KMCG-B",
+      "cooling_capacity_kw": 4.2,
+      "price_netto": 3200,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "GOOD DESIGN",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCEN NORDIC",
+      "model_code": "RSG09KMCEN",
+      "cooling_capacity_kw": 2.5,
+      "price_netto": 2240,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Bardzo cicha praca",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Wskaźnik LED czyszczenia filtra",
+        "Filtr jonowy o wydłużonej żywotności",
+        "Elektrostatyczny filtr polifenolowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCEN NORDIC",
+      "model_code": "RSG12KMCEN",
+      "cooling_capacity_kw": 3.4,
+      "price_netto": 2660,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Bardzo cicha praca",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Wskaźnik LED czyszczenia filtra",
+        "Filtr jonowy o wydłużonej żywotności",
+        "Elektrostatyczny filtr polifenolowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCEN NORDIC",
+      "model_code": "RSG14KMCEN",
+      "cooling_capacity_kw": 4.2,
+      "price_netto": 3620,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Bardzo cicha praca",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Wskaźnik LED czyszczenia filtra",
+        "Filtr jonowy o wydłużonej żywotności",
+        "Elektrostatyczny filtr polifenolowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCEN-B Black NORDIC",
+      "model_code": "RSG09KMCEN-B",
+      "cooling_capacity_kw": 2.5,
+      "price_netto": 2640,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Bardzo cicha praca",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Wskaźnik LED czyszczenia filtra",
+        "Filtr jonowy o wydłużonej żywotności",
+        "Elektrostatyczny filtr polifenolowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCEN-B Black NORDIC",
+      "model_code": "RSG12KMCEN-B",
+      "cooling_capacity_kw": 3.4,
+      "price_netto": 3060,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Bardzo cicha praca",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Wskaźnik LED czyszczenia filtra",
+        "Filtr jonowy o wydłużonej żywotności",
+        "Elektrostatyczny filtr polifenolowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMCEN-B Black NORDIC",
+      "model_code": "RSG14KMCEN-B",
+      "cooling_capacity_kw": 4.2,
+      "price_netto": 4020,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Bardzo cicha praca",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Wskaźnik LED czyszczenia filtra",
+        "Filtr jonowy o wydłużonej żywotności",
+        "Elektrostatyczny filtr polifenolowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMTE",
+      "model_code": "RSG18KMTE",
+      "cooling_capacity_kw": 5.2,
+      "price_netto": 3730,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Bardzo cicha praca",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe i poziome",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMTE",
+      "model_code": "RSG24KMTE",
+      "cooling_capacity_kw": 7.1,
+      "price_netto": 4470,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Bardzo cicha praca",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe i poziome",
+        "Program nocny",
+        "Programator dobowy",
+        "Programator tygodniowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMTA",
+      "model_code": "RSG30KMTA",
+      "cooling_capacity_kw": 8,
+      "price_netto": 6070,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KMTA",
+      "model_code": "RSG36KMTA",
+      "cooling_capacity_kw": 9.4,
+      "price_netto": 6600,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Bardzo cicha praca",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia",
+        "Funkcja 10°C Heat",
+        "Program nocny",
+        "Programator dobowy"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KNCA",
+      "model_code": "RSH05KNCA",
+      "cooling_capacity_kw": 1.5,
+      "price_netto": 1300,
+      "is_single_compatible": false,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KNCA",
+      "model_code": "RSH07KNCA",
+      "cooling_capacity_kw": 2,
+      "price_netto": 1500,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KNCA",
+      "model_code": "RSH09KNCA",
+      "cooling_capacity_kw": 2.5,
+      "price_netto": 1600,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KNCA",
+      "model_code": "RSH12KNCA",
+      "cooling_capacity_kw": 3.4,
+      "price_netto": 1750,
+      "is_single_compatible": true,
+      "is_multi_compatible": true,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KLTA",
+      "model_code": "RSH07KLTA",
+      "cooling_capacity_kw": 2,
+      "price_netto": 1200,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KLTA",
+      "model_code": "RSH09KLTA",
+      "cooling_capacity_kw": 2.5,
+      "price_netto": 1400,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KLTA",
+      "model_code": "RSH12KLTA",
+      "cooling_capacity_kw": 3.4,
+      "price_netto": 1700,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "AIRSTAGE - aplikacja do sterowania Wi-Fi",
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KLCA",
+      "model_code": "RSG18KLCA",
+      "cooling_capacity_kw": 5.2,
+      "price_netto": 2880,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia"
+      ]
+    },
+    {
+      "brand": "Fuji Electric",
+      "series_name": "KLCA",
+      "model_code": "RSG24KLCA",
+      "cooling_capacity_kw": 7.1,
+      "price_netto": 3830,
+      "is_single_compatible": true,
+      "is_multi_compatible": false,
+      "features": [
+        "Zmywalny panel obudowy",
+        "Tryb ekonomiczny",
+        "Tryb pełnej mocy",
+        "Autom. zmiana trybu pracy",
+        "Autom. regulacja siły nawiewu",
+        "Autom. żaluzje pionowe",
+        "Auto Restart",
+        "Powrót ustawień po zaniku napięcia"
+      ]
+    }
+  ],
+  "outdoor_units": [
+    {
+      "brand": "GENERAL",
+      "model_code": "AOHH07KJCA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2,
+      "max_indoor_units": 1,
+      "price_netto": 2700
+    },
+    {
+      "brand": "GENERAL",
+      "model_code": "AOHH09KJCA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2.5,
+      "max_indoor_units": 1,
+      "price_netto": 3000
+    },
+    {
+      "brand": "GENERAL",
+      "model_code": "AOHH12KJCA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 3.4,
+      "max_indoor_units": 1,
+      "price_netto": 3400
+    },
+    {
+      "brand": "GENERAL",
+      "model_code": "AOHH14KJCA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 4.2,
+      "max_indoor_units": 1,
+      "price_netto": 4100
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG07KETA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2,
+      "max_indoor_units": 1,
+      "price_netto": 2450
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG09KETA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2.5,
+      "max_indoor_units": 1,
+      "price_netto": 3040
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG12KETA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 3.4,
+      "max_indoor_units": 1,
+      "price_netto": 3090
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG14KETA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 4.2,
+      "max_indoor_units": 1,
+      "price_netto": 4100
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH07KGCG",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2,
+      "max_indoor_units": 1,
+      "price_netto": 2920
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH09KGCG",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2.5,
+      "max_indoor_units": 1,
+      "price_netto": 3500
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH12KGCG",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 3.4,
+      "max_indoor_units": 1,
+      "price_netto": 3650
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH14KGCG",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 4.2,
+      "max_indoor_units": 1,
+      "price_netto": 4670
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH07KMCG",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2,
+      "max_indoor_units": 1,
+      "price_netto": 2100
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH09KMCG",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2.5,
+      "max_indoor_units": 1,
+      "price_netto": 2300
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH12KMCG",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 3.4,
+      "max_indoor_units": 1,
+      "price_netto": 2700
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH14KMCG",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 4.2,
+      "max_indoor_units": 1,
+      "price_netto": 3800
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG09KMCEN",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2.5,
+      "max_indoor_units": 1,
+      "price_netto": 3300
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG12KMCEN",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 3.4,
+      "max_indoor_units": 1,
+      "price_netto": 3730
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG14KMCEN",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 4.2,
+      "max_indoor_units": 1,
+      "price_netto": 5330
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG18KMTA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 5.2,
+      "max_indoor_units": 1,
+      "price_netto": 4360
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG24KMTA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 7.1,
+      "max_indoor_units": 1,
+      "price_netto": 6280
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG30KMTA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 8,
+      "max_indoor_units": 1,
+      "price_netto": 9050
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG36KMTA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 9.4,
+      "max_indoor_units": 1,
+      "price_netto": 9800
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH07KNCA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2,
+      "max_indoor_units": 1,
+      "price_netto": 2400
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH09KNCA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2.5,
+      "max_indoor_units": 1,
+      "price_netto": 2500
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH12KNCA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 3.4,
+      "max_indoor_units": 1,
+      "price_netto": 2600
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH07KLTA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2,
+      "max_indoor_units": 1,
+      "price_netto": 1900
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH09KLTA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 2.5,
+      "max_indoor_units": 1,
+      "price_netto": 2200
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROH12KLTA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 3.4,
+      "max_indoor_units": 1,
+      "price_netto": 2400
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG18KLCA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 5.2,
+      "max_indoor_units": 1,
+      "price_netto": 4150
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG24KLCA",
+      "type": "SINGLE",
+      "cooling_capacity_kw": 7.1,
+      "max_indoor_units": 1,
+      "price_netto": 5750
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG14KBTA2",
+      "type": "MULTI",
+      "cooling_capacity_kw": 4,
+      "max_indoor_units": 2,
+      "price_netto": 6100
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG18KBTA2",
+      "type": "MULTI",
+      "cooling_capacity_kw": 5,
+      "max_indoor_units": 2,
+      "price_netto": 7100
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG18KBTA3",
+      "type": "MULTI",
+      "cooling_capacity_kw": 5.4,
+      "max_indoor_units": 3,
+      "price_netto": 9100
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG24KBTA3",
+      "type": "MULTI",
+      "cooling_capacity_kw": 6.8,
+      "max_indoor_units": 3,
+      "price_netto": 9800
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG30KBTA4",
+      "type": "MULTI",
+      "cooling_capacity_kw": 8,
+      "max_indoor_units": 4,
+      "price_netto": 11800
+    },
+    {
+      "brand": "Fuji Electric",
+      "model_code": "ROG36KBTA5",
+      "type": "MULTI",
+      "cooling_capacity_kw": 9.5,
+      "max_indoor_units": 5,
+      "price_netto": 14700
+    }
+  ],
+  "single_split_sets": [
+    {
+      "indoor_model": "ASHH07KJCAL",
+      "outdoor_model": "AOHH07KJCA",
+      "set_price_netto": 4500
+    },
+    {
+      "indoor_model": "ASHH09KJCAL",
+      "outdoor_model": "AOHH09KJCA",
+      "set_price_netto": 4900
+    },
+    {
+      "indoor_model": "ASHH12KJCAL",
+      "outdoor_model": "AOHH12KJCA",
+      "set_price_netto": 5500
+    },
+    {
+      "indoor_model": "ASHH14KJCAL",
+      "outdoor_model": "AOHH14KJCA",
+      "set_price_netto": 7300
+    },
+    {
+      "indoor_model": "ASHH07KJCAL-B",
+      "outdoor_model": "AOHH07KJCA",
+      "set_price_netto": 4690
+    },
+    {
+      "indoor_model": "ASHH09KJCAL-B",
+      "outdoor_model": "AOHH09KJCA",
+      "set_price_netto": 4900
+    },
+    {
+      "indoor_model": "ASHH12KJCAL-B",
+      "outdoor_model": "AOHH12KJCA",
+      "set_price_netto": 5700
+    },
+    {
+      "indoor_model": "ASHH14KJCAL-B",
+      "outdoor_model": "AOHH14KJCA",
+      "set_price_netto": 7500
+    },
+    {
+      "indoor_model": "RSG07KETF",
+      "outdoor_model": "ROG07KETA",
+      "set_price_netto": 4570
+    },
+    {
+      "indoor_model": "RSG09KETF",
+      "outdoor_model": "ROG09KETA",
+      "set_price_netto": 5260
+    },
+    {
+      "indoor_model": "RSG12KETF",
+      "outdoor_model": "ROG12KETA",
+      "set_price_netto": 5630
+    },
+    {
+      "indoor_model": "RSG14KETF",
+      "outdoor_model": "ROG14KETA",
+      "set_price_netto": 7660
+    },
+    {
+      "indoor_model": "RSG07KETF-B",
+      "outdoor_model": "ROG07KETA",
+      "set_price_netto": 4570
+    },
+    {
+      "indoor_model": "RSG09KETF-B",
+      "outdoor_model": "ROG09KETA",
+      "set_price_netto": 5260
+    },
+    {
+      "indoor_model": "RSG12KETF-B",
+      "outdoor_model": "ROG12KETA",
+      "set_price_netto": 5630
+    },
+    {
+      "indoor_model": "RSG14KETF-B",
+      "outdoor_model": "ROG14KETA",
+      "set_price_netto": 7660
+    },
+    {
+      "indoor_model": "RSH07KGTG",
+      "outdoor_model": "ROH07KGCG",
+      "set_price_netto": 5200
+    },
+    {
+      "indoor_model": "RSH09KGTG",
+      "outdoor_model": "ROH09KGCG",
+      "set_price_netto": 5890
+    },
+    {
+      "indoor_model": "RSH12KGTG",
+      "outdoor_model": "ROH12KGCG",
+      "set_price_netto": 6240
+    },
+    {
+      "indoor_model": "RSH14KGTG",
+      "outdoor_model": "ROH14KGCG",
+      "set_price_netto": 8300
+    },
+    {
+      "indoor_model": "RSH07KMCG",
+      "outdoor_model": "ROH07KMCG",
+      "set_price_netto": 3650
+    },
+    {
+      "indoor_model": "RSH09KMCG",
+      "outdoor_model": "ROH09KMCG",
+      "set_price_netto": 4200
+    },
+    {
+      "indoor_model": "RSH12KMCG",
+      "outdoor_model": "ROH12KMCG",
+      "set_price_netto": 4800
+    },
+    {
+      "indoor_model": "RSH14KMCG",
+      "outdoor_model": "ROH14KMCG",
+      "set_price_netto": 6600
+    },
+    {
+      "indoor_model": "RSH07KMCG-B",
+      "outdoor_model": "ROH07KMCG",
+      "set_price_netto": 4050
+    },
+    {
+      "indoor_model": "RSH09KMCG-B",
+      "outdoor_model": "ROH09KMCG",
+      "set_price_netto": 4600
+    },
+    {
+      "indoor_model": "RSH12KMCG-B",
+      "outdoor_model": "ROH12KMCG",
+      "set_price_netto": 5200
+    },
+    {
+      "indoor_model": "RSH14KMCG-B",
+      "outdoor_model": "ROH14KMCG",
+      "set_price_netto": 7000
+    },
+    {
+      "indoor_model": "RSG09KMCEN",
+      "outdoor_model": "ROG09KMCEN",
+      "set_price_netto": 5540
+    },
+    {
+      "indoor_model": "RSG12KMCEN",
+      "outdoor_model": "ROG12KMCEN",
+      "set_price_netto": 6390
+    },
+    {
+      "indoor_model": "RSG14KMCEN",
+      "outdoor_model": "ROG14KMCEN",
+      "set_price_netto": 8950
+    },
+    {
+      "indoor_model": "RSG09KMCEN-B",
+      "outdoor_model": "ROG09KMCEN",
+      "set_price_netto": 5940
+    },
+    {
+      "indoor_model": "RSG12KMCEN-B",
+      "outdoor_model": "ROG12KMCEN",
+      "set_price_netto": 6790
+    },
+    {
+      "indoor_model": "RSG14KMCEN-B",
+      "outdoor_model": "ROG14KMCEN",
+      "set_price_netto": 9350
+    },
+    {
+      "indoor_model": "RSG18KMTE",
+      "outdoor_model": "ROG18KMTA",
+      "set_price_netto": 8090
+    },
+    {
+      "indoor_model": "RSG24KMTE",
+      "outdoor_model": "ROG24KMTA",
+      "set_price_netto": 10750
+    },
+    {
+      "indoor_model": "RSG30KMTA",
+      "outdoor_model": "ROG30KMTA",
+      "set_price_netto": 15120
+    },
+    {
+      "indoor_model": "RSG36KMTA",
+      "outdoor_model": "ROG36KMTA",
+      "set_price_netto": 16400
+    },
+    {
+      "indoor_model": "RSH07KNCA",
+      "outdoor_model": "ROH07KNCA",
+      "set_price_netto": 3900
+    },
+    {
+      "indoor_model": "RSH09KNCA",
+      "outdoor_model": "ROH09KNCA",
+      "set_price_netto": 4100
+    },
+    {
+      "indoor_model": "RSH12KNCA",
+      "outdoor_model": "ROH12KNCA",
+      "set_price_netto": 4350
+    },
+    {
+      "indoor_model": "RSH07KLTA",
+      "outdoor_model": "ROH07KLTA",
+      "set_price_netto": 3100
+    },
+    {
+      "indoor_model": "RSH09KLTA",
+      "outdoor_model": "ROH09KLTA",
+      "set_price_netto": 3600
+    },
+    {
+      "indoor_model": "RSH12KLTA",
+      "outdoor_model": "ROH12KLTA",
+      "set_price_netto": 4100
+    },
+    {
+      "indoor_model": "RSG18KLCA",
+      "outdoor_model": "ROG18KLCA",
+      "set_price_netto": 7030
+    },
+    {
+      "indoor_model": "RSG24KLCA",
+      "outdoor_model": "ROG24KLCA",
+      "set_price_netto": 9580
+    }
+  ],
+  "multi_split_sets": [
+    {
+      "outdoor_model": "AOHG14KBTA2",
+      "supported_rooms_count": 2,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG14KBTA2",
+      "supported_rooms_count": 2,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG14KBTA2",
+      "supported_rooms_count": 2,
+      "indoor_units_json": [
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG14KBTA2",
+      "supported_rooms_count": 2,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "12"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG18KBTA2",
+      "supported_rooms_count": 2,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG18KBTA2",
+      "supported_rooms_count": 2,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG18KBTA2",
+      "supported_rooms_count": 2,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "12"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG18KBTA2",
+      "supported_rooms_count": 2,
+      "indoor_units_json": [
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG18KBTA2",
+      "supported_rooms_count": 2,
+      "indoor_units_json": [
+        {
+          "code": "09"
+        },
+        {
+          "code": "12"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG18KBTA2",
+      "supported_rooms_count": 2,
+      "indoor_units_json": [
+        {
+          "code": "12"
+        },
+        {
+          "code": "12"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG18KBTA3",
+      "supported_rooms_count": 3,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG18KBTA3",
+      "supported_rooms_count": 3,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG24KBTA3",
+      "supported_rooms_count": 3,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG24KBTA3",
+      "supported_rooms_count": 3,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG24KBTA3",
+      "supported_rooms_count": 3,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "12"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG24KBTA3",
+      "supported_rooms_count": 3,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG24KBTA3",
+      "supported_rooms_count": 3,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "12"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG24KBTA3",
+      "supported_rooms_count": 3,
+      "indoor_units_json": [
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG24KBTA3",
+      "supported_rooms_count": 3,
+      "indoor_units_json": [
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "12"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG24KBTA3",
+      "supported_rooms_count": 3,
+      "indoor_units_json": [
+        {
+          "code": "09"
+        },
+        {
+          "code": "12"
+        },
+        {
+          "code": "12"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG30KBTA4",
+      "supported_rooms_count": 4,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG30KBTA4",
+      "supported_rooms_count": 4,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG30KBTA4",
+      "supported_rooms_count": 4,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG30KBTA4",
+      "supported_rooms_count": 4,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG30KBTA4",
+      "supported_rooms_count": 4,
+      "indoor_units_json": [
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG36KBTA5",
+      "supported_rooms_count": 5,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG36KBTA5",
+      "supported_rooms_count": 5,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG36KBTA5",
+      "supported_rooms_count": 5,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG36KBTA5",
+      "supported_rooms_count": 5,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG36KBTA5",
+      "supported_rooms_count": 5,
+      "indoor_units_json": [
+        {
+          "code": "07"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    },
+    {
+      "outdoor_model": "AOHG36KBTA5",
+      "supported_rooms_count": 5,
+      "indoor_units_json": [
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        },
+        {
+          "code": "09"
+        }
+      ]
+    }
+  ]
 }
