@@ -94,7 +94,7 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
         deviceNettoPrice: deviceTotalNetto,
         installNettoPrice: installNetto,
         tag: "Bestseller",
-        marketingDesc: cheapest.marketing_description || "",
+        marketingDesc: cheapest.marketing_description || "Nowoczesna stylistyka i zaawansowane funkcje, które idealnie wpasują się w każde wnętrze. Wysoka wydajność i cicha praca zapewniają komfort przez cały rok.",
         features: features,
         gallery: [],
         _raw: rawAggregated
