@@ -1,12 +1,15 @@
 "use client";
 import React from 'react';
-import { PaintRoller, Sparkles, Hammer } from 'lucide-react';
+import { PaintRoller, Sparkles, Hammer, ArrowRight } from 'lucide-react';
 import { useTriageStore, BuildingState } from '@/store/triageStore';
 import { OptionCard } from '../OptionCard';
 import { StepWrapper } from '../StepWrapper';
+import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const Step4State = () => {
   const { data: state, updateData, nextStep } = useTriageStore();
+  const isComplete = state.buildingState !== null;
 
   const handleSelect = (buildingState: BuildingState) => {
     updateData({ buildingState });
@@ -37,7 +40,27 @@ export const Step4State = () => {
           selected={state.buildingState === 'Stan deweloperski'}
           onClick={() => handleSelect('Stan deweloperski')}
         />
-      </div>
+        </div>
+
+        <AnimatePresence>
+          {isComplete && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="flex justify-center pt-8"
+            >
+              <Button 
+                onClick={nextStep} 
+                size="lg" 
+                className="w-full sm:w-auto px-12 h-14 text-lg gap-3 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all rounded-2xl"
+              >
+                Dalej
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
     </StepWrapper>
   );
 };

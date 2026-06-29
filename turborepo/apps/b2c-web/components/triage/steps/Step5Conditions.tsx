@@ -6,6 +6,7 @@ import { OptionCard } from '../OptionCard';
 import { StepWrapper } from '../StepWrapper';
 import { ArrowRight, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 export const Step5Conditions = () => {
   const { data: state, updateData, nextStep } = useTriageStore();
@@ -18,6 +19,8 @@ export const Step5Conditions = () => {
   }, [state.location, nextStep]);
 
   if (state.location !== 'Mieszkanie') return null;
+
+  const isComplete = state.hasBalcony === true || (state.hasBalcony === false && state.floor !== null);
 
   const handleBalcony = (hasBalcony: boolean) => {
     updateData({ hasBalcony });
@@ -77,6 +80,26 @@ export const Step5Conditions = () => {
                   onClick={() => handleFloor('Powyżej 2. piętra')}
                 />
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {isComplete && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="flex justify-center pt-8"
+            >
+              <Button 
+                onClick={nextStep} 
+                size="lg" 
+                className="w-full sm:w-auto px-12 h-14 text-lg gap-3 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all rounded-2xl"
+              >
+                Dalej
+                <ArrowRight className="w-5 h-5" />
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>

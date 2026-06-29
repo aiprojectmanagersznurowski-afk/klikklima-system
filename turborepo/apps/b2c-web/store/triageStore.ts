@@ -110,7 +110,11 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
     // Zabezpieczenie: Cofając się z 7 kroku (lub jeśli z jakiegoś powodu jesteśmy na 6)
     // przeskakujemy ekran loadera bezpośrednio do kroku 5.
     if (prev === 6) {
-      prev = 5;
+      if (state.data.location === 'Mieszkanie') {
+        prev = 5;
+      } else {
+        prev = 4;
+      }
     }
     return { 
       step: Math.max(1, prev), 
