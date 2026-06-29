@@ -379,6 +379,11 @@ export function DeviceModal({
                       <h3 className="font-bold text-[#0F172A]">
                         Seria {device.model}
                       </h3>
+                      {device.marketingDesc && (
+                        <p className="mt-1 text-[13px] leading-relaxed text-[#475569]">
+                          {device.marketingDesc}
+                        </p>
+                      )}
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
                          {device.features?.map((f, i) => {
                             const IconComp = iconMap[f.iconName] || Check;
