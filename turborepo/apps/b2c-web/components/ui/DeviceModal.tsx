@@ -360,13 +360,18 @@ export function DeviceModal({
 
                   {/* Indoor unit preview */}
                   <div className="mt-6 flex items-center gap-4 rounded-2xl border border-[#E8EDF5] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                    <div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#F1F5F9]">
+                    <a 
+                      href={device.img && device.img.length > 5 ? device.img : INDOOR_IMG}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#F1F5F9] cursor-pointer transition-opacity hover:opacity-80 block"
+                    >
                       <img
                         src={device.img && device.img.length > 5 ? device.img : INDOOR_IMG}
                         alt={device.model}
                         className="size-full object-cover mix-blend-multiply"
                       />
-                    </div>
+                    </a>
                     <div className="min-w-0 flex-1">
                       <p className="text-[12px] font-semibold uppercase tracking-wide text-[#2563EB]">
                         {device.brand}
@@ -447,11 +452,18 @@ export function DeviceModal({
                       >
                         <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5">
                           {isFullyConfigured && matchedSet && !isLoading ? (
-                            <img
-                              src={OUTDOOR_IMG}
-                              alt="Agregat zewnętrzny"
-                              className="size-full object-cover opacity-90"
-                            />
+                            <a 
+                              href={OUTDOOR_IMG} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="size-full block cursor-pointer transition-opacity hover:opacity-80"
+                            >
+                              <img
+                                src={OUTDOOR_IMG}
+                                alt="Agregat zewnętrzny"
+                                className="size-full object-cover opacity-90"
+                              />
+                            </a>
                           ) : (
                             <Cpu className={`size-8 ${isLoading ? 'animate-pulse text-yellow-400' : 'text-white/40'}`} />
                           )}
