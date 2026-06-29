@@ -20,6 +20,7 @@ export const Step5Conditions = () => {
 
   if (state.location !== 'Mieszkanie') return null;
 
+  const [showNextBtn] = React.useState(state.hasBalcony === true || (state.hasBalcony === false && state.floor !== null));
   const isComplete = state.hasBalcony === true || (state.hasBalcony === false && state.floor !== null);
 
   const handleBalcony = (hasBalcony: boolean) => {
@@ -85,7 +86,7 @@ export const Step5Conditions = () => {
         </AnimatePresence>
 
         <AnimatePresence>
-          {isComplete && (
+          {isComplete && showNextBtn && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

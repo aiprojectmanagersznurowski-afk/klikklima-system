@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export const Step4State = () => {
   const { data: state, updateData, nextStep } = useTriageStore();
+  const [showNextBtn] = React.useState(state.buildingState !== null);
   const isComplete = state.buildingState !== null;
 
   const handleSelect = (buildingState: BuildingState) => {
@@ -43,7 +44,7 @@ export const Step4State = () => {
         </div>
 
         <AnimatePresence>
-          {isComplete && (
+          {isComplete && showNextBtn && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
