@@ -5,7 +5,7 @@ import { getFomoSlots, type FomoData } from "./actions/getFomoSlots";
 import { getBestsellers, type BestsellerProduct as Product } from "./actions/getBestsellers";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import ExitIntentModal from "@/components/triage/ExitIntentModal";
+// import ExitIntentModal from "@/components/triage/ExitIntentModal";
 import { ProductCard, calcBrutto } from "@/components/ui/ProductCard";
 import { DeviceModal } from "@/components/ui/DeviceModal";
 import { companyDetails } from "@/config/company";
@@ -383,7 +383,7 @@ export default function HomePageClient({
       <Footer />
 
       {/* Wyłapywanie wychodzących użytkowników (Soft Leads) - ukryte gdy otwarty Modal */}
-      {!selectedProduct && <ExitIntentModal />}
+      {/* {!selectedProduct && <ExitIntentModal />} */}
 
       {/* Global Device Modal */}
       {selectedProduct && (
