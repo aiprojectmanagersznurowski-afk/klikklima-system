@@ -198,13 +198,15 @@ export interface DeviceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onReserveClick?: () => void;
+  initialRooms?: Room[];
 }
 
 export function DeviceModal({
   device,
   isOpen,
   onClose,
-  onReserveClick
+  onReserveClick,
+  initialRooms
 }: DeviceModalProps) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [matchedSet, setMatchedSet] = useState<any>(null);
@@ -221,7 +223,11 @@ export function DeviceModal({
 
   useEffect(() => {
     if (isOpen && device) {
-      setRooms([]);
+      if (initialRooms && initialRooms.length > 0) {
+        setRooms(initialRooms);
+      } else {
+        setRooms([]);
+      }
       if (device.startingPriceBrutto) {
         setBasePrice(device.startingPriceBrutto);
       } else {

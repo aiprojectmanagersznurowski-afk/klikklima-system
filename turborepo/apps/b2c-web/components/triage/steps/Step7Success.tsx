@@ -7,7 +7,7 @@ import { Check, Info, Wind, Settings2, Box, Calendar, ChevronDown, Loader2 } fro
 import { cn } from '@/lib/utils';
 import * as Accordion from '@radix-ui/react-accordion';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { DeviceModal } from '../../ui/DeviceModal';
+import { DeviceModal, RoomSize as ModalRoomSize } from '../../ui/DeviceModal';
 import { getRecommendation } from '@/app/actions/getRecommendation';
 import type { BestsellerProduct } from '@/app/actions/getBestsellers';
 
@@ -54,6 +54,28 @@ export const Step7Success = () => {
   const [selectedProduct, setSelectedProduct] = React.useState<BestsellerProduct | null>(null);
 
   const rooms = state.roomCount || 1;
+
+  const roomLabels = ["Salon", "Sypialnia", "Gabinet", "Kuchnia", "Pokój dziecka"];
+
+  const initialRooms = React.useMemo(() => {
+     const count = state.roomCount || 1;
+     const mappedRooms = [];
+     for(let i=1; i<=count; i++) {
+        let mappedSize: ModalRoomSize = 'M';
+        const triageSize = state.roomSizes[i];
+        if (triageSize === 'Do 20 m²') mappedSize = 'S';
+        else if (triageSize === '21-25 m²') mappedSize = 'M';
+        else if (triageSize === '26-35 m²') mappedSize = 'L';
+        else if (triageSize === 'Powyżej 35 m²') mappedSize = 'XL';
+        
+        mappedRooms.push({
+           id: `room-${i}`,
+           name: roomLabels[i-1] || `Pokój ${i}`,
+           size: mappedSize
+        });
+     }
+     return mappedRooms;
+  }, [state.roomCount, state.roomSizes]);
 
   React.useEffect(() => {
     async function fetchRecommendation() {
@@ -158,6 +180,7 @@ export const Step7Success = () => {
             isOpen={isModalOpen} 
             onClose={() => setIsModalOpen(false)} 
             device={selectedProduct} 
+            initialRooms={initialRooms}
             onReserveClick={() => {
               const recItem = recommendedDevices.find(r => r.product.id === selectedProduct.id);
               if (recItem) handleSelectRecommendation(recItem);
