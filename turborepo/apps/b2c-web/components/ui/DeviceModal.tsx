@@ -355,8 +355,7 @@ export function DeviceModal({
                     Skonfiguruj swój system klimatyzacji
                   </DialogPrimitive.Title>
                   <p className="mt-1 text-[14px] text-[#475569]">
-                    Dobierz jednostki do pomieszczeń — agregat dobierzemy
-                    automatycznie.
+                    Dobierz jednostki do pomieszczeń — agregat dobierzemy automatycznie
                   </p>
 
                   {/* Indoor unit preview */}
