@@ -559,10 +559,11 @@ export function DeviceModal({
                           <AccordionContent>
                             <ul className="space-y-2.5">
                               {[
-                                { icon: Cable, t: `Do ${rooms.length === 0 ? 3 : Math.max(3, rooms.length * 4)} m instalacji freonowej` },
-                                { icon: Wrench, t: "Montaż jednostek + uruchomienie" },
-                                { icon: Ruler, t: `${rooms.length || 1} przebicie przez ścianę` },
-                                { icon: ShieldCheck, t: "Test szczelności instalacji" },
+                                { icon: Wrench, t: rooms.length <= 1 ? "Montaż 1 jednostki wewnętrznej i 1 zewnętrznej (do 4 m wys.)" : `Montaż ${rooms.length} jednostek wewnętrznych i 1 zewnętrznej (do 4 m wys.)` },
+                                { icon: Cable, t: rooms.length <= 1 ? "Do 3 mb instalacji chłodniczej i przewodu sterującego" : `Do 3 mb instalacji chłodniczej dla każdego urządzenia (łącznie do ${rooms.length * 3} mb)` },
+                                { icon: Ruler, t: rooms.length <= 1 ? "Przewiert przez jedną ścianę (1 szt.)" : `Przewiert przez ścianę (${rooms.length} szt.)` },
+                                { icon: Wind, t: rooms.length <= 1 ? "Odprowadzenie skroplin grawitacyjnie do 3 mb" : "Odprowadzenie skroplin grawitacyjnie do 3 mb dla każdej jednostki" },
+                                { icon: ShieldCheck, t: "Test szczelności układu i przeszkolenie użytkownika z obsługi" },
                               ].map((it) => (
                                 <li
                                   key={it.t}
