@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Plus, Wifi, Volume2, Snowflake, Trash2, Cpu, Info, Check, ShieldCheck, Wrench, Ruler, Cable, Sparkles, Palette, Wind
+  X, Plus, Wifi, Volume2, Snowflake, Trash2, Cpu, Info, Check, ShieldCheck, Wrench, Ruler, Cable, Sparkles, Palette, Wind, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./accordion";
 
@@ -211,10 +211,27 @@ export function DeviceModal({
   const [rooms, setRooms] = useState<Room[]>([]);
   const [matchedSet, setMatchedSet] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
   const [supportedSizes, setSupportedSizes] = useState<string[]>(['S', 'M', 'L', 'XL']);
   const [validHashes, setValidHashes] = useState<string[] | null>(null);
   const [maxSupportedRooms, setMaxSupportedRooms] = useState<number>(5);
   const [basePrice, setBasePrice] = useState<number | null>(device?.startingPriceBrutto || null);
+
+  const images = device ? [device.img && device.img.length > 5 ? device.img : INDOOR_IMG, OUTDOOR_IMG] : [];
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (galleryIndex !== null) {
+      setGalleryIndex((galleryIndex + 1) % images.length);
+    }
+  };
+
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (galleryIndex !== null) {
+      setGalleryIndex((galleryIndex - 1 + images.length) % images.length);
+    }
+  };
 
   const roomLabels = ["Salon", "Sypialnia", "Gabinet", "Kuchnia", "Pokój dziecka"];
 
@@ -360,18 +377,17 @@ export function DeviceModal({
 
                   {/* Indoor unit preview */}
                   <div className="mt-6 flex items-center gap-4 rounded-2xl border border-[#E8EDF5] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                    <a 
-                      href={device.img && device.img.length > 5 ? device.img : INDOOR_IMG}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button 
+                      onClick={(e) => { e.preventDefault(); setGalleryIndex(0); }}
+                      type="button"
                       className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#F1F5F9] cursor-pointer transition-opacity hover:opacity-80 block"
                     >
                       <img
-                        src={device.img && device.img.length > 5 ? device.img : INDOOR_IMG}
+                        src={images[0]}
                         alt={device.model}
                         className="size-full object-cover mix-blend-multiply"
                       />
-                    </a>
+                    </button>
                     <div className="min-w-0 flex-1">
                       <p className="text-[12px] font-semibold uppercase tracking-wide text-[#2563EB]">
                         {device.brand}
@@ -457,18 +473,17 @@ export function DeviceModal({
                       >
                         <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5">
                           {isFullyConfigured && matchedSet && !isLoading ? (
-                            <a 
-                              href={OUTDOOR_IMG} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
+                            <button 
+                              onClick={(e) => { e.preventDefault(); setGalleryIndex(1); }}
+                              type="button"
                               className="size-full block cursor-pointer transition-opacity hover:opacity-80"
                             >
                               <img
-                                src={OUTDOOR_IMG}
+                                src={images[1]}
                                 alt="Agregat zewnętrzny"
                                 className="size-full object-cover opacity-90"
                               />
-                            </a>
+                            </button>
                           ) : (
                             <Cpu className={`size-8 ${isLoading ? 'animate-pulse text-yellow-400' : 'text-white/40'}`} />
                           )}
@@ -618,6 +633,51 @@ export function DeviceModal({
               </motion.div>
             </DialogPrimitive.Content>
           </DialogPrimitive.Portal>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen Gallery Overlay */}
+      <AnimatePresence>
+        {galleryIndex !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md"
+            onClick={() => setGalleryIndex(null)}
+          >
+            <button
+              onClick={() => setGalleryIndex(null)}
+              className="absolute right-6 top-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            >
+              <X className="size-6" />
+            </button>
+            
+            <button
+              onClick={handlePrevImage}
+              className="absolute left-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            >
+              <ChevronLeft className="size-8" />
+            </button>
+
+            <img 
+              src={images[galleryIndex]} 
+              alt="Galeria zdjęć urządzenia" 
+              className="max-h-[85vh] max-w-[85vw] object-contain select-none" 
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            <button
+              onClick={handleNextImage}
+              className="absolute right-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            >
+              <ChevronRight className="size-8" />
+            </button>
+            
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm text-white/80 font-medium text-sm">
+               {galleryIndex + 1} / {images.length}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </DialogPrimitive.Root>
