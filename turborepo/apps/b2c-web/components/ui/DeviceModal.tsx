@@ -352,7 +352,16 @@ export function DeviceModal({
               />
             </DialogPrimitive.Overlay>
 
-            <DialogPrimitive.Content asChild forceMount aria-describedby={undefined}>
+            <DialogPrimitive.Content 
+              asChild 
+              forceMount 
+              aria-describedby={undefined}
+              onInteractOutside={(e) => {
+                if (galleryIndex !== null) {
+                  e.preventDefault();
+                }
+              }}
+            >
               <motion.div
                 initial={{ opacity: 0, scale: 0.96, y: 16 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
