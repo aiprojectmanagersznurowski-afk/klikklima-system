@@ -27,6 +27,7 @@ const TIME_SLOTS = ["08:00 - 10:00", "10:00 - 12:00", "12:00 - 14:00", "13:00 - 
 export interface AvailableSlot {
   dateStr: string; // ISO yyyy-MM-dd
   slots: string[]; // e.g. ["08:00 - 10:00", "10:00 - 12:00"]
+  isWeekend?: boolean;
 }
 
 export async function getAvailableSlots(): Promise<AvailableSlot[]> {
@@ -64,7 +65,13 @@ export async function getAvailableSlots(): Promise<AvailableSlot[]> {
       
       // Sprawdzamy czy to weekend w strefie czasowej Warszawa
       const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'Europe/Warsaw' }).format(currentDate);
-      if (weekday === 'Sat' || weekday === 'Sun') {
+      const isWeekend = weekday === 'Sat' || weekday === 'Sun';
+      if (isWeekend) {
+        availableDays.push({
+          dateStr,
+          slots: [],
+          isWeekend: true
+        });
         continue;
       }
       const availableSlotsForDay: string[] = [];

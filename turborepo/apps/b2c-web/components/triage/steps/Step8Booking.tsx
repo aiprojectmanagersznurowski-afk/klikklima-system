@@ -232,18 +232,24 @@ export const Step8Booking = () => {
                 availableDays.map((day) => {
                   const dateObj = parseISO(day.dateStr);
                   const isSelected = selectedDateStr === day.dateStr;
+                  const isWeekend = day.isWeekend;
                   return (
                     <button
                       key={day.dateStr}
+                      disabled={isWeekend}
                       onClick={() => {
-                        setSelectedDateStr(day.dateStr);
-                        setSelectedSlot(null); // Reset slotu po zmianie dnia
+                        if (!isWeekend) {
+                          setSelectedDateStr(day.dateStr);
+                          setSelectedSlot(null); // Reset slotu po zmianie dnia
+                        }
                       }}
                       className={cn(
                         "flex flex-col items-center justify-center py-3 px-1 rounded-2xl transition-all border-2",
-                        isSelected 
-                          ? "bg-primary text-primary-foreground border-primary shadow-md"
-                          : "bg-transparent text-foreground border-transparent hover:bg-secondary hover:border-secondary-foreground/10"
+                        isWeekend
+                          ? "bg-secondary text-muted-foreground border-transparent opacity-50 cursor-not-allowed"
+                          : isSelected 
+                            ? "bg-primary text-primary-foreground border-primary shadow-md"
+                            : "bg-transparent text-foreground border-transparent hover:bg-secondary hover:border-secondary-foreground/10"
                       )}
                     >
                       <span className="text-xs font-medium uppercase mb-1 opacity-80">
