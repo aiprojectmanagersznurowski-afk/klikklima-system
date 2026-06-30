@@ -23,14 +23,13 @@ const DeviceCard = ({ product, onSelect, onDetails, isBestMatch = false }: { pro
       </div>
       <div className="flex flex-col flex-1 p-6 gap-4">
         <div className="flex items-center gap-2">
-          <span className={cn("inline-flex items-center justify-center w-8 h-8 rounded-md text-xs font-bold text-white", product.brand === "Fuji Electric" ? "bg-[#0d1b2e]" : product.brand === "Haier" ? "bg-[#c8102e]" : "bg-primary")}>{product.brandLogo}</span>
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase">{product.brand}</p>
             <p className="text-sm font-semibold text-foreground">{product.model}</p>
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-muted-foreground">
+          <span className="inline-flex items-center gap-1 bg-[#EEF2FF] text-[#4F46E5] text-[11px] font-bold px-3 py-1.5 rounded-full w-fit border border-[#C7D2FE] shadow-sm">
             {product._raw?.is_single_compatible && product._raw?.is_multi_compatible 
               ? "W systemie Single i Multi split dla wielu pomieszczeń" 
               : product._raw?.is_multi_compatible 

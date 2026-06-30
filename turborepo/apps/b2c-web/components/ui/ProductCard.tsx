@@ -45,7 +45,6 @@ export function ProductCard({ product, onOpenModal, showPricing = true, exactPri
 
       <div className="flex flex-col flex-1 p-6 gap-4">
         <div className="flex items-center gap-2">
-          <BrandBadge code={product.brandLogo} />
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
               {product.brand}
@@ -56,8 +55,8 @@ export function ProductCard({ product, onOpenModal, showPricing = true, exactPri
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">
+        <div className="flex flex-col gap-2">
+          <span className="inline-flex items-center gap-1 bg-[#EEF2FF] text-[#4F46E5] text-[11px] font-bold px-3 py-1.5 rounded-full w-fit border border-[#C7D2FE] shadow-sm">
             {product._raw?.is_single_compatible && product._raw?.is_multi_compatible 
               ? "W systemie Single i Multi split dla wielu pomieszczeń" 
               : product._raw?.is_multi_compatible 
