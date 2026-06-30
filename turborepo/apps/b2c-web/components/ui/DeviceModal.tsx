@@ -513,7 +513,7 @@ export function DeviceModal({
                             </>
                           ) : (
                             <p className="mt-2 text-[14px] text-slate-300">
-                              {isLoading ? "Trwa dobieranie agregatu..." : "Dodaj i skonfiguruj pomieszczenia, aby dobrać agregat."}
+                              {isLoading ? "Trwa dobieranie agregatu..." : "Dodaj i skonfiguruj pomieszczenia, aby dobrać agregat"}
                             </p>
                           )}
                         </div>

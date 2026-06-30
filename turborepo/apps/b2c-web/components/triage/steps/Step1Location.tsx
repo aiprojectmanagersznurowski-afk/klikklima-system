@@ -16,7 +16,7 @@ export const Step1Location = () => {
   return (
     <StepWrapper 
       title="Gdzie chcesz zamontować klimatyzację?" 
-      subtitle="Wybierz typ nieruchomości, abyśmy mogli dopasować idealne rozwiązanie."
+      subtitle="Wybierz typ nieruchomości, abyśmy mogli dopasować idealne rozwiązanie"
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <OptionCard

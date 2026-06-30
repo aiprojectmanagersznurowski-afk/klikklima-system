@@ -39,7 +39,7 @@ export const Step5Conditions = () => {
   return (
     <StepWrapper 
       title="Dodatkowe warunki montażu" 
-      subtitle="Krótkie pytania, które ułatwią pracę instalatorom."
+      subtitle="Krótkie pytania, które ułatwią pracę instalatorom"
     >
       <div className="max-w-2xl mx-auto space-y-12">
         <div>

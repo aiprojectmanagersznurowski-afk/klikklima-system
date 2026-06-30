@@ -26,7 +26,7 @@ export const Step2Rooms = () => {
   return (
     <StepWrapper 
       title="W ilu pomieszczeniach?" 
-      subtitle="Określ, ile pomieszczeń wymaga klimatyzacji."
+      subtitle="Określ, ile pomieszczeń wymaga klimatyzacji"
     >
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
         <OptionCard

@@ -20,7 +20,7 @@ export const Step4State = () => {
   return (
     <StepWrapper 
       title="Jaki jest stan budynku/lokalu?" 
-      subtitle="Pomaga to w określeniu metody poprowadzenia instalacji."
+      subtitle="Pomaga to w określeniu metody poprowadzenia instalacji"
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <OptionCard

@@ -405,6 +405,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('AOHH07KJCA', 'GENERAL', 'SINGLE', 2, 1, 2700)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -412,6 +413,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('AOHH09KJCA', 'GENERAL', 'SINGLE', 2.5, 1, 3000)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -419,6 +421,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('AOHH12KJCA', 'GENERAL', 'SINGLE', 3.4, 1, 3400)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -426,6 +429,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('AOHH14KJCA', 'GENERAL', 'SINGLE', 4.2, 1, 4100)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -433,6 +437,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG07KETA', 'Fuji Electric', 'SINGLE', 2, 1, 2450)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -440,6 +445,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG09KETA', 'Fuji Electric', 'SINGLE', 2.5, 1, 3040)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -447,6 +453,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG12KETA', 'Fuji Electric', 'SINGLE', 3.4, 1, 3090)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -454,6 +461,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG14KETA', 'Fuji Electric', 'SINGLE', 4.2, 1, 4100)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -461,6 +469,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH07KGCG', 'Fuji Electric', 'SINGLE', 2, 1, 2920)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -468,6 +477,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH09KGCG', 'Fuji Electric', 'SINGLE', 2.5, 1, 3500)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -475,6 +485,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH12KGCG', 'Fuji Electric', 'SINGLE', 3.4, 1, 3650)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -482,6 +493,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH14KGCG', 'Fuji Electric', 'SINGLE', 4.2, 1, 4670)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -489,6 +501,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH07KMCG', 'Fuji Electric', 'SINGLE', 2, 1, 2100)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -496,6 +509,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH09KMCG', 'Fuji Electric', 'SINGLE', 2.5, 1, 2300)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -503,6 +517,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH12KMCG', 'Fuji Electric', 'SINGLE', 3.4, 1, 2700)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -510,6 +525,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH14KMCG', 'Fuji Electric', 'SINGLE', 4.2, 1, 3800)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -517,6 +533,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG09KMCEN', 'Fuji Electric', 'SINGLE', 2.5, 1, 3300)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -524,6 +541,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG12KMCEN', 'Fuji Electric', 'SINGLE', 3.4, 1, 3730)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -531,6 +549,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG14KMCEN', 'Fuji Electric', 'SINGLE', 4.2, 1, 5330)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -538,6 +557,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG18KMTA', 'Fuji Electric', 'SINGLE', 5.2, 1, 4360)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -545,6 +565,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG24KMTA', 'Fuji Electric', 'SINGLE', 7.1, 1, 6280)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -552,6 +573,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG30KMTA', 'Fuji Electric', 'SINGLE', 8, 1, 9050)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -559,6 +581,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG36KMTA', 'Fuji Electric', 'SINGLE', 9.4, 1, 9800)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -566,6 +589,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH07KNCA', 'Fuji Electric', 'SINGLE', 2, 1, 2400)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -573,6 +597,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH09KNCA', 'Fuji Electric', 'SINGLE', 2.5, 1, 2500)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -580,6 +605,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH12KNCA', 'Fuji Electric', 'SINGLE', 3.4, 1, 2600)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -587,6 +613,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH07KLTA', 'Fuji Electric', 'SINGLE', 2, 1, 1900)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -594,6 +621,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH09KLTA', 'Fuji Electric', 'SINGLE', 2.5, 1, 2200)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -601,6 +629,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROH12KLTA', 'Fuji Electric', 'SINGLE', 3.4, 1, 2400)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -608,6 +637,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG18KLCA', 'Fuji Electric', 'SINGLE', 5.2, 1, 4150)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -615,6 +645,7 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG24KLCA', 'Fuji Electric', 'SINGLE', 7.1, 1, 5750)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -622,6 +653,15 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG14KBTA2', 'Fuji Electric', 'MULTI', 4, 2, 6100)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
+    type = EXCLUDED.type,
+    cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
+    max_indoor_units = EXCLUDED.max_indoor_units,
+    price_netto = EXCLUDED.price_netto;
+INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
+VALUES ('AOHG14KBTA2', 'GENERAL', 'MULTI', 4, 2, 6100)
+ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -629,6 +669,15 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG18KBTA2', 'Fuji Electric', 'MULTI', 5, 2, 7100)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
+    type = EXCLUDED.type,
+    cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
+    max_indoor_units = EXCLUDED.max_indoor_units,
+    price_netto = EXCLUDED.price_netto;
+INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
+VALUES ('AOHG18KBTA2', 'GENERAL', 'MULTI', 5, 2, 7100)
+ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -636,6 +685,15 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG18KBTA3', 'Fuji Electric', 'MULTI', 5.4, 3, 9100)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
+    type = EXCLUDED.type,
+    cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
+    max_indoor_units = EXCLUDED.max_indoor_units,
+    price_netto = EXCLUDED.price_netto;
+INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
+VALUES ('AOHG18KBTA3', 'GENERAL', 'MULTI', 5.4, 3, 9100)
+ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -643,6 +701,15 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG24KBTA3', 'Fuji Electric', 'MULTI', 6.8, 3, 9800)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
+    type = EXCLUDED.type,
+    cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
+    max_indoor_units = EXCLUDED.max_indoor_units,
+    price_netto = EXCLUDED.price_netto;
+INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
+VALUES ('AOHG24KBTA3', 'GENERAL', 'MULTI', 6.8, 3, 9800)
+ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -650,6 +717,15 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG30KBTA4', 'Fuji Electric', 'MULTI', 8, 4, 11800)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
+    type = EXCLUDED.type,
+    cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
+    max_indoor_units = EXCLUDED.max_indoor_units,
+    price_netto = EXCLUDED.price_netto;
+INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
+VALUES ('AOHG30KBTA4', 'GENERAL', 'MULTI', 8, 4, 11800)
+ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -657,6 +733,15 @@ ON CONFLICT (model_code) DO UPDATE SET
 INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
 VALUES ('ROG36KBTA5', 'Fuji Electric', 'MULTI', 9.5, 5, 14700)
 ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
+    type = EXCLUDED.type,
+    cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
+    max_indoor_units = EXCLUDED.max_indoor_units,
+    price_netto = EXCLUDED.price_netto;
+INSERT INTO public.outdoor_units (model_code, brand, type, cooling_capacity_kw, max_indoor_units, price_netto)
+VALUES ('AOHG36KBTA5', 'GENERAL', 'MULTI', 9.5, 5, 14700)
+ON CONFLICT (model_code) DO UPDATE SET 
+    brand = EXCLUDED.brand,
     type = EXCLUDED.type,
     cooling_capacity_kw = EXCLUDED.cooling_capacity_kw,
     max_indoor_units = EXCLUDED.max_indoor_units,
@@ -994,9 +1079,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG14KBTA2';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (ROG14KBTA2)', o.id, 2, '[{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG14KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 2-pokojowy (AOHG14KBTA2)', o.id, 2, '[{"code":"07"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG14KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (ROG14KBTA2)', o.id, 2, '[{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG14KBTA2';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 2-pokojowy (AOHG14KBTA2)', o.id, 2, '[{"code":"09"},{"code":"09"}]'::jsonb, NULL
@@ -1004,9 +1099,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG14KBTA2';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (ROG14KBTA2)', o.id, 2, '[{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG14KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 2-pokojowy (AOHG14KBTA2)', o.id, 2, '[{"code":"07"},{"code":"12"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG14KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (ROG14KBTA2)', o.id, 2, '[{"code":"07"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG14KBTA2';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"07"},{"code":"07"}]'::jsonb, NULL
@@ -1014,9 +1119,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG18KBTA2';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (ROG18KBTA2)', o.id, 2, '[{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"07"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (ROG18KBTA2)', o.id, 2, '[{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG18KBTA2';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"07"},{"code":"12"}]'::jsonb, NULL
@@ -1024,9 +1139,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG18KBTA2';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (ROG18KBTA2)', o.id, 2, '[{"code":"07"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"09"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (ROG18KBTA2)', o.id, 2, '[{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG18KBTA2';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"09"},{"code":"12"}]'::jsonb, NULL
@@ -1034,9 +1159,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG18KBTA2';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (ROG18KBTA2)', o.id, 2, '[{"code":"09"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 2-pokojowy (AOHG18KBTA2)', o.id, 2, '[{"code":"12"},{"code":"12"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG18KBTA2';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 2-pokojowy (ROG18KBTA2)', o.id, 2, '[{"code":"12"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG18KBTA2';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 3-pokojowy (AOHG18KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
@@ -1044,9 +1179,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG18KBTA3';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (ROG18KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG18KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 3-pokojowy (AOHG18KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG18KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (ROG18KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG18KBTA3';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
@@ -1054,9 +1199,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG24KBTA3';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (ROG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (ROG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG24KBTA3';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"12"}]'::jsonb, NULL
@@ -1064,9 +1219,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG24KBTA3';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (ROG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"07"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (ROG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG24KBTA3';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"09"},{"code":"12"}]'::jsonb, NULL
@@ -1074,9 +1239,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG24KBTA3';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (ROG24KBTA3)', o.id, 3, '[{"code":"07"},{"code":"09"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (ROG24KBTA3)', o.id, 3, '[{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG24KBTA3';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"09"},{"code":"09"},{"code":"12"}]'::jsonb, NULL
@@ -1084,9 +1259,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG24KBTA3';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (ROG24KBTA3)', o.id, 3, '[{"code":"09"},{"code":"09"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 3-pokojowy (AOHG24KBTA3)', o.id, 3, '[{"code":"09"},{"code":"12"},{"code":"12"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG24KBTA3';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 3-pokojowy (ROG24KBTA3)', o.id, 3, '[{"code":"09"},{"code":"12"},{"code":"12"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG24KBTA3';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 4-pokojowy (AOHG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
@@ -1094,9 +1279,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG30KBTA4';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 4-pokojowy (ROG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG30KBTA4';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 4-pokojowy (AOHG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG30KBTA4';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 4-pokojowy (ROG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG30KBTA4';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 4-pokojowy (AOHG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"07"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
@@ -1104,9 +1299,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG30KBTA4';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 4-pokojowy (ROG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"07"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG30KBTA4';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 4-pokojowy (AOHG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG30KBTA4';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 4-pokojowy (ROG30KBTA4)', o.id, 4, '[{"code":"07"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG30KBTA4';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 4-pokojowy (AOHG30KBTA4)', o.id, 4, '[{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
@@ -1114,9 +1319,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG30KBTA4';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 4-pokojowy (ROG30KBTA4)', o.id, 4, '[{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG30KBTA4';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG36KBTA5';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (ROG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG36KBTA5';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
@@ -1124,9 +1339,19 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG36KBTA5';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (ROG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"07"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG36KBTA5';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG36KBTA5';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (ROG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"07"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG36KBTA5';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
@@ -1134,11 +1359,26 @@ FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG36KBTA5';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (ROG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"07"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG36KBTA5';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG36KBTA5';
 
 INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (ROG36KBTA5)', o.id, 5, '[{"code":"07"},{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG36KBTA5';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
 SELECT 'Zestaw 5-pokojowy (AOHG36KBTA5)', o.id, 5, '[{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
 FROM public.outdoor_units o
 WHERE o.model_code = 'AOHG36KBTA5';
+
+INSERT INTO public.multi_split_sets (name, outdoor_unit_id, supported_rooms_count, indoor_units_json, set_price_netto)
+SELECT 'Zestaw 5-pokojowy (ROG36KBTA5)', o.id, 5, '[{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"},{"code":"09"}]'::jsonb, NULL
+FROM public.outdoor_units o
+WHERE o.model_code = 'ROG36KBTA5';

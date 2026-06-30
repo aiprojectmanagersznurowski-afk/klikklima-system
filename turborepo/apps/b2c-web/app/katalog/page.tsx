@@ -260,7 +260,7 @@ export default function CatalogPage() {
           <div className="flex-1 min-w-0">
             <div className="mb-8 border-b border-border pb-4">
               <h2 className="text-3xl font-bold tracking-tight text-foreground">Klimatyzatory Ścienne</h2>
-              <p className="text-muted-foreground mt-2">Kompletny zestaw: jednostka wewnętrzna i zewnętrzna.</p>
+              <p className="text-muted-foreground mt-2">Kompletny zestaw: jednostka wewnętrzna i zewnętrzna</p>
             </div>
             
             {!catalog ? (
@@ -276,7 +276,7 @@ export default function CatalogPage() {
             ) : (
               <div className="py-24 text-center bg-muted/20 rounded-2xl border border-border/50">
                 <p className="text-xl font-bold text-foreground mb-2">Brak wyników</p>
-                <p className="text-muted-foreground">Nie znaleźliśmy urządzeń spełniających Twoje kryteria.</p>
+                <p className="text-muted-foreground">Nie znaleźliśmy urządzeń spełniających Twoje kryteria</p>
                 <button 
                   onClick={() => {
                     setFilterRoomType('all');

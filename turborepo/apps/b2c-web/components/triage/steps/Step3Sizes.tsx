@@ -34,7 +34,7 @@ export const Step3Sizes = () => {
     return (
       <StepWrapper 
         title="Jaki jest metraż pomieszczenia?" 
-        subtitle="To pomoże nam dobrać odpowiednią moc chłodniczą (kW)."
+        subtitle="To pomoże nam dobrać odpowiednią moc chłodniczą (kW)"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {sizeOptions.map((size) => (
@@ -54,7 +54,7 @@ export const Step3Sizes = () => {
   return (
     <StepWrapper 
       title="Jaki jest metraż poszczególnych pomieszczeń?" 
-      subtitle="Określ przybliżoną powierzchnię dla każdego z nich."
+      subtitle="Określ przybliżoną powierzchnię dla każdego z nich"
     >
       <div className="space-y-6 max-w-2xl mx-auto">
         {Array.from({ length: state.roomCount || 0 }).map((_, idx) => {
