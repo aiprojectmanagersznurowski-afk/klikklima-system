@@ -367,7 +367,7 @@ export function DeviceModal({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.97, y: 12 }}
                 transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                className="fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_30px_80px_-20px_rgba(15,23,42,0.45)] md:flex-row"
+                className="fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-[24px] bg-white shadow-[0_30px_80px_-20px_rgba(15,23,42,0.45)] md:flex-row md:overflow-hidden"
               >
                 {/* Close button */}
                 <DialogPrimitive.Close className="absolute right-4 top-4 z-20 flex size-9 items-center justify-center rounded-full text-[#64748B] transition-colors hover:bg-[#F1F5F9] hover:text-[#0F172A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/50">
@@ -376,7 +376,7 @@ export function DeviceModal({
                 </DialogPrimitive.Close>
 
                 {/* ---------- LEFT: Configuration ---------- */}
-                <div className="flex-1 overflow-y-auto px-6 py-7 md:px-8 bg-white">
+                <div className="flex-none bg-white px-6 py-7 md:flex-1 md:overflow-y-auto md:px-8">
                   <DialogPrimitive.Title className="text-[22px] font-bold tracking-tight text-[#0F172A]">
                     Skonfiguruj swój system klimatyzacji
                   </DialogPrimitive.Title>
@@ -524,7 +524,7 @@ export function DeviceModal({
 
                 {/* ---------- RIGHT: Summary & Pricing ---------- */}
                 <div className="flex w-full shrink-0 flex-col border-t border-[#E8EDF5] bg-white md:w-[360px] md:border-l md:border-t-0">
-                  <div className="flex-1 overflow-y-auto px-6 py-7">
+                  <div className="flex-none px-6 py-7 md:flex-1 md:overflow-y-auto">
                     {/* Price */}
                     <p className="text-[13px] font-medium text-[#475569]">
                       {isFullyConfigured ? "Cena całkowita zestawu" : "Cena zaczyna się od"}
@@ -623,7 +623,7 @@ export function DeviceModal({
                   </div>
 
                   {/* Sticky CTA */}
-                  <div className="border-t border-[#E8EDF5] bg-white/80 px-6 py-5 backdrop-blur">
+                  <div className="sticky bottom-0 z-10 border-t border-[#E8EDF5] bg-white px-6 py-5 shadow-[0_-8px_15px_-3px_rgba(15,23,42,0.05)] md:static md:shadow-none">
                     <button
                       type="button"
                       onClick={handleAuditClick}
@@ -641,52 +641,52 @@ export function DeviceModal({
                 </div>
               </motion.div>
             </DialogPrimitive.Content>
+
+            {/* Fullscreen Gallery Overlay */}
+            <AnimatePresence>
+              {galleryIndex !== null && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md"
+                  onClick={() => setGalleryIndex(null)}
+                >
+                  <button
+                    onClick={() => setGalleryIndex(null)}
+                    className="absolute right-6 top-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                  >
+                    <X className="size-6" />
+                  </button>
+                  
+                  <button
+                    onClick={handlePrevImage}
+                    className="absolute left-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                  >
+                    <ChevronLeft className="size-8" />
+                  </button>
+
+                  <img 
+                    src={images[galleryIndex]} 
+                    alt="Galeria zdjęć urządzenia" 
+                    className="max-h-[85vh] max-w-[85vw] object-contain select-none" 
+                    onClick={(e) => e.stopPropagation()}
+                  />
+
+                  <button
+                    onClick={handleNextImage}
+                    className="absolute right-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                  >
+                    <ChevronRight className="size-8" />
+                  </button>
+                  
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm text-white/80 font-medium text-sm">
+                    {galleryIndex + 1} / {images.length}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </DialogPrimitive.Portal>
-        )}
-      </AnimatePresence>
-
-      {/* Fullscreen Gallery Overlay */}
-      <AnimatePresence>
-        {galleryIndex !== null && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md"
-            onClick={() => setGalleryIndex(null)}
-          >
-            <button
-              onClick={() => setGalleryIndex(null)}
-              className="absolute right-6 top-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-            >
-              <X className="size-6" />
-            </button>
-            
-            <button
-              onClick={handlePrevImage}
-              className="absolute left-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-            >
-              <ChevronLeft className="size-8" />
-            </button>
-
-            <img 
-              src={images[galleryIndex]} 
-              alt="Galeria zdjęć urządzenia" 
-              className="max-h-[85vh] max-w-[85vw] object-contain select-none" 
-              onClick={(e) => e.stopPropagation()}
-            />
-
-            <button
-              onClick={handleNextImage}
-              className="absolute right-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-            >
-              <ChevronRight className="size-8" />
-            </button>
-            
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm text-white/80 font-medium text-sm">
-               {galleryIndex + 1} / {images.length}
-            </div>
-          </motion.div>
         )}
       </AnimatePresence>
     </DialogPrimitive.Root>
