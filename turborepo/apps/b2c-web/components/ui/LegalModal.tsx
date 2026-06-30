@@ -15,7 +15,7 @@ export function LegalModal({ title, children }: { title: string, children: React
         }
       }}
     >
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] rounded-2xl p-6 sm:p-10">
+      <DialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] md:w-[70vw] md:max-w-[70vw] rounded-2xl p-6 sm:p-10">
         <DialogHeader>
           <DialogTitle className="sr-only">{title}</DialogTitle>
         </DialogHeader>
