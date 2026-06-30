@@ -1,4 +1,4 @@
-import { Zap, ArrowRight } from "lucide-react";
+import { Zap, ArrowRight, Box, Boxes } from "lucide-react";
 import type { BestsellerProduct } from "@/app/actions/getBestsellers";
 
 export function calcBrutto(deviceNetto: number, installNetto: number): number {
@@ -55,15 +55,19 @@ export function ProductCard({ product, onOpenModal, showPricing = true, exactPri
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <span className="inline-flex items-center w-fit rounded-full bg-[#F0F4FB] px-3 py-1.5 text-[13px] font-medium text-[#475569]">
-            {product._raw?.is_single_compatible && product._raw?.is_multi_compatible 
-              ? "W systemie Single i Multi split dla wielu pomieszczeń" 
-              : product._raw?.is_multi_compatible 
-                ? "W systemie Multi split dla wielu pomieszczeń" 
-                : "W systemie Single split"
-            }
-          </span>
+        <div className="flex flex-wrap gap-2">
+          {product._raw?.is_single_compatible && (
+            <span className="inline-flex items-center gap-1.5 w-fit rounded-full bg-[#F0F4FB] px-3 py-1.5 text-[13px] font-medium text-[#475569]">
+              <Box className="size-3.5 text-[#2563EB]" />
+              Single Split
+            </span>
+          )}
+          {product._raw?.is_multi_compatible && (
+            <span className="inline-flex items-center gap-1.5 w-fit rounded-full bg-[#F0F4FB] px-3 py-1.5 text-[13px] font-medium text-[#475569]">
+              <Boxes className="size-3.5 text-[#2563EB]" />
+              Multi Split
+            </span>
+          )}
         </div>
 
         {showPricing && (
