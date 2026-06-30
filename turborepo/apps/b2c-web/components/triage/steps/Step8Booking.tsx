@@ -8,7 +8,7 @@ import { saveLead } from '@/app/actions/saveLead';
 import { getAvailableSlots, type AvailableSlot } from '@/app/actions/calendar';
 import { CheckCircle2, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameMonth, startOfToday, isBefore } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 
@@ -59,7 +59,30 @@ export const Step8Booking = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [formDataState, setFormDataState] = useState({ name: '', phone: '', email: '' });
   const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | null>(null);
+  const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
   const router = useRouter();
+
+  const maxAvailableDate = availableDays.length > 0 
+    ? parseISO(availableDays[availableDays.length - 1].dateStr)
+    : addMonths(new Date(), 2);
+
+  const canGoPrev = !isSameMonth(currentMonth, new Date()) && !isBefore(currentMonth, startOfMonth(new Date()));
+  const canGoNext = !isBefore(maxAvailableDate, endOfMonth(currentMonth));
+
+  const handlePrevMonth = () => {
+    if (canGoPrev) setCurrentMonth(subMonths(currentMonth, 1));
+  };
+  const handleNextMonth = () => {
+    if (canGoNext) setCurrentMonth(addMonths(currentMonth, 1));
+  };
+
+  const daysInMonth = eachDayOfInterval({
+    start: startOfMonth(currentMonth),
+    end: endOfMonth(currentMonth),
+  });
+
+  const startDay = getDay(startOfMonth(currentMonth));
+  const emptyDaysCount = startDay === 0 ? 6 : startDay - 1;
 
   useEffect(() => {
     getAvailableSlots().then(days => {
@@ -207,60 +230,85 @@ export const Step8Booking = () => {
         <div className="w-full lg:w-[45%] xl:w-5/12 space-y-8">
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-border/50">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="font-semibold text-lg">Data wizyty</h3>
+              <h3 className="font-semibold text-lg capitalize">
+                {format(currentMonth, 'LLLL yyyy', { locale: pl })}
+              </h3>
               <div className="flex gap-2">
-                <button className="p-1 rounded-full hover:bg-secondary text-muted-foreground">
+                <button 
+                  onClick={handlePrevMonth}
+                  disabled={!canGoPrev}
+                  className="p-1 rounded-full hover:bg-secondary text-muted-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
                   <ChevronLeft size={20} />
                 </button>
-                <button className="p-1 rounded-full hover:bg-secondary text-muted-foreground">
+                <button 
+                  onClick={handleNextMonth}
+                  disabled={!canGoNext}
+                  className="p-1 rounded-full hover:bg-secondary text-muted-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
                   <ChevronRight size={20} />
                 </button>
               </div>
             </div>
             
-            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-64 overflow-y-auto pr-2 pb-2">
+            <div className="grid grid-cols-7 gap-1 text-center mb-2">
+              {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'N'].map(day => (
+                <div key={day} className="text-xs font-semibold text-muted-foreground py-1">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 max-h-64 overflow-y-auto pr-1 pb-2">
               {isLoadingSlots ? (
-                <div className="col-span-full flex flex-col items-center justify-center py-10 text-muted-foreground">
+                <div className="col-span-7 flex flex-col items-center justify-center py-10 text-muted-foreground">
                   <Loader2 className="w-8 h-8 animate-spin mb-2" />
                   <span className="text-sm">Ładowanie dostępnych terminów z kalendarza...</span>
                 </div>
               ) : availableDays.length === 0 ? (
-                <div className="col-span-full text-center py-6 text-muted-foreground">
+                <div className="col-span-7 text-center py-6 text-muted-foreground">
                   Brak dostępnych terminów.
                 </div>
               ) : (
-                availableDays.map((day) => {
-                  const dateObj = parseISO(day.dateStr);
-                  const isSelected = selectedDateStr === day.dateStr;
-                  const isWeekend = day.isWeekend;
-                  return (
-                    <button
-                      key={day.dateStr}
-                      disabled={isWeekend}
-                      onClick={() => {
-                        if (!isWeekend) {
-                          setSelectedDateStr(day.dateStr);
-                          setSelectedSlot(null); // Reset slotu po zmianie dnia
-                        }
-                      }}
-                      className={cn(
-                        "flex flex-col items-center justify-center py-3 px-1 rounded-2xl transition-all border-2",
-                        isWeekend
-                          ? "bg-secondary text-muted-foreground border-transparent opacity-50 cursor-not-allowed"
-                          : isSelected 
-                            ? "bg-primary text-primary-foreground border-primary shadow-md"
-                            : "bg-transparent text-foreground border-transparent hover:bg-secondary hover:border-secondary-foreground/10"
-                      )}
-                    >
-                      <span className="text-xs font-medium uppercase mb-1 opacity-80">
-                        {format(dateObj, 'EEE', { locale: pl }).slice(0, 3)}
-                      </span>
-                      <span className="text-xl font-bold">
-                        {format(dateObj, 'd')}
-                      </span>
-                    </button>
-                  );
-                })
+                <>
+                  {Array.from({ length: emptyDaysCount }).map((_, i) => (
+                    <div key={`empty-${i}`} className="p-2" />
+                  ))}
+                  {daysInMonth.map((dayDate) => {
+                    const dateStr = format(dayDate, 'yyyy-MM-dd');
+                    const isSelected = selectedDateStr === dateStr;
+                    const availableDay = availableDays.find(d => d.dateStr === dateStr);
+                    const isWeekend = getDay(dayDate) === 0 || getDay(dayDate) === 6;
+                    const isPastDay = isBefore(dayDate, startOfToday());
+                    const isClickable = availableDay && !availableDay.isWeekend && !isPastDay && availableDay.slots.length > 0;
+
+                    return (
+                      <button
+                        key={dateStr}
+                        disabled={!isClickable}
+                        type="button"
+                        onClick={() => {
+                          if (isClickable) {
+                            setSelectedDateStr(dateStr);
+                            setSelectedSlot(null); // Reset slot po zmianie dnia
+                          }
+                        }}
+                        className={cn(
+                          "relative flex items-center justify-center h-10 w-full rounded-lg transition-all text-sm font-medium border-2",
+                          isWeekend
+                            ? "bg-secondary/50 text-muted-foreground border-transparent opacity-50 cursor-not-allowed"
+                            : isSelected 
+                              ? "bg-primary text-primary-foreground border-primary shadow-md"
+                              : !isClickable 
+                                ? "bg-transparent text-muted-foreground/40 border-transparent cursor-not-allowed opacity-50"
+                                : "bg-transparent text-foreground border-transparent hover:bg-secondary hover:border-secondary-foreground/10"
+                        )}
+                      >
+                        {format(dayDate, 'd')}
+                      </button>
+                    );
+                  })}
+                </>
               )}
             </div>
 
