@@ -30,8 +30,13 @@ const DeviceCard = ({ product, onSelect, onDetails, isBestMatch = false }: { pro
           </div>
         </div>
         <div className="flex flex-col gap-2">
-           <span className="inline-flex items-center gap-1 bg-secondary text-secondary-foreground text-xs font-semibold px-3 py-1.5 rounded-full w-fit">
-            <Wind className="w-3 h-3" /> {product.power}
+          <span className="text-xs font-medium text-muted-foreground">
+            {product._raw?.is_single_compatible && product._raw?.is_multi_compatible 
+              ? "W systemie Single i Multi split dla wielu pomieszczeń" 
+              : product._raw?.is_multi_compatible 
+                ? "W systemie Multi split dla wielu pomieszczeń" 
+                : "W systemie Single split"
+            }
           </span>
         </div>
         <div className="mt-auto pt-4 border-t border-border">

@@ -57,11 +57,14 @@ export function ProductCard({ product, onOpenModal, showPricing = true, exactPri
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 bg-secondary text-secondary-foreground text-xs font-semibold px-3 py-1.5 rounded-full">
-            <Zap className="w-3 h-3" />
-            {product.power}
+          <span className="text-xs font-medium text-muted-foreground">
+            {product._raw?.is_single_compatible && product._raw?.is_multi_compatible 
+              ? "W systemie Single i Multi split dla wielu pomieszczeń" 
+              : product._raw?.is_multi_compatible 
+                ? "W systemie Multi split dla wielu pomieszczeń" 
+                : "W systemie Single split"
+            }
           </span>
-          <span className="text-xs text-muted-foreground">Moc chłodnicza</span>
         </div>
 
         {showPricing && (
