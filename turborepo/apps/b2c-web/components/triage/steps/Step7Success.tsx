@@ -15,7 +15,10 @@ const DeviceCard = ({ product, onSelect, onDetails, isBestMatch = false }: { pro
   const brutto = Math.round((product.deviceNettoPrice + product.installNettoPrice) * 1.08);
   return (
     <div className={cn("group relative bg-card rounded-2xl border border-border overflow-hidden flex flex-col transition-all duration-300", isBestMatch ? "shadow-[0_20px_60px_-12px_rgba(23,80,200,0.15)] border-primary/20" : "hover:-translate-y-1 hover:shadow-lg")}>
-      <div className="relative h-48 bg-[#f0f4fb] overflow-hidden flex items-center justify-center p-4">
+      <div 
+        className="relative h-48 bg-[#f0f4fb] overflow-hidden flex items-center justify-center p-4 cursor-pointer"
+        onClick={onDetails}
+      >
         <img src={product.img} alt={product.model} className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 mix-blend-multiply" />
       </div>
       <div className="flex flex-col flex-1 p-6 gap-4">

@@ -31,13 +31,16 @@ export function ProductCard({ product, onOpenModal, showPricing = true, exactPri
         </span>
       )}
 
-      <div className="relative h-52 bg-[#f0f4fb] overflow-hidden">
+      <div 
+        className="relative h-52 bg-[#f0f4fb] overflow-hidden cursor-pointer"
+        onClick={() => onOpenModal(product)}
+      >
         <img
           src={product.img}
           alt={`Klimatyzator ${product.brand} ${product.model}`}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
       </div>
 
       <div className="flex flex-col flex-1 p-6 gap-4">
