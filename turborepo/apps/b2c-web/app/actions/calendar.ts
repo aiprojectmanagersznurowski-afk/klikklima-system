@@ -1,7 +1,7 @@
 "use server";
 
 import { google } from 'googleapis';
-import { addDays } from 'date-fns';
+import { addDays, addHours } from 'date-fns';
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 
 // Konfiguracja autoryzacji Google
@@ -57,7 +57,7 @@ export async function getAvailableSlots(): Promise<AvailableSlot[]> {
     const availableDays: AvailableSlot[] = [];
 
     // Generujemy dostępne dni i sprawdzamy kolizje w każdym dniu
-    for (let i = 1; i <= HORIZON_DAYS; i++) { // Zaczynamy od i=1 (czyli od jutra)
+    for (let i = 0; i <= HORIZON_DAYS; i++) { // Zaczynamy od i=0 (czyli od dzisiaj)
       const currentDate = addDays(todayWarsaw, i);
       
       // Bezpieczny string dla daty w strefie czasowej Warszawa
@@ -82,6 +82,11 @@ export async function getAvailableSlots(): Promise<AvailableSlot[]> {
         // Tworzymy obiekty dat w strefie czasowej Warszawa
         const slotStart = fromZonedTime(`${dateStr} ${startStr}`, 'Europe/Warsaw');
         const slotEnd = fromZonedTime(`${dateStr} ${endStr}`, 'Europe/Warsaw');
+
+        // Sprawdzamy czy slot nie jest w przeszłości (dodajemy 2 godziny bufora na dojazd)
+        if (slotStart <= addHours(now, 2)) {
+          continue;
+        }
 
         // Sprawdzamy czy slot nakłada się z jakimkolwiek wydarzeniem "busy" z kalendarza
         const isConflict = busyIntervals.some(busy => {
