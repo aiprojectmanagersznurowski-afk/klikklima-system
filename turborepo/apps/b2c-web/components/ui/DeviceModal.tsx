@@ -653,15 +653,15 @@ export function DeviceModal({
                   onClick={() => setGalleryIndex(null)}
                 >
                   <button
-                    onClick={() => setGalleryIndex(null)}
-                    className="absolute right-6 top-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                    onClick={(e) => { e.stopPropagation(); setGalleryIndex(null); }}
+                    className="absolute right-6 top-6 z-50 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
                   >
                     <X className="size-6" />
                   </button>
                   
                   <button
-                    onClick={handlePrevImage}
-                    className="absolute left-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                    onClick={(e) => { e.stopPropagation(); handlePrevImage(e); }}
+                    className="absolute left-6 z-50 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
                   >
                     <ChevronLeft className="size-8" />
                   </button>
@@ -674,13 +674,13 @@ export function DeviceModal({
                   />
 
                   <button
-                    onClick={handleNextImage}
-                    className="absolute right-6 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                    onClick={(e) => { e.stopPropagation(); handleNextImage(e); }}
+                    className="absolute right-6 z-50 flex size-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
                   >
                     <ChevronRight className="size-8" />
                   </button>
                   
-                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm text-white/80 font-medium text-sm">
+                  <div className="absolute bottom-8 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm text-white/80 font-medium text-sm">
                     {galleryIndex + 1} / {images.length}
                   </div>
                 </motion.div>
