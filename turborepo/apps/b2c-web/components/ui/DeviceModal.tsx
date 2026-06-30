@@ -131,7 +131,8 @@ function RoomRow({
   onRemove,
   supportedSizes,
   validHashes,
-  rooms
+  rooms,
+  roomPowers
 }: {
   room: Room;
   index: number;
