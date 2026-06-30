@@ -26,7 +26,7 @@ export interface Room {
 }
 
 const ROOM_SIZES: Record<RoomSize, { label: string; area: string; power: string; }> = {
-  S: { label: "do 20 m²", area: "do 20 m²", power: "2.5 kW" },
+  S: { label: "do 20 m²", area: "do 20 m²", power: "2.0 kW" },
   M: { label: "20–30 m²", area: "20–30 m²", power: "3.5 kW" },
   L: { label: "30–40 m²", area: "30–40 m²", power: "5.0 kW" },
   XL: { label: "40–60 m²", area: "40–60 m²", power: "7.1 kW" },
@@ -140,6 +140,7 @@ function RoomRow({
   supportedSizes: string[];
   validHashes: string[] | null;
   rooms: Room[];
+  roomPowers: Record<string, string>;
 }) {
   const size = room.size ? ROOM_SIZES[room.size] : null;
   return (
@@ -160,7 +161,7 @@ function RoomRow({
             <p className="font-semibold text-[#0F172A]">{room.name}</p>
             {size ? (
                <p className="text-[13px] text-[#475569]">
-                 {size.area} · {size.power}
+                 {size.area} · {room.size ? roomPowers[room.size] : size.power}
                </p>
             ) : (
                <p className="text-[13px] text-[#94A3B8]">
@@ -215,6 +216,7 @@ export function DeviceModal({
   const [supportedSizes, setSupportedSizes] = useState<string[]>(['S', 'M', 'L', 'XL']);
   const [validHashes, setValidHashes] = useState<string[] | null>(null);
   const [maxSupportedRooms, setMaxSupportedRooms] = useState<number>(5);
+  const [roomPowers, setRoomPowers] = useState<Record<string, string>>({ S: "2.0 kW", M: "2.5 kW", L: "3.5 kW", XL: "5.0 kW" });
   const [basePrice, setBasePrice] = useState<number | null>(device?.startingPriceBrutto || null);
 
   const images = device ? [
@@ -264,6 +266,7 @@ export function DeviceModal({
       getAvailableSizes(device.model).then(res => {
         setSupportedSizes(res.sizes);
         setMaxSupportedRooms(res.maxRooms);
+        if (res.powers) setRoomPowers(res.powers);
       });
     }
   }, [isOpen, device]);
@@ -452,6 +455,7 @@ export function DeviceModal({
                           supportedSizes={supportedSizes}
                           validHashes={validHashes}
                           rooms={rooms}
+                          roomPowers={roomPowers}
                         />
                       ))}
                     </AnimatePresence>
@@ -570,7 +574,7 @@ export function DeviceModal({
                             {r.name}
                           </span>
                           <span className="font-semibold text-[#0F172A]">
-                            {r.size ? `${ROOM_SIZES[r.size].area} · ${ROOM_SIZES[r.size].power}` : '---'}
+                            {r.size ? `${ROOM_SIZES[r.size].area} · ${roomPowers[r.size] || ROOM_SIZES[r.size].power}` : '---'}
                           </span>
                         </li>
                       ))}
