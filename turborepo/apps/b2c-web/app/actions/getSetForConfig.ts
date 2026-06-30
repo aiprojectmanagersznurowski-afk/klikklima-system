@@ -49,9 +49,17 @@ export async function getSetForConfig(seriesName: string, rooms: RoomConfig[]) {
     const baseInstall = cennik ? Number(cennik.koszt_b2c_netto) : 1200;
     const installNetto = baseInstall * rooms.length;
 
+    // Get outdoor unit image
+    const { data: outdoor } = await supabase
+      .from('outdoor_units')
+      .select('image_url')
+      .eq('model_code', set.outdoor_model)
+      .single();
+
     return {
       type: set.type, // 'SINGLE' or 'MULTI'
       outdoorModel: set.outdoor_model,
+      outdoorImageUrl: outdoor?.image_url || null,
       capacity: set.outdoor_capacity ? Number(set.outdoor_capacity).toFixed(1) : "-",
       priceNetto: Number(set.total_devices_price),
       installPrice: installNetto,

@@ -217,7 +217,10 @@ export function DeviceModal({
   const [maxSupportedRooms, setMaxSupportedRooms] = useState<number>(5);
   const [basePrice, setBasePrice] = useState<number | null>(device?.startingPriceBrutto || null);
 
-  const images = device ? [device.img && device.img.length > 5 ? device.img : INDOOR_IMG, OUTDOOR_IMG] : [];
+  const images = device ? [
+    device.img && device.img.length > 5 ? device.img : INDOOR_IMG, 
+    matchedSet?.outdoorImageUrl || OUTDOOR_IMG
+  ] : [];
 
   const handleNextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
