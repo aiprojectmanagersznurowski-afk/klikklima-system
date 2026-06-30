@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTriageStore } from '@/store/triageStore';
 import { StepWrapper } from '../StepWrapper';
@@ -457,8 +458,8 @@ export const Step8Booking = () => {
                     error === 'terms' ? "border-rose-500 text-rose-500 focus:ring-rose-500 ring-2 ring-rose-500" : "border-border text-primary focus:ring-primary"
                   )}
                 />
-                <label htmlFor="terms" className="text-sm text-muted-foreground cursor-pointer select-none">
-                  Akceptuję <a href="/regulamin" target="_blank" className="text-primary hover:underline">Regulamin</a> oraz <a href="/polityka-prywatnosci" target="_blank" className="text-primary hover:underline">Politykę Prywatności</a>.
+                <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed">
+                  Akceptuję <Link href="/regulamin" className="text-primary hover:underline">Regulamin</Link> oraz <Link href="/polityka-prywatnosci" className="text-primary hover:underline">Politykę Prywatności</Link>
                 </label>
               </div>
               <AnimatePresence>
