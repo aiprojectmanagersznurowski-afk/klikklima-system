@@ -25,17 +25,11 @@ Dokument podsumowuje dotychczasowy zakres funkcjonalności wdrożonych w klienck
 
 Poniższe elementy należy skopiować na tablicę Trello jako zadania do uzupełnienia/wykonania w najbliższym czasie:
 
-1. **[Integracja] API Google Maps**
-   - Podpięcie prawdziwego klucza API Google Maps do autouzupełniania adresów w kroku Triage "Lokalizacja".
-   - Testy geokodowania (zwracanie odpowiednich kodów pocztowych dla regionów).
 
 2. **[Integracja] Kalendarz Google**
    - Implementacja SSR (Server-Side Rendering) odpytującego Google Calendar API o wolne sloty na audyt.
    - Spięcie wybranego terminu przez użytkownika w Triage z logiką backendową.
 
-3. **[Integracja] Webhook Make.com**
-   - Wdrożenie wysyłki ładunku (JSON payload) z podsumowaniem Triage (tzw. Post-Booking workflow) do Make.com na koniec kroku 7.
-   - Skonfigurowanie w Make.com akcji SMSAPI (potwierdzenie SMS dla klienta).
 
 4. **[Content] Zdjęcia i Warianty w Bazie**
    - Uzupełnienie Supabase Storage o wszystkie brakujące rendery/zdjęcia (Hi-Res) jednostek wewnętrznych i agregatów.

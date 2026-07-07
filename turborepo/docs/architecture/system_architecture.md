@@ -50,15 +50,13 @@ flowchart TB
     subgraph External["🌍 Usługi Zewnętrzne (APIs)"]
         GoogleMaps["🗺️ Google Maps API\n(Autouzupełnianie i Geokodowanie)"]
         GoogleCal["🗓️ Google Calendar API\n(Synchronizacja Dostępności)"]
-        MakeCom["⚙️ Make.com\n(Post-Booking & Automatyzacje)"]
         SMSApi["📩 SMS API\n(Powiadomienia SMS)"]
     end
 
     %% Relacje z zewnątrz
     B2C -. "Pobiera podpowiedzi adresów" .-> GoogleMaps
     B2C -. "Odpytuje o wolne terminy (SSR)" .-> GoogleCal
-    Core -. "Webhook po rezerwacji (Post-Booking)" .-> MakeCom
-    MakeCom -. "Trigeruje wysyłkę SMS" .-> SMSApi
+    Core -. "Trigger DB / Edge Function" .-> SMSApi
 
     classDef core fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#000;
     classDef web fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#000;
@@ -84,7 +82,7 @@ Wybór technologii podyktowany jest szybkością tworzenia (Time-to-Market), ła
 | **3. Panel B2B (Dyspozytor)** | **Vite + React** (lub Next.js) + Tailwind CSS + shadcn/ui | Łączy się bezpośrednio z Supabase | **Vercel** | Dla zamkniętego panelu administracyjnego (Single Page Application bez SEO) Vite jest najszybszym i najlżejszym wyborem. Zestaw gotowych komponentów `shadcn/ui` pozwoli błyskawicznie budować tabele i formularze. |
 | **4. Aplikacja Terenowa (Mobile)** | **React Native + Expo** | Łączy się z Supabase z poziomu telefonu | **EAS** (Expo Application Services) | Expo ułatwia tworzenie aplikacji cross-platform (iOS + Android) bez dotykania natywnego kodu (np. Android Studio). EAS drastycznie ułatwia publikację apki do App Store i Google Play. |
 | **Integracje Zewnętrzne (APIs)** | **Google Maps** (Places Autocomplete) <br/> **Google Calendar API** (Custom SSR) <br/> **SMS API** | Zwracają JSON (Współrzędne geograficzne / Wolne sloty) | N/A | **Google Maps** gwarantuje absolutnie najwyższą jakość bazy adresowej w Polsce i natychmiastowe geokodowanie. **Google Calendar API** poprzez własne rozwiązanie serwerowe eliminuje ciężkie widgety na froncie. **SMS API** (np. SMSAPI) uwiarygadnia rezerwację dla klienta. |
-| **Post-Booking / Automatyzacje** | **Make.com** (No-Code Workflow) | Supabase wysyła sygnał Webhook do Make.com | **Make.com** | Zamiast kodować logikę powiadomień po rezerwacji (opóźnienia czasowe, wysyłka e-mail/SMS z parametrami audytora), przenosimy ten "Post-Booking Workflow" do wizualnego kreatora. To ekstremalnie przyspiesza wprowadzanie zmian marketingowych w przyszłości. |
+| **Post-Booking / Automatyzacje** | **Supabase Database Triggers / Functions** | Logika wbudowana w strukturę bazy danych | **Supabase Cloud** | Zamiast polegać na zewnętrznym Make.com, automatyzacje (powiadomienia, SMS, e-mail) są rozwiązywane przez dedykowaną strukturę bazy danych, triggery PostgreSQL i Supabase Edge Functions, co gwarantuje pełną kontrolę i mniejsze koszty. |
 
 ---
 
