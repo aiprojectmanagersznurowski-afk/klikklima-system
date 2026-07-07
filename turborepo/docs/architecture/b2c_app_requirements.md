@@ -26,15 +26,25 @@ Dokument podsumowuje dotychczasowy zakres funkcjonalności wdrożonych w klienck
 Poniższe elementy należy skopiować na tablicę Trello jako zadania do uzupełnienia/wykonania w najbliższym czasie:
 
 
-2. **[Integracja] Kalendarz Google**
+1. **[Integracja] Kalendarz Google**
    - Implementacja SSR (Server-Side Rendering) odpytującego Google Calendar API o wolne sloty na audyt.
    - Spięcie wybranego terminu przez użytkownika w Triage z logiką backendową.
 
-
-4. **[Content] Zdjęcia i Warianty w Bazie**
+2. **[Content] Zdjęcia i Warianty w Bazie**
    - Uzupełnienie Supabase Storage o wszystkie brakujące rendery/zdjęcia (Hi-Res) jednostek wewnętrznych i agregatów.
    - Sprawdzenie bazy `available_combinations` pod kątem brakujących kompatybilności nowo wprowadzonych urządzeń Fuji/GENERAL.
 
-5. **[DevOps] Środowisko Produkcyjne Vercel**
+3. **[DevOps] Środowisko Produkcyjne Vercel**
    - Zabezpieczenie zmiennych środowiskowych `.env` na produkcji Vercel (klucze Supabase, klucze Map).
    - Opięcie bazy produkcyjnej RLS (Row Level Security).
+
+4. **[Feature] Porównywarka Urządzeń (B2C)**
+   - Stworzenie funkcjonalności pozwalającej klientowi na zestawienie i porównanie parametrów wybranych jednostek wewnętrznych obok siebie (np. głośność, wymiary, filtry).
+
+5. **[Baza Danych] Wielka Aktualizacja Jesienna (Hurtownia)**
+   - Przygotowanie skryptów i importerów do wdrożenia paczki danych od hurtowni (nowe urządzenia, zdjęcia, materiały marketingowe, opisy).
+   - Przebudowa struktury bazy danych oraz dostosowanie sposobu kalkulacji w Triage pod ewentualne nowe reguły sprzedażowe hurtowni.
+
+6. **[Innowacja] Modele 3D i Rozszerzona Rzeczywistość (AR)**
+   - Wygenerowanie i przygotowanie precyzyjnych modeli 3D (.gltf / .usdz) dla każdego urządzenia z oferty.
+   - Wdrożenie modułu WebAR, by klient przed zakupem mógł przy użyciu smartfona "zawiesić" jednostkę na własnej ścianie w pokoju.
