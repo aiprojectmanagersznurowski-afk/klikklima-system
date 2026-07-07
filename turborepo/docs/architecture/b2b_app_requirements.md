@@ -41,7 +41,8 @@ Zbuduj dedykowany widok tabelaryczny do zarządzania łańcuchem dostaw (Supply 
 ## Epic 3: Moduł CRM i Relacje Encji
 Zaprojektuj klasyczny CRM w panelu B2B, zoptymalizowany pod łatwość nawigacji i strukturę relacyjną.
 
-- **Główne widoki:** Podział na "Listę Klientów" oraz "Listę Instalacji".
+- **Główne widoki:** Wyraźny podział zakładek w nawigacji głównej – obok "Klientów", dodaj osobną zakładkę "Instalacje" (umiejscowioną pomiędzy Klientami a Ustawieniami).
+- **Widok Lista Instalacji:** Osobna, rozbudowana tabela ze statusem realizacji każdego montażu (nadchodzące, zrealizowane, gwarancja), z szybkimi filtrami po ekipie monterskiej lub dacie.
 - **Karta Klienta (Widok szczegółowy 360):** Agreguje dane kontaktowe, historię instalacji, powiązane adresy, faktury.
 - **Karta Instalacji:** Szczegóły montażu uwzględniające jednoznaczne relacje bazodanowe: przypisana Ekipa Monterska (Crew) oraz przypisany Inżynier (Auditor).
 - **Nawigacja:** Zapewnij bezpośrednie linkowanie (Deep links) pomiędzy Kartą Instalacji a Kartą Klienta.
