@@ -22,34 +22,34 @@ flowchart TD
     E1[Etap 1: Nowy lead]:::status --> E2
     
     E2[Etap 2: Przypisanie audytora]:::status
-    E2 --> N1{{SMS/Email:\n'Przydzielono audytora.\nBędzie kontakt!'}}:::notif
+    E2 --> N1{{"SMS/Email: Przydzielono audytora. Będzie kontakt!"}}:::notif
     
     %% Czasowe przed audytem
-    N2{{SMS/Email (24h przed audytem):\n'Jutro audyt! Zmiana terminu?'}}:::timeNotif -.-> E3
-    N3{{SMS (Geolokalizacja):\n'Audytor jest w drodze!'}}:::geoNotif -.-> E3
+    N2{{"SMS/Email (24h przed audytem): Jutro audyt! Zmiana terminu?"}}:::timeNotif -.-> E3
+    N3{{"SMS (Geolokalizacja): Audytor jest w drodze!"}}:::geoNotif -.-> E3
 
     E3[Etap 3: Wykonany audyt]:::status --> E4
     E4[Etap 4: Wycena zaakceptowana]:::status --> E5
     E5[Etap 5: Oczekuje na przydzielenie ekipy]:::status --> E6
     
     E6[Etap 6: Wysyłka sprzętu]:::status
-    E6 --> N4{{SMS/Email:\n'Sprzęt wysłany kurierem.'}}:::notif
+    E6 --> N4{{"SMS/Email: Sprzęt wysłany kurierem."}}:::notif
     E6 --> E7
     
     E7[Etap 7: Sprzęt dostarczony]:::status
-    E7 --> N5{{SMS/Email:\n'Sprzęt dostarczony.\nOczekuj na ekipę.'}}:::notif
+    E7 --> N5{{"SMS/Email: Sprzęt dostarczony. Oczekuj na ekipę."}}:::notif
     
     %% Czasowe przed montażem
-    N6{{SMS/Email (24h przed montażem):\n'Jutro montaż! Zmiana terminu?'}}:::timeNotif -.-> E8
+    N6{{"SMS/Email (24h przed montażem): Jutro montaż! Zmiana terminu?"}}:::timeNotif -.-> E8
     
     E8[Etap 8: Wykonanie instalacji]:::status --> E9
     
     E9[Etap 9: Instalacja zakończona]:::status
-    E9 --> N7{{SMS/Email:\n'Wirtualna Gwarancja\n+ Dziękujemy!'}}:::notif
+    E9 --> N7{{"SMS/Email: Wirtualna Gwarancja + Dziękujemy!"}}:::notif
     
     %% Serwisy (Cykl Posprzedażowy)
     S1[(Baza: next_service_date)] -.-> N8
-    N8{{SMS/Email (X dni przed serwisem):\n'Zbliża się termin przeglądu!\nZarezerwuj termin.'}}:::timeNotif
+    N8{{"SMS/Email (X dni przed serwisem): Zbliża się termin przeglądu! Zarezerwuj termin."}}:::timeNotif
     
     %% Przepływy
     E2 --> E3
