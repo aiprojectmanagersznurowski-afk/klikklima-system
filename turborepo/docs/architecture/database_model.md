@@ -78,7 +78,17 @@ erDiagram
         text uwagi_monterskie
         timestamp data_rozpoczecia
         timestamp data_zakonczenia
-        timestamp next_service_date "Data planowanego serwisu"
+    }
+
+    SERVICES {
+        uuid id PK
+        uuid installation_id FK
+        uuid crew_id FK "Zewnętrzna/Wewnętrzna ekipa serwisowa"
+        string status "Enum: Planowany, Umówiony, Zakończony, Anulowany"
+        timestamp scheduled_date "Kiedy przypada serwis"
+        timestamp completed_date "Kiedy został wykonany"
+        text uwagi_serwisanta
+        string protokol_url
     }
 
     SHIPMENTS {
@@ -121,8 +131,10 @@ erDiagram
     AUDITORS ||--o{ QUOTES : "tworzy"
     LEADY ||--o{ QUOTES : "otrzymuje"
     CREWS ||--o{ LEADY : "realizuje"
+    CREWS ||--o{ SERVICES : "wykonuje"
     
     LEADY ||--o| INSTALLATIONS : "posiada szczegóły montażu"
+    INSTALLATIONS ||--o{ SERVICES : "posiada historię przeglądów"
     LEADY ||--o{ SHIPMENTS : "generuje"
     LEADY ||--o{ NOTIFICATION_QUEUE : "wyzwala"
 ```
@@ -133,6 +145,7 @@ erDiagram
 2. **`auditors`**: Dedykowana tabela rozszerzająca użytkownika (`1:1` z `users`). Ponieważ aplikacja Field App będzie używana przez zewnętrznych lub wewnętrznych inżynierów robiących wyceny zdalne, tu trzymamy specyficzne dane (nazwa firmy, prowizje).
 3. **`quotes` (Wyceny)**: Rozwiązuje problem ewidencjonowania ofert. Audytor z poziomu aplikacji terenowej / B2B generuje tu konkretną wycenę dla `leada`. Tabela posiada statusy akceptacji oraz płatności (`Nieopłacona`, `Opłacona`), jak i klucz integrujący np. bramkę płatności (`payment_session_id`). Na jej podstawie system wie, czy odblokować klientowi wybór terminu w kalendarzu.
 4. **`crews` & `crew_members`**: Ekipy monterskie. Jeden monter (`user_id`) może należeć do ekipy. Ekipa jako całość jest przypisywana do realizacji zadania na `leady`.
-5. **`installations`**: Ewidencja i repozytorium wykonanych prac. Oddzielone od "leada" (który jest nośnikiem statusu i zlecenia). To tutaj ekipa w Field App wrzuca podpisane protokoły, numery seryjne użytego sprzętu oraz zdjęcia ze ściany po robocie.
-6. **`shipments`**: Zarządzanie kurierami i materiałami, ścisłe powiązanie z leadem.
-7. **`message_templates`**: Słownik dynamicznych szablonów wiadomości e-mail oraz SMS. Administrator (B2B) może edytować treści z poziomu interfejsu (bez grzebania w kodzie). Zmienne takie jak `{{imie}}` są dynamicznie podmieniane przez Edge Functions przed wysyłką.
+5. **`installations`**: Ewidencja wykonanych prac. To tutaj ekipa w Field App wrzuca podpisane protokoły po pierwszej instalacji, numery seryjne użytego sprzętu oraz zdjęcia ze ściany.
+6. **`services`**: Historia cyklicznych przeglądów. Zamiast trzymać tylko jedną datę w instalacji, generujemy nowy rekord dla każdego serwisu (np. za rok, za dwa lata). Klient powiadamiany jest na podstawie rekordu ze statusem "Planowany". Po realizacji (Field App) status zmienia się na "Zakończony" i generowany jest kolejny rekord na następny rok.
+7. **`shipments`**: Zarządzanie kurierami i materiałami, ścisłe powiązanie z leadem.
+8. **`message_templates`**: Słownik dynamicznych szablonów wiadomości e-mail oraz SMS. Administrator (B2B) może edytować treści z poziomu interfejsu (bez grzebania w kodzie). Zmienne takie jak `{{imie}}` są dynamicznie podmieniane przez Edge Functions przed wysyłką.
