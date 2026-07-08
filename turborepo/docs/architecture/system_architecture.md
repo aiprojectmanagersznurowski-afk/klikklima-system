@@ -71,7 +71,59 @@ flowchart TB
 
 ---
 
-## 2. Stos Technologiczny i Hosting
+## 2. Architektura Przepływu Danych i Powiadomień (Data Architecture)
+
+Zrezygnowaliśmy z zewnętrznych narzędzi no-code na rzecz "Grubej Bazy Danych" (Thick DB Pattern). Poniższy schemat pokazuje architekturę kolejkowania i logiki danych.
+
+```mermaid
+flowchart TD
+    ClientB2C([Klienci B2C / Triage])
+    AdminB2B([Dyspozytorzy B2B])
+    MobileApp([Aplikacja Mobilna])
+
+    subgraph SupabaseCloud["☁️ Supabase Cloud (Data Layer)"]
+        direction TB
+        
+        subgraph PostgreSQL["🗄️ Baza Danych PostgreSQL"]
+            Tables[(Główne Tabele\nLeady, Users, itp.)]
+            RLS[🔒 Row Level Security\n(Filtrowanie dostępu wg ról)]
+            Queue[(Kolejka Powiadomień\n'notification_queue')]
+            Triggers[⚡ DB Triggers\n(Reagują na zmianę statusu)]
+            PgCron[🕰️ pg_cron\n(Harmonogram zadań)]
+            
+            Tables -->|UPDATE status=2| Triggers
+            Triggers -->|INSERT INTO| Queue
+        end
+        
+        subgraph EdgeLayer["🚀 Edge Computing"]
+            EdgeFunc[[Edge Functions\nnp. send-notifications]]
+            Auth[🔑 Supabase Auth\n(Logowanie Google)]
+        end
+        
+        PgCron -.->|Co 1 minutę wyzwala HTTP| EdgeFunc
+        EdgeFunc -->|Czyta rekordy 'PENDING'| Queue
+        EdgeFunc -->|Aktualizuje status na 'SENT'| Queue
+    end
+
+    subgraph ExternalServices["🌍 Serwisy Zewnętrzne"]
+        SMS[📩 SMS API]
+        Email[📧 Email / SMTP]
+    end
+
+    %% Połączenia zewnętrzne
+    ClientB2C -->|Odczyt/Zapis (Public)| Tables
+    AdminB2B -->|Auth (OAuth)| Auth
+    AdminB2B -->|Odczyt/Zapis (Role RLS)| RLS
+    MobileApp -->|Odczyt/Zapis (Role RLS)| RLS
+    RLS --> Tables
+
+    EdgeFunc -->|Wysyłka (Payload JSON)| SMS
+    EdgeFunc -->|Wysyłka (Payload JSON)| Email
+```
+
+---
+
+## 3. Stos Technologiczny i Hosting
 
 Wybór technologii podyktowany jest szybkością tworzenia (Time-to-Market), łatwością utrzymania z perspektywy jednego zespołu oraz niezawodnością gotowych usług chmurowych (BaaS - Backend as a Service).
 
