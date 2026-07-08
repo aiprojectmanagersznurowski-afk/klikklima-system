@@ -72,7 +72,8 @@ Zaimplementuj system logowania i ścisłą kontrolę dostępu do panelu B2B, opa
 ### Baza Danych (Data Layer)
 - Zaktualizuj schemat bazy w `@packages/database`.
 - Stwórz enum `LeadStatus` zawierający 9 wartości zdefiniowanych w Epicu 1.
-- Zadbaj o poprawne klucze obce pomiędzy tabelami `Clients`, `Leads`/`Installations`, `Shipments`, `Crews` i `Users` (Auditors).
+- Zadbaj o poprawne klucze obce pomiędzy tabelami: `Clients`, `Leads`, `Quotes` (Wyceny), `Installations` (Szczegóły montażu), `Shipments`, `Crews` i `Auditors`.
+- Zapewnij integrację statusu płatności (webhooki od Stripe/P24) z tabelą `Quotes`, automatycznie zmieniając status przypisanego `Leada`.
 
 ### State Management (UI Layer)
 - Do obsługi drag-and-drop na tablicy Kanban użyj `@hello-pangea/dnd`.
