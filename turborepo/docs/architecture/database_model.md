@@ -46,6 +46,42 @@ erDiagram
         float lng 
     }
 
+    INDOOR_UNITS {
+        uuid id PK
+        string model_code
+        string brand
+        float cooling_capacity_kw
+        float price_netto
+    }
+
+    OUTDOOR_UNITS {
+        uuid id PK
+        string model_code
+        string type
+        float max_total_indoor_capacity_kw
+    }
+
+    SINGLE_SPLIT_SETS {
+        uuid id PK
+        uuid indoor_unit_id FK
+        uuid outdoor_unit_id FK
+        float set_price_netto
+    }
+
+    MULTI_SPLIT_SETS {
+        uuid id PK
+        uuid outdoor_unit_id FK
+        jsonb indoor_units_json
+        float set_price_netto
+    }
+
+    CENNIK_USLUG {
+        uuid id PK
+        string nazwa_uslugi
+        float koszt_b2c_netto
+        float koszt_b2b_netto
+    }
+
     LEADY {
         uuid id PK
         uuid klient_id FK
@@ -127,6 +163,10 @@ erDiagram
     KLIENCI ||--o{ LEADY : "składa"
     ADRESY ||--o{ LEADY : "lokalizacja dla"
     
+    INDOOR_UNITS ||--o{ SINGLE_SPLIT_SETS : "zawiera"
+    OUTDOOR_UNITS ||--o{ SINGLE_SPLIT_SETS : "zawiera"
+    OUTDOOR_UNITS ||--o{ MULTI_SPLIT_SETS : "zawiera"
+
     AUDITORS ||--o{ LEADY : "weryfikuje"
     AUDITORS ||--o{ QUOTES : "tworzy"
     LEADY ||--o{ QUOTES : "otrzymuje"
@@ -138,6 +178,11 @@ erDiagram
     LEADY ||--o{ SHIPMENTS : "generuje"
     LEADY ||--o{ NOTIFICATION_QUEUE : "wyzwala"
 ```
+
+## Opis Tabel (Katalog Produktów)
+- **`indoor_units` & `outdoor_units`**: Baza sprzętowa, definiuje parametry klimatyzatorów.
+- **`single_split_sets` & `multi_split_sets`**: Gotowe zestawy sprzedażowe wykorzystywane w kalkulatorze (Triage) oraz przez Audytorów.
+- **`cennik_uslug`**: Standardowe koszty materiałów i robocizny (B2C i B2B).
 
 ## Opis Nowych Tabel B2B / Field App
 
