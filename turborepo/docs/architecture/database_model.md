@@ -56,6 +56,19 @@ erDiagram
         uuid crew_id FK "FK do CREWS"
     }
 
+    QUOTES {
+        uuid id PK
+        uuid lead_id FK
+        uuid auditor_id FK
+        jsonb wycena_items "Pozycje wyceny (Klima, Montaż, Rabaty)"
+        float total_price
+        string status_akceptacji "Enum: Oczekująca, Zaakceptowana, Odrzucona"
+        string status_platnosci "Enum: Nieopłacona, Opłacona"
+        string payment_session_id "ID sesji płatności (Stripe/P24)"
+        timestamp wazna_do
+        timestamp created_at
+    }
+
     INSTALLATIONS {
         uuid id PK
         uuid lead_id FK "Zlecenie nadrzędne"
@@ -89,7 +102,9 @@ erDiagram
     KLIENCI ||--o{ LEADY : "składa"
     ADRESY ||--o{ LEADY : "lokalizacja dla"
     
-    AUDITORS ||--o{ LEADY : "wycenia"
+    AUDITORS ||--o{ LEADY : "weryfikuje"
+    AUDITORS ||--o{ QUOTES : "tworzy"
+    LEADY ||--o{ QUOTES : "otrzymuje"
     CREWS ||--o{ LEADY : "realizuje"
     
     LEADY ||--o| INSTALLATIONS : "posiada szczegóły montażu"
@@ -101,6 +116,7 @@ erDiagram
 
 1. **`users` (RBAC)**: Centralna tabela kont powiązana z Auth Supabase, zawierająca rolę pracownika (Audytor, Monter, Admin).
 2. **`auditors`**: Dedykowana tabela rozszerzająca użytkownika (`1:1` z `users`). Ponieważ aplikacja Field App będzie używana przez zewnętrznych lub wewnętrznych inżynierów robiących wyceny zdalne, tu trzymamy specyficzne dane (nazwa firmy, prowizje).
-3. **`crews` & `crew_members`**: Ekipy monterskie. Jeden monter (`user_id`) może należeć do ekipy. Ekipa jako całość jest przypisywana do realizacji zadania na `leady`.
-4. **`installations`**: Ewidencja i repozytorium wykonanych prac. Oddzielone od "leada" (który jest nośnikiem statusu i zlecenia). To tutaj ekipa w Field App wrzuca podpisane protokoły, numery seryjne użytego sprzętu oraz zdjęcia ze ściany po robocie.
-5. **`shipments`**: Zarządzanie kurierami i materiałami, ścisłe powiązanie z leadem.
+3. **`quotes` (Wyceny)**: Rozwiązuje problem ewidencjonowania ofert. Audytor z poziomu aplikacji terenowej / B2B generuje tu konkretną wycenę dla `leada`. Tabela posiada statusy akceptacji oraz płatności (`Nieopłacona`, `Opłacona`), jak i klucz integrujący np. bramkę płatności (`payment_session_id`). Na jej podstawie system wie, czy odblokować klientowi wybór terminu w kalendarzu.
+4. **`crews` & `crew_members`**: Ekipy monterskie. Jeden monter (`user_id`) może należeć do ekipy. Ekipa jako całość jest przypisywana do realizacji zadania na `leady`.
+5. **`installations`**: Ewidencja i repozytorium wykonanych prac. Oddzielone od "leada" (który jest nośnikiem statusu i zlecenia). To tutaj ekipa w Field App wrzuca podpisane protokoły, numery seryjne użytego sprzętu oraz zdjęcia ze ściany po robocie.
+6. **`shipments`**: Zarządzanie kurierami i materiałami, ścisłe powiązanie z leadem.
