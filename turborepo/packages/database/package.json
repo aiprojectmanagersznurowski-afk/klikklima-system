@@ -5,14 +5,19 @@
   "types": "src/index.ts",
   "scripts": {
     "lint": "eslint \"src/**/*.ts*\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "@supabase/supabase-js": "^2.39.0"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
+    "@repo/eslint-config": "*",
     "@repo/typescript-config": "*",
-    "@repo/eslint-config": "*"
+    "prisma": "^6.19.3",
+    "typescript": "^5.3.3"
   }
 }

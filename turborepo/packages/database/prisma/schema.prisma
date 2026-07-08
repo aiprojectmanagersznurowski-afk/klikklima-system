@@ -1,0 +1,277 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum LeadStatus {
+  NEW_LEAD
+  AUDITOR_ASSIGNED
+  QUOTE_CREATED
+  QUOTE_ACCEPTED
+  AWAITING_INSTALLATION
+  HARDWARE_SHIPPED
+  HARDWARE_DELIVERED
+  INSTALLATION_IN_PROGRESS
+  INSTALLATION_COMPLETED
+}
+
+enum ServiceStatus {
+  PLANNED
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  PENDING
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  // This will match auth.users ID from Supabase
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  createdAt DateTime @default(now())
+
+  role       UserRole?
+  auditor    Auditor?
+  crewMember CrewMember?
+}
+
+model UserRole {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @db.Uuid
+  role   String // Admin, Dyspozytor, Auditor, Monter
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Client {
+  id        String   @id @default(uuid()) @db.Uuid
+  fullName  String
+  email     String
+  phone     String
+  createdAt DateTime @default(now())
+
+  addresses Address[]
+  leads     Lead[]
+}
+
+model Address {
+  id        String   @id @default(uuid()) @db.Uuid
+  clientId  String   @db.Uuid
+  city      String
+  street    String
+  lat       Float?
+  lng       Float?
+  createdAt DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  leads  Lead[]
+}
+
+model IndoorUnit {
+  id                String @id @default(uuid()) @db.Uuid
+  modelCode         String @unique
+  brand             String
+  coolingCapacityKw Float
+  priceNetto        Float
+
+  singleSplitSets SingleSplitSet[]
+}
+
+model OutdoorUnit {
+  id                  String @id @default(uuid()) @db.Uuid
+  modelCode           String @unique
+  type                String // SINGLE, MULTI
+  maxIndoorCapacityKw Float?
+
+  singleSplitSets SingleSplitSet[]
+  multiSplitSets  MultiSplitSet[]
+}
+
+model SingleSplitSet {
+  id            String @id @default(uuid()) @db.Uuid
+  indoorUnitId  String @db.Uuid
+  outdoorUnitId String @db.Uuid
+  setPriceNetto Float
+
+  indoorUnit  IndoorUnit  @relation(fields: [indoorUnitId], references: [id])
+  outdoorUnit OutdoorUnit @relation(fields: [outdoorUnitId], references: [id])
+
+  @@unique([indoorUnitId, outdoorUnitId])
+}
+
+model MultiSplitSet {
+  id              String @id @default(uuid()) @db.Uuid
+  outdoorUnitId   String @db.Uuid
+  indoorUnitsJson Json // Array of { indoorUnitId, count }
+  setPriceNetto   Float
+
+  outdoorUnit OutdoorUnit @relation(fields: [outdoorUnitId], references: [id])
+}
+
+model ServicePrice {
+  id           String @id @default(uuid()) @db.Uuid
+  name         String @unique
+  unit         String
+  costB2cNetto Float
+  costB2bNetto Float?
+}
+
+model Crew {
+  id   String @id @default(uuid()) @db.Uuid
+  name String
+
+  members  CrewMember[]
+  leads    Lead[]
+  services Service[]
+}
+
+model CrewMember {
+  id     String @id @default(uuid()) @db.Uuid
+  crewId String @db.Uuid
+  userId String @unique @db.Uuid
+
+  crew Crew @relation(fields: [crewId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Auditor {
+  id         String  @id @default(uuid()) @db.Uuid
+  userId     String  @unique @db.Uuid
+  company    String?
+  commission Float?
+
+  user   User    @relation(fields: [userId], references: [id])
+  leads  Lead[]
+  quotes Quote[]
+}
+
+model Lead {
+  id        String  @id @default(uuid()) @db.Uuid
+  clientId  String  @db.Uuid
+  addressId String? @db.Uuid
+  auditorId String? @db.Uuid
+  crewId    String? @db.Uuid
+
+  status           LeadStatus @default(NEW_LEAD)
+  triageAnswers    Json?
+  selectedConfig   Json?
+  estimatedPrice   String?
+  finalPricePln    Float?
+  installationTime String?
+  internalNotes    String?
+  reservationDate  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client  Client   @relation(fields: [clientId], references: [id])
+  address Address? @relation(fields: [addressId], references: [id])
+  auditor Auditor? @relation(fields: [auditorId], references: [id])
+  crew    Crew?    @relation(fields: [crewId], references: [id])
+
+  quotes        Quote[]
+  installation  Installation?
+  shipments     Shipment[]
+  notifications NotificationQueue[]
+}
+
+model Quote {
+  id        String @id @default(uuid()) @db.Uuid
+  leadId    String @db.Uuid
+  auditorId String @db.Uuid
+
+  status           QuoteStatus   @default(DRAFT)
+  paymentStatus    PaymentStatus @default(UNPAID)
+  paymentSessionId String?
+  itemsJson        Json
+
+  createdAt DateTime @default(now())
+
+  lead    Lead    @relation(fields: [leadId], references: [id])
+  auditor Auditor @relation(fields: [auditorId], references: [id])
+}
+
+model Installation {
+  id     String @id @default(uuid()) @db.Uuid
+  leadId String @unique @db.Uuid
+
+  protocolUrl       String?
+  photosJson        Json?
+  serialNumbersJson Json?
+  installerNotes    String?
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  lead     Lead      @relation(fields: [leadId], references: [id])
+  services Service[]
+}
+
+model Service {
+  id             String  @id @default(uuid()) @db.Uuid
+  installationId String  @db.Uuid
+  crewId         String? @db.Uuid
+
+  status          ServiceStatus @default(PLANNED)
+  scheduledDate   DateTime
+  completedDate   DateTime?
+  protocolUrl     String?
+  technicianNotes String?
+
+  installation Installation @relation(fields: [installationId], references: [id])
+  crew         Crew?        @relation(fields: [crewId], references: [id])
+}
+
+model Shipment {
+  id     String @id @default(uuid()) @db.Uuid
+  leadId String @db.Uuid
+
+  trackingNumber String?
+  courierName    String?
+  status         String // e.g. PENDING, SHIPPED, DELIVERED
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+
+  lead Lead @relation(fields: [leadId], references: [id])
+}
+
+model MessageTemplate {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @unique
+  subject     String?
+  bodyContent String
+  type        String // EMAIL, SMS
+}
+
+model NotificationQueue {
+  id            String    @id @default(uuid()) @db.Uuid
+  leadId        String?   @db.Uuid
+  templateName  String
+  status        String    @default("PENDING") // PENDING, SENT, FAILED
+  sendAt        DateTime?
+  contactInfo   String
+  variablesJson Json?
+  errorMessage  String?
+
+  createdAt DateTime @default(now())
+
+  lead Lead? @relation(fields: [leadId], references: [id])
+}
