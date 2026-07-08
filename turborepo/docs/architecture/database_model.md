@@ -78,6 +78,7 @@ erDiagram
         text uwagi_monterskie
         timestamp data_rozpoczecia
         timestamp data_zakonczenia
+        timestamp next_service_date "Data planowanego serwisu"
     }
 
     SHIPMENTS {

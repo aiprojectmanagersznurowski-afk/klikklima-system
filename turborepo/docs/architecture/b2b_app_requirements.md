@@ -41,8 +41,9 @@ Zbuduj dedykowany widok tabelaryczny do zarządzania łańcuchem dostaw (Supply 
 ## Epic 3: Moduł CRM i Relacje Encji
 Zaprojektuj klasyczny CRM w panelu B2B, zoptymalizowany pod łatwość nawigacji i strukturę relacyjną.
 
-- **Główne widoki:** Wyraźny podział zakładek w nawigacji głównej – obok "Klientów", dodaj osobną zakładkę "Instalacje" (umiejscowioną pomiędzy Klientami a Ustawieniami).
+- **Główne widoki:** Wyraźny podział zakładek w nawigacji głównej – obok "Klientów", dodaj osobną zakładkę "Instalacje", a za nią osobną zakładkę "Serwisy".
 - **Widok Lista Instalacji:** Osobna, rozbudowana tabela ze statusem realizacji każdego montażu (nadchodzące, zrealizowane, gwarancja), z szybkimi filtrami po ekipie monterskiej lub dacie.
+- **Widok Serwisów (Tab: Serwisy):** Lista historycznych instalacji zbliżających się do terminu serwisu rocznego. Sortowana od najbliższego serwisu (bazując na kolumnie `next_service_date` z tabeli `installations`). Umożliwia wgląd w to, komu wysłano już zaproszenia i pozwala ręcznie przydzielić montera do wizyty serwisowej.
 - **Karta Klienta (Widok szczegółowy 360):** Agreguje dane kontaktowe, historię instalacji, powiązane adresy, faktury.
 - **Karta Instalacji:** Szczegóły montażu uwzględniające jednoznaczne relacje bazodanowe: przypisana Ekipa Monterska (Crew) oraz przypisany Inżynier (Auditor).
 - **Nawigacja:** Zapewnij bezpośrednie linkowanie (Deep links) pomiędzy Kartą Instalacji a Kartą Klienta.
@@ -52,9 +53,9 @@ Zaprojektuj klasyczny CRM w panelu B2B, zoptymalizowany pod łatwość nawigacji
 ## Epic 4: Cykl Posprzedażowy i Retencja (Automatyzacje)
 Zaprojektuj architekturę pod automatyzację procesów utrzymaniowych po zamknięciu zlecenia (Etap 9).
 
-- **Kalkulacja dat:** Po zmianie statusu na "Instalacja zakończona", baza danych generuje z wyprzedzeniem timestampy dla przyszłych interwałów serwisowych (np. coroczny przegląd klimatyzacji).
-- **Integracja Outbound:** Przygotuj endpointy / webhooki wyzwalane cyklicznie przez bazę (np. `pg_cron` w Supabase, Triggery, Edge Functions) w celu uruchomienia przypomnień SMS/E-mail do klientów z linkiem do rezerwacji serwisu. *(Uwaga: Rezygnujemy z Make.com na rzecz procedur bazodanowych).*
-
+- **Kalkulacja dat:** Po zmianie statusu na "Instalacja zakończona" (Etap 9), baza danych generuje timestampy dla przyszłych interwałów serwisowych (`next_service_date`) dla danej instalacji.
+- **Integracja Outbound & Serwisy:** System cyklicznie przegląda tabelę `installations` i na określoną liczbę dni przed `next_service_date` wyzwala przypomnienia SMS/E-mail z linkiem do zabookowania terminu serwisu.
+- **Parametryzacja wysyłki wiadomości:** Architektura kolejkowania (`notification_queue`) musi pozwalać na definiowanie i egzekwowanie parametrów wysyłki, takich jak opóźnienie (np. wyślij jutro rano o 09:00 zamiast o 23:00 w nocy) oraz typ kanału (SMS vs Email). Dotyczy to całej komunikacji lejkowej (wyceny, logistyka, serwisy).
 ---
 
 ## Epic 5: Autoryzacja i Zarządzanie Dostępem (RBAC)

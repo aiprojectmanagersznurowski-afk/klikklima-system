@@ -2,51 +2,71 @@
 
 Poniższy schemat przedstawia sekwencyjny proces przepływu (Funnel Flow) zgłoszenia w systemie Klik Klima. Proces ten oparty jest na 9 etapach zdefiniowanych w wymaganiach biznesowych i obsługiwany za pomocą tablicy Kanban w panelu B2B.
 
-## Schemat Przepływu (State Diagram)
+## Schemat Przepływu z Systemem Powiadomień (Flowchart)
+
+Poniższy diagram obrazuje przepływ leada oraz zintegrowany, zautomatyzowany system komunikacji z klientem (SMS/E-mail).
+Węzły w kolorze **niebieskim** reprezentują automatyczną komunikację wychodzącą.
 
 ```mermaid
-stateDiagram-v2
-    direction TB
+flowchart TD
+    %% Definicja stylów
+    classDef status fill:#f2f2f2,stroke:#333,stroke-width:2px;
+    classDef notif fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#155724;
+    classDef timeNotif fill:#cce5ff,stroke:#004085,stroke-width:2px,color:#004085;
+    classDef geoNotif fill:#fff3cd,stroke:#856404,stroke-width:2px,color:#856404;
 
-    [*] --> NowyLead : Zgłoszenie z Triage B2C
+    %% Rozpoczęcie
+    Start((Zgłoszenie B2C)) --> E1
+    
+    %% Etapy główne
+    E1[Etap 1: Nowy lead]:::status --> E2
+    
+    E2[Etap 2: Przypisanie audytora]:::status
+    E2 --> N1{{SMS/Email:\n'Przydzielono audytora.\nBędzie kontakt!'}}:::notif
+    
+    %% Czasowe przed audytem
+    N2{{SMS/Email (24h przed audytem):\n'Jutro audyt! Zmiana terminu?'}}:::timeNotif -.-> E3
+    N3{{SMS (Geolokalizacja):\n'Audytor jest w drodze!'}}:::geoNotif -.-> E3
 
-    state "Etap 1: Nowy lead" as NowyLead
-    state "Etap 2: Przypisanie audytora" as PrzypisanieAudytora
-    state "Etap 3: Wykonany audyt" as WykonanyAudyt
-    state "Etap 4: Wycena zaakceptowana" as WycenaZaakceptowana
-    state "Etap 5: Oczekuje na przydzielenie ekipy" as OczekujeNaEkipe
-    state "Etap 6: Wysyłka sprzętu" as WysylkaSprzetu
-    state "Etap 7: Sprzęt dostarczony" as SprzetDostarczony
-    state "Etap 8: Wykonanie instalacji" as WykonanieInstalacji
-    state "Etap 9: Instalacja zakończona" as InstalacjaZakonczona
-
-    %% Triggering and actions
-    NowyLead --> PrzypisanieAudytora : Przydziel Inżyniera (Admin)
+    E3[Etap 3: Wykonany audyt]:::status --> E4
+    E4[Etap 4: Wycena zaakceptowana]:::status --> E5
+    E5[Etap 5: Oczekuje na przydzielenie ekipy]:::status --> E6
     
-    %% Note to left of PrzypisanieAudytora : Automatyczny SMS "Masz przydzielonego audytora"
+    E6[Etap 6: Wysyłka sprzętu]:::status
+    E6 --> N4{{SMS/Email:\n'Sprzęt wysłany kurierem.'}}:::notif
+    E6 --> E7
     
-    PrzypisanieAudytora --> WykonanyAudyt : Mobilna Aplikacja (Audytor wgrywa wycenę)
+    E7[Etap 7: Sprzęt dostarczony]:::status
+    E7 --> N5{{SMS/Email:\n'Sprzęt dostarczony.\nOczekuj na ekipę.'}}:::notif
     
-    WykonanyAudyt --> WycenaZaakceptowana : Klient akceptuje i opłaca
-    WycenaZaakceptowana --> OczekujeNaEkipe : Wymagane przypisanie terminu
+    %% Czasowe przed montażem
+    N6{{SMS/Email (24h przed montażem):\n'Jutro montaż! Zmiana terminu?'}}:::timeNotif -.-> E8
     
-    OczekujeNaEkipe --> WysylkaSprzetu : Potwierdzenie z Hurtownią (Admin)
-    WysylkaSprzetu --> SprzetDostarczony : Kurier doręcza (Klient / Admin potwierdza)
+    E8[Etap 8: Wykonanie instalacji]:::status --> E9
     
-    %% Note to right of SprzetDostarczony : Bramka przed instalacją. Odblokowuje zadanie u Montera.
+    E9[Etap 9: Instalacja zakończona]:::status
+    E9 --> N7{{SMS/Email:\n'Wirtualna Gwarancja\n+ Dziękujemy!'}}:::notif
     
-    SprzetDostarczony --> WykonanieInstalacji : Przyjazd ekipy na miejsce
-    WykonanieInstalacji --> InstalacjaZakonczona : Zakończenie pracy i podpisanie protokołu (Mobile)
+    %% Serwisy (Cykl Posprzedażowy)
+    S1[(Baza: next_service_date)] -.-> N8
+    N8{{SMS/Email (X dni przed serwisem):\n'Zbliża się termin przeglądu!\nZarezerwuj termin.'}}:::timeNotif
     
-    InstalacjaZakonczona --> [*] : Zapis do cyklu posprzedażowego (Serwis co rok)
-    
-    %% Opcjonalne odgałęzienia i ścieżki awaryjne (Rollback)
-    WysylkaSprzetu --> OczekujeNaEkipe : Awaria dostawy (Rollback)
-    WycenaZaakceptowana --> [*] : Klient rezygnuje (Zlecenie Utracone)
+    %% Przepływy
+    E2 --> E3
+    E7 --> E8
+    E9 --> S1
 ```
 
-## Opis Akcji Systemowych i Asynchronicznych
-W trakcie przechodzenia pomiędzy powyższymi stanami (Drag&Drop na tablicy Kanban lub akcje w aplikacji mobilnej), baza danych (PostgreSQL Triggers) automatycznie nasłuchuje zmian. Na przykład:
-1. Zmiana na **Etap 2** generuje w tabeli `notification_queue` powiadomienie SMS dla klienta z numerem telefonu przydzielonego inżyniera.
-2. Wejście w **Etap 6** i brak dostawy do **Etapu 7** na 24h przed montażem wywołuje alert SLA u Dyspozytora.
-3. Wejście w **Etap 9** generuje powiadomienie (Email) z wirtualną gwarancją i wpisuje klienta w cykliczny proces przypomnień o serwisie za 12 miesięcy.
+## Rodzaje Powiadomień i Parametryzacja
+
+Wysyłka wiadomości opiera się na tabeli `NOTIFICATION_QUEUE` i Edge Functions, co pozwala na pełną parametryzację (np. kolejkowanie wysyłki tylko w godzinach 8:00-18:00).
+
+Wyróżniamy 3 główne typy wyzwalaczy (oznaczone kolorami na diagramie):
+
+1. **Wyzwalacze na zmianę statusu (Zielone):** 
+   - Generowane natychmiast po zmianie kolumny na Kanbanie (np. wejście w Etap 2, 6, 7 i 9).
+2. **Wyzwalacze Czasowe (Niebieskie):**
+   - Wymagają harmonogramu (`pg_cron`). Obliczane na podstawie zaplanowanej daty w kalendarzu.
+   - Przypomnienie dzień przed audytem, dzień przed montażem oraz przypomnienie o corocznym serwisie z linkiem do zmiany terminu.
+3. **Wyzwalacze Zewnętrzne / GPS (Żółte):**
+   - Wyzwalane akcją z poziomu Field App. Audytor klika "Wyruszam" lub wkracza w promień np. 5 km od adresu leada, co wyzwala SMS "Audytor jest w drodze".
