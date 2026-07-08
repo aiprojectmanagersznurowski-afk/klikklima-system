@@ -57,6 +57,16 @@ Zaprojektuj architekturę pod automatyzację procesów utrzymaniowych po zamkni�
 
 ---
 
+## Epic 5: Autoryzacja i Zarządzanie Dostępem (RBAC)
+Zaimplementuj system logowania i ścisłą kontrolę dostępu do panelu B2B, opartą o Supabase Auth.
+
+- **Logowanie (SSO):** Wdrożenie logowania wyłącznie za pomocą konta Google (OAuth2).
+- **Zarządzanie Dostępem (Admin):** Moduł w ustawieniach ("Użytkownicy i Uprawnienia") pozwalający głównemu administratorowi na zapraszanie nowych pracowników (przypisywanie im ról, np. Dyspozytor, Audytor, Administrator).
+- **Bramka Dostępu (Guard):** Osoba próbująca zalogować się przez Google, której adres e-mail nie widnieje na liście dozwolonych użytkowników w bazie (lub nie ma przypisanej roli), musi zostać zablokowana i otrzymać komunikat o braku uprawnień.
+- **Row Level Security (RLS):** Zabezpieczenie danych na poziomie bazy danych Supabase – np. Audytor widzi tylko zlecenia przypisane do siebie, a Dyspozytor widzi wszystko.
+
+---
+
 ## Dyrektywy Implementacyjne dla Agenta AI
 
 ### Baza Danych (Data Layer)
