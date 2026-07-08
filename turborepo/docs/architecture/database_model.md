@@ -94,6 +94,20 @@ erDiagram
         string status "PENDING, SENT"
     }
 
+    MESSAGE_TEMPLATES {
+        uuid id PK
+        string trigger_event "np. STATUS_2_AUDITOR"
+        string channel "Enum: SMS, EMAIL"
+        string subject "Opcjonalny temat e-mail"
+        text body_template "Treść z tagami np. {{imie}}"
+    }
+
+    SYSTEM_CONFIG {
+        uuid id PK
+        string typ_konfiguracji "np. booking_rules"
+        jsonb konfiguracja
+    }
+
     USERS ||--o| AUDITORS : "może być"
     USERS ||--o{ CREW_MEMBERS : "należy do"
     CREWS ||--o{ CREW_MEMBERS : "składa się z"
@@ -120,3 +134,4 @@ erDiagram
 4. **`crews` & `crew_members`**: Ekipy monterskie. Jeden monter (`user_id`) może należeć do ekipy. Ekipa jako całość jest przypisywana do realizacji zadania na `leady`.
 5. **`installations`**: Ewidencja i repozytorium wykonanych prac. Oddzielone od "leada" (który jest nośnikiem statusu i zlecenia). To tutaj ekipa w Field App wrzuca podpisane protokoły, numery seryjne użytego sprzętu oraz zdjęcia ze ściany po robocie.
 6. **`shipments`**: Zarządzanie kurierami i materiałami, ścisłe powiązanie z leadem.
+7. **`message_templates`**: Słownik dynamicznych szablonów wiadomości e-mail oraz SMS. Administrator (B2B) może edytować treści z poziomu interfejsu (bez grzebania w kodzie). Zmienne takie jak `{{imie}}` są dynamicznie podmieniane przez Edge Functions przed wysyłką.
