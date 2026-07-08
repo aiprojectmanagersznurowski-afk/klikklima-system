@@ -70,3 +70,43 @@ Wyróżniamy 3 główne typy wyzwalaczy (oznaczone kolorami na diagramie):
    - Przypomnienie dzień przed audytem, dzień przed montażem oraz przypomnienie o corocznym serwisie z linkiem do zmiany terminu.
 3. **Wyzwalacze Zewnętrzne / GPS (Żółte):**
    - Wyzwalane akcją z poziomu Field App. Audytor klika "Wyruszam" lub wkracza w promień np. 5 km od adresu leada, co wyzwala SMS "Audytor jest w drodze".
+
+## Role i Odpowiedzialność (Sequence Diagram)
+
+Aby jeszcze lepiej zrozumieć, kto jest aktorem (wykonawcą) w poszczególnym kroku, poniższy diagram sekwencji ukazuje interakcje pomiędzy klientem, dyspozytorem (panel B2B), inżynierami terenowymi (Field App) oraz samym systemem automatyzującym.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    
+    actor K as Klient (B2C)
+    actor D as Dyspozytor (B2B Admin)
+    actor A as Audytor (Field App)
+    actor M as Monter (Field App)
+    participant S as System (Baza & Edge)
+
+    K->>S: Wypełnia formularz Triage (Etap 1)
+    S-->>D: Lead pojawia się w Kolumnie 1 na Kanbanie
+    
+    D->>S: Przesuwa na Etap 2 i wybiera Audytora
+    S-->>K: [Automatyczny SMS] Przydzielono inżyniera
+    
+    A->>K: Przyjazd na miejsce i audyt
+    A->>S: Wystawia wycenę i klika "Wyślij" (Etap 3)
+    S-->>K: [Automatyczny E-mail] Link do opłacenia oferty
+    
+    K->>S: Klient opłaca wycenę przez bramkę (Etap 4)
+    S-->>D: [Auto-Aktualizacja] Przesuwa leada na Etap 5
+    
+    D->>S: Zamawia sprzęt w hurtowni i oznacza wysyłkę (Etap 6)
+    S-->>K: [Automatyczny SMS] Sprzęt w drodze
+    
+    K->>S: Kurier przyjeżdża / Klient potwierdza odbiór (Etap 7)
+    S-->>M: Zlecenie w Field App odblokowuje się dla Montera
+    
+    M->>K: Przyjazd na adres i wykonanie montażu (Etap 8)
+    M->>S: Dodaje protokół i klika "Zakończ" w Field App (Etap 9)
+    
+    S-->>K: [Automatyczny E-mail] Gwarancja i powitanie w rodzinie
+    S-->>S: Generowanie daty przyszłorocznego Serwisu
+```
