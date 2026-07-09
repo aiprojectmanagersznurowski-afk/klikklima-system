@@ -24,7 +24,7 @@ flowchart TB
 
         subgraph B2B["💻 3. Panel Administracyjny B2B (Web SPA)"]
             Kanban["📋 Tablica Kanban Dyspozytora\n(Zarządzanie zleceniami)"]
-            Crew["👥 Zarządzanie Brygadami\n(Grafiki, dostępność)"]
+            Crew["👥 CRM: Zespoły i Audytorzy\n(Zarządzanie pracownikami)"]
             Rollback["📦 Logistyka i Rollback Engine\n(Magazyn, sytuacje awaryjne)"]
         end
 
@@ -135,6 +135,16 @@ Wybór technologii podyktowany jest szybkością tworzenia (Time-to-Market), ła
 | **4. Aplikacja Terenowa (Mobile)** | **React Native + Expo** | Łączy się z Supabase z poziomu telefonu | **EAS** (Expo Application Services) | Expo ułatwia tworzenie aplikacji cross-platform (iOS + Android) bez dotykania natywnego kodu (np. Android Studio). EAS drastycznie ułatwia publikację apki do App Store i Google Play. |
 | **Integracje Zewnętrzne (APIs)** | **Google Maps** (Places Autocomplete) <br/> **Google Calendar API** (Custom SSR) <br/> **SMS API** | Zwracają JSON (Współrzędne geograficzne / Wolne sloty) | N/A | **Google Maps** gwarantuje absolutnie najwyższą jakość bazy adresowej w Polsce i natychmiastowe geokodowanie. **Google Calendar API** poprzez własne rozwiązanie serwerowe eliminuje ciężkie widgety na froncie. **SMS API** (np. SMSAPI) uwiarygadnia rezerwację dla klienta. |
 | **Post-Booking / Automatyzacje** | **Supabase Database Triggers / Functions** | Logika wbudowana w strukturę bazy danych | **Supabase Cloud** | Zamiast polegać na zewnętrznym Make.com, automatyzacje (powiadomienia, SMS, e-mail) są rozwiązywane przez dedykowaną strukturę bazy danych, triggery PostgreSQL i Supabase Edge Functions, co gwarantuje pełną kontrolę i mniejsze koszty. |
+
+#### Aplikacja 2: `apps/b2b-web`
+**Opis:** Główny Panel Administracyjny przeznaczony dla Dyspozytora, logistyki i menedżerów.
+**Technologia:** React.js / Next.js (App Router), Tailwind CSS, shadcn/ui.
+**Funkcje kluczowe:**
+- Tablica Kanban do zarządzania przepływem (leady).
+- Rollback Engine w logistyce (obsługa wyjątków).
+- Moduł CRM (Klienci, Instalacje, Serwisy, Audytorzy, Zespoły).
+- Zarządzanie dostępem (RBAC) – Guard.
+- Integracje zewnętrzne (wyzwalanie wysyłek z bramki płatności, SMS).
 
 ---
 
