@@ -11,6 +11,9 @@ export default function DashboardLayout({
           <a href="/" className="block p-2 hover:bg-blue-800 rounded">Dashboard</a>
           <a href="/kanban" className="block p-2 hover:bg-blue-800 rounded">Kanban Dyspozytora</a>
           <a href="/logistics" className="block p-2 hover:bg-blue-800 rounded">Logistyka</a>
+          <a href="/clients" className="block p-2 hover:bg-blue-800 rounded">Klienci</a>
+          <a href="/installations" className="block p-2 hover:bg-blue-800 rounded">Instalacje</a>
+          <a href="/services" className="block p-2 hover:bg-blue-800 rounded">Serwisy</a>
         </nav>
       </aside>
       <main className="flex-1 p-8 overflow-auto">
