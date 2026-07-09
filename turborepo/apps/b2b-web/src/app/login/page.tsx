@@ -5,12 +5,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
 const Logo = () => (
-  <div className="flex items-center gap-2 font-bold text-lg text-gray-900">
-    <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white text-sm">
-      KK
-    </div>
-    KlikKlima
-  </div>
+  <img
+    src="/logo.png"
+    alt="Klik Klima"
+    className="h-[52px] w-auto"
+  />
 );
 
 export default function LoginScreen() {

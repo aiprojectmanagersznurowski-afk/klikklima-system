@@ -19,10 +19,10 @@ const mockLeads = [
 export default function KanbanBoard() {
   return (
     <div className="h-full flex flex-col p-8 max-w-[1600px] mx-auto animate-in fade-in duration-300">
-      <div className="flex justify-between items-center mb-8 shrink-0">
+      <div className="flex justify-between items-center bg-white p-6 rounded-xl border border-gray-200">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Kanban Dyspozytora</h1>
-          <p className="text-sm text-gray-500 mt-1">Zarządzaj przepływem leadów i instalacji.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Lejek Leadów</h1>
+          <p className="text-sm text-gray-500 mt-1">Zarządzaj statusem zapytań ofertowych przeciągając je między kolumnami.</p>
         </div>
         <div className="flex gap-4">
           <div className="relative">

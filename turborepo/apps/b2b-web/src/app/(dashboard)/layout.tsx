@@ -10,13 +10,13 @@ const Logo = () => (
     <img
       src="/logo.png"
       alt="Klik Klima"
-      className="h-[52px] w-auto"
+      className="h-[60px] w-auto"
     />
   </Link>
 );
 
 const TABS = [
-  { id: "kanban", label: "Kanban", icon: LayoutDashboard, href: "/kanban" },
+  { id: "kanban", label: "Lejek", icon: LayoutDashboard, href: "/kanban" },
   { id: "logistics", label: "Logistyka", icon: Truck, href: "/logistics" },
   { id: "clients", label: "Klienci", icon: Users, href: "/clients" },
   { id: "installations", label: "Instalacje", icon: Truck, href: "/installations" },
