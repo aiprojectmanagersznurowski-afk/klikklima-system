@@ -8,11 +8,122 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model indoor_units {
+  id                           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  model_code                   String   @unique
+  series_name                  String
+  brand                        String
+  is_single_compatible         Boolean? @default(false)
+  is_multi_compatible          Boolean? @default(false)
+  cooling_capacity_kw          Decimal? @db.Decimal
+  heating_capacity_kw          Decimal? @db.Decimal
+  power_consumption_cooling_kw Decimal? @db.Decimal
+  power_consumption_heating_kw Decimal? @db.Decimal
+  dimensions                   String?
+  noise_level_min_db           Int?
+  has_wifi                     Boolean? @default(false)
+  has_presence_sensor          Boolean? @default(false)
+  is_silent_mode               Boolean? @default(false)
+  price_netto                  Decimal? @db.Decimal
+  image_url                    String?
+  marketing_description        String?
+  created_at                   DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  color                        String?  @default("Biały")
+  recommended_area_m2          Int?
+  features                     Json?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model klienci {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  imie_i_nazwisko String?
+  email           String?
+  telefon         String?
+  created_at      DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model leady {
+  id                        String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  klient_id                 String?            @db.Uuid
+  adres_id                  String?            @db.Uuid
+  odpowiedzi_triage         Json?
+  wybrana_konfiguracja      Json?
+  estymowana_wycena         String?
+  status                    LeadStatus?        @default(NEW_LEAD)
+  audytor_id                String?            @db.Uuid
+  data_rezerwacji           DateTime?          @db.Timestamptz(6)
+  finalna_wycena_pln        Decimal?           @db.Decimal
+  przewidywany_czas_montazu String?
+  notatki_wewnetrzne        String?
+  created_at                DateTime           @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  updated_at                DateTime           @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+}
+
+model multi_split_sets {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String
+  outdoor_unit_id       String   @db.Uuid
+  indoor_units_json     Json
+  supported_rooms_count Int?
+  set_price_netto       Decimal? @db.Decimal
+  created_at            DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  is_bestseller         Boolean? @default(false)
+}
+
+model outdoor_units {
+  id                           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  model_code                   String   @unique
+  brand                        String
+  type                         String
+  max_indoor_units             Int?     @default(1)
+  cooling_capacity_kw          Decimal? @db.Decimal
+  heating_capacity_kw          Decimal? @db.Decimal
+  max_total_indoor_capacity_kw Decimal? @db.Decimal
+  dimensions                   String?
+  price_netto                  Decimal? @db.Decimal
+  image_url                    String?
+  created_at                   DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+}
+
+model single_split_sets {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  indoor_unit_id       String   @db.Uuid
+  outdoor_unit_id      String   @db.Uuid
+  seer                 Decimal? @db.Decimal
+  scop                 Decimal? @db.Decimal
+  energy_class_cooling String?
+  energy_class_heating String?
+  set_price_netto      Decimal? @db.Decimal
+  created_at           DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  is_bestseller        Boolean? @default(false)
+
+  @@unique([indoor_unit_id, outdoor_unit_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model soft_leady {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dane_kontaktowe String
+  dane_cz_stkowe  Json?    @map("dane_cząstkowe")
+  status          String?  @default("Nowy")
+  created_at      DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model system_config {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  typ_konfiguracji String   @unique
+  konfiguracja     Json
+  created_at       DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+}
+
 enum LeadStatus {
   NEW_LEAD
   AUDITOR_ASSIGNED
-  QUOTE_CREATED
+  AUDIT_COMPLETED
   QUOTE_ACCEPTED
+  PAID
   AWAITING_INSTALLATION
   HARDWARE_SHIPPED
   HARDWARE_DELIVERED
@@ -40,238 +151,11 @@ enum PaymentStatus {
   PENDING
 }
 
-model User {
-  id        String   @id @default(uuid()) @db.Uuid
-  // This will match auth.users ID from Supabase
-  email     String   @unique
-  firstName String?
-  lastName  String?
-  createdAt DateTime @default(now())
-
-  role       UserRole?
-  auditor    Auditor?
-  crewMember CrewMember?
-}
-
-model UserRole {
-  id     String @id @default(uuid()) @db.Uuid
-  userId String @unique @db.Uuid
-  role   String // Admin, Dyspozytor, Auditor, Monter
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Client {
-  id        String   @id @default(uuid()) @db.Uuid
-  fullName  String
-  email     String
-  phone     String
-  createdAt DateTime @default(now())
-
-  addresses Address[]
-  leads     Lead[]
-}
-
-model Address {
-  id        String   @id @default(uuid()) @db.Uuid
-  clientId  String   @db.Uuid
-  city      String
-  street    String
-  lat       Float?
-  lng       Float?
-  createdAt DateTime @default(now())
-
-  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  leads  Lead[]
-}
-
-model IndoorUnit {
-  id                String @id @default(uuid()) @db.Uuid
-  modelCode         String @unique
-  brand             String
-  coolingCapacityKw Float
-  priceNetto        Float
-
-  singleSplitSets SingleSplitSet[]
-}
-
-model OutdoorUnit {
-  id                  String @id @default(uuid()) @db.Uuid
-  modelCode           String @unique
-  type                String // SINGLE, MULTI
-  maxIndoorCapacityKw Float?
-
-  singleSplitSets SingleSplitSet[]
-  multiSplitSets  MultiSplitSet[]
-}
-
-model SingleSplitSet {
-  id            String @id @default(uuid()) @db.Uuid
-  indoorUnitId  String @db.Uuid
-  outdoorUnitId String @db.Uuid
-  setPriceNetto Float
-
-  indoorUnit  IndoorUnit  @relation(fields: [indoorUnitId], references: [id])
-  outdoorUnit OutdoorUnit @relation(fields: [outdoorUnitId], references: [id])
-
-  @@unique([indoorUnitId, outdoorUnitId])
-}
-
-model MultiSplitSet {
-  id              String @id @default(uuid()) @db.Uuid
-  outdoorUnitId   String @db.Uuid
-  indoorUnitsJson Json // Array of { indoorUnitId, count }
-  setPriceNetto   Float
-
-  outdoorUnit OutdoorUnit @relation(fields: [outdoorUnitId], references: [id])
-}
-
-model ServicePrice {
-  id           String @id @default(uuid()) @db.Uuid
-  name         String @unique
-  unit         String
-  costB2cNetto Float
-  costB2bNetto Float?
-}
-
-model Crew {
-  id   String @id @default(uuid()) @db.Uuid
-  name String
-
-  members  CrewMember[]
-  leads    Lead[]
-  services Service[]
-}
-
-model CrewMember {
-  id     String @id @default(uuid()) @db.Uuid
-  crewId String @db.Uuid
-  userId String @unique @db.Uuid
-
-  crew Crew @relation(fields: [crewId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-}
-
-model Auditor {
-  id         String  @id @default(uuid()) @db.Uuid
-  userId     String  @unique @db.Uuid
-  company    String?
-  commission Float?
-
-  user   User    @relation(fields: [userId], references: [id])
-  leads  Lead[]
-  quotes Quote[]
-}
-
-model Lead {
-  id        String  @id @default(uuid()) @db.Uuid
-  clientId  String  @db.Uuid
-  addressId String? @db.Uuid
-  auditorId String? @db.Uuid
-  crewId    String? @db.Uuid
-
-  status           LeadStatus @default(NEW_LEAD)
-  triageAnswers    Json?
-  selectedConfig   Json?
-  estimatedPrice   String?
-  finalPricePln    Float?
-  installationTime String?
-  internalNotes    String?
-  reservationDate  DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  client  Client   @relation(fields: [clientId], references: [id])
-  address Address? @relation(fields: [addressId], references: [id])
-  auditor Auditor? @relation(fields: [auditorId], references: [id])
-  crew    Crew?    @relation(fields: [crewId], references: [id])
-
-  quotes        Quote[]
-  installation  Installation?
-  shipments     Shipment[]
-  notifications NotificationQueue[]
-}
-
-model Quote {
-  id        String @id @default(uuid()) @db.Uuid
-  leadId    String @db.Uuid
-  auditorId String @db.Uuid
-
-  status           QuoteStatus   @default(DRAFT)
-  paymentStatus    PaymentStatus @default(UNPAID)
-  paymentSessionId String?
-  itemsJson        Json
-
-  createdAt DateTime @default(now())
-
-  lead    Lead    @relation(fields: [leadId], references: [id])
-  auditor Auditor @relation(fields: [auditorId], references: [id])
-}
-
-model Installation {
-  id     String @id @default(uuid()) @db.Uuid
-  leadId String @unique @db.Uuid
-
-  protocolUrl       String?
-  photosJson        Json?
-  serialNumbersJson Json?
-  installerNotes    String?
-
-  startDate DateTime?
-  endDate   DateTime?
-
-  lead     Lead      @relation(fields: [leadId], references: [id])
-  services Service[]
-}
-
-model Service {
-  id             String  @id @default(uuid()) @db.Uuid
-  installationId String  @db.Uuid
-  crewId         String? @db.Uuid
-
-  status          ServiceStatus @default(PLANNED)
-  scheduledDate   DateTime
-  completedDate   DateTime?
-  protocolUrl     String?
-  technicianNotes String?
-
-  installation Installation @relation(fields: [installationId], references: [id])
-  crew         Crew?        @relation(fields: [crewId], references: [id])
-}
-
-model Shipment {
-  id     String @id @default(uuid()) @db.Uuid
-  leadId String @db.Uuid
-
-  trackingNumber String?
-  courierName    String?
-  status         String // e.g. PENDING, SHIPPED, DELIVERED
-  shippedAt      DateTime?
-  deliveredAt    DateTime?
-
-  lead Lead @relation(fields: [leadId], references: [id])
-}
-
-model MessageTemplate {
-  id          String  @id @default(uuid()) @db.Uuid
-  name        String  @unique
-  subject     String?
-  bodyContent String
-  type        String // EMAIL, SMS
-}
-
-model NotificationQueue {
-  id            String    @id @default(uuid()) @db.Uuid
-  leadId        String?   @db.Uuid
-  templateName  String
-  status        String    @default("PENDING") // PENDING, SENT, FAILED
-  sendAt        DateTime?
-  contactInfo   String
-  variablesJson Json?
-  errorMessage  String?
-
-  createdAt DateTime @default(now())
-
-  lead Lead? @relation(fields: [leadId], references: [id])
+enum status_leada_enum {
+  Nowy
+  Weryfikacja
+  Um_wiony_Audyt @map("Umówiony Audyt")
+  Zrealizowane
+  Soft_Lead      @map("Soft Lead")
+  Utracony
 }
