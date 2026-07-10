@@ -9,6 +9,7 @@ export async function getLeads() {
       orderBy: { created_at: "desc" },
       include: {
         klient: true,
+        adres: true,
         instalacje: {
           include: {
             zespol: true

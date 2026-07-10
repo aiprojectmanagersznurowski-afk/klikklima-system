@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AssignAuditor } from "./assign-auditor";
+import { EditLeadModal } from "./edit-lead-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -92,10 +93,24 @@ export default async function LeadDetailsPage({ params }: { params: Promise<{ id
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-3xl font-bold text-gray-900">{name}</h1>
-              <Badge variant="outline" className="text-sm bg-blue-50 text-blue-700 border-blue-200 px-4 py-1">
-                {(lead.status || "").replace(/_/g, " ")}
-              </Badge>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-4">
+                {name}
+                <Badge variant="outline" className="text-sm bg-blue-50 text-blue-700 border-blue-200 px-4 py-1">
+                  {(lead.status || "").replace(/_/g, " ")}
+                </Badge>
+              </h1>
+              <div>
+                <EditLeadModal 
+                  leadId={lead.id} 
+                  initialData={{
+                    name,
+                    phone,
+                    email,
+                    address,
+                    estimatedQuote,
+                  }} 
+                />
+              </div>
             </div>
             <p className="text-sm text-gray-500 mb-8 pb-8 border-b border-gray-100">
               ID: {lead.id} • Utworzono: {format(new Date(lead.created_at), "dd.MM.yyyy HH:mm", { locale: pl })}

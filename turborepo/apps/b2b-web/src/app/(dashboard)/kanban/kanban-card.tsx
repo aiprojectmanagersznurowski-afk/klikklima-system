@@ -41,7 +41,7 @@ export function KanbanCard({ lead, onClick }: { lead: Lead; onClick?: () => void
   // Extract all required fields
   const triage = lead.odpowiedzi_triage as any;
   const clientName = (lead as any).klient?.imie_i_nazwisko || triage?.name || "Brak danych";
-  const city = triage?.address || "Brak miasta";
+  const fullAddress = (lead as any).adres?.ulica_miasto || triage?.address || "Brak adresu";
   const dateFormatted = format(new Date(lead.created_at), "d MMM yyyy, HH:mm", { locale: pl });
   const estimatedQuote = lead.estymowana_wycena || "Brak estymacji";
   const auditorName = (lead as any).audytor?.imie_i_nazwisko;
@@ -61,7 +61,9 @@ export function KanbanCard({ lead, onClick }: { lead: Lead; onClick?: () => void
           <div className="font-semibold text-[13px] text-gray-900 group-hover:text-blue-700 transition-colors">
             {clientName}
           </div>
-          <div className="text-[11px] text-gray-500 mt-0.5">{city}</div>
+          <div className="text-[11px] text-gray-500 mt-0.5 max-w-[160px] truncate" title={fullAddress}>
+            {fullAddress}
+          </div>
         </div>
         <div className="text-right">
           <div className="text-[10px] text-gray-400 font-medium">#{lead.id.substring(0, 6)}</div>
