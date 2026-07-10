@@ -47,12 +47,21 @@ export async function saveLead(data: SaveLeadData) {
     dateObj.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
 
     // 4. Utwórz Lead
+    let estimatedQuote = null;
+    if (data.triageData?.priceDevices || data.triageData?.priceInstallation) {
+      const total = (data.triageData.priceDevices || 0) + (data.triageData.priceInstallation || 0);
+      if (total > 0) {
+        estimatedQuote = `${total} PLN netto`;
+      }
+    }
+
     const { error: leadError } = await supabase
       .from('leady')
       .insert({
         klient_id: klient.id,
         adres_id: adres.id,
         odpowiedzi_triage: data.triageData,
+        estymowana_wycena: estimatedQuote,
         status: 'Umówiony Audyt',
         data_rezerwacji: dateObj.toISOString()
       });
