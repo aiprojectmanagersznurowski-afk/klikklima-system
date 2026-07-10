@@ -6,6 +6,7 @@ import { leady as Lead } from "@repo/database";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
+import { Calendar } from "lucide-react";
 
 export function KanbanCard({ lead, onClick }: { lead: Lead; onClick?: () => void }) {
   const {
@@ -73,11 +74,20 @@ export function KanbanCard({ lead, onClick }: { lead: Lead; onClick?: () => void
             {fullAddress}
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0">
           <div className="text-[10px] text-gray-400 font-medium">#{lead.id.substring(0, 6)}</div>
           <div className="text-[10px] text-gray-400 mt-0.5">{dateFormatted}</div>
         </div>
       </div>
+
+      {lead.status === "AUDITOR_ASSIGNED" && (
+        <div className="flex items-center gap-1.5 text-[11px] text-indigo-700 bg-indigo-50/50 py-1.5 px-2 rounded-md border border-indigo-100">
+          <Calendar size={12} />
+          <span className="font-medium">
+            {lead.data_rezerwacji ? format(new Date(lead.data_rezerwacji), "d MMM yyyy, HH:mm", { locale: pl }) : "Brak zaplanowanego terminu"}
+          </span>
+        </div>
+      )}
 
       <div className={`text-sm font-bold py-1.5 px-3 rounded-lg border self-start ${isDelayed ? "text-red-700 bg-red-100 border-red-200" : "text-blue-700 bg-blue-50/50 border-blue-100"}`}>
         {estimatedQuote}

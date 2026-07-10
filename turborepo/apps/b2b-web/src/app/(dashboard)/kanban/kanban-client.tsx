@@ -24,7 +24,7 @@ import { updateLeadStatus } from "./actions";
 // Map our enums to Polish labels
 export const KANBAN_STAGES: { id: LeadStatus; title: string }[] = [
   { id: "NEW_LEAD", title: "Nowy lead - przypisz audytora" },
-  { id: "AUDITOR_ASSIGNED", title: "Audytor Przypisany" },
+  { id: "AUDITOR_ASSIGNED", title: "Audytor Przypisany - oczekuje wyceny" },
   { id: "AUDIT_COMPLETED", title: "Wykonany audyt" },
   { id: "QUOTE_ACCEPTED", title: "Wycena zaakcept." },
   { id: "PAID", title: "Opłacono - Przypisz zespół" },
