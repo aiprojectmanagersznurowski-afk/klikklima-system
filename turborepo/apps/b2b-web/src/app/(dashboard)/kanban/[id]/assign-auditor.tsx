@@ -1,0 +1,96 @@
+"use client";
+
+import React, { useState, useTransition } from "react";
+import { updateLeadAuditor } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Check, Loader2, UserPlus } from "lucide-react";
+
+const MOCK_AUDITORS = [
+  { id: "user_1", name: "Jan Kowalski" },
+  { id: "user_2", name: "Anna Nowak" },
+  { id: "user_3", name: "Piotr Wiśniewski" },
+];
+
+export function AssignAuditor({ leadId, currentAuditorId }: { leadId: string; currentAuditorId: string | null }) {
+  const [isPending, startTransition] = useTransition();
+  const [isEditing, setIsEditing] = useState(false);
+  const [optimisticAuditor, setOptimisticAuditor] = useState(currentAuditorId);
+
+  const handleSelect = (auditorId: string | null) => {
+    setOptimisticAuditor(auditorId);
+    setIsEditing(false);
+    startTransition(async () => {
+      const result = await updateLeadAuditor(leadId, auditorId);
+      if (!result.success) {
+        alert(result.error);
+        setOptimisticAuditor(currentAuditorId); // revert on error
+      }
+    });
+  };
+
+  const currentAuditorName = MOCK_AUDITORS.find((a) => a.id === optimisticAuditor)?.name;
+
+  return (
+    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+      <h3 className="text-lg font-semibold mb-4 text-gray-900">Zarządzanie</h3>
+      
+      <div className="flex flex-col gap-2">
+        <span className="text-sm text-gray-500">Przypisany audytor</span>
+        
+        {isEditing ? (
+          <div className="flex flex-col gap-2 border border-gray-200 rounded-lg p-2 bg-gray-50">
+            {MOCK_AUDITORS.map((auditor) => (
+              <button
+                key={auditor.id}
+                onClick={() => handleSelect(auditor.id)}
+                className="flex items-center justify-between p-2 hover:bg-blue-50 hover:text-blue-700 rounded-md text-sm text-left transition-colors"
+              >
+                {auditor.name}
+                {optimisticAuditor === auditor.id && <Check size={16} className="text-blue-600" />}
+              </button>
+            ))}
+            <button
+              onClick={() => handleSelect(null)}
+              className="text-xs text-red-600 p-2 hover:bg-red-50 text-left rounded-md mt-1 border-t border-gray-200"
+            >
+              Odznacz audytora
+            </button>
+            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="mt-2 text-xs">
+              Anuluj
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            {optimisticAuditor ? (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+                  {currentAuditorName?.charAt(0)}
+                </div>
+                <span className="font-medium text-gray-900">{currentAuditorName}</span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setIsEditing(true)}
+                  disabled={isPending}
+                  className="ml-2 h-8 text-xs"
+                >
+                  {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Zmień"}
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                onClick={() => setIsEditing(true)}
+                disabled={isPending}
+                className="gap-2 text-blue-700 border-blue-200 hover:bg-blue-50 bg-blue-50/50"
+              >
+                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus size={16} />}
+                Przypisz audytora
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
