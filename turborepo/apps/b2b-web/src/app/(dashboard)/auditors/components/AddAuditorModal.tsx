@@ -213,7 +213,6 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
                 id="address"
                 name="address"
                 type="text"
-                disabled={!ready}
                 placeholder="np. Warszawa, ul. Główna 1"
                 value={value}
                 onChange={(e) => {

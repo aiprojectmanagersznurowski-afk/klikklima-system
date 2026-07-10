@@ -55,6 +55,28 @@ export default async function LeadDetailsPage({ params }: { params: Promise<{ id
     orderBy: { imie_i_nazwisko: "asc" },
   });
 
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const auditorsWithAvatars = await Promise.all(
+    audytorzy.map(async (auditor) => {
+      let signedUrl = auditor.zdjecie_url;
+      if (signedUrl) {
+        const { data } = await supabase.storage
+          .from("audytorzy")
+          .createSignedUrl(signedUrl, 60 * 60);
+        if (data) signedUrl = data.signedUrl;
+      }
+      return {
+        ...auditor,
+        avatarUrl: signedUrl,
+      };
+    })
+  );
+
   return (
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-300">
       <div className="mb-8">
@@ -192,7 +214,7 @@ export default async function LeadDetailsPage({ params }: { params: Promise<{ id
 
         {/* Sidebar - Prawa kolumna */}
         <div className="lg:col-span-1 space-y-6">
-          <AssignAuditor leadId={lead.id} currentAuditorId={lead.audytor_id} auditors={audytorzy} />
+          <AssignAuditor leadId={lead.id} currentAuditorId={lead.audytor_id} auditors={auditorsWithAvatars as any} />
         </div>
       </div>
     </div>

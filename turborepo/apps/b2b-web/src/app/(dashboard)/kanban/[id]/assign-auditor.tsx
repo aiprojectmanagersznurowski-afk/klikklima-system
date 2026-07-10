@@ -40,7 +40,20 @@ export function AssignAuditor({ leadId, currentAuditorId, auditors }: { leadId: 
                 onClick={() => handleSelect(auditor.id)}
                 className="flex items-center justify-between p-2 hover:bg-blue-50 hover:text-blue-700 rounded-md text-sm text-left transition-colors"
               >
-                {auditor.imie_i_nazwisko}
+                <div className="flex items-center gap-2">
+                  <div className="flex-shrink-0 h-6 w-6">
+                    {(auditor as any).avatarUrl ? (
+                      <img className="h-6 w-6 rounded-full object-cover" src={(auditor as any).avatarUrl} alt={auditor.imie_i_nazwisko} />
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
+                        <span className="text-blue-600 font-semibold text-[10px]">
+                          {(auditor.imie_i_nazwisko || "").charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <span>{auditor.imie_i_nazwisko}</span>
+                </div>
                 {optimisticAuditor === auditor.id && <Check size={16} className="text-blue-600" />}
               </button>
             ))}
@@ -61,8 +74,14 @@ export function AssignAuditor({ leadId, currentAuditorId, auditors }: { leadId: 
           <div className="flex items-center gap-3">
             {optimisticAuditor ? (
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
-                  {currentAuditorName?.charAt(0)}
+                <div className="flex-shrink-0 h-8 w-8">
+                  {(auditors.find((a) => a.id === optimisticAuditor) as any)?.avatarUrl ? (
+                    <img className="h-8 w-8 rounded-full object-cover" src={(auditors.find((a) => a.id === optimisticAuditor) as any)?.avatarUrl} alt={currentAuditorName} />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+                      {currentAuditorName?.charAt(0)}
+                    </div>
+                  )}
                 </div>
                 <span className="font-medium text-gray-900">{currentAuditorName}</span>
                 <Button 
