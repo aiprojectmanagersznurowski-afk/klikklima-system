@@ -5,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { leady as Lead } from "@repo/database";
 import { Badge } from "@/components/ui/badge";
 
-export function KanbanCard({ lead }: { lead: Lead }) {
+export function KanbanCard({ lead, onClick }: { lead: Lead; onClick?: () => void }) {
   const {
     setNodeRef,
     attributes,
@@ -48,6 +48,7 @@ export function KanbanCard({ lead }: { lead: Lead }) {
       style={style}
       {...attributes}
       {...listeners}
+      onClick={onClick}
       className="bg-white p-4 rounded-lg shadow-sm border border-gray-200/60 hover:shadow-md hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing group"
     >
       <div className="flex justify-between items-start mb-3">

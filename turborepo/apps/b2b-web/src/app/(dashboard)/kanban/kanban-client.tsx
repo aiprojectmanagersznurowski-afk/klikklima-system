@@ -20,6 +20,7 @@ import { LeadStatus, leady as Lead } from "@repo/database";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
 import { updateLeadStatus } from "./actions";
+import { LeadDetailsModal } from "./lead-details-modal";
 
 // Map our enums to Polish labels
 export const KANBAN_STAGES: { id: LeadStatus; title: string }[] = [
@@ -38,6 +39,7 @@ export const KANBAN_STAGES: { id: LeadStatus; title: string }[] = [
 export function KanbanClient({ initialLeads }: { initialLeads: Lead[] }) {
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const sensors = useSensors(
@@ -154,6 +156,7 @@ export function KanbanClient({ initialLeads }: { initialLeads: Lead[] }) {
                 key={stage.id}
                 column={stage}
                 leads={leads.filter((l) => l.status === stage.id)}
+                onCardClick={(lead) => setSelectedLead(lead)}
               />
             ))}
           </div>
@@ -162,6 +165,12 @@ export function KanbanClient({ initialLeads }: { initialLeads: Lead[] }) {
           </DragOverlay>
         </DndContext>
       </div>
+
+      <LeadDetailsModal 
+        lead={selectedLead} 
+        isOpen={!!selectedLead} 
+        onClose={() => setSelectedLead(null)} 
+      />
     </div>
   );
 }
