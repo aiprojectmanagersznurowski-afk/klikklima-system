@@ -7,6 +7,15 @@ export async function getLeads() {
   try {
     const leads = await prisma.leady.findMany({
       orderBy: { created_at: "desc" },
+      include: {
+        klient: true,
+        instalacje: {
+          include: {
+            zespol: true
+          }
+        },
+        audytor: true
+      }
     });
     return leads;
   } catch (error) {
