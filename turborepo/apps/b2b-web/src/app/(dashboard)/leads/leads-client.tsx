@@ -7,6 +7,7 @@ import { LeadStatus, leady as Lead, audytorzy as Auditor } from "@repo/database"
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,7 @@ export const KANBAN_STAGES: { id: LeadStatus; title: string }[] = [
 ];
 
 export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], auditors: Auditor[] }) {
+  const router = useRouter();
   const [selectedStage, setSelectedStage] = useState<LeadStatus>("NEW_LEAD");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -44,12 +46,24 @@ export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], 
       if (!clientName.includes(q) && !id.includes(q)) return false;
     }
     return true;
+  }).sort((a, b) => {
+    // Sort by audit date (data_rezerwacji) ascending, if no audit date then by created_at descending
+    if (a.data_rezerwacji && b.data_rezerwacji) {
+      return new Date(a.data_rezerwacji).getTime() - new Date(b.data_rezerwacji).getTime();
+    } else if (a.data_rezerwacji) {
+      return -1;
+    } else if (b.data_rezerwacji) {
+      return 1;
+    }
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
   const handleAssignAuditor = async (leadId: string, auditorId: string | null) => {
     const res = await updateLeadAuditor(leadId, auditorId);
     if (!res.success) {
       alert("Błąd podczas przypisywania audytora: " + res.error);
+    } else {
+      router.refresh();
     }
   };
 
@@ -77,7 +91,7 @@ export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], 
 
       <div className="flex flex-1 overflow-hidden bg-white">
         {/* Sidebar z Etapami */}
-        <div className="w-72 border-r border-gray-200 bg-gray-50/50 flex flex-col overflow-y-auto">
+        <div className="w-[320px] border-r border-gray-200 bg-gray-50/50 flex flex-col overflow-y-auto shrink-0">
           <div className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Etapy Lejka</div>
           <nav className="flex-1 px-3 space-y-1 pb-4">
             {KANBAN_STAGES.map(stage => {
