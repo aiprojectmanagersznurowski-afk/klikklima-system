@@ -47,7 +47,7 @@ export function LeadDetailsModal({ lead, isOpen, onClose }: LeadDetailsModalProp
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl font-bold">Szczegóły Leada</DialogTitle>
             <Badge variant="outline" className="mr-6 bg-blue-50 text-blue-700 border-blue-200">
-              {lead.status.replace(/_/g, " ")}
+              {(lead.status || "").replace(/_/g, " ")}
             </Badge>
           </div>
           <p className="text-sm text-gray-500">
