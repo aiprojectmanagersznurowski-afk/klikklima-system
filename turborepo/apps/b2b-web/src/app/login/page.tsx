@@ -9,7 +9,7 @@ const Logo = () => (
   <img
     src="/logo.png"
     alt="Klik Klima"
-    className="h-[52px] w-auto"
+    className="h-[84px] w-auto"
   />
 );
 
