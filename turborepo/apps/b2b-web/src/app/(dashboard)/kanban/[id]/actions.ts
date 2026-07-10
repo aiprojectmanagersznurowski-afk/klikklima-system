@@ -4,11 +4,17 @@ import { revalidatePath } from "next/cache";
 
 export async function updateLeadAuditor(leadId: string, audytorId: string | null) {
   try {
+    const newStatus = audytorId ? "AUDITOR_ASSIGNED" : "NEW_LEAD";
+
     await prisma.leady.update({
       where: { id: leadId },
-      data: { audytor_id: audytorId },
+      data: { 
+        audytor_id: audytorId,
+        status: newStatus 
+      },
     });
     revalidatePath(`/kanban/${leadId}`);
+    revalidatePath(`/kanban`);
     return { success: true };
   } catch (error) {
     console.error("Failed to assign auditor:", error);

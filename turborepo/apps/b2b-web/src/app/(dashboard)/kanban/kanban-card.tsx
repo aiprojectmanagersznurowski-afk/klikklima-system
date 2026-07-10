@@ -46,6 +46,10 @@ export function KanbanCard({ lead, onClick }: { lead: Lead; onClick?: () => void
   const estimatedQuote = lead.estymowana_wycena || "Brak estymacji";
   const auditorName = (lead as any).audytor?.imie_i_nazwisko;
   const installationTeamName = (lead as any).instalacje?.[0]?.zespol?.nazwa;
+
+  const isNewLead = lead.status === "NEW_LEAD";
+  const hoursSinceCreation = (new Date().getTime() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60);
+  const isDelayed = isNewLead && hoursSinceCreation > 24;
     
   return (
     <div
@@ -54,7 +58,11 @@ export function KanbanCard({ lead, onClick }: { lead: Lead; onClick?: () => void
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className="bg-white p-4 rounded-xl shadow-sm border border-gray-200/60 hover:shadow-md hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing group flex flex-col gap-3"
+      className={`bg-white p-4 rounded-xl shadow-sm border transition-all cursor-grab active:cursor-grabbing group flex flex-col gap-3 ${
+        isDelayed 
+          ? "border-red-400 bg-red-50 hover:shadow-md hover:border-red-500" 
+          : "border-gray-200/60 hover:shadow-md hover:border-blue-300"
+      }`}
     >
       <div className="flex justify-between items-start">
         <div>
@@ -71,7 +79,7 @@ export function KanbanCard({ lead, onClick }: { lead: Lead; onClick?: () => void
         </div>
       </div>
 
-      <div className="text-sm font-bold text-blue-700 bg-blue-50/50 py-1.5 px-3 rounded-lg border border-blue-100 self-start">
+      <div className={`text-sm font-bold py-1.5 px-3 rounded-lg border self-start ${isDelayed ? "text-red-700 bg-red-100 border-red-200" : "text-blue-700 bg-blue-50/50 border-blue-100"}`}>
         {estimatedQuote}
       </div>
 
