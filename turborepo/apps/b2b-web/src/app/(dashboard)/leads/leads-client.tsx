@@ -144,7 +144,7 @@ export function LeadsClient({
               return (
                 <button
                   key={stage.id}
-                  onClick={() => router.push(`?status=${stage.id}`)}
+                  onClick={() => startTransition(() => router.push(`?status=${stage.id}`))}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isSelected 
                       ? "bg-blue-50 text-blue-700" 
@@ -164,9 +164,19 @@ export function LeadsClient({
         </div>
 
         {/* Tabela Leadów */}
-        <div className="flex-1 overflow-auto">
-          <div className="min-w-max">
-            <table className="w-full text-left border-collapse">
+        <div className="flex-1 overflow-auto relative">
+          {isPending && (
+            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+              <div className="flex flex-col items-center text-blue-600">
+                <svg className="animate-spin h-8 w-8 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="text-sm font-medium">Ładowanie...</span>
+              </div>
+            </div>
+          )}
+          <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-white border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 z-10 shadow-sm">
                   <th className="px-6 py-4">ID & Data wpłynięcia</th>
@@ -305,16 +315,16 @@ export function LeadsClient({
               <Button
                 variant="outline"
                 size="sm"
-                disabled={currentPage <= 1}
-                onClick={() => router.push(`?status=${initialStatus}&page=${currentPage - 1}`)}
+                disabled={currentPage <= 1 || isPending}
+                onClick={() => startTransition(() => router.push(`?status=${initialStatus}&page=${currentPage - 1}`))}
               >
                 Poprzednia
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                disabled={currentPage >= totalPages}
-                onClick={() => router.push(`?status=${initialStatus}&page=${currentPage + 1}`)}
+                disabled={currentPage >= totalPages || isPending}
+                onClick={() => startTransition(() => router.push(`?status=${initialStatus}&page=${currentPage + 1}`))}
               >
                 Następna
               </Button>
