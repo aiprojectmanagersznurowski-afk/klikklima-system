@@ -101,3 +101,16 @@ export async function updateLeadData(
   }
 }
 
+export async function deleteLead(leadId: string) {
+  try {
+    await prisma.leady.delete({
+      where: { id: leadId },
+    });
+    revalidatePath("/leads");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete lead:", error);
+    return { success: false, error: "Nie udało się usunąć leada." };
+  }
+}
+

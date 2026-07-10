@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AssignAuditor } from "./assign-auditor";
 import { EditLeadModal } from "./edit-lead-modal";
+import { DeleteLeadButton } from "./delete-lead-button";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +108,7 @@ export default async function LeadDetailsPage({
                   {(lead.status || "").replace(/_/g, " ")}
                 </Badge>
               </h1>
-              <div>
+              <div className="flex items-center gap-2">
                 <EditLeadModal 
                   leadId={lead.id} 
                   defaultOpen={isEditMode}
@@ -119,6 +120,7 @@ export default async function LeadDetailsPage({
                     estimatedQuote,
                   }} 
                 />
+                <DeleteLeadButton leadId={lead.id} />
               </div>
             </div>
             <p className="text-sm text-gray-500 mb-8 pb-8 border-b border-gray-100">

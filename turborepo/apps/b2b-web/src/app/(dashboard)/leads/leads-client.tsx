@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ export const KANBAN_STAGES: { id: LeadStatus; title: string }[] = [
 
 export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], auditors: Auditor[] }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [selectedStage, setSelectedStage] = useState<LeadStatus>("NEW_LEAD");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -63,7 +65,9 @@ export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], 
     if (!res.success) {
       alert("Błąd podczas przypisywania audytora: " + res.error);
     } else {
-      router.refresh();
+      startTransition(() => {
+        router.refresh();
+      });
     }
   };
 
@@ -199,7 +203,7 @@ export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], 
                               {auditors.map(a => (
                                 <DropdownMenuItem 
                                   key={a.id} 
-                                  onClick={() => handleAssignAuditor(lead.id, a.id)}
+                                  onSelect={() => handleAssignAuditor(lead.id, a.id)}
                                   className="flex items-center justify-between cursor-pointer"
                                 >
                                   <span>{a.imie_i_nazwisko}</span>
@@ -213,7 +217,7 @@ export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], 
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
-                                    onClick={() => handleAssignAuditor(lead.id, null)}
+                                    onSelect={() => handleAssignAuditor(lead.id, null)}
                                     className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer"
                                   >
                                     Odznacz audytora
@@ -238,12 +242,6 @@ export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], 
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {/* Przyciski Edit i Open jako linki do strony leada, gdzie jest modal edycji */}
-                            <Link href={`/leads/${lead.id}?edit=true`}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-blue-600" title="Edytuj dane">
-                                <Edit size={16} />
-                              </Button>
-                            </Link>
                             <Link href={`/leads/${lead.id}`}>
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-blue-600" title="Otwórz szczegóły">
                                 <ExternalLink size={16} />
