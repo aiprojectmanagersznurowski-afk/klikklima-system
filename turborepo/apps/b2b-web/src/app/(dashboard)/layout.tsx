@@ -1,9 +1,15 @@
 "use client"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Truck, Users, Clock, Settings, Bell, HardHat, Briefcase } from 'lucide-react'
+import { LayoutDashboard, Truck, Users, Clock, Settings, Bell, HardHat, Briefcase, Store, Box, AirVent, ChevronDown, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const Logo = () => (
   <Link href="/" className="flex items-center gap-3 flex-shrink-0">
@@ -16,13 +22,24 @@ const Logo = () => (
 );
 
 const TABS = [
-  { id: "kanban", label: "Lejek", icon: LayoutDashboard, href: "/kanban" },
-  { id: "logistics", label: "Logistyka", icon: Truck, href: "/logistics" },
-  { id: "clients", label: "Klienci", icon: Users, href: "/clients" },
+  { id: "kanban", label: "Lejek", icon: Filter, href: "/kanban" },
   { id: "installations", label: "Instalacje", icon: Truck, href: "/installations" },
   { id: "services", label: "Serwisy", icon: Clock, href: "/services" },
+  { id: "clients", label: "Klienci", icon: Users, href: "/clients" },
+  { id: "logistics", label: "Logistyka", icon: Truck, href: "/logistics" },
   { id: "auditors", label: "Audytorzy", icon: Briefcase, href: "/auditors" },
   { id: "crews", label: "Zespoły", icon: HardHat, href: "/crews" },
+  { 
+    id: "shop", 
+    label: "Sklep", 
+    icon: Store, 
+    isDropdown: true,
+    items: [
+      { id: "devices", label: "Urządzenia", href: "/shop/devices", icon: AirVent },
+      { id: "3d-models", label: "Modele 3D", href: "/shop/3d-models", icon: Box }
+    ]
+  },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { id: "settings", label: "Ustawienia", icon: Settings, href: "/settings" },
 ];
 
@@ -41,11 +58,42 @@ export default function DashboardLayout({
             <Logo />
             <nav className="hidden lg:flex items-center gap-1">
               {TABS.map(tab => {
-                const isActive = pathname.startsWith(tab.href);
+                const isActive = tab.href ? pathname.startsWith(tab.href) : (tab.items && tab.items.some(item => pathname.startsWith(item.href)));
+                
+                if (tab.isDropdown && tab.items) {
+                  return (
+                    <DropdownMenu key={tab.id}>
+                      <DropdownMenuTrigger className={cn(
+                        "relative px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 outline-none",
+                        isActive 
+                          ? "text-blue-700 bg-blue-50/50" 
+                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                      )}>
+                        <tab.icon size={16} className={isActive ? "text-blue-600" : "text-gray-400"} />
+                        {tab.label}
+                        <ChevronDown size={14} className="opacity-50" />
+                        {isActive && (
+                          <span className="absolute bottom-[-17px] left-0 right-0 h-0.5 bg-blue-600 rounded-t-full"></span>
+                        )}
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-48">
+                        {tab.items.map(item => (
+                          <DropdownMenuItem key={item.id} asChild>
+                            <Link href={item.href} className="flex items-center gap-2 cursor-pointer">
+                              <item.icon size={14} className="text-gray-500" />
+                              {item.label}
+                            </Link>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )
+                }
+
                 return (
                   <Link
                     key={tab.id}
-                    href={tab.href}
+                    href={tab.href as string}
                     className={cn(
                       "relative px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2",
                       isActive 
