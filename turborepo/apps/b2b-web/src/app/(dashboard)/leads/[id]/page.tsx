@@ -12,8 +12,16 @@ import { EditLeadModal } from "./edit-lead-modal";
 
 export const dynamic = "force-dynamic";
 
-export default async function LeadDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function LeadDetailsPage({ 
+  params,
+  searchParams 
+}: { 
+  params: Promise<{ id: string }>,
+  searchParams: Promise<{ edit?: string }> 
+}) {
   const { id } = await params;
+  const { edit } = await searchParams;
+  const isEditMode = edit === 'true';
 
   const lead = await prisma.leady.findUnique({
     where: { id },
@@ -102,6 +110,7 @@ export default async function LeadDetailsPage({ params }: { params: Promise<{ id
               <div>
                 <EditLeadModal 
                   leadId={lead.id} 
+                  defaultOpen={isEditMode}
                   initialData={{
                     name,
                     phone,

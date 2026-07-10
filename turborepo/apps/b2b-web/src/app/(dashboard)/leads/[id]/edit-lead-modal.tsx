@@ -22,10 +22,11 @@ interface EditLeadModalProps {
     address: string;
     estimatedQuote: string;
   };
+  defaultOpen?: boolean;
 }
 
-export function EditLeadModal({ leadId, initialData }: EditLeadModalProps) {
-  const [open, setOpen] = useState(false);
+export function EditLeadModal({ leadId, initialData, defaultOpen = false }: EditLeadModalProps) {
+  const [open, setOpen] = useState(defaultOpen);
   const [formData, setFormData] = useState(initialData);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");

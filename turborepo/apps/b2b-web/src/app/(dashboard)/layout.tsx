@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 const Logo = () => (
-  <Link href="/" className="flex items-center gap-3 flex-shrink-0">
+  <Link href="/leads" className="flex items-center gap-3 flex-shrink-0">
     <img
       src="/logo.png"
       alt="Klik Klima"
