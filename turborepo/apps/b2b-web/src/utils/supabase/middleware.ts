@@ -37,6 +37,13 @@ export async function updateSession(request: NextRequest) {
 
   const isPublicRoute = request.nextUrl.pathname === '/login' || request.nextUrl.pathname.startsWith('/auth') || request.nextUrl.pathname.startsWith('/api')
 
+  // Fallback: If Supabase redirects to /?code=... instead of /auth/callback?code=...
+  if (request.nextUrl.pathname === '/' && request.nextUrl.searchParams.has('code')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/callback'
+    return NextResponse.redirect(url)
+  }
+
   if (
     !user &&
     !isPublicRoute
