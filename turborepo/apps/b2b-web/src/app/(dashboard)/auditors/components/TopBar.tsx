@@ -11,7 +11,7 @@ interface TopBarProps {
 
 export function TopBar({ searchValue, onSearchChange, onAddClick }: TopBarProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-['Inter']">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-sans">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Audytorzy</h1>
         <p className="text-sm text-gray-500 mt-1">Zarządzaj zespołem audytorów terenowych</p>

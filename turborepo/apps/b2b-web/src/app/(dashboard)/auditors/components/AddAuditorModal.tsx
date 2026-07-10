@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 
 interface AddAuditorModalProps {
   open: boolean;
@@ -26,6 +27,19 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
     fgazCert: ''
   });
 
+  const {
+    ready,
+    value,
+    suggestions: { status, data },
+    setValue,
+    clearSuggestions,
+  } = usePlacesAutocomplete({
+    requestOptions: {
+      componentRestrictions: { country: "pl" },
+    },
+    debounce: 300,
+  });
+
   useEffect(() => {
     if (open) {
       if (initialData) {
@@ -38,6 +52,7 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
           nip: initialData.nip || '',
           fgazCert: initialData.certyfikat_fgaz || ''
         });
+        setValue(initialData.adres || '', false);
         setPhotoPreview(initialData.avatarUrl || null);
       } else {
         setFormData({
@@ -49,6 +64,7 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
           nip: '',
           fgazCert: ''
         });
+        setValue('', false);
         setPhotoPreview(null);
       }
     }
@@ -57,6 +73,12 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelect = async (address: string) => {
+    setValue(address, false);
+    setFormData(prev => ({ ...prev, address }));
+    clearSuggestions();
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,7 +122,7 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
         onClick={() => onOpenChange(false)}
       />
       
-      <div className="relative z-50 w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="relative z-50 w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 font-sans">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-xl font-semibold text-gray-900">
             {initialData ? "Edytuj audytora" : "Dodaj nowego audytora"}
@@ -185,17 +207,34 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 relative">
               <label htmlFor="address" className="text-sm font-medium text-gray-700">Adres / Miasto</label>
               <input
                 id="address"
                 name="address"
                 type="text"
+                disabled={!ready}
                 placeholder="np. Warszawa, ul. Główna 1"
-                value={formData.address}
-                onChange={handleChange}
+                value={value}
+                onChange={(e) => {
+                  setValue(e.target.value);
+                  setFormData(prev => ({ ...prev, address: e.target.value }));
+                }}
                 className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400"
               />
+              {status === "OK" && (
+                <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto">
+                  {data.map(({ place_id, description }) => (
+                    <li
+                      key={place_id}
+                      onClick={() => handleSelect(description)}
+                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors text-sm text-gray-700 border-b border-gray-100 last:border-0"
+                    >
+                      {description}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div className="space-y-1.5">

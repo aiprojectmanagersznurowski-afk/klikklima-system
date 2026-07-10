@@ -3,7 +3,7 @@ import { Edit2, Trash2 } from 'lucide-react';
 
 export function AuditorsTable({ auditors, onEdit, onDelete }: { auditors: any[], onEdit: (a: any) => void, onDelete: (id: string) => void }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-['Inter']">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-sans">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
