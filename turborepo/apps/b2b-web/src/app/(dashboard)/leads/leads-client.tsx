@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Filter, Calendar, Edit, ExternalLink, UserPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadStatus, leady as Lead, audytorzy as Auditor } from "@repo/database";
@@ -37,8 +37,13 @@ export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], 
   const [isPending, startTransition] = useTransition();
   const [selectedStage, setSelectedStage] = useState<LeadStatus>("NEW_LEAD");
   const [searchQuery, setSearchQuery] = useState("");
+  const [leads, setLeads] = useState(initialLeads);
 
-  const filteredLeads = initialLeads.filter(lead => {
+  useEffect(() => {
+    setLeads(initialLeads);
+  }, [initialLeads]);
+
+  const filteredLeads = leads.filter(lead => {
     if (lead.status !== selectedStage) return false;
     
     if (searchQuery) {
@@ -61,9 +66,23 @@ export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], 
   });
 
   const handleAssignAuditor = async (leadId: string, auditorId: string | null) => {
+    const previousLeads = [...leads];
+    setLeads(current => current.map(l => {
+      if (l.id === leadId) {
+        return {
+          ...l,
+          audytor_id: auditorId,
+          status: auditorId ? "AUDITOR_ASSIGNED" : "NEW_LEAD",
+          audytor: auditors.find(a => a.id === auditorId) || null
+        } as Lead;
+      }
+      return l;
+    }));
+
     const res = await updateLeadAuditor(leadId, auditorId);
     if (!res.success) {
       alert("Błąd podczas przypisywania audytora: " + res.error);
+      setLeads(previousLeads);
     } else {
       startTransition(() => {
         router.refresh();
