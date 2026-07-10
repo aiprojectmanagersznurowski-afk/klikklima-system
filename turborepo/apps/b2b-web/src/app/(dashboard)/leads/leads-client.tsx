@@ -82,10 +82,17 @@ export function LeadsClient({
     const previousLeads = [...leads];
     setLeads(current => current.map(l => {
       if (l.id === leadId) {
+        let newStatus = l.status;
+        if (auditorId && l.status === "NEW_LEAD") {
+          newStatus = "AUDITOR_ASSIGNED";
+        } else if (!auditorId && l.status === "AUDITOR_ASSIGNED") {
+          newStatus = "NEW_LEAD";
+        }
+        
         return {
           ...l,
           audytor_id: auditorId,
-          status: auditorId ? "AUDITOR_ASSIGNED" : "NEW_LEAD",
+          status: newStatus,
           audytor: auditors.find(a => a.id === auditorId) || null
         } as Lead;
       }

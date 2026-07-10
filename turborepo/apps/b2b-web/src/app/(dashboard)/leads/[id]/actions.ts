@@ -4,7 +4,15 @@ import { revalidatePath } from "next/cache";
 
 export async function updateLeadAuditor(leadId: string, audytorId: string | null) {
   try {
-    const newStatus = audytorId ? "AUDITOR_ASSIGNED" : "NEW_LEAD";
+    const lead = await prisma.leady.findUnique({ where: { id: leadId } });
+    if (!lead) return { success: false, error: "Lead not found" };
+
+    let newStatus = lead.status;
+    if (audytorId && lead.status === "NEW_LEAD") {
+      newStatus = "AUDITOR_ASSIGNED";
+    } else if (!audytorId && lead.status === "AUDITOR_ASSIGNED") {
+      newStatus = "NEW_LEAD";
+    }
 
     await prisma.leady.update({
       where: { id: leadId },
