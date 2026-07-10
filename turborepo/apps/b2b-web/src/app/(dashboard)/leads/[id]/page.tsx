@@ -71,21 +71,30 @@ export default async function LeadDetailsPage({
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const auditorsWithAvatars = await Promise.all(
-    audytorzy.map(async (auditor) => {
-      let signedUrl = auditor.zdjecie_url;
-      if (signedUrl) {
-        const { data } = await supabase.storage
-          .from("audytorzy")
-          .createSignedUrl(signedUrl, 60 * 60);
-        if (data) signedUrl = data.signedUrl;
-      }
-      return {
-        ...auditor,
-        avatarUrl: signedUrl,
-      };
-    })
-  );
+  // Bulk generate signed URLs for auditors
+  const auditorPaths = audytorzy
+    .map(a => a.zdjecie_url)
+    .filter((url): url is string => Boolean(url));
+  
+  let signedUrlsMap: Record<string, string> = {};
+  if (auditorPaths.length > 0) {
+    const { data } = await supabase.storage
+      .from("audytorzy")
+      .createSignedUrls(auditorPaths, 60 * 60);
+    
+    if (data) {
+      data.forEach(item => {
+        if (!item.error && item.signedUrl && item.path) {
+          signedUrlsMap[item.path as string] = item.signedUrl;
+        }
+      });
+    }
+  }
+
+  const auditorsWithAvatars = audytorzy.map((auditor) => ({
+    ...auditor,
+    avatarUrl: auditor.zdjecie_url ? signedUrlsMap[auditor.zdjecie_url as string] : null,
+  }));
 
   return (
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-300">

@@ -14,25 +14,59 @@ export async function getAuditors() {
   }
 }
 
-export async function getLeads() {
+export async function getLeads(options?: { status?: LeadStatus, page?: number, limit?: number }) {
   try {
-    const leads = await prisma.leady.findMany({
-      orderBy: { created_at: "desc" },
-      include: {
-        klient: true,
-        adres: true,
-        instalacje: {
-          include: {
-            zespol: true
-          }
-        },
-        audytor: true
+    const page = options?.page || 1;
+    const limit = options?.limit || 50;
+    const skip = (page - 1) * limit;
+
+    const where = options?.status ? { status: options.status } : {};
+
+    const [leads, totalCount, statusGroups] = await Promise.all([
+      prisma.leady.findMany({
+        where,
+        orderBy: [
+          { data_rezerwacji: "asc" },
+          { created_at: "desc" }
+        ],
+        skip,
+        take: limit,
+        include: {
+          klient: true,
+          adres: true,
+          instalacje: {
+            include: {
+              zespol: true
+            }
+          },
+          audytor: true
+        }
+      }),
+      prisma.leady.count({ where }),
+      prisma.leady.groupBy({
+        by: ['status'],
+        _count: {
+          id: true
+        }
+      })
+    ]);
+
+    const stageCounts = statusGroups.reduce((acc, curr) => {
+      if (curr.status) {
+        acc[curr.status] = curr._count.id;
       }
-    });
-    return leads;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      leads,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      stageCounts
+    };
   } catch (error) {
     console.error("Failed to fetch leads:", error);
-    return [];
+    return { leads: [], totalCount: 0, totalPages: 0, stageCounts: {} };
   }
 }
 

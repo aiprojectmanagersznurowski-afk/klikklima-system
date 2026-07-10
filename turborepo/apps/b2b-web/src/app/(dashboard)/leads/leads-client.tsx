@@ -32,10 +32,23 @@ export const KANBAN_STAGES: { id: LeadStatus; title: string }[] = [
   { id: "INSTALLATION_COMPLETED", title: "Zakończona" },
 ];
 
-export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], auditors: Auditor[] }) {
+export function LeadsClient({ 
+  initialLeads, 
+  auditors,
+  totalPages,
+  currentPage,
+  initialStatus,
+  stageCounts
+}: { 
+  initialLeads: Lead[]; 
+  auditors: Auditor[];
+  totalPages: number;
+  currentPage: number;
+  initialStatus: LeadStatus;
+  stageCounts: Record<string, number>;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [selectedStage, setSelectedStage] = useState<LeadStatus>("NEW_LEAD");
   const [searchQuery, setSearchQuery] = useState("");
   const [leads, setLeads] = useState(initialLeads);
 
@@ -44,7 +57,7 @@ export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], 
   }, [initialLeads]);
 
   const filteredLeads = leads.filter(lead => {
-    if (lead.status !== selectedStage) return false;
+    if (lead.status !== initialStatus) return false;
     
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -118,13 +131,13 @@ export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], 
           <div className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Etapy Lejka</div>
           <nav className="flex-1 px-3 space-y-1 pb-4">
             {KANBAN_STAGES.map(stage => {
-              const count = initialLeads.filter(l => l.status === stage.id).length;
-              const isSelected = selectedStage === stage.id;
+              const count = stageCounts[stage.id] || 0;
+              const isSelected = initialStatus === stage.id;
               
               return (
                 <button
                   key={stage.id}
-                  onClick={() => setSelectedStage(stage.id)}
+                  onClick={() => router.push(`?status=${stage.id}`)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isSelected 
                       ? "bg-blue-50 text-blue-700" 
@@ -273,10 +286,36 @@ export function LeadsClient({ initialLeads, auditors }: { initialLeads: Lead[], 
                   })
                 )}
               </tbody>
-            </table>
-          </div>
+          </table>
         </div>
+        
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200">
+            <div className="text-sm text-gray-500">
+              Strona <span className="font-medium text-gray-900">{currentPage}</span> z <span className="font-medium text-gray-900">{totalPages}</span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => router.push(`?status=${initialStatus}&page=${currentPage - 1}`)}
+              >
+                Poprzednia
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= totalPages}
+                onClick={() => router.push(`?status=${initialStatus}&page=${currentPage + 1}`)}
+              >
+                Następna
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+    </div>
     </div>
   );
 }

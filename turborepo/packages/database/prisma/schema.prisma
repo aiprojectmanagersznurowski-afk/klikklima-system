@@ -90,6 +90,9 @@ model leady {
 
   instalacje           instalacje[]
   logistyka_zamowienia logistyka_zamowienia[]
+
+  @@index([status])
+  @@index([created_at])
 }
 
 model multi_split_sets {
