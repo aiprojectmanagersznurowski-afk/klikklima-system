@@ -25,7 +25,7 @@ const Logo = () => (
 );
 
 const TABS = [
-  { id: "kanban", label: "Lejek", icon: Filter, href: "/kanban" },
+  { id: "leads", label: "Leady", icon: Filter, href: "/leads" },
   { id: "installations", label: "Instalacje", icon: Truck, href: "/installations" },
   { id: "services", label: "Serwisy", icon: Clock, href: "/services" },
   { id: "clients", label: "Klienci", icon: Users, href: "/clients" },

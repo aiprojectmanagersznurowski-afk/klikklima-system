@@ -80,9 +80,9 @@ export default async function LeadDetailsPage({ params }: { params: Promise<{ id
 
   return (
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-300">
-      <div className="mb-8">
-        <Link href="/kanban">
-          <Button variant="ghost" className="gap-2 -ml-4 text-gray-500 hover:text-gray-900">
+      <div className="mb-6">
+        <Link href="/leads">
+          <Button variant="ghost" className="text-gray-500 hover:text-gray-900 -ml-4 gap-2">
             <ArrowLeft size={16} /> Powrót do tablicy
           </Button>
         </Link>

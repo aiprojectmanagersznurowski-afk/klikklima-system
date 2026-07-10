@@ -3,6 +3,17 @@
 import { prisma, LeadStatus } from "@repo/database";
 import { revalidatePath } from "next/cache";
 
+export async function getAuditors() {
+  try {
+    return await prisma.audytorzy.findMany({
+      orderBy: { imie_i_nazwisko: "asc" }
+    });
+  } catch (error) {
+    console.error("Failed to fetch auditors:", error);
+    return [];
+  }
+}
+
 export async function getLeads() {
   try {
     const leads = await prisma.leady.findMany({
@@ -48,7 +59,7 @@ export async function updateLeadStatus(leadId: string, newStatus: LeadStatus) {
         data: { status: newStatus },
       });
     }
-    revalidatePath("/kanban");
+    revalidatePath("/leads");
     return { success: true };
   } catch (error) {
     console.error("Failed to update lead status:", error);

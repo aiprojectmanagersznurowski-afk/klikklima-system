@@ -13,8 +13,8 @@ export async function updateLeadAuditor(leadId: string, audytorId: string | null
         status: newStatus 
       },
     });
-    revalidatePath(`/kanban/${leadId}`);
-    revalidatePath(`/kanban`);
+    revalidatePath(`/leads/${leadId}`);
+    revalidatePath(`/leads`);
     return { success: true };
   } catch (error) {
     console.error("Failed to assign auditor:", error);
@@ -93,7 +93,7 @@ export async function updateLeadData(
       }
     });
 
-    revalidatePath(`/kanban/${leadId}`);
+    revalidatePath(`/leads/${leadId}`);
     return { success: true };
   } catch (error) {
     console.error("Failed to update lead data:", error);
