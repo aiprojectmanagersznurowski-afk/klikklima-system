@@ -78,8 +78,8 @@ export default function DashboardLayout({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-48">
                         {tab.items.map(item => (
-                          <DropdownMenuItem key={item.id} asChild>
-                            <Link href={item.href} className="flex items-center gap-2 cursor-pointer">
+                          <DropdownMenuItem key={item.id} className="p-0">
+                            <Link href={item.href} className="flex items-center gap-2 cursor-pointer w-full px-2 py-1.5">
                               <item.icon size={14} className="text-gray-500" />
                               {item.label}
                             </Link>
