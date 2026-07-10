@@ -31,6 +31,8 @@ model indoor_units {
   color                        String?  @default("Biały")
   recommended_area_m2          Int?
   features                     Json?
+
+  modele_3d modele_3d[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -40,14 +42,22 @@ model klienci {
   email           String?
   telefon         String?
   created_at      DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+
+  adresy  adresy[]
+  leady   leady[]
+  serwisy serwisy[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model adresy {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   klient_id    String?  @db.Uuid
+  klient       klienci? @relation(fields: [klient_id], references: [id], onDelete: SetNull)
   ulica_miasto String?
   created_at   DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+
+  leady   leady[]
+  serwisy serwisy[]
 }
 
 model AuthorizedUser {
@@ -60,20 +70,25 @@ model AuthorizedUser {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model leady {
-  id                        String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  klient_id                 String?            @db.Uuid
-  adres_id                  String?            @db.Uuid
+  id                        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  klient_id                 String?     @db.Uuid
+  klient                    klienci?    @relation(fields: [klient_id], references: [id], onDelete: SetNull)
+  adres_id                  String?     @db.Uuid
+  adres                     adresy?     @relation(fields: [adres_id], references: [id], onDelete: SetNull)
   odpowiedzi_triage         Json?
   wybrana_konfiguracja      Json?
   estymowana_wycena         String?
-  status                    LeadStatus?        @default(NEW_LEAD)
-  audytor_id                String?            @db.Uuid
-  data_rezerwacji           DateTime?          @db.Timestamptz(6)
-  finalna_wycena_pln        Decimal?           @db.Decimal
+  status                    LeadStatus? @default(NEW_LEAD)
+  audytor_id                String?     @db.Uuid
+  data_rezerwacji           DateTime?   @db.Timestamptz(6)
+  finalna_wycena_pln        Decimal?    @db.Decimal
   przewidywany_czas_montazu String?
   notatki_wewnetrzne        String?
-  created_at                DateTime           @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  updated_at                DateTime           @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  created_at                DateTime    @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  updated_at                DateTime    @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+
+  instalacje           instalacje[]
+  logistyka_zamowienia logistyka_zamowienia[]
 }
 
 model multi_split_sets {
@@ -134,6 +149,70 @@ model system_config {
   created_at       DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 }
 
+model zespoly_monterskie {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nazwa              String
+  telefon_kontaktowy String?
+  email              String?
+  aktywny            Boolean  @default(true)
+  created_at         DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+
+  instalacje instalacje[]
+  serwisy    serwisy[]
+}
+
+model instalacje {
+  id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id          String              @db.Uuid
+  lead             leady               @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  zespol_id        String?             @db.Uuid
+  zespol           zespoly_monterskie? @relation(fields: [zespol_id], references: [id], onDelete: SetNull)
+  data_planowana   DateTime?           @db.Timestamptz(6)
+  data_zakonczenia DateTime?           @db.Timestamptz(6)
+  protokol_url     String?
+  status           InstallationStatus  @default(PLANNED)
+  created_at       DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+
+  serwisy serwisy[]
+}
+
+model serwisy {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  klient_id       String?             @db.Uuid
+  klient          klienci?            @relation(fields: [klient_id], references: [id], onDelete: SetNull)
+  adres_id        String?             @db.Uuid
+  adres           adresy?             @relation(fields: [adres_id], references: [id], onDelete: SetNull)
+  instalacja_id   String?             @db.Uuid
+  instalacja      instalacje?         @relation(fields: [instalacja_id], references: [id], onDelete: SetNull)
+  zespol_id       String?             @db.Uuid
+  zespol          zespoly_monterskie? @relation(fields: [zespol_id], references: [id], onDelete: SetNull)
+  opis_usterki    String?
+  data_zgloszenia DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  data_realizacji DateTime?           @db.Timestamptz(6)
+  status          ServiceStatus       @default(PLANNED)
+}
+
+model logistyka_zamowienia {
+  id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id               String         @db.Uuid
+  lead                  leady          @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  status_wysylki        ShippingStatus @default(PENDING)
+  nr_listu_przewozowego String?
+  firma_kurierska       String?
+  data_wysylki          DateTime?      @db.Timestamptz(6)
+  created_at            DateTime       @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+}
+
+model modele_3d {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nazwa          String
+  plik_url       String
+  kategoria      String?
+  indoor_unit_id String?       @db.Uuid
+  indoor_unit    indoor_units? @relation(fields: [indoor_unit_id], references: [id], onDelete: SetNull)
+  created_at     DateTime      @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+}
+
 enum LeadStatus {
   NEW_LEAD
   AUDITOR_ASSIGNED
@@ -174,4 +253,17 @@ enum status_leada_enum {
   Zrealizowane
   Soft_Lead      @map("Soft Lead")
   Utracony
+}
+
+enum InstallationStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ShippingStatus {
+  PENDING
+  SHIPPED
+  DELIVERED
 }
