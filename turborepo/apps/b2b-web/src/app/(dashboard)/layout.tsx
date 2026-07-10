@@ -53,10 +53,10 @@ export default function DashboardLayout({
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden font-sans">
       <header className="bg-white border-b border-gray-200 z-20">
-        <div className="px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-12">
+        <div className="px-6 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-6 min-w-0">
             <Logo />
-            <nav className="hidden lg:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden">
               {TABS.map(tab => {
                 const isActive = tab.href ? pathname.startsWith(tab.href) : (tab.items && tab.items.some(item => pathname.startsWith(item.href)));
                 
@@ -64,7 +64,7 @@ export default function DashboardLayout({
                   return (
                     <DropdownMenu key={tab.id}>
                       <DropdownMenuTrigger className={cn(
-                        "relative px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 outline-none",
+                        "relative px-2 xl:px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 outline-none whitespace-nowrap",
                         isActive 
                           ? "text-blue-700 bg-blue-50/50" 
                           : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
@@ -95,7 +95,7 @@ export default function DashboardLayout({
                     key={tab.id}
                     href={tab.href as string}
                     className={cn(
-                      "relative px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2",
+                      "relative px-2 xl:px-3 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap",
                       isActive 
                         ? "text-blue-700 bg-blue-50/50" 
                         : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
@@ -111,7 +111,7 @@ export default function DashboardLayout({
               })}
             </nav>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-5 flex-shrink-0">
             <button className="relative text-gray-400 hover:text-gray-600 transition-colors">
               <Bell size={20} />
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
