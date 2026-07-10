@@ -4,14 +4,9 @@ import React, { useState, useTransition } from "react";
 import { updateLeadAuditor } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, UserPlus } from "lucide-react";
+import { audytorzy } from "@repo/database";
 
-const MOCK_AUDITORS = [
-  { id: "user_1", name: "Jan Kowalski" },
-  { id: "user_2", name: "Anna Nowak" },
-  { id: "user_3", name: "Piotr Wiśniewski" },
-];
-
-export function AssignAuditor({ leadId, currentAuditorId }: { leadId: string; currentAuditorId: string | null }) {
+export function AssignAuditor({ leadId, currentAuditorId, auditors }: { leadId: string; currentAuditorId: string | null; auditors: audytorzy[] }) {
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
   const [optimisticAuditor, setOptimisticAuditor] = useState(currentAuditorId);
@@ -28,7 +23,7 @@ export function AssignAuditor({ leadId, currentAuditorId }: { leadId: string; cu
     });
   };
 
-  const currentAuditorName = MOCK_AUDITORS.find((a) => a.id === optimisticAuditor)?.name;
+  const currentAuditorName = auditors.find((a) => a.id === optimisticAuditor)?.imie_i_nazwisko;
 
   return (
     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -39,16 +34,19 @@ export function AssignAuditor({ leadId, currentAuditorId }: { leadId: string; cu
         
         {isEditing ? (
           <div className="flex flex-col gap-2 border border-gray-200 rounded-lg p-2 bg-gray-50">
-            {MOCK_AUDITORS.map((auditor) => (
+            {auditors.map((auditor) => (
               <button
                 key={auditor.id}
                 onClick={() => handleSelect(auditor.id)}
                 className="flex items-center justify-between p-2 hover:bg-blue-50 hover:text-blue-700 rounded-md text-sm text-left transition-colors"
               >
-                {auditor.name}
+                {auditor.imie_i_nazwisko}
                 {optimisticAuditor === auditor.id && <Check size={16} className="text-blue-600" />}
               </button>
             ))}
+            {auditors.length === 0 && (
+              <div className="text-xs text-gray-500 p-2 italic text-center">Brak dodanych audytorów w bazie</div>
+            )}
             <button
               onClick={() => handleSelect(null)}
               className="text-xs text-red-600 p-2 hover:bg-red-50 text-left rounded-md mt-1 border-t border-gray-200"

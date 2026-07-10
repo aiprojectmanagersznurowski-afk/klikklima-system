@@ -50,6 +50,11 @@ export default async function LeadDetailsPage({ params }: { params: Promise<{ id
   const extUnit = triage.selectedExternalUnit;
   const intUnits = triage.selectedInternalUnits || [];
 
+  // Fetch all auditors
+  const audytorzy = await prisma.audytorzy.findMany({
+    orderBy: { imie_i_nazwisko: "asc" },
+  });
+
   return (
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-300">
       <div className="mb-8">
@@ -75,6 +80,58 @@ export default async function LeadDetailsPage({ params }: { params: Promise<{ id
             </p>
 
             <div className="space-y-12">
+              {/* Sekcja: Wybrane urządzenia i wycena (TERAZ NA GÓRZE) */}
+              <section>
+                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-gray-100">Preferencje urządzeń i Wycena</h3>
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-6">
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Preferowany termin audytu</p>
+                      <p className="font-medium text-lg">
+                        {lead.data_rezerwacji 
+                          ? format(new Date(lead.data_rezerwacji), "dd.MM.yyyy HH:mm", { locale: pl }) 
+                          : "Brak wybranego terminu"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-6 p-4 bg-white rounded-lg border border-blue-100">
+                    <p className="text-sm text-gray-500 mb-3 font-semibold">Wybrany zestaw (Triage):</p>
+                    {extUnit || intUnits.length > 0 ? (
+                      <div className="space-y-4">
+                        {extUnit && (
+                          <div>
+                            <span className="text-xs font-bold uppercase text-gray-400">Jednostka zewnętrzna:</span>
+                            <div className="font-medium text-gray-900 mt-1">
+                              {extUnit.brand} {extUnit.model_code} <span className="text-gray-500 font-normal">({extUnit.cooling_capacity_kw} kW)</span>
+                            </div>
+                          </div>
+                        )}
+                        {intUnits.length > 0 && (
+                          <div>
+                            <span className="text-xs font-bold uppercase text-gray-400">Jednostki wewnętrzne ({intUnits.length}):</span>
+                            <ul className="mt-1 space-y-2">
+                              {intUnits.map((iu: any, idx: number) => (
+                                <li key={idx} className="font-medium text-gray-900 flex items-center gap-2 before:content-['•'] before:text-blue-500">
+                                  {iu.brand} {iu.series_name || iu.model_code} <span className="text-gray-500 font-normal">({iu.cooling_capacity_kw} kW, {iu.color})</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="font-medium text-lg">{triage.selectedDeviceLine || "Nie wybrano konkretnej linii (zdano się na audytora)"}</p>
+                    )}
+                  </div>
+                  
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <p className="text-sm text-gray-500 mb-1">Estymowana wycena z Triage</p>
+                    <p className="text-2xl font-bold text-blue-700">{estimatedQuote}</p>
+                  </div>
+                </div>
+              </section>
+
               {/* Sekcja: Dane kontaktowe */}
               <section>
                 <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-gray-100">Dane kontaktowe i Adres</h3>
@@ -129,65 +186,13 @@ export default async function LeadDetailsPage({ params }: { params: Promise<{ id
                 </div>
               </section>
 
-              {/* Sekcja: Wybrane urządzenia i wycena */}
-              <section>
-                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-gray-100">Preferencje urządzeń i Wycena</h3>
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-6">
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Preferowany termin audytu</p>
-                      <p className="font-medium text-lg">
-                        {lead.data_rezerwacji 
-                          ? format(new Date(lead.data_rezerwacji), "dd.MM.yyyy HH:mm", { locale: pl }) 
-                          : "Brak wybranego terminu"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mb-6 p-4 bg-white rounded-lg border border-blue-100">
-                    <p className="text-sm text-gray-500 mb-3 font-semibold">Wybrany zestaw (Triage):</p>
-                    {extUnit || intUnits.length > 0 ? (
-                      <div className="space-y-4">
-                        {extUnit && (
-                          <div>
-                            <span className="text-xs font-bold uppercase text-gray-400">Jednostka zewnętrzna:</span>
-                            <div className="font-medium text-gray-900 mt-1">
-                              {extUnit.brand} {extUnit.model_code} <span className="text-gray-500 font-normal">({extUnit.cooling_capacity_kw} kW)</span>
-                            </div>
-                          </div>
-                        )}
-                        {intUnits.length > 0 && (
-                          <div>
-                            <span className="text-xs font-bold uppercase text-gray-400">Jednostki wewnętrzne ({intUnits.length}):</span>
-                            <ul className="mt-1 space-y-2">
-                              {intUnits.map((iu: any, idx: number) => (
-                                <li key={idx} className="font-medium text-gray-900 flex items-center gap-2 before:content-['•'] before:text-blue-500">
-                                  {iu.brand} {iu.series_name || iu.model_code} <span className="text-gray-500 font-normal">({iu.cooling_capacity_kw} kW, {iu.color})</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="font-medium text-lg">{triage.selectedDeviceLine || "Nie wybrano konkretnej linii (zdano się na audytora)"}</p>
-                    )}
-                  </div>
-                  
-                  <div className="mt-6 pt-6 border-t border-gray-200">
-                    <p className="text-sm text-gray-500 mb-1">Estymowana wycena z Triage</p>
-                    <p className="text-2xl font-bold text-blue-700">{estimatedQuote}</p>
-                  </div>
-                </div>
-              </section>
-
             </div>
           </div>
         </div>
 
         {/* Sidebar - Prawa kolumna */}
         <div className="lg:col-span-1 space-y-6">
-          <AssignAuditor leadId={lead.id} currentAuditorId={lead.audytor_id} />
+          <AssignAuditor leadId={lead.id} currentAuditorId={lead.audytor_id} auditors={audytorzy} />
         </div>
       </div>
     </div>

@@ -80,6 +80,7 @@ model leady {
   estymowana_wycena         String?
   status                    LeadStatus? @default(NEW_LEAD)
   audytor_id                String?     @db.Uuid
+  audytor                   audytorzy?  @relation(fields: [audytor_id], references: [id], onDelete: SetNull)
   data_rezerwacji           DateTime?   @db.Timestamptz(6)
   finalna_wycena_pln        Decimal?    @db.Decimal
   przewidywany_czas_montazu String?
@@ -266,4 +267,18 @@ enum ShippingStatus {
   PENDING
   SHIPPED
   DELIVERED
+}
+
+model audytorzy {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  imie_i_nazwisko String
+  telefon         String?
+  email           String?
+  nazwa_firmy     String?
+  nip             String?
+  zdjecie_url     String?
+  certyfikat_fgaz String?
+  created_at      DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+
+  leady           leady[]
 }
