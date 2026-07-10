@@ -1,5 +1,6 @@
 "use client"
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
+import { createClient } from "@/utils/supabase/client"
 import { AlertTriangle } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,6 +16,14 @@ const Logo = () => (
 export default function LoginScreen() {
   const [status, setStatus] = useState<'idle' | 'denied'>('idle');
 
+  useEffect(() => {
+    // Check if there is a 'denied' query param from the middleware
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('denied') === 'true') {
+      setStatus('denied');
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4 relative overflow-hidden">
       <div className="absolute inset-0 z-0 bg-[url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-5"></div>
@@ -22,8 +31,8 @@ export default function LoginScreen() {
       <Card className="w-full max-w-md z-10 shadow-xl border-gray-200/60 backdrop-blur-sm bg-white/95">
         <CardHeader className="text-center space-y-4 pb-8 pt-10">
           <div className="flex justify-center mb-2"><Logo /></div>
-          <CardTitle className="text-2xl">Panel Dyspozytora B2B</CardTitle>
-          <p className="text-sm text-gray-500">Zaloguj się za pomocą konta służbowego Google, aby kontynuować.</p>
+          <CardTitle className="text-2xl">Panel Administratora KlikKlima</CardTitle>
+          <p className="text-sm text-gray-500">Zaloguj się przy użyciu konta Google.</p>
         </CardHeader>
         
         <CardContent className="space-y-4 pb-10">
@@ -31,8 +40,14 @@ export default function LoginScreen() {
             <>
               <Button 
                 className="w-full h-14 text-base gap-3 bg-blue-600 hover:bg-blue-700 text-white" 
-                onClick={() => {
-                  window.location.href = '/kanban'
+                onClick={async () => {
+                  const supabase = createClient()
+                  await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                      redirectTo: `${window.location.origin}/auth/callback`,
+                    },
+                  })
                 }}
               >
                 <svg viewBox="0 0 24 24" className="w-6 h-6 bg-white rounded-full p-0.5 fill-current text-blue-600">
@@ -43,9 +58,6 @@ export default function LoginScreen() {
                 </svg>
                 Zaloguj się przez Google
               </Button>
-              <button onClick={() => setStatus('denied')} className="w-full text-xs text-gray-400 hover:text-gray-600 underline text-center">
-                Symuluj brak uprawnień
-              </button>
             </>
           ) : (
             <div className="space-y-4">
@@ -53,10 +65,13 @@ export default function LoginScreen() {
                 <AlertTriangle className="w-5 h-5 shrink-0 text-red-600" />
                 <div>
                   <p className="font-semibold mb-1">Brak autoryzacji.</p>
-                  <p>Twój adres email (<b>jan.kowalski@gmail.com</b>) nie posiada uprawnień do tego panelu. Skontaktuj się z Administratorem.</p>
+                  <p>Twój adres email nie posiada uprawnień do tego panelu. Skontaktuj się z Administratorem, aby go dodać.</p>
                 </div>
               </div>
-              <Button variant="outline" className="w-full h-12" onClick={() => setStatus('idle')}>
+              <Button variant="outline" className="w-full h-12" onClick={() => {
+                setStatus('idle');
+                window.history.replaceState({}, '', '/login');
+              }}>
                 Wróć do logowania
               </Button>
             </div>

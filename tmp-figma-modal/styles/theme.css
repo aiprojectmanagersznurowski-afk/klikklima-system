@@ -1,0 +1,13 @@
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  
+  --color-primary-400: #fbbf24; /* yellow-400 */
+  --color-primary-500: #f59e0b; /* yellow-500 */
+  --color-primary-900: #78350f; /* yellow-900 */
+}
+
+@layer base {
+  body {
+    @apply font-sans antialiased text-slate-800 bg-slate-50;
+  }
+}

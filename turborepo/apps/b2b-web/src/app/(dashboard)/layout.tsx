@@ -1,6 +1,9 @@
 "use client"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/utils/supabase/client'
+import type { User } from '@supabase/supabase-js'
 import { LayoutDashboard, Truck, Users, Clock, Settings, Bell, HardHat, Briefcase, Store, Box, AirVent, ChevronDown, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -49,6 +52,24 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setUser(data.user);
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
+  const getInitials = (email: string) => {
+    return email.substring(0, 2).toUpperCase();
+  };
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden font-sans">
@@ -117,15 +138,19 @@ export default function DashboardLayout({
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
             <div className="h-6 w-px bg-gray-200"></div>
-            <Link href="/login" className="flex items-center gap-3 cursor-pointer group">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">Anna K.</p>
+            <button onClick={handleLogout} className="flex items-center gap-3 cursor-pointer group text-left">
+              <div className="hidden sm:block">
+                <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  {user ? user.email : 'Ładowanie...'}
+                </p>
                 <p className="text-xs text-gray-500">Wyloguj</p>
               </div>
               <Avatar>
-                <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">AK</AvatarFallback>
+                <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
+                  {user && user.email ? getInitials(user.email) : 'AK'}
+                </AvatarFallback>
               </Avatar>
-            </Link>
+            </button>
           </div>
         </div>
       </header>
