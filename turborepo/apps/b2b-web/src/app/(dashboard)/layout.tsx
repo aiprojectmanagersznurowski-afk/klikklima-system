@@ -138,19 +138,26 @@ export default function DashboardLayout({
               <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
             <div className="h-6 w-px bg-gray-200"></div>
-            <button onClick={handleLogout} className="flex items-center gap-3 cursor-pointer group text-left">
-              <div className="hidden sm:block">
-                <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  {user ? user.email : 'Ładowanie...'}
-                </p>
-                <p className="text-xs text-gray-500">Wyloguj</p>
-              </div>
-              <Avatar>
-                <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
-                  {user && user.email ? getInitials(user.email) : 'AK'}
-                </AvatarFallback>
-              </Avatar>
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="outline-none">
+                <Avatar className="cursor-pointer hover:ring-2 hover:ring-blue-100 transition-all">
+                  <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
+                    {user && user.email ? getInitials(user.email) : 'AK'}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-2 border-b border-gray-100 mb-1">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    {user ? user.email : 'Ładowanie...'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">Administrator</p>
+                </div>
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer focus:text-red-700 focus:bg-red-50">
+                  Wyloguj się
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
