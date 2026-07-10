@@ -62,7 +62,7 @@ export async function saveLead(data: SaveLeadData) {
         adres_id: adres.id,
         odpowiedzi_triage: data.triageData,
         estymowana_wycena: estimatedQuote,
-        status: 'Umówiony Audyt',
+        status: 'NEW_LEAD',
         data_rezerwacji: dateObj.toISOString()
       });
 
