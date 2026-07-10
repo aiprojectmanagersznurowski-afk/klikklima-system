@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code')
   // if "next" is in param, use it as the redirect URL
-  const next = request.nextUrl.searchParams.get('next') ?? '/kanban'
+  const next = request.nextUrl.searchParams.get('next') ?? '/leads'
 
   if (code) {
     const supabase = await createClient()

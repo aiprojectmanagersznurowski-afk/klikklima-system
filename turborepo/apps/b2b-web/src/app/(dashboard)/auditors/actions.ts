@@ -99,7 +99,7 @@ export async function addAuditor(formData: FormData) {
     });
 
     revalidatePath("/auditors");
-    revalidatePath("/kanban");
+    revalidatePath("/leads");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to add auditor:", error);
@@ -157,7 +157,7 @@ export async function updateAuditor(id: string, formData: FormData) {
     });
 
     revalidatePath("/auditors");
-    revalidatePath("/kanban");
+    revalidatePath("/leads");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to update auditor:", error);
@@ -180,7 +180,7 @@ export async function deleteAuditor(id: string) {
     });
 
     revalidatePath("/auditors");
-    revalidatePath("/kanban");
+    revalidatePath("/leads");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to delete auditor:", error);

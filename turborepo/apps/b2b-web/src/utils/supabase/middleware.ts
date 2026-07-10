@@ -76,7 +76,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone()
-    url.pathname = '/kanban'
+    url.pathname = '/leads'
     return NextResponse.redirect(url)
   }
 
