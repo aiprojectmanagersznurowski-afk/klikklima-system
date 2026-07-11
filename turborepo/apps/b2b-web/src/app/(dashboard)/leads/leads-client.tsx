@@ -118,6 +118,22 @@ export function LeadsClient({
           <p className="text-sm text-gray-500 mt-1">Zarządzaj zapytaniami ofertowymi i przypisuj audytorów.</p>
         </div>
         <div className="flex gap-4">
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-gray-400" />
+            <span className="text-sm text-gray-500 font-medium whitespace-nowrap">Etap lejka:</span>
+            <select
+              className="text-sm border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent cursor-pointer shadow-sm disabled:opacity-50"
+              value={initialStatus}
+              onChange={(e) => startTransition(() => router.push(`?status=${e.target.value}`))}
+              disabled={isPending}
+            >
+              {KANBAN_STAGES.map(stage => (
+                <option key={stage.id} value={stage.id}>
+                  {stage.title} ({stageCounts[stage.id] || 0})
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input 
@@ -128,40 +144,11 @@ export function LeadsClient({
               className="pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent w-64 shadow-sm"
             />
           </div>
-          <Button variant="outline" className="gap-2 bg-white"><Filter size={16}/> Filtruj</Button>
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden bg-white">
-        {/* Sidebar z Etapami */}
-        <div className="w-[320px] border-r border-gray-200 bg-gray-50/50 flex flex-col overflow-y-auto shrink-0">
-          <div className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Etapy Lejka</div>
-          <nav className="flex-1 px-3 space-y-1 pb-4">
-            {KANBAN_STAGES.map(stage => {
-              const count = stageCounts[stage.id] || 0;
-              const isSelected = initialStatus === stage.id;
-              
-              return (
-                <button
-                  key={stage.id}
-                  onClick={() => startTransition(() => router.push(`?status=${stage.id}`))}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isSelected 
-                      ? "bg-blue-50 text-blue-700" 
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
-                >
-                  <span className="truncate pr-2 text-left">{stage.title}</span>
-                  <span className={`py-0.5 px-2 rounded-full text-xs ${
-                    isSelected ? "bg-blue-100 text-blue-700" : "bg-gray-200 text-gray-600"
-                  }`}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+
 
         {/* Tabela Leadów */}
         <div className="flex-1 overflow-auto relative">
@@ -291,8 +278,8 @@ export function LeadsClient({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link href={`/leads/${lead.id}`}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-blue-600" title="Otwórz szczegóły">
+                            <Link href={`/leads/${lead.id}`} target="_blank" rel="noopener noreferrer">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-blue-600" title="Otwórz szczegóły w nowej karcie">
                                 <ExternalLink size={16} />
                               </Button>
                             </Link>

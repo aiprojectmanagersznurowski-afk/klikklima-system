@@ -1,7 +1,7 @@
 
-  # Execute prompt from file
+  # Create Polish language prompt
 
-  This is a code bundle for Execute prompt from file. The original project is available at https://www.figma.com/design/q7GeQJZlwt78mEmnkTkG9S/Execute-prompt-from-file.
+  This is a code bundle for Create Polish language prompt. The original project is available at https://www.figma.com/design/20pApssAwVXrx8AaJgJr5s/Create-Polish-language-prompt.
 
   ## Running the code
 
