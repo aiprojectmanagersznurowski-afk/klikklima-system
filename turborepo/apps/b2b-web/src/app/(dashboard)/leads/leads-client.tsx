@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Calendar, Edit, ExternalLink, UserPlus, Check } from "lucide-react";
+import { Search, Filter, Calendar, Edit, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadStatus, leady as Lead, audytorzy as Auditor } from "@repo/database";
 import { format } from "date-fns";
@@ -147,9 +147,7 @@ export function LeadsClient({
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden bg-white">
-
-
+      <div className="flex flex-col flex-1 overflow-hidden bg-white">
         {/* Tabela Leadów */}
         <div className="flex-1 overflow-auto relative">
           {isPending && (
@@ -294,28 +292,37 @@ export function LeadsClient({
         </div>
         
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200">
-            <div className="text-sm text-gray-500">
-              Strona <span className="font-medium text-gray-900">{currentPage}</span> z <span className="font-medium text-gray-900">{totalPages}</span>
+          <div className="flex items-center justify-center px-6 py-4 border-t border-gray-200 gap-2 bg-white">
+            <button
+              disabled={currentPage <= 1 || isPending}
+              onClick={() => startTransition(() => router.push(`?status=${initialStatus}&page=${currentPage - 1}`))}
+              className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            
+            <div className="flex gap-1">
+               {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                 <button
+                   key={p}
+                   onClick={() => startTransition(() => router.push(`?status=${initialStatus}&page=${p}`))}
+                   className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm transition-colors ${p === currentPage ? 'bg-blue-600 text-white font-semibold' : 'text-gray-500 hover:bg-gray-100'}`}
+                 >
+                   {p}
+                 </button>
+               ))}
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage <= 1 || isPending}
-                onClick={() => startTransition(() => router.push(`?status=${initialStatus}&page=${currentPage - 1}`))}
-              >
-                Poprzednia
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage >= totalPages || isPending}
-                onClick={() => startTransition(() => router.push(`?status=${initialStatus}&page=${currentPage + 1}`))}
-              >
-                Następna
-              </Button>
-            </div>
+
+            <button
+              disabled={currentPage >= totalPages || isPending}
+              onClick={() => startTransition(() => router.push(`?status=${initialStatus}&page=${currentPage + 1}`))}
+              className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight size={16} />
+            </button>
+            <span className="text-xs text-gray-400 ml-2">
+              Strona {currentPage} z {totalPages}
+            </span>
           </div>
         )}
       </div>
