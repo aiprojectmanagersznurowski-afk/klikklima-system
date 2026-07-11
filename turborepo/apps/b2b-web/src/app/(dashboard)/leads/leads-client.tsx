@@ -61,7 +61,7 @@ export function LeadsClient({
     
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      const clientName = ((lead as any).klient?.imie + " " + (lead as any).klient?.nazwisko).toLowerCase();
+      const clientName = ((lead as any).klient?.imie_i_nazwisko || "").toLowerCase();
       const id = lead.id.toLowerCase();
       if (!clientName.includes(q) && !id.includes(q)) return false;
     }
@@ -197,7 +197,7 @@ export function LeadsClient({
                   </tr>
                 ) : (
                   filteredLeads.map(lead => {
-                    const clientName = (lead as any).klient ? `${(lead as any).klient.imie} ${(lead as any).klient.nazwisko}` : "Brak danych klienta";
+                    const clientName = (lead as any).klient?.imie_i_nazwisko || "Brak danych klienta";
                     const fullAddress = (lead as any).adres?.ulica_miasto || "Brak miasta";
                     const dateFormatted = format(new Date(lead.created_at), "d MMM yyyy, HH:mm", { locale: pl });
                     const auditDate = lead.data_rezerwacji ? format(new Date(lead.data_rezerwacji), "d MMM yyyy, HH:mm", { locale: pl }) : null;
