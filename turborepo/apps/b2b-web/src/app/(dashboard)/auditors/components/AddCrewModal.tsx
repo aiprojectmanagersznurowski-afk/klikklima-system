@@ -76,7 +76,9 @@ export function AddCrewModal({ open, onOpenChange, onSave, initialData }: AddCre
     
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
-      data.append(key, value.toString());
+      if (value !== undefined && value !== null) {
+        data.append(key, String(value));
+      }
     });
     
     const success = await onSave(data);

@@ -116,7 +116,9 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
     
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
-      data.append(key, value);
+      if (value !== undefined && value !== null) {
+        data.append(key, String(value));
+      }
     });
     
     // If photo preview is a base64 string (new photo uploaded)
