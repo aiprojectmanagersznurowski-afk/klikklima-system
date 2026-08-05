@@ -28,7 +28,7 @@ Jesteś World-Class Senior UX/UI Designerem. Zaprojektuj interfejs wieloetapoweg
    - Jeśli wybrano 1 pokój: Pytamy o "Metraż pokoju". Kafelki: [Do 25 m²], [26-35 m²], [36-50 m²], [Powyżej 50 m²].
    - Jeśli wybrano 2 lub 3 pokoje (Multisplit): Projekt zakłada dynamiczną listę (np. Suwaki lub dropdowny dla Pokoju 1, Pokoju 2). Zrób UI pozwalające przypisać metraż dla każdego pomieszczenia z osobna na jednym zgrabnym ekranie.
 
-4. **Pytanie 4: Jaki jest stan budynku/lokalu?**
+4. **Pytanie 4: Jaki jest stan lokalu?**
    - Kafelki: [Wykończony / Zamieszkany], [W trakcie remontu], [Stan deweloperski].
 
 5. **Pytanie 5 (Zależne): Dodatkowe warunki**
