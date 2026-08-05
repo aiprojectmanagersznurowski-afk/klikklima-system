@@ -1,17 +1,25 @@
 import React from "react";
-import { getAudytorzy } from "./actions";
+import { getAudytorzy, getCrews } from "./actions";
 import { AuditorsClient } from "./auditors-client";
 
 export default async function AuditorsPage() {
-  const result = await getAudytorzy();
+  const [auditorsResult, crewsResult] = await Promise.all([
+    getAudytorzy(),
+    getCrews()
+  ]);
   
-  if (!result.success || !result.data) {
+  if (!auditorsResult.success || !auditorsResult.data) {
     return (
       <div className="p-8 text-center text-red-500">
-        Błąd ładowania danych audytorów: {result.error}
+        Błąd ładowania danych audytorów: {auditorsResult.error}
       </div>
     );
   }
 
-  return <AuditorsClient initialAuditors={result.data} />;
+  return (
+    <AuditorsClient 
+      initialAuditors={auditorsResult.data} 
+      initialCrews={crewsResult.data || []}
+    />
+  );
 }

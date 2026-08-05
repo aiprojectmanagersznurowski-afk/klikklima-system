@@ -44,7 +44,7 @@ Zaprojektuj klasyczny CRM w panelu B2B, zoptymalizowany pod łatwość nawigacji
 - **Główne widoki:** Wyraźny podział zakładek w nawigacji głównej – obok "Klientów", dodaj osobne zakładki: "Instalacje", "Serwisy", "Audytorzy" oraz "Zespoły".
 - **Widok Lista Instalacji:** Osobna, rozbudowana tabela ze statusem realizacji każdego montażu (nadchodzące, zrealizowane, gwarancja), z szybkimi filtrami po ekipie monterskiej lub dacie.
 - **Widok Serwisów (Tab: Serwisy):** Lista historycznych instalacji zbliżających się do terminu serwisu rocznego. Sortowana od najbliższego serwisu (bazując na kolumnie `next_service_date` z tabeli `installations`). Umożliwia wgląd w to, komu wysłano już zaproszenia i pozwala ręcznie przydzielić montera do wizyty serwisowej.
-- **Karta Klienta (Widok szczegółowy 360):** Agreguje dane kontaktowe, historię instalacji, powiązane adresy, faktury.
+- **Karta Klienta (Widok szczegółowy 360):** Agreguje dane kontaktowe, jego szczegóły, powiązane leady, instalacje, serwisy, dokumenty i faktury, notatki, usterki, ostatnie kontakty, powiązane adresy, faktury.
 - **Karta Instalacji:** Szczegóły montażu uwzględniające jednoznaczne relacje bazodanowe: przypisana Ekipa Monterska (Crew) oraz przypisany Inżynier (Auditor).
 - **Nawigacja:** Zapewnij bezpośrednie linkowanie (Deep links) pomiędzy Kartą Instalacji a Kartą Klienta.
 

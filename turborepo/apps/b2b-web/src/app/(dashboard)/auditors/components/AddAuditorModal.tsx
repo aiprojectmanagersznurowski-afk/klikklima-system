@@ -24,7 +24,13 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
     address: '',
     companyName: '',
     nip: '',
-    fgazCert: ''
+    fgazCert: '',
+    hvacExperience: '',
+    sep: false,
+    brands: '[]',
+    zipCode: '',
+    radius: '',
+    iban: ''
   });
 
   const {
@@ -50,7 +56,13 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
           address: initialData.adres || '',
           companyName: initialData.nazwa_firmy || '',
           nip: initialData.nip || '',
-          fgazCert: initialData.certyfikat_fgaz || ''
+          fgazCert: initialData.certyfikat_fgaz || '',
+          hvacExperience: initialData.doswiadczenie_hvac_lata?.toString() || '',
+          sep: initialData.uprawnienia_sep || false,
+          brands: JSON.stringify(initialData.preferowane_marki || []),
+          zipCode: initialData.kod_pocztowy_bazowy || '',
+          radius: initialData.max_promien_dojazdu_km?.toString() || '',
+          iban: initialData.iban || ''
         });
         setValue(initialData.adres || '', false);
         setPhotoPreview(initialData.avatarUrl || null);
@@ -62,7 +74,13 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
           address: '',
           companyName: '',
           nip: '',
-          fgazCert: ''
+          fgazCert: '',
+          hvacExperience: '',
+          sep: false,
+          brands: '[]',
+          zipCode: '',
+          radius: '',
+          iban: ''
         });
         setValue('', false);
         setPhotoPreview(null);
@@ -71,8 +89,8 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
   }, [open, initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSelect = async (address: string) => {
@@ -166,7 +184,8 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Podstawowe dane</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-1.5">
               <label htmlFor="name" className="text-sm font-medium text-gray-700">Imię i nazwisko <span className="text-red-500">*</span></label>
               <input
@@ -270,6 +289,76 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData }: Add
                 type="text"
                 placeholder="np. FGAZ/1234/2024"
                 value={formData.fgazCert}
+                onChange={handleChange}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+
+          <h3 className="text-lg font-medium text-gray-900 mb-4 mt-8">Kwalifikacje i Logistyka</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="space-y-1.5">
+              <label htmlFor="hvacExperience" className="text-sm font-medium text-gray-700">Doświadczenie HVAC (lata)</label>
+              <input
+                id="hvacExperience"
+                name="hvacExperience"
+                type="number"
+                min="0"
+                value={formData.hvacExperience}
+                onChange={handleChange}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow"
+              />
+            </div>
+            
+            <div className="space-y-1.5 flex items-center mt-6">
+              <input
+                id="sep"
+                name="sep"
+                type="checkbox"
+                checked={formData.sep}
+                onChange={handleChange}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="sep" className="ml-2 block text-sm text-gray-900">Uprawnienia SEP do 1kV</label>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="zipCode" className="text-sm font-medium text-gray-700">Bazowy kod pocztowy</label>
+              <input
+                id="zipCode"
+                name="zipCode"
+                type="text"
+                placeholder="XX-XXX"
+                value={formData.zipCode}
+                onChange={handleChange}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="radius" className="text-sm font-medium text-gray-700">Max promień dojazdu (km)</label>
+              <input
+                id="radius"
+                name="radius"
+                type="number"
+                min="10"
+                value={formData.radius}
+                onChange={handleChange}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow"
+              />
+            </div>
+          </div>
+
+          <h3 className="text-lg font-medium text-gray-900 mb-4 mt-8">Finanse</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="space-y-1.5">
+              <label htmlFor="iban" className="text-sm font-medium text-gray-700">IBAN</label>
+              <input
+                id="iban"
+                name="iban"
+                type="text"
+                placeholder="PL..."
+                value={formData.iban}
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400"
               />

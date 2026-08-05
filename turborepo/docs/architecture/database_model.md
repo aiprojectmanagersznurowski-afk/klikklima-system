@@ -9,7 +9,7 @@ erDiagram
     USERS {
         uuid id PK "auth.users"
         string email
-        string role "Enum: Admin, Dyspozytor, Audytor, Monter"
+        string role "Enum Admin Dyspozytor Audytor Monter"
         timestamp created_at
     }
 
@@ -42,8 +42,8 @@ erDiagram
         uuid id PK
         uuid klient_id FK
         string ulica_miasto
-        float lat 
-        float lng 
+        float lat
+        float lng
     }
 
     INDOOR_UNITS {
@@ -96,11 +96,11 @@ erDiagram
         uuid id PK
         uuid lead_id FK
         uuid auditor_id FK
-        jsonb wycena_items "Pozycje wyceny (Klima, Montaż, Rabaty)"
+        jsonb wycena_items "Klima Montaż Rabaty"
         float total_price
-        string status_akceptacji "Enum: Oczekująca, Zaakceptowana, Odrzucona"
-        string status_platnosci "Enum: Nieopłacona, Opłacona"
-        string payment_session_id "ID sesji płatności (Stripe/P24)"
+        string status_akceptacji "Oczekująca Zaakceptowana Odrzucona"
+        string status_platnosci "Nieopłacona Opłacona"
+        string payment_session_id "Stripe P24"
         timestamp wazna_do
         timestamp created_at
     }
@@ -120,7 +120,7 @@ erDiagram
         uuid id PK
         uuid installation_id FK
         uuid crew_id FK "Zewnętrzna/Wewnętrzna ekipa serwisowa"
-        string status "Enum: Planowany, Umówiony, Zakończony, Anulowany"
+        string status "Planowany Umówiony Zakończony Anulowany"
         timestamp scheduled_date "Kiedy przypada serwis"
         timestamp completed_date "Kiedy został wykonany"
         text uwagi_serwisanta
@@ -131,22 +131,22 @@ erDiagram
         uuid id PK
         uuid lead_id FK
         string numer_przesylki
-        string status "Enum: Oczekująca, Wysłana, Doręczona"
+        string status "Oczekująca Wysłana Doręczona"
     }
 
     NOTIFICATION_QUEUE {
         uuid id PK
         uuid lead_id FK
-        string type "SMS, EMAIL"
-        string status "PENDING, SENT"
+        string type "SMS EMAIL"
+        string status "PENDING SENT"
     }
 
     MESSAGE_TEMPLATES {
         uuid id PK
-        string trigger_event "np. STATUS_2_AUDITOR"
-        string channel "Enum: SMS, EMAIL"
+        string trigger_event "STATUS_2_AUDITOR"
+        string channel "SMS EMAIL"
         string subject "Opcjonalny temat e-mail"
-        text body_template "Treść z tagami np. {{imie}}"
+        text body_template "Treść z tagami np. imie"
     }
 
     SYSTEM_CONFIG {

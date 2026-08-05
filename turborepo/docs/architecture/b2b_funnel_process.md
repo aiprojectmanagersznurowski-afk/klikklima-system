@@ -41,16 +41,28 @@ flowchart TD
     
     %% Czasowe przed montażem
     N6{{"SMS/Email (24h przed montażem): Jutro montaż! Zmiana terminu?"}}:::timeNotif -.-> E8
+    N9{{"SMS (Geolokalizacja): Ekipa jest w drodze!"}}:::geoNotif -.-> E8
     
     E8[Etap 8: Wykonanie instalacji]:::status --> E9
     
     E9[Etap 9: Instalacja zakończona]:::status
-    E9 --> N7{{"SMS/Email: Wirtualna Gwarancja + Dziękujemy!"}}:::notif
+    E9 --> N7{{"SMS/Email: Karta gwarancyjna + Protokół zdawczo-odbiorczy + Faktura (+ ew. Link do II etapu)"}}:::notif
     
     %% Serwisy (Cykl Posprzedażowy)
     S1[(Baza: next_service_date)] -.-> N8
     N8{{"SMS/Email (X dni przed serwisem): Zbliża się termin przeglądu! Zarezerwuj termin."}}:::timeNotif
+    N8 --> S_BOOKED[Serwis zarezerwowany]:::status
     
+    S_BOOKED --> S_ASSIGNED[Przydzielono serwisanta]:::status
+    S_ASSIGNED --> N11{{"SMS/Email: Przydzielono serwisanta do przeglądu."}}:::notif
+    
+    %% Czasowe przed serwisem
+    N12{{"SMS/Email (24h przed serwisem): Potwierdzenie lub zmiana terminu."}}:::timeNotif -.-> S_DONE
+    N13{{"SMS (Geolokalizacja): Serwisant jest w drodze!"}}:::geoNotif -.-> S_DONE
+    
+    S_ASSIGNED --> S_DONE[Serwis wykonany]:::status
+    S_DONE --> N10{{"SMS/Email: Protokół zdawczo-odbiorczy po serwisie + Faktura"}}:::notif
+    N10 -.-> S1    
     %% Przepływy
     E2 --> E3
     E7 --> E8

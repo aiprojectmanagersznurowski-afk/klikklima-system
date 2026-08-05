@@ -56,6 +56,14 @@ export async function addAuditor(formData: FormData) {
     const nip = formData.get("nip") as string;
     const certyfikat_fgaz = formData.get("fgazCert") as string;
     const photoBase64 = formData.get("photoBase64") as string;
+    
+    // New fields
+    const doswiadczenie_hvac_lata = parseInt(formData.get("hvacExperience") as string) || null;
+    const uprawnienia_sep = formData.get("sep") === "true";
+    const preferowane_marki = JSON.parse((formData.get("brands") as string) || "[]");
+    const kod_pocztowy_bazowy = formData.get("zipCode") as string;
+    const max_promien_dojazdu_km = parseInt(formData.get("radius") as string) || null;
+    const iban = formData.get("iban") as string;
 
     if (!imie_i_nazwisko) {
       return { success: false, error: "Imię i nazwisko jest wymagane" };
@@ -95,6 +103,12 @@ export async function addAuditor(formData: FormData) {
         nip,
         certyfikat_fgaz,
         zdjecie_url: filePath,
+        doswiadczenie_hvac_lata,
+        uprawnienia_sep,
+        preferowane_marki,
+        kod_pocztowy_bazowy,
+        max_promien_dojazdu_km,
+        iban,
       },
     });
 
@@ -117,6 +131,13 @@ export async function updateAuditor(id: string, formData: FormData) {
     const nip = formData.get("nip") as string;
     const certyfikat_fgaz = formData.get("fgazCert") as string;
     const photoBase64 = formData.get("photoBase64") as string;
+    
+    const doswiadczenie_hvac_lata = parseInt(formData.get("hvacExperience") as string) || null;
+    const uprawnienia_sep = formData.get("sep") === "true";
+    const preferowane_marki = JSON.parse((formData.get("brands") as string) || "[]");
+    const kod_pocztowy_bazowy = formData.get("zipCode") as string;
+    const max_promien_dojazdu_km = parseInt(formData.get("radius") as string) || null;
+    const iban = formData.get("iban") as string;
 
     let updateData: any = {
       imie_i_nazwisko,
@@ -126,6 +147,12 @@ export async function updateAuditor(id: string, formData: FormData) {
       nazwa_firmy,
       nip,
       certyfikat_fgaz,
+      doswiadczenie_hvac_lata,
+      uprawnienia_sep,
+      preferowane_marki,
+      kod_pocztowy_bazowy,
+      max_promien_dojazdu_km,
+      iban,
     };
 
     if (photoBase64) {
@@ -185,5 +212,115 @@ export async function deleteAuditor(id: string) {
   } catch (error: any) {
     console.error("Failed to delete auditor:", error);
     return { success: false, error: "Nie udało się usunąć audytora" };
+  }
+}
+
+export async function getCrews() {
+  try {
+    const crews = await prisma.zespoly_monterskie.findMany({
+      orderBy: { nazwa: 'asc' }
+    });
+    return { success: true, data: crews };
+  } catch (error: any) {
+    console.error("Failed to fetch crews:", error);
+    return { success: false, error: "Nie udało się pobrać ekip" };
+  }
+}
+
+export async function addCrew(formData: FormData) {
+  try {
+    const nazwa = formData.get("name") as string;
+    const telefon_kontaktowy = formData.get("phone") as string;
+    const email = formData.get("email") as string;
+    const nip = formData.get("nip") as string;
+    const koordynator_imie_nazwisko = formData.get("coordinator") as string;
+    const certyfikat_fgaz = formData.get("fgazCert") as string;
+    const uprawnienia_sep = formData.get("sep") === "true";
+    const kod_pocztowy_bazowy = formData.get("zipCode") as string;
+    const promien_dzialania_km = parseInt(formData.get("radius") as string) || null;
+    const liczba_brygad = parseInt(formData.get("teamsCount") as string) || 1;
+    const posiada_wiertnice = formData.get("drillingRig") === "true";
+    const iban = formData.get("iban") as string;
+
+    if (!nazwa) {
+      return { success: false, error: "Nazwa jest wymagana" };
+    }
+
+    await prisma.zespoly_monterskie.create({
+      data: {
+        nazwa,
+        telefon_kontaktowy,
+        email,
+        nip,
+        koordynator_imie_nazwisko,
+        certyfikat_fgaz,
+        uprawnienia_sep,
+        kod_pocztowy_bazowy,
+        promien_dzialania_km,
+        liczba_brygad,
+        posiada_wiertnice,
+        iban,
+      },
+    });
+
+    revalidatePath("/auditors");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to add crew:", error);
+    return { success: false, error: "Nie udało się dodać ekipy" };
+  }
+}
+
+export async function updateCrew(id: string, formData: FormData) {
+  try {
+    const nazwa = formData.get("name") as string;
+    const telefon_kontaktowy = formData.get("phone") as string;
+    const email = formData.get("email") as string;
+    const nip = formData.get("nip") as string;
+    const koordynator_imie_nazwisko = formData.get("coordinator") as string;
+    const certyfikat_fgaz = formData.get("fgazCert") as string;
+    const uprawnienia_sep = formData.get("sep") === "true";
+    const kod_pocztowy_bazowy = formData.get("zipCode") as string;
+    const promien_dzialania_km = parseInt(formData.get("radius") as string) || null;
+    const liczba_brygad = parseInt(formData.get("teamsCount") as string) || 1;
+    const posiada_wiertnice = formData.get("drillingRig") === "true";
+    const iban = formData.get("iban") as string;
+
+    await prisma.zespoly_monterskie.update({
+      where: { id },
+      data: {
+        nazwa,
+        telefon_kontaktowy,
+        email,
+        nip,
+        koordynator_imie_nazwisko,
+        certyfikat_fgaz,
+        uprawnienia_sep,
+        kod_pocztowy_bazowy,
+        promien_dzialania_km,
+        liczba_brygad,
+        posiada_wiertnice,
+        iban,
+      },
+    });
+
+    revalidatePath("/auditors");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to update crew:", error);
+    return { success: false, error: "Nie udało się zaktualizować ekipy" };
+  }
+}
+
+export async function deleteCrew(id: string) {
+  try {
+    await prisma.zespoly_monterskie.delete({
+      where: { id }
+    });
+    revalidatePath("/auditors");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to delete crew:", error);
+    return { success: false, error: "Nie udało się usunąć ekipy" };
   }
 }
