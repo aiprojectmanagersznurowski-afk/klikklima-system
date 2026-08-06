@@ -1,0 +1,1 @@
+export default function NotificationsPage() { return <div className="p-8"><h1 className="text-2xl font-bold">Centrum Powiadomień</h1><p className="text-muted-foreground mt-2">Moduł w przygotowaniu.</p></div> }

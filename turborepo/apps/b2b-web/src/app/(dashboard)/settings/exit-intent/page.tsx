@@ -1,0 +1,1 @@
+export default function ExitIntentSettingsPage() { return <div className="p-8"><h1 className="text-2xl font-bold">Ustawienia: Exit Intent</h1><p className="text-muted-foreground mt-2">Konfiguracja popupu ratunkowego (w przygotowaniu).</p></div> }

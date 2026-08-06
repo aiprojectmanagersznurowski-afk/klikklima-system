@@ -1,0 +1,1 @@
+export default function RBACSettingsPage() { return <div className="p-8"><h1 className="text-2xl font-bold">Użytkownicy i Uprawnienia (RBAC)</h1><p className="text-muted-foreground mt-2">Moduł w przygotowaniu.</p></div> }
