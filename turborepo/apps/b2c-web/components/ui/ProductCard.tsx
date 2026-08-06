@@ -7,12 +7,12 @@ export function calcBrutto(deviceNetto: number, installNetto: number): number {
 
 function BrandBadge({ code }: { code: string }) {
   const colors: Record<string, string> = {
-    FE: "bg-[#0d1b2e] text-white",
-    HA: "bg-[#c8102e] text-white",
+    FE: "bg-foreground text-background",
+    HA: "bg-destructive text-destructive-foreground",
   };
   return (
     <span
-      className={`inline-flex items-center justify-center w-8 h-8 rounded-md text-xs font-bold tracking-wide ${colors[code] ?? "bg-muted text-foreground"}`}
+      className={`inline-flex items-center justify-center size-8 rounded-md text-xs font-bold tracking-wide ${colors[code] ?? "bg-muted text-foreground"}`}
     >
       {code}
     </span>
@@ -32,7 +32,7 @@ export function ProductCard({ product, onOpenModal, showPricing = true, exactPri
       )}
 
       <div 
-        className="relative h-52 bg-[#f0f4fb] overflow-hidden cursor-pointer"
+        className="relative h-52 bg-secondary overflow-hidden cursor-pointer"
         onClick={() => onOpenModal(product)}
       >
         <img
@@ -57,14 +57,14 @@ export function ProductCard({ product, onOpenModal, showPricing = true, exactPri
 
         <div className="flex flex-wrap gap-2">
           {product._raw?.is_single_compatible && (
-            <span className="inline-flex items-center gap-1.5 w-fit rounded-full bg-[#F0F4FB] px-3 py-1.5 text-[13px] font-medium text-[#475569]">
-              <Box className="size-3.5 text-[#2563EB]" />
+            <span className="inline-flex items-center gap-1.5 w-fit rounded-full bg-secondary px-3 py-1.5 text-[13px] font-medium text-muted-foreground">
+              <Box className="size-3.5 text-primary" />
               Single Split
             </span>
           )}
           {product._raw?.is_multi_compatible && (
-            <span className="inline-flex items-center gap-1.5 w-fit rounded-full bg-[#F0F4FB] px-3 py-1.5 text-[13px] font-medium text-[#475569]">
-              <Boxes className="size-3.5 text-[#2563EB]" />
+            <span className="inline-flex items-center gap-1.5 w-fit rounded-full bg-secondary px-3 py-1.5 text-[13px] font-medium text-muted-foreground">
+              <Boxes className="size-3.5 text-primary" />
               Multi Split
             </span>
           )}
@@ -75,7 +75,7 @@ export function ProductCard({ product, onOpenModal, showPricing = true, exactPri
             <p className="text-xs text-muted-foreground mb-1">
               {exactPriceBrutto ? "Cena za proponowany zestaw (brutto)" : "Cena zaczyna się od (brutto)"}
             </p>
-            <p className="text-3xl font-bold text-foreground tracking-tight">
+            <p className="text-3xl font-bold font-mono text-foreground tracking-tight">
               {displayPrice.toLocaleString("pl-PL")} zł
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -92,7 +92,7 @@ export function ProductCard({ product, onOpenModal, showPricing = true, exactPri
 
         <button 
           onClick={() => onOpenModal(product)}
-          className="w-full text-primary font-semibold text-sm rounded-xl py-3 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10"
+          className="w-full text-primary font-semibold text-sm rounded-md py-3 px-4 border border-primary/20 bg-primary/5 flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary/10"
         >
           Szczegóły urządzenia
         </button>

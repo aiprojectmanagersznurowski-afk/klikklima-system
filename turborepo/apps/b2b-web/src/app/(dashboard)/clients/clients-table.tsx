@@ -156,10 +156,10 @@ export function ClientsTable({ initialClients }: ClientsTableProps) {
 
                     <TableCell className="py-4 px-6 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 font-medium text-xs">
+                        <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary font-semibold text-xs rounded-full px-2.5">
                           Montaże: {client.totalInstallationsCount}
                         </Badge>
-                        <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-700 font-medium text-xs flex items-center gap-1">
+                        <Badge variant="outline" className="border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-500 font-semibold text-xs flex items-center gap-1 rounded-full px-2.5">
                           <Wrench className="h-3 w-3" />
                           {client.servicesCount}
                         </Badge>

@@ -23,7 +23,7 @@ flowchart TB
         end
 
         subgraph B2B["💻 3. Panel Administracyjny B2B (Web SPA)"]
-            Kanban["📋 Tablica Kanban Dyspozytora\n(Zarządzanie zleceniami)"]
+            LeadTable["📋 Tabela Zgłoszeń z Filtrem Etapu\n(Zarządzanie zleceniami)"]
             Crew["👥 CRM: Zespoły i Audytorzy\n(Zarządzanie pracownikami)"]
             Rollback["📦 Logistyka i Rollback Engine\n(Magazyn, sytuacje awaryjne)"]
         end
@@ -43,8 +43,8 @@ flowchart TB
         Mobile == Synchronizacja (Offline/Online) ==> Core
 
         %% Przykładowy przepływ biznesowy (przerywane linie)
-        Triage -. "1. Przekazuje Leada z estymacją" .-> Kanban
-        Kanban -. "2. Przypisuje audyt / montaż" .-> FieldApp
+        Triage -. "1. Przekazuje Leada z estymacją" .-> LeadTable
+        LeadTable -. "2. Przypisuje audyt / montaż" .-> FieldApp
     end
 
     subgraph External["🌍 Usługi Zewnętrzne (APIs)"]
@@ -140,7 +140,7 @@ Wybór technologii podyktowany jest szybkością tworzenia (Time-to-Market), ła
 **Opis:** Główny Panel Administracyjny przeznaczony dla Dyspozytora, logistyki i menedżerów.
 **Technologia:** React.js / Next.js (App Router), Tailwind CSS, shadcn/ui.
 **Funkcje kluczowe:**
-- Tablica Kanban do zarządzania przepływem (leady).
+- Tabela zgłoszeń z filtrem etapu (dropdown) do zarządzania przepływem leadów (8 etapów + 2 buckety).
 - Rollback Engine w logistyce (obsługa wyjątków).
 - Moduł CRM (Klienci, Instalacje, Serwisy, Audytorzy, Zespoły).
 - Zarządzanie dostępem (RBAC) – Guard.

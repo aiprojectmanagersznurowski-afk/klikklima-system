@@ -25,21 +25,21 @@ export default function LoginScreen() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4 relative overflow-hidden">
-      <div className="absolute inset-0 z-0 bg-[url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-5"></div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+      <div className="absolute inset-0 z-0 bg-[url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-5" />
       
-      <Card className="w-full max-w-md z-10 shadow-xl border-gray-200/60 backdrop-blur-sm bg-white/95">
+      <Card className="w-full max-w-md z-10 shadow-xl border-border backdrop-blur-sm bg-card/95 rounded-2xl">
         <CardHeader className="text-center space-y-4 pb-8 pt-10">
           <div className="flex justify-center mb-2"><Logo /></div>
-          <CardTitle className="text-2xl">Panel Administratora KlikKlima</CardTitle>
-          <p className="text-sm text-gray-500">Zaloguj się przy użyciu konta Google.</p>
+          <CardTitle className="text-2xl font-bold tracking-tight text-foreground">Panel Administratora KlikKlima</CardTitle>
+          <p className="text-sm text-muted-foreground">Zaloguj się przy użyciu konta Google.</p>
         </CardHeader>
         
         <CardContent className="space-y-4 pb-10">
           {status === 'idle' ? (
             <>
               <Button 
-                className="w-full h-14 text-base gap-3 bg-blue-600 hover:bg-blue-700 text-white" 
+                className="w-full h-12 text-sm font-semibold gap-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md shadow-md hover:shadow-lg transition-all" 
                 onClick={async () => {
                   const supabase = createClient()
                   await supabase.auth.signInWithOAuth({
@@ -50,7 +50,7 @@ export default function LoginScreen() {
                   })
                 }}
               >
-                <svg viewBox="0 0 24 24" className="w-6 h-6 bg-white rounded-full p-0.5 fill-current text-blue-600">
+                <svg viewBox="0 0 24 24" className="size-5 bg-white rounded-full p-0.5 fill-current shrink-0">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
@@ -61,14 +61,14 @@ export default function LoginScreen() {
             </>
           ) : (
             <div className="space-y-4">
-              <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex gap-3 text-sm">
-                <AlertTriangle className="w-5 h-5 shrink-0 text-red-600" />
+              <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-md flex gap-3 text-sm">
+                <AlertTriangle className="size-5 shrink-0 text-destructive" />
                 <div>
                   <p className="font-semibold mb-1">Brak autoryzacji.</p>
-                  <p>Twój adres email nie posiada uprawnień do tego panelu. Skontaktuj się z Administratorem, aby go dodać.</p>
+                  <p className="text-xs opacity-90">Twój adres email nie posiada uprawnień do tego panelu. Skontaktuj się z Administratorem, aby go dodać.</p>
                 </div>
               </div>
-              <Button variant="outline" className="w-full h-12" onClick={() => {
+              <Button variant="outline" className="w-full h-11 rounded-md font-medium" onClick={() => {
                 setStatus('idle');
                 window.history.replaceState({}, '', '/login');
               }}>

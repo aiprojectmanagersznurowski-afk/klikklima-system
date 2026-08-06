@@ -33,7 +33,7 @@ Ten dokument stanowi **centralny rejestr** wszystkich scenariuszy testowych E2E 
 - **Given** użytkownik przeszedł wszystkie kroki formularza
 - **When** podaje dane kontaktowe (imię, email, telefon) i zatwierdza
 - **Then** system tworzy rekord w tabeli `klienci`, `adresy` i `leady`
-- **And** lead pojawia się w kolumnie „Nowy" na tablicy Kanban B2B
+- **And** lead pojawia się w tabeli zgłoszeń B2B pod statusem „Etap 1: Nowy lead"
 
 ---
 
@@ -45,11 +45,44 @@ Ten dokument stanowi **centralny rejestr** wszystkich scenariuszy testowych E2E 
 - **Then** system otwiera w nowej karcie (`target="_blank"`) dedykowany widok szczegółów `/clients/[id]`
 - **And** na karcie widoczne są kompletne dane z relacjami: leady, instalacje, serwisy, usterki, dokumenty, notatki oraz historia powiadomień
 
-### ⬜ Scenariusz: Tablica Kanban — przesunięcie leada
-- **Given** dyspozytor jest zalogowany i widzi tablicę Kanban
-- **When** przeciąga lead z kolumny „Nowy" do „Przypisanie audytora" i wybiera audytora
-- **Then** lead zmienia status na „Etap 2" w bazie danych
+### ⬜ Scenariusz: Tabela zgłoszeń — przypisanie audytora (E1 → E2)
+- **Given** dyspozytor jest zalogowany i widzi tabelę zgłoszeń (wybrany filtr: Etap 1 lub Wszystkie)
+- **When** przypisuje audytora do leada na Etapie 1
+- **Then** lead zmienia status na „Etap 2: Oczekiwanie na audyt" w bazie danych
 - **And** system wysyła SMS/Email do klienta z informacją o przydzieleniu audytora
+
+### ⬜ Scenariusz: Auto-odrzucenie wyceny po 14 dniach (E3 → Bucket)
+- **Given** lead jest na Etapie 3 z wygenerowaną wyceną
+- **When** mija 14 dni bez akceptacji ze strony klienta
+- **Then** system automatycznie (pg_cron) przenosi lead do bucketu „Wyceny odrzucone"
+- **And** klient otrzymuje Email informujący o wygaśnięciu wyceny
+
+### ⬜ Scenariusz: Akceptacja wyceny przez klienta (E3 → E4)
+- **Given** klient otrzymał email z linkiem do wyceny
+- **When** akceptuje wycenę i rezerwuje termin montażu
+- **Then** lead przechodzi na Etap 4: Oczekuje na przydzielenie ekipy
+- **And** dyspozytor otrzymuje powiadomienie o nowym zleceniu do przypisania ekipy
+
+### ⬜ Scenariusz: State Bypass — dostawa z ekipą (E5 → E7)
+- **Given** lead jest na Etapie 5 (sprzęt w hurtowni), ekipa przypisana
+- **When** dyspozytor klika „Dostawa z ekipą w dniu montażu"
+- **Then** lead pomija Etap 6 i przechodzi bezpośrednio na Etap 7: Oczekuje instalacji
+- **And** Etap 6 (Wysyłka w drodze) jest pominięty w historii statusów
+
+### ⬜ Scenariusz: Wysyłka kurierem z Tracking ID (E5 → E6)
+- **Given** lead jest na Etapie 5
+- **When** dyspozytor klika „Wysłano kurierem" i podaje Tracking ID
+- **Then** lead przechodzi na Etap 6: Wysyłka w drodze
+- **And** klient otrzymuje SMS z numerem przesyłki
+
+### ⬜ Scenariusz: Rollback Engine — zmiana terminu (E4–E7 → Bucket → E4)
+- **Given** lead jest na jednym z etapów 4–7
+- **When** klient klika „Zmień termin" w e-mailu LUB dyspozytor wyzwala akcję „Rollback"
+- **Then** lead trafia do bucketu „Anulowane / Do przełożenia"
+- **And** system zwalnia slot kalendarza ekipy
+- **And** klient otrzymuje email ratunkowy z linkiem do ponownej rezerwacji
+- **When** klient rezerwuje nowy termin z linku
+- **Then** lead wraca do Etapu 4: Oczekuje na przydzielenie ekipy
 
 ### ⬜ Scenariusz: Dodawanie nowego audytora
 - **Given** dyspozytor jest na stronie `/auditors`
@@ -67,7 +100,7 @@ Ten dokument stanowi **centralny rejestr** wszystkich scenariuszy testowych E2E 
 - **Given** audytor wykonał audyt i lead jest na Etapie 3
 - **When** dyspozytor (lub audytor) tworzy wycenę z pozycjami (urządzenia, montaż, rabaty)
 - **Then** system tworzy rekord w tabeli `quotes` ze statusem „Oczekująca"
-- **And** klient otrzymuje Email z linkiem do opłacenia
+- **And** klient otrzymuje Email z linkiem do akceptacji i rezerwacji terminu
 
 ---
 
@@ -75,7 +108,7 @@ Ten dokument stanowi **centralny rejestr** wszystkich scenariuszy testowych E2E 
 
 ### ⬜ Scenariusz: Automatyczny SMS po przypisaniu audytora
 - **Given** lead jest na Etapie 1
-- **When** dyspozytor przesuwa go na Etap 2 i przypisuje audytora
+- **When** dyspozytor przypisuje audytora (E1 → E2)
 - **Then** system dodaje wpis do `notification_queue` z typem SMS
 - **And** SMS jest wysyłany do klienta w godzinach 8:00-18:00
 
@@ -88,6 +121,11 @@ Ten dokument stanowi **centralny rejestr** wszystkich scenariuszy testowych E2E 
 - **Given** audytor jest w Field App i ma zaplanowaną wizytę
 - **When** klika „Wyruszam" lub GPS wykrywa wjazd w promień 5km od adresu
 - **Then** system wysyła SMS do klienta „Audytor jest w drodze!"
+
+### ⬜ Scenariusz: Email ratunkowy po Rollback
+- **Given** lead został przeniesiony do bucketu „Anulowane / Do przełożenia"
+- **When** system zwalnia kalendarz ekipy
+- **Then** klient otrzymuje Email z linkiem do rezerwacji nowego terminu
 
 ---
 
@@ -102,12 +140,14 @@ Ten dokument stanowi **centralny rejestr** wszystkich scenariuszy testowych E2E 
 - **Given** monter jest na miejscu i wykonał montaż
 - **When** wypełnia protokół zdawczo-odbiorczy, dodaje zdjęcia i klika „Zakończ"
 - **Then** system tworzy rekord w tabeli `installations`
-- **And** lead przechodzi na Etap 9
+- **And** lead przechodzi na Etap 8 (Instalacja zakończona)
 - **And** klient otrzymuje Email z kartą gwarancyjną + protokołem + fakturą
 
 ---
 
 ## Serwisy i Reklamacje
+
+> **Uwaga:** Proces serwisów i usterek zostanie zdefiniowany w osobnym wątku. Poniższe scenariusze zachowane jako placeholder.
 
 ### ⬜ Scenariusz: Przypomnienie o przeglądzie
 - **Given** instalacja ma ustawiony `next_service_date` za X dni
@@ -119,9 +159,3 @@ Ten dokument stanowi **centralny rejestr** wszystkich scenariuszy testowych E2E 
 - **When** opisuje usterkę i zatwierdza zgłoszenie
 - **Then** system tworzy rekord serwisowy
 - **And** klient otrzymuje SMS/Email z linkiem do rezerwacji terminu wizyty
-
-### ⬜ Scenariusz: Zakończenie naprawy serwisowej
-- **Given** serwisant wykonał naprawę w Field App
-- **When** wypełnia protokół i klika „Zakończ"
-- **Then** klient otrzymuje Email z protokołem zdawczo-odbiorczym
-- **And** jeśli naprawa pogwarancyjna → dołączona jest faktura

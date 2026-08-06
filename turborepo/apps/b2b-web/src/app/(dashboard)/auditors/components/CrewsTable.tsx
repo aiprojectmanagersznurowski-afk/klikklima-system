@@ -3,52 +3,52 @@ import { Edit2, Trash2 } from 'lucide-react';
 
 export function CrewsTable({ crews, onEdit, onDelete }: { crews: any[], onEdit: (c: any) => void, onDelete: (id: string) => void }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-sans">
+    <div className="bg-card rounded-2xl shadow-xs border border-border overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-border text-left">
+          <thead className="bg-secondary/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <tr>
-              <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ekipa</th>
-              <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kontakt</th>
-              <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Logistyka</th>
-              <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kwalifikacje</th>
-              <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Akcje</th>
+              <th scope="col" className="p-3.5 px-6">Ekipa</th>
+              <th scope="col" className="p-3.5 px-6">Kontakt</th>
+              <th scope="col" className="p-3.5 px-6">Logistyka</th>
+              <th scope="col" className="p-3.5 px-6">Kwalifikacje</th>
+              <th scope="col" className="p-3.5 px-6 text-right">Akcje</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {crews.map((crew) => (
-              <tr key={crew.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={crew.id} className="hover:bg-secondary/30 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{crew.nazwa}</div>
-                  <div className="text-sm text-gray-500">NIP: {crew.nip || "-"}</div>
+                  <div className="text-sm font-semibold text-foreground">{crew.nazwa}</div>
+                  <div className="text-xs font-mono text-muted-foreground mt-0.5">NIP: {crew.nip || "-"}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{crew.koordynator_imie_nazwisko || "-"}</div>
-                  <div className="text-sm text-gray-500">{crew.telefon_kontaktowy || "-"}</div>
+                  <div className="text-sm font-medium text-foreground">{crew.koordynator_imie_nazwisko || "-"}</div>
+                  <div className="text-xs font-mono text-muted-foreground mt-0.5">{crew.telefon_kontaktowy || "-"}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{crew.kod_pocztowy_bazowy || "-"}</div>
-                  <div className="text-sm text-gray-500">{crew.promien_dzialania_km ? `do ${crew.promien_dzialania_km}km` : "-"}</div>
+                  <div className="text-sm font-mono font-medium text-foreground">{crew.kod_pocztowy_bazowy || "-"}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{crew.promien_dzialania_km ? `do ${crew.promien_dzialania_km}km` : "-"}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap space-y-1">
+                <td className="px-6 py-4 whitespace-nowrap space-x-2">
                   {crew.certyfikat_fgaz && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 mr-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
                       F-GAZ
                     </span>
                   )}
                   {crew.uprawnienia_sep && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-accent/10 text-accent border border-accent/20">
                       SEP
                     </span>
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex justify-end space-x-3">
-                    <button onClick={() => onEdit(crew)} className="text-gray-400 hover:text-blue-600 transition-colors p-1" title="Edytuj">
-                      <Edit2 className="w-4 h-4" />
+                  <div className="flex justify-end space-x-2">
+                    <button onClick={() => onEdit(crew)} className="size-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-secondary transition-colors" title="Edytuj">
+                      <Edit2 className="size-4" />
                     </button>
-                    <button onClick={() => onDelete(crew.id)} className="text-gray-400 hover:text-red-600 transition-colors p-1" title="Usuń">
-                      <Trash2 className="w-4 h-4" />
+                    <button onClick={() => onDelete(crew.id)} className="size-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="Usuń">
+                      <Trash2 className="size-4" />
                     </button>
                   </div>
                 </td>
@@ -57,7 +57,7 @@ export function CrewsTable({ crews, onEdit, onDelete }: { crews: any[], onEdit: 
             
             {crews.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-500 text-sm">
+                <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground text-sm">
                   Brak przypisanych ekip. Dodaj nową ekipę.
                 </td>
               </tr>

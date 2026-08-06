@@ -48,7 +48,7 @@ test.describe('Triage Flow Combinations', () => {
       await clickOption(combo.state);
 
       // Step 5: Conditions (only if Mieszkanie)
-      if (combo.location === 'Mieszkanie') {
+      if (combo.location === 'Mieszkanie' && combo.balcony) {
         await clickOption(combo.balcony);
         if (combo.balcony === 'Nie' && combo.floor) {
           await clickOption(combo.floor);

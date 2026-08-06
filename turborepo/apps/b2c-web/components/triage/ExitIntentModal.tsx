@@ -128,7 +128,7 @@ export default function ExitIntentModal() {
                           }}
                           placeholder="Twój numer telefonu"
                           required
-                          className={`w-full bg-gray-50 border ${error ? "border-red-500 focus:ring-red-500/20" : "border-gray-200 focus:ring-primary/20 focus:border-primary"} text-gray-900 font-medium rounded-xl py-4 pl-12 pr-4 outline-none focus:bg-white focus:ring-2 transition-all`}
+                          className={`w-full bg-secondary border ${error ? "border-destructive focus:ring-destructive/20" : "border-border focus:ring-primary/20 focus:border-primary"} text-foreground font-medium rounded-md py-4 pl-12 pr-4 outline-none focus:bg-white focus:ring-2 transition-all`}
                         />
                       </div>
                       {error && (
@@ -139,7 +139,7 @@ export default function ExitIntentModal() {
                     <button
                       type="submit"
                       disabled={isSubmitting || !phone}
-                      className="w-full bg-primary text-primary-foreground font-bold text-base rounded-xl py-4 px-4 flex items-center justify-center gap-2 transition-all hover:bg-[#1244b0] hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98]"
+                      className="w-full bg-primary text-primary-foreground font-bold text-base rounded-md py-4 px-4 flex items-center justify-center gap-2 transition-all hover:bg-primary/90 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98]"
                     >
                       {isSubmitting ? (
                         <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -164,9 +164,9 @@ export default function ExitIntentModal() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", bounce: 0.5, delay: 0.1 }}
-                  className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6"
+                  className="size-20 bg-primary/10 rounded-full flex items-center justify-center mb-6"
                 >
-                  <CheckCircle2 className="w-10 h-10 text-green-500" />
+                  <CheckCircle2 className="size-10 text-primary" />
                 </motion.div>
                 <h3 className="text-2xl font-bold text-gray-900 tracking-tight mb-3">
                   Dziękujemy!

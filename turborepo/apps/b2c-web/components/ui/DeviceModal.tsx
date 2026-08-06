@@ -54,8 +54,8 @@ const iconMap: Record<string, any> = {
 
 function FeatureChip({ icon: Icon, label }: { icon: any; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F0F4FB] px-3 py-1.5 text-[13px] font-medium text-[#475569]">
-      <Icon className="size-3.5 text-[#2563EB]" />
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-[13px] font-medium text-muted-foreground">
+      <Icon className="size-3.5 text-primary" />
       {label}
     </span>
   );
@@ -437,7 +437,7 @@ export function DeviceModal({
                       type="button"
                       onClick={addRoom}
                       disabled={rooms.length >= maxSupportedRooms || (!device._raw?.is_multi_compatible && rooms.length >= 1)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#CBD9F2] bg-white px-3.5 py-2 text-[14px] font-semibold text-[#2563EB] transition-colors hover:border-[#2563EB] hover:bg-[#EEF3FE] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-[#CBD9F2] bg-white px-3.5 py-2 text-[14px] font-semibold text-primary transition-colors hover:border-primary hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Plus className="size-4" />
                       Dodaj pokój
@@ -548,7 +548,7 @@ export function DeviceModal({
                              animate={{ opacity: 1, y: 0 }}
                              exit={{ opacity: 0, y: -8 }}
                              transition={{ duration: 0.2 }}
-                             className="text-[40px] font-extrabold leading-none tracking-tight text-[#0F172A]"
+                             className="text-[40px] font-extrabold font-mono leading-none tracking-tight text-[#0F172A]"
                            >
                              {fmt(total)}
                            </motion.span>
@@ -636,13 +636,13 @@ export function DeviceModal({
                       type="button"
                       onClick={handleAuditClick}
                       disabled={(!isFullyConfigured && hasRooms) || isLoading}
-                      className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#2563EB] py-4 text-[16px] font-bold text-white shadow-[0_12px_28px_-8px_rgba(37,99,235,0.6)] transition-all hover:bg-[#1D4ED8] hover:shadow-[0_16px_34px_-8px_rgba(37,99,235,0.7)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+                      className="group flex w-full items-center justify-center gap-2 rounded-md bg-primary py-4 text-[16px] font-bold text-primary-foreground shadow-[0_12px_28px_-8px_rgba(37,99,235,0.6)] transition-all hover:bg-primary/90 hover:shadow-[0_16px_34px_-8px_rgba(37,99,235,0.7)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
                     >
                       <Check className="size-5 transition-transform group-hover:scale-110" />
                       {!isFullyConfigured && hasRooms ? "Uzupełnij metraż pokoi" : "Wybieram ten zestaw"}
                     </button>
-                    <p className="mt-3 flex items-center justify-center gap-1.5 text-[12px] text-[#64748B]">
-                      <ShieldCheck className="size-3.5 text-[#22C55E]" />
+                    <p className="mt-3 flex items-center justify-center gap-1.5 text-[12px] text-muted-foreground">
+                      <ShieldCheck className="size-3.5 text-primary" />
                       Bezpłatna wycena · Płatność po montażu
                     </p>
                   </div>

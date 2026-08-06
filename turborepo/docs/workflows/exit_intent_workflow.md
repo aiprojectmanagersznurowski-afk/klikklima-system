@@ -20,7 +20,7 @@ flowchart TD
     
     SaveDB --> LinkTriage["Dołącz zebrane do tej pory\ndane z kalkulatora (Pokoje, Metraż)"]
     
-    LinkTriage --> B2BPanel["Wyświetlenie w Panelu B2B (Kanban)\njako zadanie priorytetowe dla Dyspozytora"]
+    LinkTriage --> B2BPanel["Wyświetlenie w Panelu B2B (Tabela zgłoszeń)\njako zadanie priorytetowe dla Dyspozytora"]
     LinkTriage -- "Webhook" --> SlackNotification["(Opcjonalnie) Powiadomienie na Slack / E-mail do działu handlowego"]
     
     style Popup fill:#e11d48,stroke:#9f1239,color:white

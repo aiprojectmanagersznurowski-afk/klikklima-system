@@ -1,34 +1,20 @@
-# Model Danych (Supabase / PostgreSQL) - Wersja B2B/B2C
+# Model Danych (Supabase / PostgreSQL) - Wersja B2B/B2C & CRM
 
-Poniższy dokument obrazuje pełny, zaktualizowany relacyjny model danych dla systemu Klik Klima, uwzględniający zarówno obsługę Triage (B2C), jak i panel zarządzania dla dyspozytora i monterów (B2B/CRM).
+Poniższy dokument obrazuje pełny, zaktualizowany relacyjny model danych dla systemu KlikKlima. Uwzględnia on proces pozyskiwania leadów przez kalkulator Triage (B2C), zarządzanie lejkiem sprzedażowym (8 etapów + 2 buckety) w panelu dyspozytora i administracji B2B, a także rygorystyczną obsługę 7 widoków modułu CRM (Karta 360, certyfikaty F-Gaz/SEP, serwisowanie roczne i niezależny proces awaryjnych usterek).
 
-## Diagram Relacji Encji (ERD)
+---
+
+## 1. Diagram Relacji Encji (ERD)
+
+Nazwa encji i pól odzwierciedla stan w schemacie Prisma (`schema.prisma`) oraz zawiera kolumny niezbędne do realizacji pełnych wytycznych architektonicznych i serwisowych.
 
 ```mermaid
 erDiagram
-    USERS {
-        uuid id PK "auth.users"
-        string email
-        string role "Enum Admin Dyspozytor Audytor Monter"
-        timestamp created_at
-    }
-
-    AUDITORS {
-        uuid user_id PK "FK do USERS"
-        string nazwa_firmy
-        string nr_telefonu
-        float prowizja
-    }
-
-    CREWS {
-        uuid id PK
-        string nazwa_ekipy
-        string kolor
-    }
-
-    CREW_MEMBERS {
-        uuid crew_id FK
-        uuid user_id FK "FK do USERS"
+    AUTHORIZED_USER {
+        string id PK
+        string email UK "Bramka logowania SSO Google"
+        string role "Admin, Dyspozytor, Audytor, Monter"
+        timestamp createdAt
     }
 
     KLIENCI {
@@ -36,6 +22,7 @@ erDiagram
         string imie_i_nazwisko
         string email
         string telefon
+        timestamp created_at
     }
 
     ADRESY {
@@ -44,153 +31,230 @@ erDiagram
         string ulica_miasto
         float lat
         float lng
+        timestamp created_at
+    }
+
+    AUDYTORZY {
+        uuid id PK
+        string imie_i_nazwisko
+        string telefon
+        string email
+        string zdjecie_url "Awaryjny avatar wizytówkowy"
+        string certyfikat_fgaz
+        date fgaz_valid_until "Wyzwalacz alertu 30d przed"
+        boolean uprawnienia_sep
+        date sep_valid_until "Wyzwalacz alertu 30d przed"
+        int doswiadczenie_hvac_lata
+        string iban
+        timestamp created_at
+    }
+
+    ZESPOLY_MONTERSKIE {
+        uuid id PK
+        string nazwa "np. Ekipa Alpha Wrocław"
+        string telefon_kontaktowy
+        string zdjecie_url "Zdjęcie reprezentatywne brygady"
+        string certyfikat_fgaz
+        date fgaz_valid_until "Wyzwalacz alertu i blokady w E4"
+        boolean uprawnienia_sep
+        date sep_valid_until "Wyzwalacz alertu i blokady w E4"
+        string koordynator_imie_nazwisko
+        int liczba_brygad
+        string iban
+        boolean aktywny
     }
 
     INDOOR_UNITS {
         uuid id PK
-        string model_code
+        string model_code UK
         string brand
-        float cooling_capacity_kw
-        float price_netto
+        decimal cooling_capacity_kw
+        decimal price_netto
+        string image_url
     }
 
     OUTDOOR_UNITS {
         uuid id PK
-        string model_code
-        string type
-        float max_total_indoor_capacity_kw
+        string model_code UK
+        string brand
+        string type "SINGLE MULTI"
+        decimal price_netto
     }
 
     SINGLE_SPLIT_SETS {
         uuid id PK
         uuid indoor_unit_id FK
         uuid outdoor_unit_id FK
-        float set_price_netto
+        decimal set_price_netto
+        boolean is_bestseller
     }
 
     MULTI_SPLIT_SETS {
         uuid id PK
         uuid outdoor_unit_id FK
         jsonb indoor_units_json
-        float set_price_netto
-    }
-
-    CENNIK_USLUG {
-        uuid id PK
-        string nazwa_uslugi
-        float koszt_b2c_netto
-        float koszt_b2b_netto
+        decimal set_price_netto
+        boolean is_bestseller
     }
 
     LEADY {
         uuid id PK
         uuid klient_id FK
         uuid adres_id FK
-        jsonb odpowiedzi_triage "JSON z B2C"
-        string status_leada "Etapy 1-9"
-        uuid auditor_id FK "FK do AUDITORS"
-        uuid crew_id FK "FK do CREWS"
+        jsonb odpowiedzi_triage "Konfiguracja z Triage B2C"
+        string status "LeadStatus: Enum 8 etapów + 2 Buckety"
+        uuid audytor_id FK
+        datetime data_rezerwacji
+        decimal finalna_wycena_pln
+        timestamp bucket_entered_at "Kiedy wejście do Zimne Leady lub Rollback"
+        string lost_reason "Powód trwałej archiwizacji Lost"
+        timestamp last_followup_date "Ostatni automatyczny kontakt re-angażujący"
+        timestamp created_at
     }
 
     QUOTES {
         uuid id PK
         uuid lead_id FK
-        uuid auditor_id FK
-        jsonb wycena_items "Klima Montaż Rabaty"
-        float total_price
-        string status_akceptacji "Oczekująca Zaakceptowana Odrzucona"
-        string status_platnosci "Nieopłacona Opłacona"
-        string payment_session_id "Stripe P24"
-        timestamp wazna_do
+        uuid audytor_id FK
+        jsonb wycena_items "Klimatyzacja, montaż, rabat"
+        decimal total_price
+        string status_akceptacji "DRAFT SENT ACCEPTED REJECTED"
+        string status_platnosci "UNPAID PAID PENDING"
+        string payment_session_id "Stripe / Przelew24"
+        timestamp wazna_do "Po 14d przenosi do Zimnych leadów"
         timestamp created_at
     }
 
     INSTALLATIONS {
         uuid id PK
-        uuid lead_id FK "Zlecenie nadrzędne"
-        jsonb zainstalowany_sprzet "Szczegóły urządzeń, numery seryjne"
-        string protokol_odbioru_url
+        uuid lead_id FK "Zlecenie sprzedażowo-montażowe"
+        uuid zespol_id FK "Przypisany zespół monterski"
+        datetime data_planowana "Termin instalacji w E7/E8"
+        datetime data_zakonczenia
+        string status "PLANNED IN_PROGRESS COMPLETED CANCELLED"
+        date next_service_date "Baza wyliczenia cyklicznego serwisu (Instalacja + 1 rok)"
+        string protokol_url
         jsonb zdjecia_z_montazu
         text uwagi_monterskie
-        timestamp data_rozpoczecia
-        timestamp data_zakonczenia
     }
 
-    SERVICES {
-        uuid id PK
-        uuid installation_id FK
-        uuid crew_id FK "Zewnętrzna/Wewnętrzna ekipa serwisowa"
-        string status "Planowany Umówiony Zakończony Anulowany"
-        timestamp scheduled_date "Kiedy przypada serwis"
-        timestamp completed_date "Kiedy został wykonany"
-        text uwagi_serwisanta
-        string protokol_url
+    SERWISY {
+        uuid id PK "Cykliczne przeglądy roczne"
+        uuid klient_id FK
+        uuid adres_id FK
+        uuid instalacja_id FK "Relacja do pierwotnego montażu"
+        uuid zespol_id FK
+        datetime scheduled_date "Termin najbliższego serwisu"
+        datetime completed_date
+        string status "PLANNED SCHEDULED COMPLETED CANCELLED"
+        text uwagi_serwisowe
     }
 
-    SHIPMENTS {
-        uuid id PK
+    USTERKI_INCIDENTS {
+        uuid id PK "Identyfikator np. UST-2026-001"
+        uuid klient_id FK
+        uuid instalacja_id FK
+        uuid zespol_id FK "Brygada ratunkowo-serwisowa"
+        string priorytet "NISKI SREDNI KRYTYCZNY (SLA 48h, PUSH)"
+        string status "NOWE W_DRODZE NA_CZESCI NAPRAWIONE ODRZUCENIE_GWARANCJI"
+        text opis_problem_klienta
+        jsonb zdjecia_wideo_url "Dowody usterki od B2C lub dyspozytora"
+        timestamp created_at
+    }
+
+    LOGISTYKA_ZAMOWIENIA {
+        uuid id PK "Obsługa hurtowni (E5) i kurierów (E6)"
         uuid lead_id FK
-        string numer_przesylki
-        string status "Oczekująca Wysłana Doręczona"
+        string status_wysylki "PENDING SHIPPED DELIVERED"
+        string tracking_id "Nr listu przewozowego od webhooka kuriera"
+        string firma_kurierska
+        datetime data_wysylki
     }
 
     NOTIFICATION_QUEUE {
         uuid id PK
         uuid lead_id FK
         string type "SMS EMAIL"
-        string status "PENDING SENT"
+        string status "PENDING SENT ERROR"
+        timestamp send_after "Parametryzacja wysyłki (np. okno 8:00-18:00)"
     }
 
     MESSAGE_TEMPLATES {
         uuid id PK
-        string trigger_event "STATUS_2_AUDITOR"
+        string trigger_event "Słownik wyzwalaczy powiadomień np. I2, N3"
         string channel "SMS EMAIL"
-        string subject "Opcjonalny temat e-mail"
-        text body_template "Treść z tagami np. imie"
+        string subject
+        text body_template "Szablon ze zmiennymi np. imie, kwota"
     }
 
-    SYSTEM_CONFIG {
-        uuid id PK
-        string typ_konfiguracji "np. booking_rules"
-        jsonb konfiguracja
-    }
-
-    USERS ||--o| AUDITORS : "może być"
-    USERS ||--o{ CREW_MEMBERS : "należy do"
-    CREWS ||--o{ CREW_MEMBERS : "składa się z"
-    
     KLIENCI ||--o{ ADRESY : "posiada"
     KLIENCI ||--o{ LEADY : "składa"
     ADRESY ||--o{ LEADY : "lokalizacja dla"
     
-    INDOOR_UNITS ||--o{ SINGLE_SPLIT_SETS : "zawiera"
-    OUTDOOR_UNITS ||--o{ SINGLE_SPLIT_SETS : "zawiera"
-    OUTDOOR_UNITS ||--o{ MULTI_SPLIT_SETS : "zawiera"
+    INDOOR_UNITS ||--o{ SINGLE_SPLIT_SETS : "tworzy"
+    OUTDOOR_UNITS ||--o{ SINGLE_SPLIT_SETS : "tworzy"
+    OUTDOOR_UNITS ||--o{ MULTI_SPLIT_SETS : "tworzy"
 
-    AUDITORS ||--o{ LEADY : "weryfikuje"
-    AUDITORS ||--o{ QUOTES : "tworzy"
-    LEADY ||--o{ QUOTES : "otrzymuje"
-    CREWS ||--o{ LEADY : "realizuje"
-    CREWS ||--o{ SERVICES : "wykonuje"
+    AUDYTORZY ||--o{ LEADY : "weryfikuje na E2-E3"
+    AUDYTORZY ||--o{ QUOTES : "generuje dla klienta"
+    LEADY ||--o{ QUOTES : "obejmuje wycene"
     
-    LEADY ||--o| INSTALLATIONS : "posiada szczegóły montażu"
-    INSTALLATIONS ||--o{ SERVICES : "posiada historię przeglądów"
-    LEADY ||--o{ SHIPMENTS : "generuje"
-    LEADY ||--o{ NOTIFICATION_QUEUE : "wyzwala"
+    ZESPOLY_MONTERSKIE ||--o{ INSTALLATIONS : "realizuje montaz"
+    ZESPOLY_MONTERSKIE ||--o{ SERWISY : "wykonuje przeglady"
+    ZESPOLY_MONTERSKIE ||--o{ USTERKI_INCIDENTS : "usuwa awarie"
+    
+    LEADY ||--o| INSTALLATIONS : "konwertuje do montaz"
+    LEADY ||--o{ LOGISTYKA_ZAMOWIENIA : "posiada dostawy E5-E6"
+    LEADY ||--o{ NOTIFICATION_QUEUE : "kolejkuje powiadomienia"
+    
+    INSTALLATIONS ||--o{ SERWISY : "generuje roczny harmonogram"
+    INSTALLATIONS ||--o{ USTERKI_INCIDENTS : "podlega pod awarie"
+    KLIENCI ||--o{ USTERKI_INCIDENTS : "zgłasza awarie"
 ```
 
-## Opis Tabel (Katalog Produktów)
-- **`indoor_units` & `outdoor_units`**: Baza sprzętowa, definiuje parametry klimatyzatorów.
-- **`single_split_sets` & `multi_split_sets`**: Gotowe zestawy sprzedażowe wykorzystywane w kalkulatorze (Triage) oraz przez Audytorów.
-- **`cennik_uslug`**: Standardowe koszty materiałów i robocizny (B2C i B2B).
+---
 
-## Opis Nowych Tabel B2B / Field App
+## 2. Opis Tabel (Katalog Produktów)
+- **`indoor_units` & `outdoor_units`**: Baza sprzętowa definująca techniczne parametry klimatyzatorów (moc chłodnicza/grzewcza, głośność, wymiary, cechy smart jak WiFi/czujnik obecności).
+- **`single_split_sets` & `multi_split_sets`**: Kompletne zestawy sprzedażowe wykorzystywane we froncie B2C w kalkulatorze Triage oraz przez audytorów.
+- **`cennik_uslug` & `modele_3d`**: Kosztorysy usług dodatkowych (kucie w betonie, wysięgniki) oraz zasoby modeli 3D do wizualizacji na ścianie klienta.
 
-1. **`users` (RBAC)**: Centralna tabela kont powiązana z Auth Supabase, zawierająca rolę pracownika (Audytor, Monter, Admin).
-2. **`auditors`**: Dedykowana tabela rozszerzająca użytkownika (`1:1` z `users`). Ponieważ aplikacja Field App będzie używana przez zewnętrznych lub wewnętrznych inżynierów robiących wyceny zdalne, tu trzymamy specyficzne dane (nazwa firmy, prowizje).
-3. **`quotes` (Wyceny)**: Rozwiązuje problem ewidencjonowania ofert. Audytor z poziomu aplikacji terenowej / B2B generuje tu konkretną wycenę dla `leada`. Tabela posiada statusy akceptacji oraz płatności (`Nieopłacona`, `Opłacona`), jak i klucz integrujący np. bramkę płatności (`payment_session_id`). Na jej podstawie system wie, czy odblokować klientowi wybór terminu w kalendarzu.
-4. **`crews` & `crew_members`**: Ekipy monterskie. Jeden monter (`user_id`) może należeć do ekipy. Ekipa jako całość jest przypisywana do realizacji zadania na `leady`.
-5. **`installations`**: Ewidencja wykonanych prac. To tutaj ekipa w Field App wrzuca podpisane protokoły po pierwszej instalacji, numery seryjne użytego sprzętu oraz zdjęcia ze ściany.
-6. **`services`**: Historia cyklicznych przeglądów. Zamiast trzymać tylko jedną datę w instalacji, generujemy nowy rekord dla każdego serwisu (np. za rok, za dwa lata). Klient powiadamiany jest na podstawie rekordu ze statusem "Planowany". Po realizacji (Field App) status zmienia się na "Zakończony" i generowany jest kolejny rekord na następny rok.
-7. **`shipments`**: Zarządzanie kurierami i materiałami, ścisłe powiązanie z leadem.
-8. **`message_templates`**: Słownik dynamicznych szablonów wiadomości e-mail oraz SMS. Administrator (B2B) może edytować treści z poziomu interfejsu (bez grzebania w kodzie). Zmienne takie jak `{{imie}}` są dynamicznie podmieniane przez Edge Functions przed wysyłką.
+---
+
+## 3. Opis Głównych Encji B2B, CRM i Field App
+
+1. **`AuthorizedUser` (Bramka RBAC i SSO Google)**:
+   - Tabela kontroli dostępu (Epic 5). Przechowuje dozwolone adresy e-mail i rolę (`admin`, `dyspozytor`, `audytor`, `monter`). Gdy użytkownik próbuje zalogować się przez Google (OAuth2), system sprawdza obecność maila w tej tabeli — brak wpisu natychmiast blokuje sesję z komunikatem o braku uprawnień.
+2. **`audytorzy`**:
+   - Rozszerzenie danych inżynierów techniczno-handlowych pracujących w terenie na Etapie 2 i 3. Posiada awatary (`zdjecie_url`), numery kont IBAN oraz obowiązkowe daty wygaśnięcia **certyfikatów F-Gaz i uprawnień SEP** (`fgaz_valid_until`, `sep_valid_until`). Zbliżenie się do daty wygaśnięcia (< 30 dni) wyzwala powiadomienie do Administratora.
+3. **`zespoly_monterskie`**:
+   - Reprezentuje brygady instalacyjne realizujące zlecenia montażowe na Etapach 7–8 i serwisach. Tabela zawiera zdjęcie reprezentatywne ekipy (przy aucie/w mundurach) oraz kontrolę ważności **certyfikatów F-Gaz i SEP**. Zespół z wygasłym certyfikatem jest **automatycznie blokowany i ukrywany z puli dostępnych brygad** na Etapie 4 przy przydzielaniu do zlecenia.
+4. **`leady`**:
+   - Centralne zgłoszenie w systemie z polem `status` typu `LeadStatus` przyjmującym 8 statusów lejka (`NEW_LEAD`, `AWAITING_AUDIT`, `AUDIT_COMPLETED`, `AWAITING_CREW_ASSIGNMENT`, `HARDWARE_IN_WAREHOUSE`, `HARDWARE_IN_TRANSIT`, `AWAITING_INSTALLATION`, `INSTALLATION_COMPLETED`) oraz 2 stany bucket:
+     - **`QUOTE_REJECTED` (Zimne leady):** Wyceny bez akceptacji > 14 dni z polami `bucket_entered_at`, `last_followup_date` oraz obowiązkowym powodem odrzucenia `lost_reason` (np. „Konkurencja", „Za drogo") przy definitywnej archiwizacji (Lost).
+     - **`ROLLBACK_RESCHEDULING` (Rollback Engine):** Stan awaryjny wywoływany m.in. brakiem dostawcy z kuriera z linkiem ponownym rezerwacji terminu montażu.
+5. **`quotes` (Wyceny)**:
+   - Ewidencja ofert generowanych w Field App na Etapie 3. Śledzi ważność wyceny (14 dni) oraz posiada `payment_session_id` integrujące bramki Stripe/P24 dla automatycznego księgowania w Etapie 4.
+6. **`instalacje`**:
+   - Karta zrealizowanej (lub w trakcie) pracy na Etapie 7 i 8. Zamiast mieszać serwisowanie roczne, generuje w bazie datę `next_service_date`, która służy za trigger dla crona automatycznie uruchamiającego procesy cyklicznych przeglądów.
+7. **`serwisy`**:
+   - Cykliczne przeglądy roczne (gwarancyjne i pogwarancyjne). Na 30 dni przed upływem terminu serwisu rocznego system generuje dla klienta powiadomienie SMS/Email z linkiem do kalendarza serwisowego.
+8. **`usterki_incidents` (Incident Management - Usterki Awaryjne)**:
+   - Osobny moduł odizolowany od planowanych przeglądów rocznych! Zgłoszenia awaryjne z unikalnym ID (np. `UST-2026-001`), zdjęciami od klienta i poziomem priorytetu. Usterki z priorytetem **Krytycznym** wyzwalają natychmiastową notyfikację PUSH do Dyspozytora. Brak podjęcia akcji przez 48 godzin od zgłoszenia zmienia kolor wiersza w tabeli CRM na czerwony.
+9. **`logistyka_zamowienia`**:
+   - Zarządzanie łańcuchem dostaw dla hurtowni (Etap 5) i kurierów (Etap 6) z obsługą numeru listu przewozowego (`tracking_id`) aktualizowanego zdalnie za pomocą webhooków kurierskich lub akcją manualną w panelu ("Paczka dostarczona", lub "Dostawa z ekipą - Bypass").
+
+---
+
+## 4. Zasady Bezpieczeństwa Bazy, RODO i Usuwanie Danych
+
+Zgodnie z wymogami prawnymi (RODO) oraz zapewnieniem spójności transakcyjnej w relacyjnych bazach PostgreSQL / Supabase, w systemie obowiązuą rygorystyczne wytyczne manipulacji danymi:
+
+### 1. Globalne Uprawnienie Usuwania (🚨 „Usuń”)
+- W żadnym widoku CRM (Klienci, Instalacje, Serwisy, Usterki, Audytorzy, Zespoły, Zimne leady) ranga Dyspozytora, Audytora ani Montera **nie posiada uprawnień do usuwania rekordów**.
+- Akcja **🚨 „Usuń”** jest zablokowana na poziomie interfejsu (ukryty przycisku w Shadcn UI) oraz na poziomie RLS Supabase i Server Actions **wyłącznie dla roli Administrator (`admin`)**.
+
+### 2. Polityka Relacji i Usunięć na Kluczach Obcych (Foreign Keys)
+- **Klient 360 (`klienci`):** W przypadku nakazu twardego usunięcia klienta (RODO) przez Administratora, relacje ze zleceniami montażowymi i rachunkowo-fakturowymi nie ulegają destrukcji historycznej — stosowany jest mechanizm `onDelete: SetNull` lub anonimizacja danych kontaktowych rekordu (z zachowaniem wartości zrealizowanego montażu).
+- **Usunięcie Leada (`leady`):** Jeżeli rekord w tabeli `leady` zostanie skasowany z powodu duplikatu lub błędu systemowego przez Administratora, wszystkie jego zależne encje w trakcie tworzenia (`logistyka_zamowienia`, `quotes`) podlegają czyszczeniu kaskadowemu (`onDelete: Cascade`).
+- **Usunięcie Audytora lub Zespołu:** Próba usunięcia rekordu z tabel `audytorzy` lub `zespoly_monterskie` blokowana jest na poziomie logiki do momentu ręcznego przepięcia przez Administratora wszystkich „wiszących", aktywnych na chwilę obecną leadów i instalacji na inną osobę/ekipę.

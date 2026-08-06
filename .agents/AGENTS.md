@@ -13,7 +13,7 @@ Before performing any action, reading or writing code, you MUST follow these rou
 - For naming conventions across code and files, follow `.agents/rules/naming-conventions.md`.
 
 ## 3. Business Logic & Domain
-- **B2B Admin Panel:** Read `turborepo/docs/architecture/b2b_app_requirements.md` and `turborepo/docs/architecture/b2b_funnel_process.md`.
+- **B2B Admin Panel:** Read `turborepo/docs/architecture/b2b_app_requirements.md`, `turborepo/docs/architecture/b2b_funnel_process.md`, and `turborepo/docs/architecture/b2b_crm_specifications.md`.
 - **B2C Customer App (Triage):** Read `turborepo/docs/architecture/b2c_app_requirements.md` and `turborepo/docs/workflows/triage_workflow.md`.
 - **Field App (Installers & Technicians):** Read `turborepo/docs/architecture/field_app_requirements.md`.
 - **Notifications (SMS/Email):** Read `turborepo/docs/architecture/notification_definitions.md` before creating or modifying templates or triggers.

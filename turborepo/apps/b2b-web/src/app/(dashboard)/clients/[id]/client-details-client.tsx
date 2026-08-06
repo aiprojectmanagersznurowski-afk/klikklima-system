@@ -109,7 +109,7 @@ export function ClientDetailsClient({ client }: ClientDetailsProps) {
   const badgeColorForStatus = (status: string | null) => {
     if (!status) return "secondary";
     if (status.includes("COMPLETED") || status.includes("PAID") || status.includes("Znak") || status === "Zrealizowane") {
-      return "bg-green-100 text-green-700 border-green-200";
+      return "bg-primary/10 text-primary border-primary/20";
     }
     if (status.includes("IN_PROGRESS") || status.includes("AUDIT_COMPLETED") || status.includes("QUOTE_ACCEPTED")) {
       return "bg-blue-100 text-blue-700 border-blue-200";
@@ -234,7 +234,7 @@ export function ClientDetailsClient({ client }: ClientDetailsProps) {
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <span className="text-gray-500 font-medium">Preferowany Kanał</span>
                   <span className="col-span-2 flex items-center gap-2 font-medium text-gray-700">
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs rounded-full font-semibold">
                       {client.email !== "Brak email" ? "Email + SMS (Automatyczny)" : "Wyłącznie SMS"}
                     </Badge>
                   </span>
@@ -325,7 +325,7 @@ export function ClientDetailsClient({ client }: ClientDetailsProps) {
                         <TableCell className="py-3.5 px-6 text-sm">
                           {lead.audytor ? (
                             <span className="font-medium text-gray-900 flex items-center gap-2">
-                              <UserCheck className="h-3.5 w-3.5 text-green-600" />
+                              <UserCheck className="h-3.5 w-3.5 text-primary" />
                               {lead.audytor.imie_i_nazwisko}
                             </span>
                           ) : (
@@ -498,7 +498,7 @@ export function ClientDetailsClient({ client }: ClientDetailsProps) {
                       <div>
                         <span className="text-sm font-semibold text-gray-900 block">{doc.name}</span>
                         <span className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
-                          <span>Typ: {doc.type}</span> • <span>Rozmiar: {doc.size}</span> • <span className="text-green-600 font-medium">{doc.date}</span>
+                          <span>Typ: {doc.type}</span> • <span>Rozmiar: {doc.size}</span> • <span className="text-muted-foreground font-mono">{doc.date}</span>
                         </span>
                       </div>
                     </div>
@@ -648,7 +648,7 @@ export function ClientDetailsClient({ client }: ClientDetailsProps) {
                         {log.recipient}
                       </TableCell>
                       <TableCell className="py-3.5 px-6 text-right">
-                        <Badge className="bg-green-100 text-green-700 border-green-200 font-medium">
+                        <Badge className="bg-primary/10 text-primary border-primary/20 font-semibold rounded-full">
                           {log.status}
                         </Badge>
                       </TableCell>

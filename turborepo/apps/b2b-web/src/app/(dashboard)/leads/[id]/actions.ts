@@ -9,8 +9,8 @@ export async function updateLeadAuditor(leadId: string, audytorId: string | null
 
     let newStatus = lead.status;
     if (audytorId && lead.status === "NEW_LEAD") {
-      newStatus = "AUDITOR_ASSIGNED";
-    } else if (!audytorId && lead.status === "AUDITOR_ASSIGNED") {
+      newStatus = "AWAITING_AUDIT";
+    } else if (!audytorId && lead.status === "AWAITING_AUDIT") {
       newStatus = "NEW_LEAD";
     }
 

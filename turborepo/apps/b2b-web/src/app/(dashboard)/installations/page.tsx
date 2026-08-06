@@ -68,7 +68,7 @@ export default function InstallationDetails() {
                     <div className="text-sm text-gray-500">Model: FTXC35C/RXC35C</div>
                   </div>
                 </div>
-                <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-200" variant="outline">Na stanie</Badge>
+                <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 rounded-full font-semibold px-3 py-1" variant="outline">Na stanie</Badge>
               </div>
             </CardContent>
           </Card>
@@ -142,7 +142,7 @@ export default function InstallationDetails() {
                 </div>
 
                 <div className="flex gap-4">
-                  <div className="w-4 h-4 rounded-full bg-green-500 shadow-[0_0_0_4px_rgba(255,255,255,1)] relative z-10 mt-1"></div>
+                  <div className="w-4 h-4 rounded-full bg-primary shadow-[0_0_0_4px_rgba(255,255,255,1)] relative z-10 mt-1"></div>
                   <div>
                     <p className="text-sm text-gray-800">Płatność za pośrednictwem Stripe zakończona sukcesem</p>
                     <p className="text-xs text-gray-500 mt-1">Wczoraj, 14:20</p>
