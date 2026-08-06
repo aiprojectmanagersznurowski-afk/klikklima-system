@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { toast } from "sonner"
 
 export function LogisticsClient({ initialShipments }: { initialShipments: LogisticsLead[] }) {
   const [shipments, setShipments] = useState<LogisticsLead[]>(initialShipments)
@@ -25,13 +24,13 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
       try {
         // Zabezpieczenie przed UI flickeringiem - zoptymalizowane w UI (optimistic update jeśli trzeba by)
         await actionFn();
-        toast.success(`Akcja "${actionName}" wykonana pomyślnie`);
+        alert(`Akcja "${actionName}" wykonana pomyślnie`);
         // Note: next.js server action z revalidatePath odświeży propsy, ale tu używamy lokalnego stanu, 
         // więc powinniśmy to odświeżyć globalnie, albo od razu usunąć/zaktualizować w state:
         // W prawdziwym środowisku moglibyśmy zaufać Server Components i nie uzywać `useState` 
         // jako jedynego źródła prawdy, lecz tu musimy uaktualnić lokalny stan:
       } catch (e) {
-        toast.error(`Błąd podczas wykonywania akcji "${actionName}"`);
+        alert(`Błąd podczas wykonywania akcji "${actionName}"`);
       }
     });
   }
