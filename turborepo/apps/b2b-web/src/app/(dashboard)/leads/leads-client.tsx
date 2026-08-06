@@ -370,10 +370,8 @@ export function LeadsClient({
                             
                             {actions.length > 0 && (
                               <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-foreground" title="Akcje">
+                                <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" title="Akcje">
                                     <MoreHorizontal size={16} />
-                                  </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-64">
                                   <DropdownMenuLabel>Zmień etap</DropdownMenuLabel>
