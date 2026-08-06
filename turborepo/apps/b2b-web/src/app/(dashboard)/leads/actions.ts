@@ -158,7 +158,7 @@ const ALLOWED_TRANSITIONS: Record<LeadStatus, LeadStatus[]> = {
   ROLLBACK_RESCHEDULING: ["AWAITING_CREW_ASSIGNMENT"],
 };
 
-export { ALLOWED_TRANSITIONS };
+
 
 /** Przesuwa leada do nowego statusu z walidacją dozwolonych przejść */
 export async function advanceLeadStatus(leadId: string, targetStatus: LeadStatus) {
