@@ -100,7 +100,7 @@ export default async function LeadDetailsPage({
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-300">
       <div className="mb-6">
         <Link href="/leads">
-          <Button variant="ghost" className="text-gray-500 hover:text-gray-900 -ml-4 gap-2">
+          <Button variant="ghost" className="text-muted-foreground hover:text-foreground -ml-4 gap-2">
             <ArrowLeft size={16} /> Powrót do tablicy
           </Button>
         </Link>
@@ -109,11 +109,11 @@ export default async function LeadDetailsPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Główna zawartość - 2 kolumny */}
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
+          <div className="bg-card p-8 rounded-xl border border-border shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-4">
+              <h1 className="text-3xl font-bold text-foreground flex items-center gap-4">
                 {name}
-                <Badge variant="outline" className="text-sm bg-blue-50 text-blue-700 border-blue-200 px-4 py-1">
+                <Badge variant="outline" className="text-sm bg-primary/10 text-primary border-primary/20 px-4 py-1">
                   {(lead.status || "").replace(/_/g, " ")}
                 </Badge>
               </h1>
@@ -132,18 +132,18 @@ export default async function LeadDetailsPage({
                 <DeleteLeadButton leadId={lead.id} />
               </div>
             </div>
-            <p className="text-sm text-gray-500 mb-8 pb-8 border-b border-gray-100">
+            <p className="text-sm text-muted-foreground mb-8 pb-8 border-b border-border">
               ID: {lead.id} • Utworzono: {format(new Date(lead.created_at), "dd.MM.yyyy HH:mm", { locale: pl })}
             </p>
 
             <div className="space-y-12">
               {/* Sekcja: Wybrane urządzenia i wycena (TERAZ NA GÓRZE) */}
               <section>
-                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-gray-100">Preferencje urządzeń i Wycena</h3>
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-border">Preferencje urządzeń i Wycena</h3>
+                <div className="bg-secondary rounded-xl p-6 border border-border">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-6">
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Preferowany termin audytu</p>
+                      <p className="text-sm text-muted-foreground mb-1">Preferowany termin audytu</p>
                       <p className="font-medium text-lg">
                         {lead.data_rezerwacji 
                           ? format(new Date(lead.data_rezerwacji), "dd.MM.yyyy HH:mm", { locale: pl }) 
@@ -152,25 +152,25 @@ export default async function LeadDetailsPage({
                     </div>
                   </div>
 
-                  <div className="mb-6 p-4 bg-white rounded-lg border border-blue-100">
-                    <p className="text-sm text-gray-500 mb-3 font-semibold">Wybrany zestaw (Triage):</p>
+                  <div className="mb-6 p-4 bg-card rounded-lg border border-primary/10">
+                    <p className="text-sm text-muted-foreground mb-3 font-semibold">Wybrany zestaw (Triage):</p>
                     {extUnit || intUnits.length > 0 ? (
                       <div className="space-y-4">
                         {extUnit && (
                           <div>
-                            <span className="text-xs font-bold uppercase text-gray-400">Jednostka zewnętrzna:</span>
-                            <div className="font-medium text-gray-900 mt-1">
-                              {extUnit.brand} {extUnit.model_code} <span className="text-gray-500 font-normal">({extUnit.cooling_capacity_kw} kW)</span>
+                            <span className="text-xs font-bold uppercase text-muted-foreground/60">Jednostka zewnętrzna:</span>
+                            <div className="font-medium text-foreground mt-1">
+                              {extUnit.brand} {extUnit.model_code} <span className="text-muted-foreground font-normal">({extUnit.cooling_capacity_kw} kW)</span>
                             </div>
                           </div>
                         )}
                         {intUnits.length > 0 && (
                           <div>
-                            <span className="text-xs font-bold uppercase text-gray-400">Jednostki wewnętrzne ({intUnits.length}):</span>
+                            <span className="text-xs font-bold uppercase text-muted-foreground/60">Jednostki wewnętrzne ({intUnits.length}):</span>
                             <ul className="mt-1 space-y-2">
                               {intUnits.map((iu: any, idx: number) => (
-                                <li key={idx} className="font-medium text-gray-900 flex items-center gap-2 before:content-['•'] before:text-blue-500">
-                                  {iu.brand} {iu.series_name || iu.model_code} <span className="text-gray-500 font-normal">({iu.cooling_capacity_kw} kW, {iu.color})</span>
+                                <li key={idx} className="font-medium text-foreground flex items-center gap-2 before:content-['•'] before:text-primary">
+                                  {iu.brand} {iu.series_name || iu.model_code} <span className="text-muted-foreground font-normal">({iu.cooling_capacity_kw} kW, {iu.color})</span>
                                 </li>
                               ))}
                             </ul>
@@ -182,31 +182,31 @@ export default async function LeadDetailsPage({
                     )}
                   </div>
                   
-                  <div className="mt-6 pt-6 border-t border-gray-200">
-                    <p className="text-sm text-gray-500 mb-1">Estymowana wycena z Triage</p>
-                    <p className="text-2xl font-bold text-blue-700">{estimatedQuote}</p>
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <p className="text-sm text-muted-foreground mb-1">Estymowana wycena z Triage</p>
+                    <p className="text-2xl font-bold font-mono text-primary">{estimatedQuote}</p>
                   </div>
                 </div>
               </section>
 
               {/* Sekcja: Dane kontaktowe */}
               <section>
-                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-gray-100">Dane kontaktowe i Adres</h3>
+                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-border">Dane kontaktowe i Adres</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Imię i nazwisko</p>
+                    <p className="text-sm text-muted-foreground mb-1">Imię i nazwisko</p>
                     <p className="font-medium text-lg">{name}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Telefon</p>
+                    <p className="text-sm text-muted-foreground mb-1">Telefon</p>
                     <p className="font-medium text-lg">{phone}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Email</p>
+                    <p className="text-sm text-muted-foreground mb-1">Email</p>
                     <p className="font-medium text-lg">{email}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Adres montażu</p>
+                    <p className="text-sm text-muted-foreground mb-1">Adres montażu</p>
                     <p className="font-medium text-lg">{address}</p>
                   </div>
                 </div>
@@ -214,30 +214,30 @@ export default async function LeadDetailsPage({
 
               {/* Sekcja: Informacje o obiekcie */}
               <section>
-                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-gray-100">Informacje o obiekcie (Triage)</h3>
+                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-border">Informacje o obiekcie (Triage)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Rodzaj obiektu</p>
+                    <p className="text-sm text-muted-foreground mb-1">Rodzaj obiektu</p>
                     <p className="font-medium text-lg">{location}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Stan wykończenia</p>
+                    <p className="text-sm text-muted-foreground mb-1">Stan wykończenia</p>
                     <p className="font-medium text-lg">{buildingState}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Liczba pomieszczeń</p>
+                    <p className="text-sm text-muted-foreground mb-1">Liczba pomieszczeń</p>
                     <p className="font-medium text-lg">{roomCount}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Wielkości pokoi</p>
+                    <p className="text-sm text-muted-foreground mb-1">Wielkości pokoi</p>
                     <p className="font-medium text-lg">{roomSizes}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Piętro</p>
+                    <p className="text-sm text-muted-foreground mb-1">Piętro</p>
                     <p className="font-medium text-lg">{floorDisplay}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Możliwy agregat na balkonie</p>
+                    <p className="text-sm text-muted-foreground mb-1">Możliwy agregat na balkonie</p>
                     <p className="font-medium text-lg">{hasBalcony}</p>
                   </div>
                 </div>

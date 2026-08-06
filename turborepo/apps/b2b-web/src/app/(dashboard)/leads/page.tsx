@@ -6,14 +6,32 @@ import { LeadStatus } from "@repo/database";
 export const dynamic = "force-dynamic";
 
 export default async function LeadsPage(props: {
-  searchParams: Promise<{ status?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; page?: string; bucket?: string }>;
 }) {
   const searchParams = await props.searchParams;
-  const status = (searchParams.status as LeadStatus) || "NEW_LEAD";
+  
+  // Bucket query param takes priority (from Sidebar links like ?bucket=cold)
+  const bucket = searchParams.bucket;
+  const status = bucket 
+    ? undefined 
+    : ((searchParams.status as LeadStatus | "ALL") || "NEW_LEAD");
+  
   const page = searchParams.page ? parseInt(searchParams.page, 10) : 1;
 
-  const result = await getLeads({ status, page, limit: 50 });
+  const result = await getLeads({ 
+    status: bucket ? undefined : status, 
+    bucket,
+    page, 
+    limit: 50 
+  });
   const auditors = await getAuditors();
+
+  // Determine which status to highlight in the dropdown
+  const activeStatus: LeadStatus | "ALL" = bucket === "cold" 
+    ? "QUOTE_REJECTED" 
+    : bucket === "rollback" 
+      ? "ROLLBACK_RESCHEDULING" 
+      : (status || "NEW_LEAD");
 
   return (
     <LeadsClient 
@@ -21,7 +39,7 @@ export default async function LeadsPage(props: {
       auditors={auditors} 
       totalPages={result.totalPages}
       currentPage={page}
-      initialStatus={status}
+      initialStatus={activeStatus}
       stageCounts={result.stageCounts}
     />
   );

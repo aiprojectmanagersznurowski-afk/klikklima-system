@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Calendar, Edit, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, Snowflake, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadStatus, leady as Lead, audytorzy as Auditor } from "@repo/database";
 import { format } from "date-fns";
@@ -18,19 +18,65 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { updateLeadAuditor } from "./[id]/actions";
+import { advanceLeadStatus } from "./actions";
 
-export const KANBAN_STAGES: { id: LeadStatus; title: string }[] = [
-  { id: "NEW_LEAD", title: "1. Nowy lead" },
-  { id: "AWAITING_AUDIT", title: "2. Oczekiwanie na audyt" },
-  { id: "AUDIT_COMPLETED", title: "3. Wykonany audyt" },
-  { id: "AWAITING_CREW_ASSIGNMENT", title: "4. Oczekuje na przydzielenie ekipy" },
-  { id: "HARDWARE_IN_WAREHOUSE", title: "5. Wysyłka sprzętu (Hurtownia)" },
-  { id: "HARDWARE_IN_TRANSIT", title: "6. Wysyłka w drodze (Kurier)" },
-  { id: "AWAITING_INSTALLATION", title: "7. Oczekuje instalacji" },
-  { id: "INSTALLATION_COMPLETED", title: "8. Instalacja zakończona" },
-  { id: "QUOTE_REJECTED", title: "BUCKET - Wyceny odrzucone / Zimne leady" },
-  { id: "ROLLBACK_RESCHEDULING", title: "BUCKET - Anulowane / Do przełożenia" },
+type StageFilter = LeadStatus | "ALL";
+
+export const KANBAN_STAGES: { id: StageFilter; title: string; short?: string }[] = [
+  { id: "ALL", title: "Wszystkie", short: "Wszystkie" },
+  { id: "NEW_LEAD", title: "1. Nowy lead", short: "E1" },
+  { id: "AWAITING_AUDIT", title: "2. Oczekiwanie na audyt", short: "E2" },
+  { id: "AUDIT_COMPLETED", title: "3. Wykonany audyt", short: "E3" },
+  { id: "AWAITING_CREW_ASSIGNMENT", title: "4. Oczekuje na ekipę", short: "E4" },
+  { id: "HARDWARE_IN_WAREHOUSE", title: "5. Wysyłka (Hurtownia)", short: "E5" },
+  { id: "HARDWARE_IN_TRANSIT", title: "6. Wysyłka w drodze", short: "E6" },
+  { id: "AWAITING_INSTALLATION", title: "7. Oczekuje instalacji", short: "E7" },
+  { id: "INSTALLATION_COMPLETED", title: "8. Instalacja zakończona", short: "E8" },
+  { id: "QUOTE_REJECTED", title: "🧊 Zimne leady", short: "ZL" },
+  { id: "ROLLBACK_RESCHEDULING", title: "🔄 Rollback", short: "RB" },
 ];
+
+/** Map status to user-friendly label */
+function statusLabel(status: LeadStatus | null): string {
+  const stage = KANBAN_STAGES.find(s => s.id === status);
+  return stage?.title || status || "—";
+}
+
+/** Dozwolone akcje kontekstowe per status */
+const CONTEXT_ACTIONS: Record<LeadStatus, { label: string; target: LeadStatus; icon?: string; variant?: "default" | "destructive" }[]> = {
+  NEW_LEAD: [],
+  AWAITING_AUDIT: [
+    { label: "Cofnij do Nowy lead", target: "NEW_LEAD" },
+  ],
+  AUDIT_COMPLETED: [
+    { label: "Klient zaakceptował → Ekipa", target: "AWAITING_CREW_ASSIGNMENT" },
+    { label: "Przenieś do Zimnych leadów", target: "QUOTE_REJECTED", variant: "destructive" },
+  ],
+  AWAITING_CREW_ASSIGNMENT: [
+    { label: "Ekipa przydzielona → Logistyka", target: "HARDWARE_IN_WAREHOUSE" },
+    { label: "Rollback (Problem)", target: "ROLLBACK_RESCHEDULING", variant: "destructive" },
+  ],
+  HARDWARE_IN_WAREHOUSE: [
+    { label: "Wysłano kurierem → W drodze", target: "HARDWARE_IN_TRANSIT" },
+    { label: "Dostawa z ekipą (Bypass) → E7", target: "AWAITING_INSTALLATION" },
+    { label: "Rollback (Problem)", target: "ROLLBACK_RESCHEDULING", variant: "destructive" },
+  ],
+  HARDWARE_IN_TRANSIT: [
+    { label: "Paczka dostarczona → E7", target: "AWAITING_INSTALLATION" },
+    { label: "Rollback (Problem)", target: "ROLLBACK_RESCHEDULING", variant: "destructive" },
+  ],
+  AWAITING_INSTALLATION: [
+    { label: "Instalacja zakończona ✓", target: "INSTALLATION_COMPLETED" },
+    { label: "Rollback (Problem)", target: "ROLLBACK_RESCHEDULING", variant: "destructive" },
+  ],
+  INSTALLATION_COMPLETED: [],
+  QUOTE_REJECTED: [
+    { label: "Reaktywuj → Nowy lead", target: "NEW_LEAD" },
+  ],
+  ROLLBACK_RESCHEDULING: [
+    { label: "Powrót do lejka → E4", target: "AWAITING_CREW_ASSIGNMENT" },
+  ],
+};
 
 export function LeadsClient({ 
   initialLeads, 
@@ -44,7 +90,7 @@ export function LeadsClient({
   auditors: Auditor[];
   totalPages: number;
   currentPage: number;
-  initialStatus: LeadStatus;
+  initialStatus: StageFilter;
   stageCounts: Record<string, number>;
 }) {
   const router = useRouter();
@@ -56,8 +102,11 @@ export function LeadsClient({
     setLeads(initialLeads);
   }, [initialLeads]);
 
+  const isShowingAll = initialStatus === "ALL";
+
   const filteredLeads = leads.filter(lead => {
-    if (lead.status !== initialStatus) return false;
+    // When showing all, don't filter by status
+    if (!isShowingAll && lead.status !== initialStatus) return false;
     
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -67,7 +116,6 @@ export function LeadsClient({
     }
     return true;
   }).sort((a, b) => {
-    // Sort by audit date (data_rezerwacji) ascending, if no audit date then by created_at descending
     if (a.data_rezerwacji && b.data_rezerwacji) {
       return new Date(a.data_rezerwacji).getTime() - new Date(b.data_rezerwacji).getTime();
     } else if (a.data_rezerwacji) {
@@ -110,6 +158,34 @@ export function LeadsClient({
     }
   };
 
+  const handleAdvanceStatus = async (leadId: string, targetStatus: LeadStatus) => {
+    // Optimistic UI: Update the lead status locally
+    const previousLeads = [...leads];
+    setLeads(current => current.map(l => {
+      if (l.id === leadId) {
+        return { ...l, status: targetStatus } as Lead;
+      }
+      return l;
+    }));
+
+    const res = await advanceLeadStatus(leadId, targetStatus);
+    if (!res.success) {
+      alert("Błąd: " + res.error);
+      setLeads(previousLeads);
+    } else {
+      startTransition(() => {
+        router.refresh();
+      });
+    }
+  };
+
+  const buildPageUrl = (status: StageFilter, page?: number) => {
+    const params = new URLSearchParams();
+    params.set("status", status);
+    if (page && page > 1) params.set("page", String(page));
+    return `?${params.toString()}`;
+  };
+
   return (
     <div className="h-full flex flex-col max-w-[1800px] mx-auto animate-in fade-in duration-300">
       <div className="flex justify-between items-center bg-card p-6 border-b border-border">
@@ -124,7 +200,7 @@ export function LeadsClient({
             <select
               className="text-sm border border-border rounded-md px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer shadow-xs disabled:opacity-50"
               value={initialStatus}
-              onChange={(e) => startTransition(() => router.push(`?status=${e.target.value}`))}
+              onChange={(e) => startTransition(() => router.push(buildPageUrl(e.target.value as StageFilter)))}
               disabled={isPending}
             >
               {KANBAN_STAGES.map(stage => (
@@ -161,11 +237,12 @@ export function LeadsClient({
               </div>
             </div>
           )}
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
                 <tr className="bg-secondary/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider sticky top-0 z-10 shadow-xs">
                   <th className="p-3 px-6">ID & Data wpłynięcia</th>
                   <th className="p-3 px-6">Klient & Adres</th>
+                  {isShowingAll && <th className="p-3 px-6">Etap</th>}
                   <th className="p-3 px-6">Kwota estymowana</th>
                   <th className="p-3 px-6">Audytor</th>
                   <th className="p-3 px-6">Termin audytu</th>
@@ -176,7 +253,7 @@ export function LeadsClient({
               <tbody className="divide-y divide-border">
                 {filteredLeads.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
+                    <td colSpan={isShowingAll ? 8 : 7} className="px-6 py-12 text-center text-muted-foreground">
                       Brak leadów w tym etapie.
                     </td>
                   </tr>
@@ -194,6 +271,8 @@ export function LeadsClient({
                     const hoursSinceCreation = (new Date().getTime() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60);
                     const isDelayed = isNewLead && hoursSinceCreation > 24;
 
+                    const actions = lead.status ? CONTEXT_ACTIONS[lead.status as LeadStatus] || [] : [];
+
                     return (
                       <tr key={lead.id} className={`hover:bg-secondary/30 transition-colors ${isDelayed ? "bg-destructive/10 hover:bg-destructive/15" : ""}`}>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -209,6 +288,13 @@ export function LeadsClient({
                             <span className="text-xs text-muted-foreground mt-0.5 truncate" title={fullAddress}>{fullAddress}</span>
                           </div>
                         </td>
+                        {isShowingAll && (
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                              {KANBAN_STAGES.find(s => s.id === lead.status)?.short || "—"}
+                            </span>
+                          </td>
+                        )}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-sm font-semibold text-foreground">{estimatedQuote}</span>
                         </td>
@@ -275,12 +361,46 @@ export function LeadsClient({
                           <span className="text-sm text-muted-foreground">{teamName}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1">
                             <Link href={`/leads/${lead.id}`} target="_blank" rel="noopener noreferrer">
-                              <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-primary" title="Otwórz szczegóły w nowej karcie">
+                              <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-primary" title="Otwórz szczegóły">
                                 <ExternalLink size={16} />
                               </Button>
                             </Link>
+                            
+                            {actions.length > 0 && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-foreground" title="Akcje">
+                                    <MoreHorizontal size={16} />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-64">
+                                  <DropdownMenuLabel>Zmień etap</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  {actions.map((action) => (
+                                    <DropdownMenuItem
+                                      key={action.target}
+                                      onSelect={() => handleAdvanceStatus(lead.id, action.target)}
+                                      className={`cursor-pointer flex items-center gap-2 ${
+                                        action.variant === "destructive" 
+                                          ? "text-destructive focus:text-destructive focus:bg-destructive/10" 
+                                          : ""
+                                      }`}
+                                    >
+                                      {action.variant === "destructive" ? (
+                                        <AlertTriangle size={14} className="shrink-0" />
+                                      ) : action.target === "NEW_LEAD" || action.target === "AWAITING_CREW_ASSIGNMENT" ? (
+                                        <RotateCcw size={14} className="shrink-0" />
+                                      ) : (
+                                        <ArrowRight size={14} className="shrink-0" />
+                                      )}
+                                      {action.label}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -295,7 +415,7 @@ export function LeadsClient({
           <div className="flex items-center justify-center px-6 py-4 border-t border-border gap-2 bg-card">
             <button
               disabled={currentPage <= 1 || isPending}
-              onClick={() => startTransition(() => router.push(`?status=${initialStatus}&page=${currentPage - 1}`))}
+              onClick={() => startTransition(() => router.push(buildPageUrl(initialStatus, currentPage - 1)))}
               className="p-1.5 rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeft size={16} />
@@ -305,7 +425,7 @@ export function LeadsClient({
                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                  <button
                    key={p}
-                   onClick={() => startTransition(() => router.push(`?status=${initialStatus}&page=${p}`))}
+                   onClick={() => startTransition(() => router.push(buildPageUrl(initialStatus, p)))}
                    className={`w-8 h-8 flex items-center justify-center rounded-md text-sm transition-colors ${p === currentPage ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-secondary'}`}
                  >
                    {p}
@@ -315,7 +435,7 @@ export function LeadsClient({
 
             <button
               disabled={currentPage >= totalPages || isPending}
-              onClick={() => startTransition(() => router.push(`?status=${initialStatus}&page=${currentPage + 1}`))}
+              onClick={() => startTransition(() => router.push(buildPageUrl(initialStatus, currentPage + 1)))}
               className="p-1.5 rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronRight size={16} />
