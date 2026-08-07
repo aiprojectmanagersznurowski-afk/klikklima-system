@@ -47,22 +47,6 @@ Dodatkowo rekord w tabeli `leady` po przypisaniu musi zostać zaktualizowany o i
 ALTER TABLE leady ADD COLUMN auditor_id UUID REFERENCES auth.users(id);
 ```
 
-## Scenariusze Testowe (Playwright)
-
-Poniższe scenariusze BDD definiują weryfikację tego procesu od strony końcowej.
-
-**Scenariusz 1: Ekran Sukcesu i integracja z kalendarzem klienta**
-- **Given** użytkownik prawidłowo wypełnił formularz Triage i kliknął "Zarezerwuj"
-- **When** system wyświetla widok podziękowania ("Sukces")
-- **Then** na ekranie widoczne są dwa przyciski: "Dodaj do Google Calendar" oraz "Dodaj do Apple Calendar"
-- **And** kliknięcie w przycisk generuje poprawny plik `.ics` lub link do kalendarza z danymi spotkania
-
-**Scenariusz 2: Parametryzacja asynchronicznych powiadomień**
-- **Given** aplikacja wysłała Webhook do Make.com o nowym Leadzie
-- **When** skrypt Make.com dochodzi do węzła "Sleep/Delay"
-- **Then** odczytuje wartości `delay_min_minutes` i `delay_max_minutes` z bazy danych
-- **And** wznawia działanie dopiero po losowym czasie z tego przedziału, po czym triggeruje e-mail i SMS API
-
 ## Wizualizacja Diagramu
 ![Diagram Post-Booking](./post_booking_workflow.png)
 

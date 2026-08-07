@@ -29,10 +29,10 @@ Zaimplementuj stały pasek boczny (Sidebar) z następującą strukturą nawigacj
 
   
 
-- **Logistyka** *(menu wysuwane)* — sekcja zarządzania łańcuchem dostaw (Supply Chain):
-  - **Do wysłania** — lista leadów na Etapie 5 (Wysyłka sprzętu – W hurtowni).
-  - **Wysyłka w drodze** — lista leadów na Etapie 6 (Wysyłka w drodze – Kurier).
-  - **Rollback / Do przełożenia** *(Bucket)* — lista leadów w buckecie „Anulowane / Do przełożenia", oczekujących na ponowną rezerwację terminu montażu.
+- **Logistyka** — pojedynczy widok tabelaryczny do zarządzania łańcuchem dostaw (Supply Chain). Zawiera wewnętrzne filtry dla statusów:
+  - Do wysłania (Etap 5)
+  - Wysyłka w drodze (Etap 6)
+  - Rollback / Do przełożenia (Bucket)
 
 - **Centrum Powiadomień** — pełna historia wysłanych i zakolejkowanych powiadomień SMS/Email z tabeli `notification_queue` z opcją ponowienia wysyłki w razie błędów.
 
@@ -88,9 +88,9 @@ Cykl życia zgłoszenia sprzedażowo-montażowego składa się z **8 sekwencyjny
 ---
 
 ## Epic 2: Moduł Logistyki i Wysyłek (Rollback Engine)
-Zbuduj dedykowany widok tabelaryczny do zarządzania łańcuchem dostaw (Supply Chain).
+Zbuduj dedykowany widok tabelaryczny do zarządzania łańcuchem dostaw (Supply Chain). Nawigacja boczna do Logistyki to pojedynczy link (bez listy rozwijanej).
 
-- **Tabela wysyłek:** Prezentuje skolejkowane wysyłki. Kolumny: Nazwa klienta, Adres dostawy, Specyfikacja/Model sprzętu, Status, Tracking ID.
+- **Tabela wysyłek:** Prezentuje skolejkowane wysyłki w jednym zbiorczym widoku. Posiada wewnętrzny filtr (rozwijaną listę) pozwalający na zawężenie widoku do konkretnego statusu wysyłki (Do wysłania, W drodze, Rollback). Kolumny: Nazwa klienta, Adres dostawy, Specyfikacja/Model sprzętu, Status, Tracking ID.
 - **Sortowanie i SLA:** Tabela domyślnie sortowana po pilności dostawy (względem daty montażu). Wprowadź kolorowanie wierszy:
   - 🔴 **Czerwony:** < 3 dni do montażu.
   - 🟠 **Pomarańczowy:** 3-7 dni do montażu.

@@ -102,42 +102,6 @@ Przykładowy rekord Leada z wyceną:
 ```
 *Uwaga: Adres w formularzu Triage jest walidowany i geokodowany "w locie" przy użyciu Google Maps Places API (Autocomplete). Po wyborze adresu z listy, natychmiast zapisujemy zwalidowany tekst oraz jego współrzędne (lat/lng).*
 
-## Scenariusze Testowe (Playwright)
-
-Poniższe scenariusze BDD mogą zostać bezpośrednio wykorzystane przy budowie testów E2E dla kalkulatora.
-
-**Scenariusz 1: Ścieżka A - Standardowy Montaż (Happy Path, Single Split)**
-- **Given** użytkownik wchodzi na formularz Triage
-- **When** wpisuje adres korzystając z podpowiedzi (Google Places Autocomplete)
-- **And** wybiera "Mieszkanie" -> "1 pokój" -> "Do 25m²" -> "Wykończone" -> "Masz balkon: Tak"
-- **Then** użytkownik dociera do końca formularza na Ścieżkę A (Wycena Online + Booking)
-
-**Scenariusz 2: Ścieżka C - Instalacja Dwuetapowa (Multisplit)**
-- **Given** użytkownik wchodzi na formularz Triage
-- **When** wybiera "Dom" -> "2 lub 3 pokoje" -> oba pokoje "Do 25m²" -> "Deweloperski / Remont"
-- **Then** użytkownik dociera do końca formularza na Ścieżkę C (Wycena Dwuetapowa + Booking)
-
-**Scenariusz 3: Ścieżka D - Podwyższone Ryzyko (Wysokościowe)**
-- **Given** użytkownik wchodzi na formularz Triage
-- **When** wybiera "Mieszkanie" -> "1 pokój" -> "26-35m²" -> "Wykończone" -> "Masz balkon: Nie" -> "Piętro: Powyżej 2"
-- **Then** użytkownik dociera do końca formularza na Ścieżkę D (Tylko Booking, komunikat o audycie i podnośniku)
-
-**Scenariusz 4: Ścieżka Ekspercka (Za dużo pokoi)**
-- **Given** użytkownik wchodzi na formularz Triage
-- **When** wybiera "Dom" -> "4 i więcej pomieszczeń"
-- **Then** system natychmiast wyrzuca użytkownika na Ścieżkę Ekspercką (Tylko Booking bez wyceny)
-
-**Scenariusz 5: Ścieżka Ekspercka (Duży metraż pojedynczego pokoju w Multisplicie)**
-- **Given** użytkownik wchodzi na formularz Triage
-- **When** wybiera "Mieszkanie" -> "2 lub 3 pokoje" -> Pokój 1: "Do 25m²", Pokój 2: "Przynajmniej 1 > 50m²"
-- **Then** system wyrzuca użytkownika na Ścieżkę Ekspercką z powodu nietypowego metrażu
-
-**Scenariusz 6: Moduł Rezerwacji (Dostępność i Sloty)**
-- **Given** użytkownik dociera do ekranu końcowego (dowolna ścieżka) i widzi kalendarz
-- **When** system pobiera dostępne terminy ze zintegrowanego kalendarza doradców (np. Google Calendar)
-- **Then** użytkownik widzi wyłącznie sloty trwające dokładnie 1h (z uwzględnieniem 45 minut bufora między spotkaniami)
-- **And** sloty mieszczą się w zdefiniowanym oknie godzinowym (np. 08:00 - 15:00)
-
 ## Moduł Kalkulatora Wyceny (Netto / Brutto)
 
 Kluczowym elementem formularza jest kalkulator, który po przejściu ścieżki B2C i wybraniu "Mieszkanie" lub "Dom", musi zaprezentować klientowi ostateczną wycenę Brutto.

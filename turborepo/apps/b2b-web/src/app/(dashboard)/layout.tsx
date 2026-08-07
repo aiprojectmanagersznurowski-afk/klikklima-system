@@ -37,17 +37,7 @@ const navItems: NavItem[] = [
       { id: 'rejected_auto', label: 'Odrzucone (Brak akceptacji > 14 dni)', href: '/leads?bucket=rejected_auto' },
     ]
   },
-  {
-    id: 'logistics',
-    label: 'Logistyka',
-    icon: Box,
-    subItems: [
-      { id: 'logistics_all', label: 'Wszystkie', href: '/logistics' },
-      { id: 'to_send', label: 'Do wysłania', href: '/logistics?stage=5' },
-      { id: 'in_transit', label: 'Wysyłka w drodze', href: '/logistics?stage=6' },
-      { id: 'rollback', label: 'Rollback', href: '/logistics?bucket=rollback' },
-    ]
-  },
+  { id: 'logistics', label: 'Logistyka', icon: Box, href: '/logistics' },
   { id: 'notifications', label: 'Centrum Powiadomień', icon: Bell, href: '/notifications' },
   {
     id: 'settings',

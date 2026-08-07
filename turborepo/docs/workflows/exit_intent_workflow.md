@@ -51,21 +51,5 @@ Wymaga to rozszerzenia pola `status_leada` o nową wartość (np. `Soft Lead` lu
 ```
 Dzięki temu Dyspozytor dzwoniąc do klienta wie, że klient szukał klimatyzacji do 1 pokoju, co drastycznie zwiększa szanse na sprzedaż.
 
-## Scenariusze Testowe (Playwright)
-
-Poniższe scenariusze BDD definiują weryfikację tego procesu od strony testów E2E.
-
-**Scenariusz 1: Triggerowanie pop-upu Exit-Intent**
-- **Given** użytkownik jest na kroku podawania danych adresowych w Triage
-- **When** symuluje ruch kursora poza obszar okna przeglądarki (zdarzenie `mouseleave` na `document`)
-- **Then** na ekranie pojawia się pop-up "Zostaw numer, oddzwonimy"
-- **And** pop-up pojawia się tylko raz na sesję (aby nie irytować użytkownika)
-
-**Scenariusz 2: Zapisanie Soft Leada**
-- **Given** użytkownik widzi pop-up Exit-Intent
-- **When** wpisuje numer telefonu i klika "Wyślij"
-- **Then** pop-up wyświetla podziękowanie
-- **And** w bazie danych Supabase tworzy się nowy rekord w tabeli `leady` ze statusem `Soft Lead` oraz częściowo wypełnionym JSONem `odpowiedzi_triage`.
-
 ## Wizualizacja Diagramu
 ![Diagram Soft Lead (Exit-Intent)](./exit_intent_workflow.png)
