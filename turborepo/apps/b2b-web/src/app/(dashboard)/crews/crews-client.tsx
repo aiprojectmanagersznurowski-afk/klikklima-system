@@ -1,9 +1,10 @@
 "use client"
 
-import React, { useState } from "react"
-import { Search, ShieldCheck, Wrench, MoreHorizontal, FileCheck, MapPin } from "lucide-react"
+import React, { useState, useRef } from "react"
+import { Search, ShieldCheck, Wrench, MoreHorizontal, FileCheck, MapPin, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CrewSummary } from "./actions"
+import { CrewSummary, updateCrewAvatar } from "./actions"
+import { createClient } from "@/utils/supabase/client"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,9 +15,50 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
-export function CrewsClient({ initialCrews }: { initialCrews: CrewSummary[] }) {
-  const [crews] = useState<CrewSummary[]>(initialCrews)
+export type CrewSummaryWithAvatar = CrewSummary & { avatarUrl?: string | null };
+
+export function CrewsClient({ initialCrews }: { initialCrews: CrewSummaryWithAvatar[] }) {
+  const [crews] = useState<CrewSummaryWithAvatar[]>(initialCrews)
   const [searchQuery, setSearchQuery] = useState("")
+  const [isUploading, setIsUploading] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingCrewId, setUploadingCrewId] = useState<string | null>(null)
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !uploadingCrewId) return
+
+    setIsUploading(uploadingCrewId)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop()
+      const fileName = `${uploadingCrewId}-${Date.now()}.${ext}`
+      
+      const { data, error } = await supabase.storage
+        .from('zespoly')
+        .upload(fileName, file)
+
+      if (error) throw error
+
+      await updateCrewAvatar(uploadingCrewId, data.path)
+    } catch (err) {
+      console.error('Error uploading file:', err)
+      alert("Błąd podczas wgrywania zdjęcia")
+    } finally {
+      setIsUploading(null)
+      setUploadingCrewId(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
+  }
+
+  const triggerFileUpload = (crewId: string) => {
+    setUploadingCrewId(crewId)
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
 
   const filtered = crews.filter(c => {
     if (searchQuery) {
@@ -35,6 +77,13 @@ export function CrewsClient({ initialCrews }: { initialCrews: CrewSummary[] }) {
           <p className="text-sm text-muted-foreground mt-1">Zarządzanie ekipami instalatorów, certyfikatami i obszarami działania.</p>
         </div>
         <div className="flex gap-3">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            accept="image/*" 
+            className="hidden" 
+          />
           <Button className="rounded-md font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm flex items-center gap-2" onClick={() => alert("Dodawanie w Fazie 2")}>
             <Wrench className="size-4" />
             Dodaj Zespół
@@ -69,8 +118,17 @@ export function CrewsClient({ initialCrews }: { initialCrews: CrewSummary[] }) {
               <div key={crew.id} className={`flex flex-col bg-card rounded-2xl border ${crew.aktywny ? 'border-border' : 'border-destructive/30 opacity-75'} overflow-hidden shadow-sm hover:shadow-md transition-shadow relative`}>
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-4">
-                    <div className="size-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                      <Wrench className="size-5 text-primary" />
+                    <div className="size-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden relative">
+                      {crew.avatarUrl ? (
+                        <img src={crew.avatarUrl} alt={crew.nazwa} className="w-full h-full object-cover" />
+                      ) : (
+                        <Wrench className="size-5 text-primary" />
+                      )}
+                      {isUploading === crew.id && (
+                        <div className="absolute inset-0 bg-background/50 flex items-center justify-center backdrop-blur-sm">
+                          <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+                        </div>
+                      )}
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
@@ -80,6 +138,9 @@ export function CrewsClient({ initialCrews }: { initialCrews: CrewSummary[] }) {
                         <DropdownMenuLabel>Zarządzanie</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => alert("Wkrótce w Fazie 2")}>Edytuj Zespół</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => triggerFileUpload(crew.id)}>
+                          <Upload className="size-4 mr-2" /> Wgraj zdjęcie zespołu
+                        </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:text-destructive">Zawieś Zespół</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

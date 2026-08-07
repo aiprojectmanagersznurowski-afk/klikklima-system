@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@repo/database"
+import { revalidatePath } from "next/cache"
 
 export type CrewSummary = {
   id: string;
@@ -13,6 +14,7 @@ export type CrewSummary = {
   liczba_brygad: number;
   aktywny: boolean;
   installationsCount: number;
+  zdjecie_url: string | null;
 }
 
 export async function getCrews(): Promise<CrewSummary[]> {
@@ -39,6 +41,15 @@ export async function getCrews(): Promise<CrewSummary[]> {
     promien_dzialania_km: c.promien_dzialania_km,
     liczba_brygad: c.liczba_brygad,
     aktywny: c.aktywny,
-    installationsCount: c.instalacje.length
+    installationsCount: c.instalacje.length,
+    zdjecie_url: c.zdjecie_url
   }));
+}
+
+export async function updateCrewAvatar(crewId: string, path: string) {
+  await prisma.zespoly_monterskie.update({
+    where: { id: crewId },
+    data: { zdjecie_url: path }
+  });
+  revalidatePath('/crews');
 }
