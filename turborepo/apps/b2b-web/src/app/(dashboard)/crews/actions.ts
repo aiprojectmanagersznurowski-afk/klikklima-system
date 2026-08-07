@@ -53,3 +53,10 @@ export async function updateCrewAvatar(crewId: string, path: string) {
   });
   revalidatePath('/crews');
 }
+
+export async function deleteCrewAction(id: string) {
+  await prisma.zespoly_monterskie.delete({
+    where: { id }
+  });
+  revalidatePath('/crews');
+}

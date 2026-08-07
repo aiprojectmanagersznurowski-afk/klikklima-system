@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useState } from "react"
-import { Search, Wrench, MoreHorizontal, CalendarClock, Phone } from "lucide-react"
+import { Search, Wrench, MoreHorizontal, CalendarClock, Phone , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ServiceSummary } from "./actions"
+import { ServiceSummary , deleteServiceAction } from "./actions"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +28,19 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
     }
     return true;
   });
+
+  const handleDelete = (id: string) => {
+    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
+      startTransition(async () => {
+        try {
+          await deleteServiceAction(id);
+          window.location.reload();
+        } catch (e) {
+          alert("Wystąpił błąd podczas usuwania rekordu.");
+        }
+      });
+    }
+  }
 
   return (
     <div className="h-full flex flex-col max-w-[1800px] mx-auto animate-in fade-in duration-300">
@@ -139,6 +152,15 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
                               <DropdownMenuItem onClick={() => alert("Wysyłka przypomnienia (Epic 4)")}>Wyślij Przypomnienie (SMS/Email)</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => alert("Przydział w Fazie 2")}>Przydziel Brygadę</DropdownMenuItem>
                               <DropdownMenuItem>Oznacz jako Wykonany</DropdownMenuItem>
+                            
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                onClick={() => handleDelete(item.id)}
+                              >
+                                <ShieldAlert className="mr-2 size-4" />
+                                <span>Usuń (Tylko Admin)</span>
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>

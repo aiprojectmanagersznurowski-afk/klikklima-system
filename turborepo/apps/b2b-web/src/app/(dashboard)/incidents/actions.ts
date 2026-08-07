@@ -35,3 +35,10 @@ export async function getIncidents(): Promise<IncidentSummary[]> {
     zespol_name: inc.zespol?.nazwa ?? null
   }));
 }
+
+export async function deleteIncidentAction(id: string) {
+  await prisma.usterki_incidents.delete({
+    where: { id }
+  });
+  revalidatePath('/incidents');
+}

@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useState, useTransition } from "react"
-import { Search, MapPin, Calendar, Wrench, MoreHorizontal, CheckCircle2, XCircle, ArrowRight } from "lucide-react"
+import { Search, MapPin, Calendar, Wrench, MoreHorizontal, CheckCircle2, XCircle, ArrowRight , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { InstallationSummary, updateInstallationStatus } from "./actions"
+import { InstallationSummary, updateInstallationStatus , deleteInstallationAction } from "./actions"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,20 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
   const [installations, setInstallations] = useState<InstallationSummary[]>(initialInstallations)
   const [searchQuery, setSearchQuery] = useState("")
   const [isPending, startTransition] = useTransition()
+
+  const handleDelete = (id: string) => {
+    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
+      startTransition(async () => {
+        try {
+          await deleteInstallationAction(id);
+          window.location.reload();
+        } catch (e) {
+          alert("Wystąpił błąd podczas usuwania rekordu.");
+        }
+      });
+    }
+  }
+
 
   const handleStatusChange = (id: string, newStatus: any) => {
     startTransition(async () => {
@@ -211,7 +225,16 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
                                     <span>Anuluj montaż</span>
                                   </DropdownMenuItem>
                                 )}
-                              </DropdownMenuContent>
+                              
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                onClick={() => handleDelete(item.id)}
+                              >
+                                <ShieldAlert className="mr-2 size-4" />
+                                <span>Usuń (Tylko Admin)</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
                         </td>

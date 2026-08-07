@@ -44,3 +44,10 @@ export async function getUpcomingServices(): Promise<ServiceSummary[]> {
     installation_date: inst.data_zakonczenia
   }));
 }
+
+export async function deleteServiceAction(id: string) {
+  await prisma.serwisy.delete({
+    where: { id }
+  });
+  revalidatePath('/services');
+}

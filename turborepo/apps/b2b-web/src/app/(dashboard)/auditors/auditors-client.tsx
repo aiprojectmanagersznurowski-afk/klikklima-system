@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useState } from "react"
-import { Search, ShieldCheck, UserCheck, MoreHorizontal, FileCheck, MapPin } from "lucide-react"
+import { Search, ShieldCheck, UserCheck, MoreHorizontal, FileCheck, MapPin , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { AuditorSummary } from "./actions"
+import { AuditorSummary , deleteAuditorAction } from "./actions"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +26,19 @@ export function AuditorsClient({ initialAuditors }: { initialAuditors: AuditorSu
     }
     return true;
   });
+
+  const handleDelete = (id: string) => {
+    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
+      startTransition(async () => {
+        try {
+          await deleteAuditorAction(id);
+          window.location.reload();
+        } catch (e) {
+          alert("Wystąpił błąd podczas usuwania rekordu.");
+        }
+      });
+    }
+  }
 
   return (
     <div className="h-full flex flex-col max-w-[1800px] mx-auto animate-in fade-in duration-300">
@@ -95,7 +108,16 @@ export function AuditorsClient({ initialAuditors }: { initialAuditors: AuditorSu
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => alert("Wkrótce w Fazie 2")}>Edytuj Audytora</DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive focus:text-destructive">Zawieś Konto</DropdownMenuItem>
-                        </DropdownMenuContent>
+                        
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                onClick={() => handleDelete(item.id)}
+                              >
+                                <ShieldAlert className="mr-2 size-4" />
+                                <span>Usuń (Tylko Admin)</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                     

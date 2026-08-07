@@ -82,3 +82,10 @@ export async function assignCrew(installationId: string, crewId: string) {
   
   revalidatePath('/installations');
 }
+
+export async function deleteInstallationAction(id: string) {
+  await prisma.instalacje.delete({
+    where: { id }
+  });
+  revalidatePath('/installations');
+}

@@ -5,6 +5,9 @@ Ten dokument zawiera szczegółowe wymagania funkcjonalne, modele danych, reguł
 > [!IMPORTANT]
 > **Globalne Uprawnienie Usuwania:** W każdym z poniższych widoków zaimplementowana jest globalna akcja **🚨 „Usuń”**, która jest zarezerwowana **wyłącznie dla roli Administratora**. Jest to kluczowe z punktu widzenia utrzymania higieny bazy danych oraz zgodności z przepisami RODO.
 
+> [!TIP]
+> **Interfejs Akcji Kontekstowych (DropdownMenu):** We wszystkich tabelarycznych widokach w panelu B2B dodatkowe akcje dla konkretnego rekordu (edycja, usunięcie, zmiana statusu, przypisanie) muszą być zgrupowane i wywoływane z menu kontekstowego ukrytego pod ikoną trzech kropek (`MoreHorizontal` / "Trzy kropki") w ostatniej kolumnie danego wiersza. Zapewnia to czysty i spójny UX.
+
 ---
 
 ## 1. Widok: Klienci (Karta 360)

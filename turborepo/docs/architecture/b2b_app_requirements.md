@@ -108,6 +108,7 @@ Zaprojektuj klasyczny CRM w panelu B2B, zoptymalizowany pod łatwość nawigacji
 
 > 📖 **Pełna specyfikacja biznesowa, modele danych, akcje (w tym globalna akcja 🚨 „Usuń" dla Administratora), obsługa certyfikatów (F-Gaz/SEP) oraz kryteria akceptacji dla wszystkich 7 widoków CRM (Klienci, Instalacje, Serwisy, Usterki, Audytorzy, Zespoły, Zimne leady) znajdują się w pliku: [b2b_crm_specifications.md](file:///Users/michalsznurowski/Developemnt/klikklima-system/klikklima-system/turborepo/docs/architecture/b2b_crm_specifications.md).**
 
+- **Akcje Kontekstowe w Tabelach:** Wymaganiem dla KAŻDEGO widoku tabelarycznego w panelu B2B jest to, aby dodatkowe akcje dla danego rekordu (np. edycja, usunięcie) mogły być wywoływane z rozwijanego menu kontekstowego ukrytego pod ikoną trzech kropek (`MoreHorizontal`) w ostatniej kolumnie danego wiersza.
 - **Główne widoki:** Wyraźny podział w sekcji CRM nawigacji bocznej na: Klientów, Instalacje, Serwisy, Usterki, Audytorów, Zespoły oraz Zimne leady.
 - **Widok Lista Instalacji:** Osobna, rozbudowana tabela ze statusem realizacji każdego montażu (nadchodzące, zrealizowane, gwarancja), z szybkimi filtrami po ekipie monterskiej lub dacie.
 - **Widok Serwisów (Tab: Serwisy):** Lista historycznych instalacji zbliżających się do terminu serwisu rocznego. Sortowana od najbliższego serwisu (bazując na kolumnie `next_service_date` z tabeli `installations`). Umożliwia wgląd w to, komu wysłano już zaproszenia i pozwala ręcznie przydzielić montera do wizyty serwisowej.

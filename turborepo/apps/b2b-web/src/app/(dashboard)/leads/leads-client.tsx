@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle } from "lucide-react";
+import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadStatus, leady as Lead, audytorzy as Auditor } from "@repo/database";
 import { format } from "date-fns";
@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { updateLeadAuditor } from "./[id]/actions";
-import { advanceLeadStatus } from "./actions";
+import { advanceLeadStatus , deleteLeadAction } from "./actions";
 
 type StageFilter = LeadStatus | "ALL";
 
@@ -88,7 +88,21 @@ export function LeadsClient({
   stageCounts: Record<string, number>;
 }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition()
+
+  const handleDelete = (id: string) => {
+    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
+      startTransition(async () => {
+        try {
+          await deleteLeadAction(id);
+          window.location.reload();
+        } catch (e) {
+          alert("Wystąpił błąd podczas usuwania rekordu.");
+        }
+      });
+    }
+  }
+;
   const [searchQuery, setSearchQuery] = useState("");
   const [leads, setLeads] = useState(initialLeads);
 
@@ -338,6 +352,15 @@ export function LeadsClient({
                                   </DropdownMenuItem>
                                 </>
                               )}
+                            
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                onClick={() => handleDelete(item.id)}
+                              >
+                                <ShieldAlert className="mr-2 size-4" />
+                                <span>Usuń (Tylko Admin)</span>
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
@@ -390,7 +413,16 @@ export function LeadsClient({
                                       {action.label}
                                     </DropdownMenuItem>
                                   ))}
-                                </DropdownMenuContent>
+                                
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                onClick={() => handleDelete(item.id)}
+                              >
+                                <ShieldAlert className="mr-2 size-4" />
+                                <span>Usuń (Tylko Admin)</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
                               </DropdownMenu>
                             )}
                           </div>

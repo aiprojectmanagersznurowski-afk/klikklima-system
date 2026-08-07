@@ -215,3 +215,10 @@ export async function advanceLeadStatus(leadId: string, targetStatus: LeadStatus
     return { success: false, error: "Nie udało się zmienić statusu leada." };
   }
 }
+
+export async function deleteLeadAction(id: string) {
+  await prisma.leady.delete({
+    where: { id }
+  });
+  revalidatePath('/leads');
+}

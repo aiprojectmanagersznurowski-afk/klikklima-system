@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useState, useRef } from "react"
-import { Search, ShieldCheck, Wrench, MoreHorizontal, FileCheck, MapPin, Upload } from "lucide-react"
+import { Search, ShieldCheck, Wrench, MoreHorizontal, FileCheck, MapPin, Upload , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CrewSummary, updateCrewAvatar } from "./actions"
+import { CrewSummary, updateCrewAvatar , deleteCrewAction } from "./actions"
 import { createClient } from "@/utils/supabase/client"
 import {
   DropdownMenu,
@@ -68,6 +68,19 @@ export function CrewsClient({ initialCrews }: { initialCrews: CrewSummaryWithAva
     }
     return true;
   });
+
+  const handleDelete = (id: string) => {
+    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
+      startTransition(async () => {
+        try {
+          await deleteCrewAction(id);
+          window.location.reload();
+        } catch (e) {
+          alert("Wystąpił błąd podczas usuwania rekordu.");
+        }
+      });
+    }
+  }
 
   return (
     <div className="h-full flex flex-col max-w-[1800px] mx-auto animate-in fade-in duration-300">
@@ -142,7 +155,16 @@ export function CrewsClient({ initialCrews }: { initialCrews: CrewSummaryWithAva
                           <Upload className="size-4 mr-2" /> Wgraj zdjęcie zespołu
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:text-destructive">Zawieś Zespół</DropdownMenuItem>
-                      </DropdownMenuContent>
+                      
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                onClick={() => handleDelete(item.id)}
+                              >
+                                <ShieldAlert className="mr-2 size-4" />
+                                <span>Usuń (Tylko Admin)</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                   

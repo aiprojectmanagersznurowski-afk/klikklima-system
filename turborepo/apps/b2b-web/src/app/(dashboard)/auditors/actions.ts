@@ -38,3 +38,10 @@ export async function getAuditors(): Promise<AuditorSummary[]> {
     leadsCount: a.leady.length
   }));
 }
+
+export async function deleteAuditorAction(id: string) {
+  await prisma.audytorzy.delete({
+    where: { id }
+  });
+  revalidatePath('/auditors');
+}

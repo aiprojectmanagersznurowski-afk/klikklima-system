@@ -159,3 +159,10 @@ export async function rollbackLogisticsOrder(leadId: string, reason?: string) {
   revalidatePath('/logistics');
   revalidatePath('/leads');
 }
+
+export async function deleteLogisticsOrderAction(id: string) {
+  await prisma.leady.delete({
+    where: { id }
+  });
+  revalidatePath('/logistics');
+}

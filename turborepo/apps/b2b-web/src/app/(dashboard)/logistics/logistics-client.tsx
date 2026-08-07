@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useState, useTransition } from "react"
-import { Package, Truck, AlertCircle, Clock, Search, Filter, RotateCcw, CheckCircle2, ChevronRight, MoreHorizontal, FileText } from "lucide-react"
+import { Package, Truck, AlertCircle, Clock, Search, Filter, RotateCcw, CheckCircle2, ChevronRight, MoreHorizontal, FileText , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { LogisticsLead, shipLogisticsOrder, bypassLogisticsOrder, markAsDelivered, rollbackLogisticsOrder } from "./actions"
+import { LogisticsLead, shipLogisticsOrder, bypassLogisticsOrder, markAsDelivered, rollbackLogisticsOrder , deleteLogisticsOrderAction } from "./actions"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,20 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("ALL")
   const [isPending, startTransition] = useTransition()
+
+  const handleDelete = (id: string) => {
+    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
+      startTransition(async () => {
+        try {
+          await deleteLogisticsOrderAction(id);
+          window.location.reload();
+        } catch (e) {
+          alert("Wystąpił błąd podczas usuwania rekordu.");
+        }
+      });
+    }
+  }
+
 
   const handleAction = async (leadId: string, actionName: string, actionFn: () => Promise<void>) => {
     startTransition(async () => {
@@ -300,7 +314,16 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
                                     <span>Wycofaj / Rollback</span>
                                   </DropdownMenuItem>
                                 )}
-                              </DropdownMenuContent>
+                              
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                onClick={() => handleDelete(item.leadId)}
+                              >
+                                <ShieldAlert className="mr-2 size-4" />
+                                <span>Usuń (Tylko Admin)</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
                         </td>
