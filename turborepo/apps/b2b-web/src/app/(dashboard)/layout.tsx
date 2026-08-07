@@ -27,7 +27,7 @@ const navItems: NavItem[] = [
     label: 'CRM',
     icon: FolderKanban,
     subItems: [
-      { id: 'clients', label: 'Klienci', href: '/clients' },
+      { id: 'clients', label: 'Klienci', href: '/customers' },
       { id: 'installations', label: 'Instalacje', href: '/installations' },
       { id: 'services', label: 'Serwisy', href: '/services' },
       { id: 'faults', label: 'Usterki', href: '/faults' },
@@ -311,24 +311,7 @@ export default function DashboardLayout({
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {/* Top bar */}
         <header className="bg-card border-b border-border px-6 flex items-center gap-4 h-16 shrink-0 shadow-2xs">
-          <div className="flex-1 max-w-sm relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchValue}
-              onChange={e => setSearchValue(e.target.value)}
-              placeholder="Szukaj klientów, leadów, numerów..."
-              className="w-full pl-9 pr-9 py-2 bg-secondary focus:bg-white border border-transparent focus-visible:border-primary/40 focus-visible:ring-[3px] focus-visible:ring-primary/20 rounded-md text-sm font-normal text-foreground placeholder:text-muted-foreground outline-none transition-all duration-200"
-            />
-            {searchValue && (
-              <button
-                onClick={() => setSearchValue('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-0.5"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
+          <div className="flex-1"></div>
           <div className="ml-auto flex items-center gap-3">
             <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors rounded-md">
               <Bell className="size-5" />

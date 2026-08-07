@@ -56,3 +56,16 @@ export async function deleteCustomerAction(id: string) {
 
   revalidatePath('/customers');
 }
+
+export async function addCustomerAddress(klientId: string, ulicaMiasto: string) {
+  await prisma.adresy.create({
+    data: {
+      klient_id: klientId,
+      ulica_miasto: ulicaMiasto,
+      lat: 0,
+      lng: 0
+    }
+  });
+  
+  revalidatePath(`/customers/${klientId}`);
+}
