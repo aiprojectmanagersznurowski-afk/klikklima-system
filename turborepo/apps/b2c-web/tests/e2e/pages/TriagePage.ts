@@ -3,11 +3,7 @@ import { Page, Locator, expect } from '@playwright/test';
 export class TriagePage {
   readonly page: Page;
   readonly addressInput: Locator;
-  readonly typeOfBuildingOption: (type: string) => Locator;
-  readonly roomsCountOption: (count: string) => Locator;
-  readonly sizeOption: (size: string) => Locator;
-  readonly stateOption: (state: string) => Locator;
-  readonly balconyOption: (hasBalcony: string) => Locator;
+
   readonly nextButton: Locator;
 
   constructor(page: Page) {
