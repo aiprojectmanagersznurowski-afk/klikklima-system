@@ -27,7 +27,7 @@ export async function getIncidents(): Promise<IncidentSummary[]> {
   return incidents.map(inc => ({
     id: inc.id,
     numer_zgloszenia: inc.numer_zgloszenia,
-    klient_name: inc.klient ? `${inc.klient.imie} ${inc.klient.nazwisko}` : "Nieznany Klient",
+    klient_name: inc.klient?.imie_i_nazwisko || "Nieznany Klient",
     opis_usterki: inc.opis_usterki ?? "Brak opisu",
     priorytet: inc.priorytet ?? "NISKI",
     status: inc.status ?? "NOWE",

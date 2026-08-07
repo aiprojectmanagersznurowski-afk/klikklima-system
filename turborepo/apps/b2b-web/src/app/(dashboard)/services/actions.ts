@@ -24,10 +24,7 @@ export async function getUpcomingServices(): Promise<ServiceSummary[]> {
       lead: {
         include: {
           klient: true,
-          wyceny: {
-            where: { is_final: true },
-            take: 1
-          }
+          adres: true
         }
       }
     },
@@ -41,9 +38,9 @@ export async function getUpcomingServices(): Promise<ServiceSummary[]> {
     next_service_date: inst.next_service_date as Date,
     status: inst.status,
     lead_id: inst.lead_id,
-    customer_name: inst.lead.klient ? `${inst.lead.klient.imie} ${inst.lead.klient.nazwisko}` : "Nieznany Klient",
+    customer_name: inst.lead.klient?.imie_i_nazwisko || "Nieznany Klient",
     customer_phone: inst.lead.klient?.telefon ?? null,
-    address: inst.lead.wyceny[0]?.ulica_miasto ?? "Brak adresu",
+    address: inst.lead.adres?.ulica_miasto ?? "Brak adresu",
     installation_date: inst.data_zakonczenia
   }));
 }

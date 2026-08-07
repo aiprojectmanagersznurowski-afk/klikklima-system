@@ -130,10 +130,8 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8">
-                                <MoreHorizontal size={16} />
-                              </Button>
+                            <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                              <MoreHorizontal size={16} />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Zarządzanie Serwisem</DropdownMenuLabel>
