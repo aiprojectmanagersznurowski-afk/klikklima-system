@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Search, ShieldCheck, UserCheck, MoreHorizontal, FileCheck, MapPin, CalendarAlert } from "lucide-react"
+import { Search, ShieldCheck, UserCheck, MoreHorizontal, FileCheck, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AuditorSummary } from "./actions"
 import {
