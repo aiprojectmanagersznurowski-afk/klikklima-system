@@ -1,1 +1,9 @@
-export default function CrewsPage() { return <div className="p-8"><h1 className="text-2xl font-bold">Zespoły Monterskie</h1><p className="text-muted-foreground mt-2">Moduł w przygotowaniu.</p></div> }
+import { getCrews } from "./actions"
+import { CrewsClient } from "./crews-client"
+
+export const dynamic = "force-dynamic"
+
+export default async function CrewsPage() {
+  const crews = await getCrews();
+  return <CrewsClient initialCrews={crews} />;
+}
