@@ -139,11 +139,12 @@ export function CustomersClient({ initialCustomers }: { initialCustomers: Custom
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button asChild size="sm" variant="outline" className="h-8 text-xs font-medium">
-                            <Link href={`/customers/${item.id}`}>
-                              Karta 360 <ArrowRight className="ml-1.5 size-3.5" />
-                            </Link>
-                          </Button>
+                          <Link 
+                            href={`/customers/${item.id}`} 
+                            className={`h-8 text-xs font-medium inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground px-3`}
+                          >
+                            Karta 360 <ArrowRight className="ml-1.5 size-3.5" />
+                          </Link>
                           
                           <DropdownMenu>
                             <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" disabled={isPending}>
@@ -152,8 +153,8 @@ export function CustomersClient({ initialCustomers }: { initialCustomers: Custom
                             <DropdownMenuContent align="end" className="w-56">
                               <DropdownMenuLabel>Opcje Klienta</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem asChild>
-                                <Link href={`/customers/${item.id}`}>
+                              <DropdownMenuItem>
+                                <Link href={`/customers/${item.id}`} className="flex items-center w-full">
                                   <User className="mr-2 size-4" />
                                   <span>Otwórz Kartę 360</span>
                                 </Link>
