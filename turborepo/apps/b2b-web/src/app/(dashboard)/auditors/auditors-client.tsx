@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useTransition,  useState } from "react"
 import { Search, ShieldCheck, UserCheck, MoreHorizontal, FileCheck, MapPin , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AuditorSummary , deleteAuditorAction } from "./actions"
@@ -27,6 +27,7 @@ export function AuditorsClient({ initialAuditors }: { initialAuditors: AuditorSu
     return true;
   });
 
+  const [isPending, startTransition] = useTransition();
   const handleDelete = (id: string) => {
     if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
       startTransition(async () => {

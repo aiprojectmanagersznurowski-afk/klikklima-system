@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useTransition,  useState, useRef } from "react"
 import { Search, ShieldCheck, Wrench, MoreHorizontal, FileCheck, MapPin, Upload , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CrewSummary, updateCrewAvatar , deleteCrewAction } from "./actions"
@@ -69,6 +69,7 @@ export function CrewsClient({ initialCrews }: { initialCrews: CrewSummaryWithAva
     return true;
   });
 
+  const [isPending, startTransition] = useTransition();
   const handleDelete = (id: string) => {
     if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
       startTransition(async () => {

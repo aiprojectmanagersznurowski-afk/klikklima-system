@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useTransition,  useState } from "react"
 import { Search, Wrench, MoreHorizontal, CalendarClock, Phone , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ServiceSummary , deleteServiceAction } from "./actions"
@@ -29,6 +29,7 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
     return true;
   });
 
+  const [isPending, startTransition] = useTransition();
   const handleDelete = (id: string) => {
     if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
       startTransition(async () => {

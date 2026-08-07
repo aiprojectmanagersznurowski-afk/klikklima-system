@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useTransition,  useState } from "react"
 import { Search, AlertTriangle, MoreHorizontal, Clock, Wrench , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { IncidentSummary , deleteIncidentAction } from "./actions"
@@ -29,6 +29,7 @@ export function IncidentsClient({ initialIncidents }: { initialIncidents: Incide
     return true;
   });
 
+  const [isPending, startTransition] = useTransition();
   const handleDelete = (id: string) => {
     if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
       startTransition(async () => {
