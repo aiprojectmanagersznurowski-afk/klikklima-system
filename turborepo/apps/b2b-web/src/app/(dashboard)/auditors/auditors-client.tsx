@@ -113,7 +113,7 @@ export function AuditorsClient({ initialAuditors }: { initialAuditors: AuditorSu
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                onClick={() => handleDelete(item.id)}
+                                onClick={() => handleDelete(auditor.id)}
                               >
                                 <ShieldAlert className="mr-2 size-4" />
                                 <span>Usuń (Tylko Admin)</span>

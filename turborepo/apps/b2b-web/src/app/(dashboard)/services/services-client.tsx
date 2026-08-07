@@ -157,7 +157,7 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                onClick={() => handleDelete(item.id)}
+                                onClick={() => handleDelete(service.id)}
                               >
                                 <ShieldAlert className="mr-2 size-4" />
                                 <span>Usuń (Tylko Admin)</span>
