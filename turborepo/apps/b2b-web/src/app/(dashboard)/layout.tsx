@@ -34,6 +34,7 @@ const navItems: NavItem[] = [
       { id: 'auditors', label: 'Audytorzy', href: '/auditors' },
       { id: 'crews', label: 'Zespoły', href: '/crews' },
       { id: 'cold_leads', label: 'Zimne leady', href: '/leads?bucket=cold' },
+      { id: 'rejected_auto', label: 'Odrzucone (Brak akceptacji > 14 dni)', href: '/leads?bucket=rejected_auto' },
     ]
   },
   {

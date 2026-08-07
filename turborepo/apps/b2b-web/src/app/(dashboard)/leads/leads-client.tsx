@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, Snowflake, AlertTriangle } from "lucide-react";
+import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadStatus, leady as Lead, audytorzy as Auditor } from "@repo/database";
 import { format } from "date-fns";
@@ -22,7 +22,7 @@ import { advanceLeadStatus } from "./actions";
 
 type StageFilter = LeadStatus | "ALL";
 
-export const KANBAN_STAGES: { id: StageFilter; title: string; short?: string }[] = [
+export const LEAD_STAGES: { id: StageFilter; title: string; short?: string }[] = [
   { id: "ALL", title: "Wszystkie", short: "Wszystkie" },
   { id: "NEW_LEAD", title: "1. Nowy lead", short: "E1" },
   { id: "AWAITING_AUDIT", title: "2. Oczekiwanie na audyt", short: "E2" },
@@ -35,12 +35,6 @@ export const KANBAN_STAGES: { id: StageFilter; title: string; short?: string }[]
   { id: "QUOTE_REJECTED", title: "🧊 Zimne leady", short: "ZL" },
   { id: "ROLLBACK_RESCHEDULING", title: "🔄 Rollback", short: "RB" },
 ];
-
-/** Map status to user-friendly label */
-function statusLabel(status: LeadStatus | null): string {
-  const stage = KANBAN_STAGES.find(s => s.id === status);
-  return stage?.title || status || "—";
-}
 
 /** Dozwolone akcje kontekstowe per status */
 const CONTEXT_ACTIONS: Record<LeadStatus, { label: string; target: LeadStatus; icon?: string; variant?: "default" | "destructive" }[]> = {
@@ -203,7 +197,7 @@ export function LeadsClient({
               onChange={(e) => startTransition(() => router.push(buildPageUrl(e.target.value as StageFilter)))}
               disabled={isPending}
             >
-              {KANBAN_STAGES.map(stage => (
+              {LEAD_STAGES.map(stage => (
                 <option key={stage.id} value={stage.id}>
                   {stage.title} ({stageCounts[stage.id] || 0})
                 </option>
@@ -291,7 +285,7 @@ export function LeadsClient({
                         {isShowingAll && (
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
-                              {KANBAN_STAGES.find(s => s.id === lead.status)?.short || "—"}
+                              {LEAD_STAGES.find(s => s.id === lead.status)?.short || "—"}
                             </span>
                           </td>
                         )}

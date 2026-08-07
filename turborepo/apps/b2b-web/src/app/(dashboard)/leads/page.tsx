@@ -27,7 +27,7 @@ export default async function LeadsPage(props: {
   const auditors = await getAuditors();
 
   // Determine which status to highlight in the dropdown
-  const activeStatus: LeadStatus | "ALL" = bucket === "cold" 
+  const activeStatus: LeadStatus | "ALL" = (bucket === "cold" || bucket === "rejected_auto")
     ? "QUOTE_REJECTED" 
     : bucket === "rollback" 
       ? "ROLLBACK_RESCHEDULING" 

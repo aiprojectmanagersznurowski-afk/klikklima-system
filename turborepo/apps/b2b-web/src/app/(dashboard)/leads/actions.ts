@@ -30,6 +30,7 @@ export async function getCrews() {
 function bucketToStatus(bucket: string): LeadStatus | null {
   switch (bucket) {
     case "cold": return "QUOTE_REJECTED";
+    case "rejected_auto": return "QUOTE_REJECTED";
     case "rollback": return "ROLLBACK_RESCHEDULING";
     default: return null;
   }
@@ -50,9 +51,13 @@ export async function getLeads(options?: {
     let where: any = {};
     
     if (options?.bucket) {
-      const mappedStatus = bucketToStatus(options.bucket);
-      if (mappedStatus) {
-        where = { status: mappedStatus };
+      if (options.bucket === "rejected_auto") {
+        where = { status: "QUOTE_REJECTED", lost_reason: "AUTO_REJECT_14_DAYS" };
+      } else {
+        const mappedStatus = bucketToStatus(options.bucket);
+        if (mappedStatus) {
+          where = { status: mappedStatus };
+        }
       }
     } else if (options?.status && options.status !== "ALL") {
       where = { status: options.status };
