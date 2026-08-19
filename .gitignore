@@ -1,2 +1,7 @@
 .vercel
 .env*
+
+# Źródło kitu agentowego — zainstalowane w turborepo/, tutaj tylko archiwum.
+# Bez tego kk-phase i skany oparte na gicie liczą jego pliki jako duplikaty.
+kk-agentic-os/
+files.zip

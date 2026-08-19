@@ -9,10 +9,11 @@ import {
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./accordion";
 
 import type { BestsellerProduct } from "@/app/actions/getBestsellers";
-import { getSetForConfig } from "@/app/actions/getSetForConfig";
+import { getSetForConfig, type DisqualifiedSetResult } from "@/app/actions/getSetForConfig";
 import { getAvailableSizes } from "@/app/actions/getAvailableSizes";
 import { getValidConfigurations } from "@/app/actions/getValidConfigurations";
 import { getLowestPriceForIndoorUnit } from "@/app/actions/getLowestPriceForIndoorUnit";
+import { ROOM_COUNT_EXPERT_THRESHOLD } from "@klikklima/contracts";
 
 const INDOOR_IMG = "https://images.unsplash.com/photo-1711873315178-ee7de0b2ea5d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
 const OUTDOOR_IMG = "https://images.unsplash.com/photo-1757219525975-03b5984bc6e8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
@@ -79,7 +80,7 @@ function SizeSelector({
   roomId: string;
 }) {
   return (
-    <div className="relative flex w-full rounded-xl bg-[#F0F4FB] p-1">
+    <div className="relative flex w-full rounded-xl bg-secondary p-1">
       {SIZE_ORDER.map((s) => {
         const active = s === value;
         const isSizeSupported = supportedSizes.includes(s);
@@ -203,6 +204,12 @@ export interface DeviceModalProps {
   initialRooms?: Room[];
 }
 
+// Zestaw dopasowany przez `getSetForConfig`, z wykluczonym sentinelem
+// dyskwalifikacji (`DisqualifiedSetResult`) — modal traktuje dyskwalifikację
+// identycznie jak "brak dopasowania" (`null`), nigdy nie renderuje sentinela
+// jako prawdziwego zestawu (WO B2C-TRIAGE-DISQUALIFY, poprawka po recenzji).
+type MatchedSet = Exclude<Awaited<ReturnType<typeof getSetForConfig>>, DisqualifiedSetResult | null>;
+
 export function DeviceModal({
   device,
   isOpen,
@@ -211,7 +218,7 @@ export function DeviceModal({
   initialRooms
 }: DeviceModalProps) {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [matchedSet, setMatchedSet] = useState<any>(null);
+  const [matchedSet, setMatchedSet] = useState<MatchedSet | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
   const [supportedSizes, setSupportedSizes] = useState<string[]>(['S', 'M', 'L', 'XL']);
@@ -243,6 +250,11 @@ export function DeviceModal({
 
   const isFullyConfigured = rooms.length > 0 && rooms.every((r) => r.size !== null);
   const hasRooms = rooms.length > 0;
+  // D1 (WO B2C-TRIAGE-DISQUALIFY): przy `rooms.length >= ROOM_COUNT_EXPERT_THRESHOLD`
+  // blok ceny znika w całości. Liczone synchronicznie z `rooms.length`, nie z
+  // wyniku `getSetForConfig` (debounce 300 ms) — inaczej stara kwota zostaje na
+  // ekranie przez chwilę po dodaniu pokoju ponad próg.
+  const showPrice = rooms.length < ROOM_COUNT_EXPERT_THRESHOLD;
 
   useEffect(() => {
     if (isOpen && device) {
@@ -285,18 +297,30 @@ export function DeviceModal({
 
   useEffect(() => {
     if (isOpen && device) {
-      if (!isFullyConfigured) {
+      // D1 (WO B2C-TRIAGE-DISQUALIFY, BLOCKER poprawiony po recenzji): przy
+      // `rooms.length >= ROOM_COUNT_EXPERT_THRESHOLD` `getSetForConfig` w ogóle
+      // nie jest wołane. Serwer i tak zwróciłby sentinel dyskwalifikacji
+      // (`{ disqualified: true, outcome: 'EXPERT_SCREEN' }`), a nie `null` —
+      // bez tej wcześniejszej bramki `matchedSet` przyjąłby ten obiekt jako
+      // prawdziwy dopasowany zestaw i sekcja „Inteligentny dobór" renderowałaby
+      // puste pola (`outdoorModel`, `capacity` nie istnieją na sentinelu).
+      if (!isFullyConfigured || rooms.length >= ROOM_COUNT_EXPERT_THRESHOLD) {
         setMatchedSet(null);
         return;
       }
-      
+
       let isActive = true;
       const fetchMatch = async () => {
         setIsLoading(true);
         const configuredRooms = rooms.map(r => ({ id: r.id, size: r.size as RoomSize }));
         const setConfig = await getSetForConfig(device.model, configuredRooms);
         if (isActive) {
-          setMatchedSet(setConfig);
+          // Bramka wyżej (`rooms.length >= ROOM_COUNT_EXPERT_THRESHOLD`) już
+          // wyklucza wywołanie dla konfiguracji dyskwalifikującej po liczbie
+          // pokoi, ale sentinel sprawdzamy i tak — obronnie, na wypadek gdyby
+          // serwer kiedyś zaczął odrzucać z innego powodu (np. reguła
+          // COMMERCIAL_PROPERTY dojechała tu w przyszłości).
+          setMatchedSet(setConfig && 'disqualified' in setConfig ? null : setConfig);
           setIsLoading(false);
         }
       };
@@ -533,7 +557,11 @@ export function DeviceModal({
                 {/* ---------- RIGHT: Summary & Pricing ---------- */}
                 <div className="flex w-full shrink-0 flex-col border-t border-[#E8EDF5] bg-white md:w-[360px] md:border-l md:border-t-0">
                   <div className="flex-none px-6 py-7 md:flex-1 md:overflow-y-auto">
-                    {/* Price */}
+                    {/* Price — D1 (WO B2C-TRIAGE-DISQUALIFY): znika w całości przy
+                        rooms.length >= ROOM_COUNT_EXPERT_THRESHOLD, łącznie z
+                        fallbackiem "Cena zaczyna się od" na basePrice. */}
+                    {showPrice && (
+                    <>
                     <p className="text-[13px] font-medium text-[#475569]">
                       {isFullyConfigured ? "Cena całkowita zestawu" : "Cena zaczyna się od"}
                     </p>
@@ -558,6 +586,8 @@ export function DeviceModal({
                     <p className="mt-2 text-[12px] text-[#64748B]">
                       Zawiera 8% VAT oraz montaż podstawowy
                     </p>
+                    </>
+                    )}
 
                     <div className="my-6 h-px bg-[#E8EDF5]" />
 

@@ -1,4 +1,20 @@
 import { create } from "zustand";
+import {
+  BUILDING_TYPE_PL,
+  disqualifyingRules,
+  isExpertScreen as isExpertScreenContract,
+  type BuildingTypeId,
+  type DisqualificationRuleId,
+  type TriageAnswers,
+} from "@klikklima/contracts";
+
+// Store trzyma etykietę PL (`location`), kontrakt operuje na identyfikatorze
+// (`BUILDING_TYPE`). `BUILDING_TYPE_PL` daje id -> pl; tu odwracamy mapowanie
+// lokalnie — dokładnie ten sam wzorzec, jakiego `Step7Success.tsx` używa dla
+// wywołania Server Action (WO B2C-TRIAGE-DISQUALIFY).
+const BUILDING_TYPE_ID_BY_PL: Record<string, BuildingTypeId> = Object.fromEntries(
+  (Object.entries(BUILDING_TYPE_PL) as [BuildingTypeId, string][]).map(([id, pl]) => [pl, id])
+);
 
 export type LocationType = 'Mieszkanie' | 'Dom' | 'Lokal komercyjny' | null;
 export type RoomCount = 1 | 2 | 3 | 4 | 5 | null;
@@ -48,7 +64,21 @@ interface TriageStore {
   
   // Helpers
   isExpertScreen: boolean;
+  disqualifyingRuleIds: DisqualificationRuleId[];
   calculateRequiredPower: () => number;
+}
+
+/** Odpowiedzi kreatora w kształcie oczekiwanym przez predykaty kontraktu (null-safe). */
+function toTriageAnswers(location: LocationType, roomCount: RoomCount): TriageAnswers {
+  const answers: TriageAnswers = {};
+  if (location) {
+    const buildingType = BUILDING_TYPE_ID_BY_PL[location];
+    if (buildingType) answers.BUILDING_TYPE = buildingType;
+  }
+  if (typeof roomCount === 'number') {
+    answers.ROOM_COUNT = roomCount;
+  }
+  return answers;
 }
 
 const initialState: TriageStateData = {
@@ -77,13 +107,17 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
   step: 1,
   direction: 1,
   data: initialState,
-  
-  get isExpertScreen() {
-    const { location, roomCount } = get().data;
-    return location === 'Lokal komercyjny';
-  },
 
-  goToStep: (stepNumber) => set((state) => ({ 
+  // `isExpertScreen`/`disqualifyingRuleIds` NIE są gettery na obiekcie store'a.
+  // Zustand scala kolejne stany przez `Object.assign({}, state, nextState)`,
+  // co odczytuje (i zamraża jako zwykłą wartość) każdy getter przy PIERWSZYM
+  // `set()` — kolejne aktualizacje `data` nigdy by go już nie przeliczyły.
+  // Dlatego te pola są zwykłymi wartościami, przeliczanymi jawnie w `updateData`
+  // i `reset` — jedynych akcjach zmieniających `data`.
+  isExpertScreen: isExpertScreenContract(toTriageAnswers(initialState.location, initialState.roomCount)),
+  disqualifyingRuleIds: disqualifyingRules(toTriageAnswers(initialState.location, initialState.roomCount)),
+
+  goToStep: (stepNumber) => set((state) => ({
     step: stepNumber, 
     direction: stepNumber > state.step ? 1 : -1 
   })),
@@ -122,9 +156,15 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
     };
   }),
   
-  updateData: (newData) => set((state) => ({ 
-    data: { ...state.data, ...newData } 
-  })),
+  updateData: (newData) => set((state) => {
+    const data = { ...state.data, ...newData };
+    const answers = toTriageAnswers(data.location, data.roomCount);
+    return {
+      data,
+      isExpertScreen: isExpertScreenContract(answers),
+      disqualifyingRuleIds: disqualifyingRules(answers),
+    };
+  }),
   
   calculateRequiredPower: () => {
     const { roomSizes, roomCount } = get().data;
@@ -141,5 +181,11 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
     return totalKw;
   },
 
-  reset: () => set({ step: 1, direction: 1, data: initialState }),
+  reset: () => set({
+    step: 1,
+    direction: 1,
+    data: initialState,
+    isExpertScreen: isExpertScreenContract(toTriageAnswers(initialState.location, initialState.roomCount)),
+    disqualifyingRuleIds: disqualifyingRules(toTriageAnswers(initialState.location, initialState.roomCount)),
+  }),
 }));

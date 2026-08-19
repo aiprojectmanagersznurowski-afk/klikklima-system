@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Bramka commitowa KlikKlima — ostatnia linia obrony niezależna od IDE.
+#
+# Hooki IDE blokują zapis pliku. Ten hook blokuje commit. Potrzebne są oba:
+# hook IDE nie zadziała, gdy plik powstanie poza agentem (ręcznie, z gita,
+# przez inne narzędzie), a commit przechodzi zawsze przez to samo miejsce.
+set -uo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+
+# --- ADAPTER: turborepo nie jest korzeniem repozytorium git ---
+# Kit zakłada, że korzeń gita == katalog turborepo. W tym repo turborepo leży
+# w podkatalogu, więc bramka musi (a) pracować w katalogu turborepo i (b) ciąć
+# prefiks ze ścieżek, bo `git diff --cached` zwraca je względem korzenia gita.
+KK_SUBDIR="turborepo"
+if [ -d "$ROOT/$KK_SUBDIR/tools" ]; then KK_DIR="$ROOT/$KK_SUBDIR"; else KK_DIR="$ROOT"; KK_SUBDIR=""; fi
+cd "$KK_DIR" || exit 1
+FAIL=0
+
+echo "▸ Bramka KlikKlima (pre-commit)"
+
+if [ -n "$KK_SUBDIR" ]; then
+  staged=$(git diff --cached --name-only --diff-filter=ACM -- "$ROOT/$KK_SUBDIR" | sed "s|^$KK_SUBDIR/||")
+else
+  staged=$(git diff --cached --name-only --diff-filter=ACM)
+fi
+[ -z "$staged" ] && exit 0
+
+# 1. Kontrakt spójny i bez dryfu — tylko gdy ruszono kontrakt lub artefakty
+if echo "$staged" | grep -qE '^(contracts/|packages/contracts/)'; then
+  node tools/kk-validate.mjs >/dev/null 2>&1   || { echo "  ✗ kk-validate"; FAIL=1; }
+  node tools/kk-codegen.mjs --check >/dev/null 2>&1 || { echo "  ✗ dryf codegenu — uruchom: node tools/kk-codegen.mjs"; FAIL=1; }
+fi
+
+# 2. Wzorce zakazane w plikach kodu wchodzących do commita
+#    Dokumentacja pominięta świadomie — cytuje zakazane wzorce jako przykłady.
+KK_PROJECT_DIR="$KK_DIR" node tools/kk-precommit-scan.mjs $staged || FAIL=1
+
+# 3. Nazewnictwo w całym repo
+node tools/kk-naming.mjs >/dev/null 2>&1 || { echo "  ✗ kk-naming — uruchom: node tools/kk-naming.mjs"; FAIL=1; }
+
+# 4. Konfiguracja Antigravity nie rozjechała się z Claude Code
+if [ -d .agents ]; then
+  node tools/kk-port-antigravity.mjs --check >/dev/null 2>&1 \
+    || { echo "  ✗ .agents/ rozjechane — uruchom: node tools/kk-port-antigravity.mjs"; FAIL=1; }
+fi
+
+if [ $FAIL -ne 0 ]; then
+  echo ""
+  echo "  Commit zatrzymany. Pominięcie: git commit --no-verify (świadomie, nie z przyzwyczajenia)."
+  exit 1
+fi
+echo "  ✓ bramka commitowa zielona"

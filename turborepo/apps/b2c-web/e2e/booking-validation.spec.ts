@@ -16,20 +16,24 @@ test.describe('Booking Form Validations', () => {
     await clickOption('Mieszkanie');
     await clickOption('1 pomieszczenie');
     await clickOption('Do 20 m²');
-    await clickOption('Wykończony / Zamieszkany');
+    await clickOption('Wykończony');
     await clickOption('Tak');
 
     // Wait for results
-    await expect(page.locator('text=Rekomendowane klimatyzatory')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('text=Oto propozycje zestawów dobranych specjalnie do Twojego zapotrzebowania')).toBeVisible({ timeout: 20000 });
     
-    // Open Booking modal
-    await clickOption('Rezerwuj termin audytu');
+    // Open Booking form (Step8Booking) — "Rezerwuj termin audytu" nigdy nie
+    // istniał w produkcji; realny przycisk w Step7Success.tsx to "Wybieram ten zestaw".
+    await clickOption('Wybieram ten zestaw');
 
-    // Verify modal is open
-    await expect(page.locator('h3:has-text("Wybierz termin audytu")')).toBeVisible();
+    // Step8Booking jest ekranem inline w kreatorze, nie modalem; StepWrapper renderuje
+    // tytuł jako <h2>, a realny tekst to "Wybierz termin darmowej wyceny" (Step8Booking.tsx:225).
+    await expect(page.locator('h2:has-text("Wybierz termin darmowej wyceny")')).toBeVisible();
 
-    // Select a date
-    const dateButton = page.locator('button.bg-primary\\/5').first();
+    // Select a date — "button.bg-primary/5" nie odpowiada żadnej klasie przycisku dnia
+    // w Step8Booking.tsx; ten sam kalendarz jest już poprawnie celowany w
+    // triage-disqualify.spec.ts (AC19) tym wzorcem.
+    const dateButton = page.locator('div.grid-cols-7 button:not([disabled])').first();
     await dateButton.click({ force: true });
     
     // Select a time slot

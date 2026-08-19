@@ -9,7 +9,10 @@ export const ProgressBar = () => {
   const { step, prevStep, goToStep, isExpertScreen } = useTriageStore();
   const router = useRouter();
   const totalSteps = 8;
-  const progress = isExpertScreen ? 100 : (step / totalSteps) * 100;
+  // Pasek liczy się z numeru kroku identycznie na obu ścieżkach dla kroków 1–5
+  // (AC12). `isExpertScreen` wpływa na pasek wyłącznie na kroku 7, bo tam
+  // zastępuje ekran wyceny ekranem Eksperta.
+  const progress = step === 7 && isExpertScreen ? 100 : (Math.min(step, totalSteps) / totalSteps) * 100;
 
   const handleBack = () => {
     if (step === 1) {
@@ -21,8 +24,10 @@ export const ProgressBar = () => {
     }
   };
 
-  // Hide button entirely on loader (6) or expert screen
-  const isHidden = isExpertScreen || step === 6;
+  // "Wstecz" jest ukryte wyłącznie na loaderze (krok 6) — dostępne w krokach 2–5
+  // niezależnie od ścieżki (AC12), a na ekranie Eksperta (krok 7) wraca jako
+  // drugorzędne wyjście "Wróć i zmień odpowiedzi" wewnątrz StepExpert, nie tutaj.
+  const isHidden = step === 6;
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 relative z-10">

@@ -50,10 +50,10 @@ const FunnelContent = () => {
   }, [searchParams, updateData, initialized]);
 
   const renderStep = () => {
-    if (isExpertScreen) {
-      return <StepExpert key="expert" />;
-    }
-
+    // `isExpertScreen` decyduje WYŁĄCZNIE o tym, co pokazuje krok 7 — nie przykrywa
+    // całego kreatora. Krok 8 (`Step8Booking`) musi renderować się identycznie na
+    // obu ścieżkach, inaczej rezerwacja audytu ze ścieżki Eksperta (D6) jest
+    // niewykonalna (WO B2C-TRIAGE-DISQUALIFY, Mechanika D3 pkt 3).
     switch (step) {
       case 1: return <Step1Location key="step1" />;
       case 2: return <Step2Rooms key="step2" />;
@@ -61,7 +61,7 @@ const FunnelContent = () => {
       case 4: return <Step4State key="step4" />;
       case 5: return <Step5Conditions key="step5" />;
       case 6: return <Step6Loader key="step6" />;
-      case 7: return <Step7Success key="step7" />;
+      case 7: return isExpertScreen ? <StepExpert key="expert" /> : <Step7Success key="step7" />;
       case 8: return <Step8Booking key="step8" />;
       default: return <Step1Location key="step1-default" />;
     }

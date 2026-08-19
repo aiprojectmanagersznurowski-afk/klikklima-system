@@ -1,6 +1,6 @@
 # Proces Lejka Sprzedażowego (B2B Admin Panel)
 
-Poniższy schemat przedstawia sekwencyjny proces przepływu (Funnel Flow) zgłoszenia w systemie Klik Klima. Proces ten oparty jest na **8 etapach** i **2 bucketach** (stanach pobocznych) zdefiniowanych w wymaganiach biznesowych i obsługiwany za pomocą rozbudowanej tabeli z filtrem etapu (dropdown) w panelu B2B.
+Poniższy schemat przedstawia sekwencyjny proces przepływu (Funnel Flow) zgłoszenia w systemie Klik Klima. Proces ten oparty jest na **8 etapach** i **3 bucketach** (stanach pobocznych) zdefiniowanych w wymaganiach biznesowych i obsługiwany za pomocą rozbudowanej tabeli z filtrem etapu (dropdown) w panelu B2B.
 
 > **Uwaga:** Proces serwisów gwarancyjnych i obsługi usterek zostanie zdefiniowany w osobnym wątku i osobnym dokumencie procesowym.
 
@@ -23,6 +23,7 @@ stateDiagram-v2
     
     Bucket_Odrzucone: BUCKET - Wyceny odrzucone
     Bucket_Rollback: BUCKET - Anulowane / Do przełożenia
+    Bucket_Lost: BUCKET - Zarchiwizowany (Lost)
 
     %% Przepływ początkowy
     E1 --> E2 : Administrator przypisuje audytora
@@ -31,6 +32,11 @@ stateDiagram-v2
     %% Decyzja klienta
     E3 --> E4 : Klient akceptuje wycenę i regulamin i rezerwuje termin
     E3 --> Bucket_Odrzucone : Brak akceptacji powyżej 14 dni (Auto)
+
+    %% Wyjścia z bucketu Zimnych leadów (ADR-004)
+    Bucket_Odrzucone --> E3 : Zwróć do obiegu (wymaga odświeżenia ceny po 30 dniach)
+    Bucket_Odrzucone --> Bucket_Lost : Archiwizuj trwale (wymaga powodu utraty)
+    Bucket_Lost --> [*] : Stan terminalny
 
     %% Logistyka i montaż
     E4 --> E5 : Administrator przypisuje ekipę (Crew_ID)
@@ -90,6 +96,13 @@ stateDiagram-v2
 ### Bucket: Wyceny odrzucone
 - **Opis:** Miejsce na leady, które nie skonwertowały.
 - **Wyzwalacz WEJŚCIA:** Brak akceptacji wyceny na Etapie 3 przez ponad 14 dni (automat).
+- **Wyjście „Zwróć do obiegu" (T15):** Dyspozytor przesuwa leada z powrotem na Etap 3. Jeżeli od wejścia do bucketu minęło ponad 30 dni, guard `quoteRefreshedIfStale` blokuje przejście do czasu odświeżenia ceny — chodzi o to, żeby klient nie zaakceptował wyceny opartej na nieaktualnych cenach materiałów.
+- **Wyjście „Archiwizuj trwale" (T16):** przejście do bucketu Lost, wymaga podania powodu utraty.
+
+### Bucket: Zarchiwizowany (Lost)
+- **Opis:** Stan terminalny. Lead zamknięty definitywnie, powód utraty zasila moduł analityczny.
+- **Wyzwalacz WEJŚCIA:** wyłącznie ręczna akcja Dyspozytora z bucketu „Wyceny odrzucone" (T16), zawsze z powodem utraty (guard `lostReasonProvided`).
+- **Wyjście:** brak w maszynie stanów. Przywrócenie leada wymaga ręcznej interwencji administratora w bazie — to celowe, bo archiwizacja ma być decyzją nieodwracalną w normalnym trybie pracy.
 
 ### Bucket: Anulowane / Do przełożenia (Rollback Engine)
 - **Opis:** Worek na leady wyjęte z głównego przepływu. Zwalnia zasoby (kalendarz ekipy) i blokuje SLA logistyczne.

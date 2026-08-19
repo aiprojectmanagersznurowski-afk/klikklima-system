@@ -37,3 +37,10 @@ yarn-error.log*
 .DS_Store
 *.pem
 .env*
+
+# --- kk-agentic-os / CDAL (scalone z kitem, nie nadpisane) ---
+test-results/
+playwright-report/
+.claude/state/run-log.jsonl
+.claude/state/contract-window.json
+.claude/state/current-workorder.json

@@ -8,9 +8,9 @@ test.describe('Catalog Page', () => {
     await expect(page.locator('h1', { hasText: 'Katalog' })).toBeVisible();
 
     // Verify sections
-    await expect(page.locator('h2', { hasText: 'Klimatyzatory Ścienne (Single Split)' })).toBeVisible();
-    await expect(page.locator('h2', { hasText: 'Jednostki Wewnętrzne (Multi Split)' })).toBeVisible();
-    await expect(page.locator('h2', { hasText: 'Agregaty Zewnętrzne (Multi Split)' })).toBeVisible();
+    // Katalog przebudowany na jedną sekcję z filtrami (Design System, 2026-08-06).
+    // Dawne sekcje Multi Split / Agregaty nie istnieją — asercje usunięte, nie osłabione.
+    await expect(page.locator('h2', { hasText: 'Klimatyzatory Ścienne' })).toBeVisible();
 
     // Click the first product card to open modal
     const firstProduct = page.locator('.group.relative').first();

@@ -5,15 +5,25 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
+    "test": "vitest run",
     "test:e2e": "turbo run test:e2e",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "postinstall": "cd packages/database && npm run db:generate"
+    "typecheck": "turbo run check-types",
+    "postinstall": "cd packages/database && npm run db:generate",
+    "contracts:check": "node tools/kk-validate.mjs && node tools/kk-codegen.mjs --check",
+    "contracts:build": "node tools/kk-codegen.mjs",
+    "verify": "bash scripts/verify.sh --full",
+    "verify:fast": "bash scripts/verify.sh --fast"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@vitest/coverage-v8": "^4.1.11",
     "prettier": "^3.7.4",
     "turbo": "^2.9.18",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=18"

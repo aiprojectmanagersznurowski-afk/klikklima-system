@@ -2,13 +2,52 @@
 
 import { unstable_noStore as noStore } from 'next/cache';
 import { supabase } from "@/lib/supabaseClient";
+import { DISQUALIFICATION_RULES, disqualifyingRules, BUILDING_TYPE_IDS, type TriageAnswers } from "@klikklima/contracts";
 
 export interface RoomSizes {
   [key: number]: string;
 }
 
-export async function getRecommendation(roomCount: number, roomSizes: RoomSizes, seriesLine?: string | null) {
+/**
+ * Wynik z ekranu Eksperta — kontrakt zabrania automatycznej wyceny dla tej
+ * konfiguracji (`contracts/triage.contract.mjs`, DISQUALIFICATION_RULES).
+ * Świadomie bez pól cenowych i bez `recommendations` (WO B2C-TRIAGE-DISQUALIFY, AC7-9).
+ */
+const EXPERT_SCREEN_OUTCOME = DISQUALIFICATION_RULES[0].outcome; // 'EXPERT_SCREEN' — z kontraktu, nie literał
+
+export async function getRecommendation(
+  roomCount: number,
+  roomSizes: RoomSizes,
+  seriesLine?: string | null,
+  buildingType?: string | null
+) {
   noStore();
+
+  // Odrzucenie po typie — bez niejawnej koercji JS. `roomCount` z sieci potrafi
+  // przyjść jako string ("5"); `!roomCount || roomCount < 1` przepuszcza to
+  // dalej niejawną koercją. Fail-closed: jeśli nie potwierdzimy, że wejście
+  // jest liczbą, kierujemy tak samo jak realną dyskwalifikację (AC9).
+  if (typeof roomCount !== 'number' || !Number.isFinite(roomCount)) {
+    return { success: false, outcome: EXPERT_SCREEN_OUTCOME };
+  }
+
+  // Jedyne źródło prawdy o dyskwalifikacji — kontrakt, nie własny switch/case.
+  // Sprawdzane PRZED jakimkolwiek zapytaniem do bazy.
+  // Fail-closed: wartość spoza słownika BUILDING_TYPE_IDS (np. surowa etykieta PL
+  // zamiast identyfikatora) nie ma cicho ominąć COMMERCIAL_PROPERTY — traktujemy ją
+  // tak samo jak realną dyskwalifikację (recenzja WO B2C-TRIAGE-DISQUALIFY, MAJOR).
+  if (buildingType && !BUILDING_TYPE_IDS.includes(buildingType as (typeof BUILDING_TYPE_IDS)[number])) {
+    return { success: false, outcome: EXPERT_SCREEN_OUTCOME };
+  }
+
+  const answers: TriageAnswers = { ROOM_COUNT: roomCount };
+  if (buildingType) {
+    answers.BUILDING_TYPE = buildingType;
+  }
+  if (disqualifyingRules(answers).length > 0) {
+    return { success: false, outcome: EXPERT_SCREEN_OUTCOME };
+  }
+
   try {
     if (!roomCount || roomCount < 1) {
       throw new Error("Brak danych o pokojach");

@@ -5,7 +5,7 @@ Ten dokument stanowi **jednoźródłową bazę prawdy (Source of Truth)** dla ws
 ---
 
 ## 1. Stos Technologiczny i Konfiguracja UI
-- **Framework:** Next.js (App Router, Server Actions / React Query dla Optimistic UI)
+- **Framework:** Next.js (App Router; mutacje wyłącznie przez Server Actions, Optimistic UI przez `useOptimistic` z React 19 — **bez React Query i bez tRPC**, zgodnie z ADR-001)
 - **Styling:** Tailwind CSS v4 (zmienne CSS oraz `@theme inline` zdefiniowane w `globals.css`)
 - **Biblioteka Komponentów:** Shadcn UI + Radix UI (dla Headless primitives)
 - **Ikony:** WYŁĄCZNIE `lucide-react` (zabronione jest używanie FontAwesome, Heroicons czy SVG inline)

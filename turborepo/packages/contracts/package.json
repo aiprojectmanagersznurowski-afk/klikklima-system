@@ -1,0 +1,21 @@
+{
+  "name": "@klikklima/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Wygenerowane typy i predykaty domenowe. NIE EDYTOWAĆ RĘCZNIE — źródłem jest /contracts/*.contract.mjs.",
+  "type": "module",
+  "main": "./src/generated/index.ts",
+  "types": "./src/generated/index.ts",
+  "exports": {
+    ".": "./src/generated/index.ts",
+    "./funnel": "./src/generated/funnel.ts",
+    "./notifications": "./src/generated/notifications.ts",
+    "./sla": "./src/generated/sla.ts",
+    "./rbac": "./src/generated/rbac.ts",
+    "./requirements": "./src/generated/requirements.ts"
+  },
+  "scripts": {
+    "generate": "node ../../tools/kk-codegen.mjs",
+    "check": "node ../../tools/kk-codegen.mjs --check"
+  }
+}

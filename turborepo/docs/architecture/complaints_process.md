@@ -1,5 +1,8 @@
 # Proces Reklamacji i Zgłaszania Usterek
 
+> **ADR-003 (2026-08-18):** powiadomienia w tym procesie były numerowane `N1`–`N4`, czyli tymi samymi identyfikatorami, które w kanonicznym słowniku `notification_definitions.md` należą do lejka sprzedażowego. Przenumerowane na `N15`–`N18` zgodnie ze słownikiem. **Kanonem jest `notification_definitions.md`** — ten dokument opisuje proces, nie definiuje powiadomień.
+
+
 Dokument ten definiuje przepływ (Flowchart) obsługi zgłoszeń serwisowych, usterek oraz reklamacji w systemie Klik Klima. Proces ten jest zintegrowany z systemem powiadomień B2C, podobnie jak główny lejek sprzedażowy i serwisowy.
 
 ## Schemat Przepływu (Flowchart)
@@ -19,18 +22,18 @@ flowchart TD
 
     %% Kroki Procesu
     C1[Zgłoszenie Usterki / Reklamacji<br/>Formularz www / Telefon]:::status
-    C1 --> N1{{"SMS/Email: Link do rezerwacji terminu wizyty serwisowej"}}:::notif
+    C1 --> N15{{"SMS/Email: Link do rezerwacji terminu wizyty serwisowej"}}:::notif
     
-    N1 --> C2[Zarezerwowany termin]:::status
+    N15 --> C2[Zarezerwowany termin]:::status
     
     C2 --> C3[Przydzielono serwisanta]:::status
-    C3 --> N2{{"SMS/Email: Przydzielono serwisanta do Twojego zgłoszenia"}}:::notif
+    C3 --> N16{{"SMS/Email: Przydzielono serwisanta do Twojego zgłoszenia"}}:::notif
     
-    N3{{"SMS (Geolokalizacja): Serwisant jest w drodze!"}}:::geoNotif -.-> C4
+    N17{{"SMS (Geolokalizacja): Serwisant jest w drodze!"}}:::geoNotif -.-> C4
     
     C3 --> C4[Zakończenie naprawy / wizyty]:::status
     
-    C4 --> N4{{"SMS/Email: Protokół zdawczo-odbiorczy + Faktura<br/>(Opcjonalnie jeśli to naprawa pogwarancyjna)"}}:::notif
+    C4 --> N18{{"SMS/Email: Protokół zdawczo-odbiorczy + Faktura<br/>(Opcjonalnie jeśli to naprawa pogwarancyjna)"}}:::notif
 ```
 
 ## Opis Kroków

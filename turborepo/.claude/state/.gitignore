@@ -1,0 +1,4 @@
+# Stan przebiegu jest lokalny dla maszyny — nie trafia do repo.
+run-log.jsonl
+contract-window.json
+current-workorder.json

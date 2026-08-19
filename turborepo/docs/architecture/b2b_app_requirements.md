@@ -1,8 +1,9 @@
 # Wymagania i Architektura Aplikacji B2B (Panel Dyspozytora)
 
 ## Kontekst Architektoniczny
-- **Cel:** Budowa panelu administracyjnego B2B (Web SPA) w architekturze monorepo (Turborepo).
-- **Stos technologiczny:** React/Next.js (SPA/SSR), Supabase PostgreSQL (baza danych i autoryzacja), tRPC/React Query (komunikacja), Prisma/Drizzle (ORM w paczce `@packages/database`).
+- **Cel:** Budowa panelu administracyjnego B2B (aplikacja webowa Next.js App Router) w architekturze monorepo (Turborepo).
+- **Stos technologiczny:** Next.js (App Router, React Server Components), Supabase PostgreSQL (baza danych i autoryzacja), **Server Actions** jako jedyna warstwa mutacji (bez tRPC i bez `/app/api/*` dla logiki wewnętrznej), **Prisma** jako jedyny ORM (paczka `@packages/database`).
+  > Rozstrzygnięcie ADR-001. Odrzucone warianty: tRPC, React Query, Drizzle, Vite. Powód: Server Actions eliminują potrzebę osobnej warstwy API, a dwa ORM-y w jednym monorepo dają dwa niekompatybilne zestawy typów.
 - **Biznes:** Zarządzanie procesem end-to-end w branży HVAC (Klimatyzacje) – od pozyskania leada (B2C), przez wycenę i montaż (Mobile App), po serwis.
 
 ---
@@ -144,14 +145,14 @@ Zaimplementuj system logowania i ścisłą kontrolę dostępu do panelu B2B, opa
 ### Baza Danych (Data Layer)
 - Zaktualizuj schemat bazy w `@packages/database`.
 - Stwórz enum `LeadStatus` zawierający **8 wartości głównych** (`NEW_LEAD`, `AWAITING_AUDIT`, `AUDIT_COMPLETED`, `AWAITING_CREW_ASSIGNMENT`, `HARDWARE_IN_WAREHOUSE`, `HARDWARE_IN_TRANSIT`, `AWAITING_INSTALLATION`, `INSTALLATION_COMPLETED`) oraz **2 stany bucket** (`QUOTE_REJECTED`, `ROLLBACK_RESCHEDULING`) zdefiniowane w Epicu 1.
-- Zadbaj o poprawne klucze obce pomiędzy tabelami: `Clients`, `Leads`, `Quotes` (Wyceny), `Installations` (Szczegóły montażu), `Shipments`, `Crews` i `Auditors`.
-- Zapewnij integrację statusu płatności (webhooki od Stripe/P24) z tabelą `Quotes`, automatycznie zmieniając status przypisanego `Leada`.
+- Zadbaj o poprawne klucze obce pomiędzy tabelami: `clients`, `leads`, `quotes`, `installations`, `shipments`, `crews` i `auditors` (ADR-002: `snake_case` w bazie, `PascalCase` w modelach Prisma).
+- Zapewnij integrację statusu płatności (webhooki od Stripe/P24) z tabelą `quotes`, automatycznie zmieniając status przypisanego rekordu w `leads`.
 - Zaimplementuj automatyczny trigger lub `pg_cron` job przenoszący leady z Etapu 3 do bucketu `QUOTE_REJECTED` po upływie 14 dni bez akceptacji.
-- Przygotuj kolumnę `tracking_id` w tabeli `Shipments` na potrzeby integracji z webhookiem kurierskim.
+- Przygotuj kolumnę `tracking_id` w tabeli `shipments` na potrzeby integracji z webhookiem kurierskim.
 
 ### State Management (UI Layer)
 - Zastosuj tabelę (Shadcn `Table`) wraz z rozwijaną listą filtrów (`Select` ze Shadcn UI) umieszczoną nad tabelą do przełączania etapów 1–8 oraz bucketów.
-- Zaimplementuj Optimistic UI za pomocą React Query / Server Actions, aby zmiana statusu leada reagowała w tabeli natychmiastowo, a aktualizacja w bazie Supabase działa się w tle.
+- Zaimplementuj Optimistic UI za pomocą Server Action wywołanej z hooka `useOptimistic` (React 19), aby zmiana statusu leada reagowała w tabeli natychmiastowo, a zapis w bazie Supabase działał się w tle. Przy odrzuceniu zapisu przez guarda maszyny stanów przywróć poprzednią wartość i pokaż `toast` z powodem — optymistyczny stan nigdy nie może zostać stanem końcowym.
 - Obsłuż **State Bypass** (E5 → E7) jako osobną akcję w interfejsie logistycznym.
 
 ### Logika Biznesowa (SLA)

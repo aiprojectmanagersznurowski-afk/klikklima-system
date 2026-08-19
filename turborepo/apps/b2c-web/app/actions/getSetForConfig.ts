@@ -2,10 +2,23 @@
 
 import { unstable_noStore as noStore } from 'next/cache';
 import { supabase } from "@/lib/supabaseClient";
+import { isExpertScreen } from "@klikklima/contracts";
 
 interface RoomConfig {
   id: string;
   size: "S" | "M" | "L" | "XL";
+}
+
+/**
+ * Wynik dyskwalifikacji — MUSI być odróżnialny od `null` ("brak dopasowania"),
+ * bo `DeviceModal.tsx` czyta `null` i spada na fallback cenowy `basePrice`,
+ * czyli i tak pokazuje cenę "od" mimo dyskwalifikacji (WO B2C-TRIAGE-DISQUALIFY, AC15).
+ * Kształt: `{ disqualified: true, outcome: 'EXPERT_SCREEN' }`, bez `priceNetto`,
+ * `installPrice`, `totalPrice`.
+ */
+export interface DisqualifiedSetResult {
+  disqualified: true;
+  outcome: 'EXPERT_SCREEN';
 }
 
 // Convert room size to cooling capacity code
@@ -19,8 +32,23 @@ function sizeToCode(size: "S" | "M" | "L" | "XL"): string {
   }
 }
 
-export async function getSetForConfig(seriesName: string, rooms: RoomConfig[]) {
+export async function getSetForConfig(
+  seriesName: string,
+  rooms: RoomConfig[]
+): Promise<Awaited<ReturnType<typeof buildSet>> | DisqualifiedSetResult | null> {
   noStore();
+
+  // Odrzucenie wyłącznie na podstawie DŁUGOŚCI listy — nie jej kompletności
+  // (WO B2C-TRIAGE-DISQUALIFY, AC15). Reguła COMMERCIAL_PROPERTY nie ma tu
+  // zastosowania: modal nie zna typu budynku. Sprawdzane PRZED zapytaniem do bazy.
+  if (isExpertScreen({ ROOM_COUNT: rooms.length })) {
+    return { disqualified: true, outcome: 'EXPERT_SCREEN' };
+  }
+
+  return buildSet(seriesName, rooms);
+}
+
+async function buildSet(seriesName: string, rooms: RoomConfig[]) {
   try {
     const requiredCodes = rooms.map((r) => sizeToCode(r.size)).sort();
     const hash = requiredCodes.join('-');

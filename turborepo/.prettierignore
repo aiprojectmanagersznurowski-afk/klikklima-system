@@ -1,0 +1,11 @@
+# Artefakty generowane z kontraktu — formatowanie ich złamałoby
+# `node tools/kk-codegen.mjs --check` (bramka dryfu).
+packages/contracts/src/generated/
+docs/architecture/generated/
+
+node_modules/
+.next/
+.turbo/
+dist/
+playwright-report/
+test-results/

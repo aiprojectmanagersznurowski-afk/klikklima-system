@@ -1,0 +1,100 @@
+name: Bramka KlikKlima
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Etap 1 — kontrakt. Uruchamiany osobno i jako pierwszy, bo jeśli źródło prawdy
+  # jest sprzeczne, wyniki testów aplikacji nic nie znaczą. Ten job nie ma zależności
+  # i kończy się w kilka sekund, więc daje najszybszą informację zwrotną.
+  kontrakt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Spójność kontraktu
+        run: node tools/kk-validate.mjs
+      - name: Żywotność bramki (test mutacyjny)
+        run: node tools/kk-selftest.mjs
+      - name: Dryf codegenu
+        run: node tools/kk-codegen.mjs --check
+      - name: Identyfikowalność wymagań
+        run: node tools/kk-trace.mjs --enforce
+
+  # Etap 2 — aplikacja. Uruchamiany dopiero po zielonym kontrakcie.
+  aplikacja:
+    needs: kontrakt
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: klikklima_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/klikklima_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm prisma migrate deploy
+      - run: pnpm test -- --run --reporter=json --outputFile=test-results.json
+      - name: Macierz identyfikowalności z wynikami testów
+        run: node tools/kk-trace.mjs --results test-results.json --enforce
+      - name: Tabela pokrycia do podsumowania PR
+        if: always()
+        run: node tools/kk-trace.mjs --markdown >> $GITHUB_STEP_SUMMARY
+
+  # Etap 3 — E2E. Osobno, bo najdłuższy i najbardziej podatny na flaky.
+  e2e:
+    needs: aplikacja
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-report, path: playwright-report/, retention-days: 7 }
+
+  # Etap 4 — recenzja agentowa w trybie headless. Nieblokująca:
+  # komentarz recenzenta ma pomagać człowiekowi, a nie zastępować jego decyzji.
+  recenzja-agentowa:
+    needs: kontrakt
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Recenzja przez subagenta reviewer
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Wymaga zainstalowanego Claude Code w runnerze.
+          # Tryb nieinteraktywny: -p przekazuje prompt i kończy po odpowiedzi.
+          npx --yes @anthropic-ai/claude-code -p \
+            "Użyj subagenta reviewer do recenzji diffu wobec origin/main. Zwróć wyłącznie werdykt w ustalonym formacie." \
+            > review.md || echo "Recenzja niedostępna" > review.md
+          cat review.md >> $GITHUB_STEP_SUMMARY

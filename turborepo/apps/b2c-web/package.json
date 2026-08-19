@@ -33,7 +33,8 @@
     "tailwind-merge": "^3.6.0",
     "use-places-autocomplete": "^4.0.1",
     "ws": "^8.21.0",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.14",
+    "@klikklima/contracts": "*"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

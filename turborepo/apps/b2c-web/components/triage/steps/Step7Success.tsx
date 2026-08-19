@@ -10,13 +10,21 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { DeviceModal, RoomSize as ModalRoomSize } from '../../ui/DeviceModal';
 import { getRecommendation } from '@/app/actions/getRecommendation';
 import type { BestsellerProduct } from '@/app/actions/getBestsellers';
+import { BUILDING_TYPE_PL, type BuildingTypeId } from '@klikklima/contracts';
+
+// Store trzyma etykietę PL (`location`), Server Action oczekuje identyfikatora
+// kontraktu (`BUILDING_TYPE`). `BUILDING_TYPE_PL` daje id -> pl; tu odwracamy
+// mapowanie lokalnie, tylko na potrzeby tego wywołania (WO B2C-TRIAGE-DISQUALIFY).
+const BUILDING_TYPE_ID_BY_PL: Record<string, BuildingTypeId> = Object.fromEntries(
+  (Object.entries(BUILDING_TYPE_PL) as [BuildingTypeId, string][]).map(([id, pl]) => [pl, id])
+);
 
 const DeviceCard = ({ product, onSelect, onDetails, isBestMatch = false }: { product: BestsellerProduct, onSelect: () => void, onDetails: () => void, isBestMatch?: boolean }) => {
   const brutto = Math.round((product.deviceNettoPrice + product.installNettoPrice) * 1.08);
   return (
     <div className={cn("group relative bg-card rounded-2xl border border-border overflow-hidden flex flex-col transition-all duration-300", isBestMatch ? "shadow-[0_20px_60px_-12px_rgba(23,80,200,0.15)] border-primary/20" : "hover:-translate-y-1 hover:shadow-lg")}>
       <div 
-        className="relative h-48 bg-[#f0f4fb] overflow-hidden flex items-center justify-center p-4 cursor-pointer"
+        className="relative h-48 bg-secondary overflow-hidden flex items-center justify-center p-4 cursor-pointer"
         onClick={onDetails}
       >
         <img src={product.img} alt={product.model} className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 mix-blend-multiply" />
@@ -30,13 +38,13 @@ const DeviceCard = ({ product, onSelect, onDetails, isBestMatch = false }: { pro
         </div>
         <div className="flex flex-wrap gap-2">
           {product._raw?.is_single_compatible && (
-            <span className="inline-flex items-center gap-1.5 w-fit rounded-full bg-[#F0F4FB] px-3 py-1.5 text-[13px] font-medium text-[#475569]">
+            <span className="inline-flex items-center gap-1.5 w-fit rounded-full bg-secondary px-3 py-1.5 text-[13px] font-medium text-muted-foreground">
               <Box className="size-3.5 text-[#2563EB]" />
               Single Split
             </span>
           )}
           {product._raw?.is_multi_compatible && (
-            <span className="inline-flex items-center gap-1.5 w-fit rounded-full bg-[#F0F4FB] px-3 py-1.5 text-[13px] font-medium text-[#475569]">
+            <span className="inline-flex items-center gap-1.5 w-fit rounded-full bg-secondary px-3 py-1.5 text-[13px] font-medium text-muted-foreground">
               <Boxes className="size-3.5 text-[#2563EB]" />
               Multi Split
             </span>
@@ -91,7 +99,8 @@ export const Step7Success = () => {
   React.useEffect(() => {
     async function fetchRecommendation() {
       setIsLoading(true);
-      const res = await getRecommendation(state.roomCount || 1, state.roomSizes, state.selectedDeviceLine);
+      const buildingType = state.location ? BUILDING_TYPE_ID_BY_PL[state.location] ?? null : null;
+      const res = await getRecommendation(state.roomCount || 1, state.roomSizes, state.selectedDeviceLine, buildingType);
       if (res.success && res.recommendations && res.recommendations.length > 0) {
         const mappedRecs = res.recommendations.map((rec: any, idx: number) => {
           const mainUnit = rec.internalUnits[0];

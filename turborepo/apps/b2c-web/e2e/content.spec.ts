@@ -8,7 +8,7 @@ test.describe('Content and Legal Pages', () => {
     await expect(page.locator('h1', { hasText: 'Baza' })).toBeVisible();
 
     // Verify there is at least one article card
-    const articleCards = page.locator('article.group');
+    const articleCards = page.locator('a[href^="/baza-wiedzy/"]');
     await expect(articleCards.first()).toBeVisible();
 
     // Click the first article
