@@ -54,7 +54,11 @@ step "Kontrakt: spójność"            node tools/kk-validate.mjs
 step "Kontrakt: żywotność bramki"    node tools/kk-selftest.mjs
 step "Kontrakt: brak dryfu codegenu" node tools/kk-codegen.mjs --check
 step "Kontrakt: wygenerowany TS jest ładowalny" node tools/kk-smoke.mjs
-step "Kontrakt: nazewnictwo ADR-002" node tools/kk-naming.mjs
+# Nazewnictwo: bramka pilnuje PRZYROSTU ponad zamrożony dług (tools/kk-naming-baseline.json),
+# nie całego stanu. Pełny skan (~1045 znanych naruszeń) byłby zawsze czerwony niezależnie od
+# tego, co realnie zmieniono — a bramka zawsze czerwona nie niesie sygnału, tylko uczy jej
+# omijania. Pełny obraz długu na żądanie: node tools/kk-naming.mjs
+step "Kontrakt: nazewnictwo ADR-002 (przyrost ponad baseline)" node tools/kk-naming.mjs --check-baseline
 
 # ── Warstwa 2: statyczna analiza ─────────────────────────────────────
 # ADAPTER: repozytorium jedzie na npm (workspaces + package-lock.json), nie na pnpm.

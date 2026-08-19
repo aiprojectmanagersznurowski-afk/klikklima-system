@@ -35,8 +35,11 @@ fi
 #    Dokumentacja pominięta świadomie — cytuje zakazane wzorce jako przykłady.
 KK_PROJECT_DIR="$KK_DIR" node tools/kk-precommit-scan.mjs $staged || FAIL=1
 
-# 3. Nazewnictwo w całym repo
-node tools/kk-naming.mjs >/dev/null 2>&1 || { echo "  ✗ kk-naming — uruchom: node tools/kk-naming.mjs"; FAIL=1; }
+# 3. Nazewnictwo: wyłącznie PRZYROST ponad zamrożony dług (tools/kk-naming-baseline.json).
+#    Repo niesie ~1045 udokumentowanych naruszeń sprzed ADR-002 — bramka czerwona na starcie
+#    nie niesie sygnału, tylko uczy pomijania jej przez --no-verify. Pełny obraz: node tools/kk-naming.mjs
+#    Output narzędzia idzie na wierzch celowo: dev ma zobaczyć KTÓRE nowe naruszenie blokuje commit.
+node tools/kk-naming.mjs --check-baseline || FAIL=1
 
 # 4. Konfiguracja Antigravity nie rozjechała się z Claude Code
 if [ -d .agents ]; then

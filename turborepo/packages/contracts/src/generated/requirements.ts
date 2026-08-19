@@ -530,7 +530,7 @@ export const REQUIREMENTS = [
   {
     "id": "B2C-TRIAGE-DISQUALIFY",
     "domain": "b2c",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "MEDIUM",
     "source": "contracts/triage.contract.mjs",
     "statement": "Konfiguracja spełniająca którąkolwiek regułę z DISQUALIFICATION_RULES kieruje klienta na ekran Eksperta zamiast na wycenę."
