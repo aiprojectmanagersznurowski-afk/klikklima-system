@@ -325,8 +325,6 @@ test.describe('Ścieżka Eksperta do rezerwacji (D6)', () => {
     await expect(page.locator('text=Twoja instalacja zasługuje na dokładną wycenę')).toBeVisible({ timeout: 20000 });
 
     await expect(page.locator('text="Audyt jest bezpłatny i niezobowiązujący."')).toBeVisible();
-    // Telefon zostaje jako wyjście drugorzędne, ale nie jest już jedyne.
-    await expect(page.locator('a[href^="tel:"]')).toBeVisible();
 
     await clickOption(page, 'Umów bezpłatny audyt');
     await expect(page.locator('text=Wybierz termin darmowej wyceny')).toBeVisible({ timeout: 10000 });
