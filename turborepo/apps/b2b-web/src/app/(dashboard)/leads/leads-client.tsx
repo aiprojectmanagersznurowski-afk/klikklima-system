@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive } from "lucide-react";
+import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadStatus, Prisma, audytorzy as Auditor } from "@repo/database";
 import { format } from "date-fns";
@@ -21,6 +21,7 @@ import { updateLeadAuditor } from "./[id]/actions";
 import { advanceLeadStatus , deleteLeadAction } from "./actions";
 import { ReturnToFunnelDialog } from "./return-to-funnel-dialog";
 import { ArchiveLostDialog } from "./archive-lost-dialog";
+import { AssignCrewDialog } from "./assign-crew-dialog";
 import { can, type Role } from "@klikklima/contracts";
 
 /**
@@ -65,7 +66,9 @@ const CONTEXT_ACTIONS: Record<LeadStatus, { label: string; target: LeadStatus; i
     { label: "Przenieś do Zimnych leadów", target: "QUOTE_REJECTED", variant: "destructive" },
   ],
   AWAITING_CREW_ASSIGNMENT: [
-    { label: "Ekipa przydzielona → Logistyka", target: "HARDWARE_IN_WAREHOUSE" },
+    // E4-CREW-ASSIGNMENT-UI: usunięto głupie przejście "Ekipa przydzielona → Logistyka"
+    // które nie wybierało ekipy ani nie sprawdzało certyfikatów. Zamiast tego dialog
+    // AssignCrewDialog otwiera się z osobnego elementu menu (showE4CrewAction).
     { label: "Rollback (Problem)", target: "ROLLBACK_RESCHEDULING", variant: "destructive" },
   ],
   HARDWARE_IN_WAREHOUSE: [
@@ -119,6 +122,7 @@ export function LeadsClient({
 
   const [returnDialogLeadId, setReturnDialogLeadId] = useState<string | null>(null);
   const [archiveDialogLeadId, setArchiveDialogLeadId] = useState<string | null>(null);
+  const [assignCrewDialogLeadId, setAssignCrewDialogLeadId] = useState<string | null>(null);
 
   const handleDelete = (id: string) => {
     if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
@@ -426,7 +430,9 @@ export function LeadsClient({
                             {(() => {
                               const isColdLead = lead.status === "QUOTE_REJECTED";
                               const showColdActions = isColdLead && canUpdateLeads;
-                              const showMenu = actions.length > 0 || showColdActions || canDeleteLeads;
+                              const isE4 = lead.status === "AWAITING_CREW_ASSIGNMENT";
+                              const showE4CrewAction = isE4 && canUpdateLeads;
+                              const showMenu = actions.length > 0 || showColdActions || showE4CrewAction || canDeleteLeads;
                               if (!showMenu) return null;
                               return (
                                 <DropdownMenu>
@@ -458,6 +464,20 @@ export function LeadsClient({
                                             {action.label}
                                           </DropdownMenuItem>
                                         ))}
+                                      </>
+                                    )}
+
+                                    {showE4CrewAction && (
+                                      <>
+                                        <DropdownMenuLabel>Przydział ekipy (E4)</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          className="cursor-pointer flex items-center gap-2"
+                                          onSelect={() => setAssignCrewDialogLeadId(lead.id)}
+                                        >
+                                          <Wrench size={14} className="shrink-0" />
+                                          Przypisz ekipę monterską
+                                        </DropdownMenuItem>
                                       </>
                                     )}
 
@@ -568,6 +588,25 @@ export function LeadsClient({
           }}
           onSuccess={() => {
             setArchiveDialogLeadId(null);
+            startTransition(() => router.refresh());
+          }}
+        />
+      )}
+
+      {assignCrewDialogLeadId && (
+        <AssignCrewDialog
+          leadId={assignCrewDialogLeadId}
+          installationDate={
+            leads.find((l) => l.id === assignCrewDialogLeadId)?.data_rezerwacji
+              ? new Date(leads.find((l) => l.id === assignCrewDialogLeadId)!.data_rezerwacji!)
+              : null
+          }
+          open={!!assignCrewDialogLeadId}
+          onOpenChange={(next) => {
+            if (!next) setAssignCrewDialogLeadId(null);
+          }}
+          onSuccess={() => {
+            setAssignCrewDialogLeadId(null);
             startTransition(() => router.refresh());
           }}
         />
