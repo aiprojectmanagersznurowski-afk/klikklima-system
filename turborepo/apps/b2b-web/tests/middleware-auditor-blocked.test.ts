@@ -45,6 +45,25 @@ import { NextRequest } from 'next/server';
  *    znow przechodzi PO PRZELACZENIU is_active) nie jest tu weryfikowalna —
  *    to pokrywa auditors-toggle-active.test.ts na poziomie samej akcji
  *    przelaczajacej `is_active`.
+ *
+ * 4) NAPRAWA (zgloszenie uzytkownika, 2026-08-20, bug produkcyjny — zablokowane
+ *    logowanie administratora): zapytanie o `audytorzy` uruchamialo sie dla
+ *    KAZDEGO authorized_usera, niezaleznie od jego roli w `AuthorizedUser`.
+ *    Jesli e-mail admina przypadkowo pasowal do jakiegokolwiek (nawet
+ *    niezwiazanego, testowego) wiersza w `audytorzy` z `is_active=false`,
+ *    admin dostawal falszywa blokade logowania mimo poprawnego wpisu w
+ *    `AuthorizedUser`. Fix: zapytanie o `audytorzy` uruchamia sie teraz TYLKO
+ *    gdy `authorizedUser.role === 'audytor'` (pole `role` rozszerzone w
+ *    zapytaniu `AuthorizedUser` z `select('email')` na
+ *    `select('email, role')`). Trzy istniejace testy ponizej zakladaly rolе
+ *    `'audytor'` niejawnie (mock nie zwracal `role` w ogole) — po naprawie
+ *    musza deklarowac ja jawnie, inaczej przestalyby testowac galaz, ktora
+ *    deklaruja (`role` byloby `undefined`, warunek `=== 'audytor'` bylby
+ *    zawsze falszywy, zapytanie o `audytorzy` nigdy by sie nie wykonalo).
+ *    Nowy test ponizej jest dokladna regresja zgloszonego buga: uzytkownik
+ *    z rola INNA niz `'audytor'`, ktorego e-mail PRZYPADKIEM pasuje do
+ *    zablokowanego wiersza w `audytorzy`, mimo to przechodzi bramke, bo
+ *    zapytanie o `audytorzy` w ogole sie nie wykonuje dla nie-audytorow.
  */
 
 const {
@@ -115,7 +134,9 @@ describe('updateSession - blokada logowania zablokowanego audytora (CRM-AUDYT-AC
   // @REQ: CRM-AUDYT-AC1
   it('AC1.5 - audytor z is_active=false jest odrzucony mimo poprawnych danych logowania', async () => {
     getUserMock.mockResolvedValue({ data: { user: AUTHENTICATED_USER } });
-    authorizedUserSingleMock.mockResolvedValue({ data: { email: AUTHENTICATED_USER.email } });
+    authorizedUserSingleMock.mockResolvedValue({
+      data: { email: AUTHENTICATED_USER.email, role: 'audytor' },
+    });
     blockedAuditorMaybeSingleMock.mockResolvedValue({ data: { id: 'aud-1' } });
 
     const request = new NextRequest('http://localhost/leads');
@@ -140,7 +161,9 @@ describe('updateSession - blokada logowania zablokowanego audytora (CRM-AUDYT-AC
   // @REQ: CRM-AUDYT-AC1
   it('kontrola negatywna - autoryzowany uzytkownik bez blokady przechodzi bramke', async () => {
     getUserMock.mockResolvedValue({ data: { user: AUTHENTICATED_USER } });
-    authorizedUserSingleMock.mockResolvedValue({ data: { email: AUTHENTICATED_USER.email } });
+    authorizedUserSingleMock.mockResolvedValue({
+      data: { email: AUTHENTICATED_USER.email, role: 'audytor' },
+    });
     blockedAuditorMaybeSingleMock.mockResolvedValue({ data: null });
 
     const request = new NextRequest('http://localhost/leads');
@@ -168,7 +191,9 @@ describe('updateSession - blokada logowania zablokowanego audytora (CRM-AUDYT-AC
   // @REQ: CRM-AUDYT-AC1
   it('fail-closed - blad zapytania o blokade audytora konczy sie odmowa dostepu, nie przejsciem', async () => {
     getUserMock.mockResolvedValue({ data: { user: AUTHENTICATED_USER } });
-    authorizedUserSingleMock.mockResolvedValue({ data: { email: AUTHENTICATED_USER.email } });
+    authorizedUserSingleMock.mockResolvedValue({
+      data: { email: AUTHENTICATED_USER.email, role: 'audytor' },
+    });
     blockedAuditorMaybeSingleMock.mockResolvedValue({
       data: null,
       error: { message: 'connection reset', code: 'PGRST000' },
@@ -183,5 +208,30 @@ describe('updateSession - blokada logowania zablokowanego audytora (CRM-AUDYT-AC
     expect(location.pathname).toBe('/login');
     expect(location.searchParams.get('denied')).toBe('true');
     expect(location.searchParams.get('blocked')).toBe('true');
+  });
+
+  // Regresja buga produkcyjnego (2026-08-20): admin (rola != 'audytor'), ktorego
+  // e-mail PRZYPADKIEM pasuje do zablokowanego wiersza w `audytorzy` (rekord
+  // niezwiazany z jego faktyczna rola), musi przejsc bramke — zapytanie o
+  // `audytorzy` nie moze sie w ogole wykonac dla nie-audytorow. Asercja
+  // sprawdza nie tylko wynik (brak signOut), ale i to, ze galaz faktycznie
+  // sie nie uruchomila (blockedAuditorEqMock/blockedAuditorMaybeSingleMock
+  // niewywolane) — inaczej test przeszedlby przypadkiem, gdyby ktos znow
+  // uruchomil zapytanie, ale z warunkiem, ktory akurat nie trafil.
+  // @REQ: CRM-AUDYT-AC1
+  it('admin z e-mailem pasujacym do zablokowanego audytora przechodzi bramke, bo zapytanie o audytorzy nie uruchamia sie dla nie-audytorow', async () => {
+    getUserMock.mockResolvedValue({ data: { user: AUTHENTICATED_USER } });
+    authorizedUserSingleMock.mockResolvedValue({
+      data: { email: AUTHENTICATED_USER.email, role: 'admin' },
+    });
+    blockedAuditorMaybeSingleMock.mockResolvedValue({ data: { id: 'aud-1' } });
+
+    const request = new NextRequest('http://localhost/leads');
+    const response = await updateSession(request);
+
+    expect(signOutMock).not.toHaveBeenCalled();
+    expect(response.status).not.toBe(307);
+    expect(blockedAuditorEqMock).not.toHaveBeenCalled();
+    expect(blockedAuditorMaybeSingleMock).not.toHaveBeenCalled();
   });
 });

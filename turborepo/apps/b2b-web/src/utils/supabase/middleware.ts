@@ -58,7 +58,7 @@ export async function updateSession(request: NextRequest) {
   if (user && !isPublicRoute) {
     const { data: authorizedUser } = await supabase
       .from('AuthorizedUser')
-      .select('email')
+      .select('email, role')
       .eq('email', user.email)
       .single()
 
@@ -77,24 +77,33 @@ export async function updateSession(request: NextRequest) {
     // audytora (audytorzy.is_active = false) nie przechodzi bramki, mimo poprawnych
     // danych logowania i obecności w AuthorizedUser. Field App poza zakresem repo (R1)
     // — bramka jest ta sama, co dziś sprawdza samą obecność w AuthorizedUser.
-    const { data: blockedAuditor, error: blockedAuditorError } = await supabase
-      .from('audytorzy')
-      .select('id')
-      .eq('email', user.email)
-      .eq('is_active', false)
-      .maybeSingle()
+    //
+    // NAPRAWA (zgłoszenie użytkownika, 2026-08-20): sprawdzenie musi dotyczyć
+    // WYŁĄCZNIE kont z rolą 'audytor' w AuthorizedUser. Bez tego warunku każdy
+    // authorized_user (admin/dyspozytor/monter), którego e-mail przypadkiem pasuje
+    // do JAKIEGOKOLWIEK wiersza w audytorzy z is_active=false (stary/testowy rekord,
+    // niezwiązany z jego faktyczną rolą), dostawał fałszywą blokadę logowania —
+    // dokładnie to się stało administratorowi, mimo poprawnego wpisu w AuthorizedUser.
+    if (authorizedUser.role === 'audytor') {
+      const { data: blockedAuditor, error: blockedAuditorError } = await supabase
+        .from('audytorzy')
+        .select('id')
+        .eq('email', user.email)
+        .eq('is_active', false)
+        .maybeSingle()
 
-    // BLOCKER (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #2): fail-closed. Jeśli zapytanie
-    // padnie, nie wiemy, czy konto jest zablokowane — traktujemy to jak potwierdzoną
-    // blokadę, spójnie z getCurrentActorRole() (który też jest fail-closed na `null`).
-    if (blockedAuditorError || blockedAuditor) {
-      await supabase.auth.signOut()
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      url.searchParams.set('denied', 'true')
-      url.searchParams.set('blocked', 'true')
-      url.searchParams.set('email', user.email || '')
-      return NextResponse.redirect(url)
+      // BLOCKER (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #2): fail-closed. Jeśli zapytanie
+      // padnie, nie wiemy, czy konto jest zablokowane — traktujemy to jak potwierdzoną
+      // blokadę, spójnie z getCurrentActorRole() (który też jest fail-closed na `null`).
+      if (blockedAuditorError || blockedAuditor) {
+        await supabase.auth.signOut()
+        const url = request.nextUrl.clone()
+        url.pathname = '/login'
+        url.searchParams.set('denied', 'true')
+        url.searchParams.set('blocked', 'true')
+        url.searchParams.set('email', user.email || '')
+        return NextResponse.redirect(url)
+      }
     }
   }
 
