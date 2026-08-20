@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 import { AssignAuditor } from "./assign-auditor";
 import { EditLeadModal } from "./edit-lead-modal";
 import { DeleteLeadButton } from "./delete-lead-button";
+import { getAuditors } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -60,10 +61,11 @@ export default async function LeadDetailsPage({
   const extUnit = triage.selectedExternalUnit;
   const intUnits = triage.selectedInternalUnits || [];
 
-  // Fetch all auditors
-  const audytorzy = await prisma.audytorzy.findMany({
-    orderBy: { imie_i_nazwisko: "asc" },
-  });
+  // BLOCKER 3 (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #2): ta pula wyboru audytora MUSI
+  // wykluczać zablokowane konta (is_active: false), tak samo jak pula w
+  // assignCrewToLead/leads/actions.ts. Wołamy tę samą funkcję zamiast dublować
+  // zapytanie, żeby istniała tylko jedna definicja "puli wyboru".
+  const audytorzy = await getAuditors();
 
   const { createClient } = await import("@supabase/supabase-js");
   const supabase = createClient(

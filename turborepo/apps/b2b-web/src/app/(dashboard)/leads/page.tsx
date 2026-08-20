@@ -2,6 +2,7 @@ import React from "react";
 import { LeadsClient } from "./leads-client";
 import { getLeads, getAuditors } from "./actions";
 import { LeadStatus } from "@repo/database";
+import { getCurrentActorRole } from "@/utils/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ export default async function LeadsPage(props: {
     limit: 50 
   });
   const auditors = await getAuditors();
+  const actorRole = await getCurrentActorRole();
 
   // Determine which status to highlight in the dropdown
   const activeStatus: LeadStatus | "ALL" = (bucket === "cold" || bucket === "rejected_auto")
@@ -41,6 +43,7 @@ export default async function LeadsPage(props: {
       currentPage={page}
       initialStatus={activeStatus}
       stageCounts={result.stageCounts}
+      actorRole={actorRole}
     />
   );
 }

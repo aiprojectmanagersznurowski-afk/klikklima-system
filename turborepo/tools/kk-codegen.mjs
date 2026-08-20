@@ -57,6 +57,11 @@ ${LOST_REASONS.map((r) => `  ${r.id}: ${q(r.pl)},`).join('\n')}
 /** Archiwizacja bez powodu ze słownika jest odrzucana — guard lostReasonProvided (T16). */
 export const isValidLostReason = (v: string): v is LostReason => (LOST_REASONS as readonly string[]).includes(v);
 
+/** Powody wymagające niepustej notatki w leads.lost_reason_note (D5). Nie hardkoduj 'OTHER'. */
+export const LOST_REASONS_REQUIRING_NOTE = [${LOST_REASONS.filter((r) => r.requiresNote).map((r) => q(r.id)).join(', ')}] as const;
+export const lostReasonRequiresNote = (v: LostReason): boolean =>
+  (LOST_REASONS_REQUIRING_NOTE as readonly string[]).includes(v);
+
 export const STATE_META: Record<LeadStatus, { n: number; kind: 'STAGE' | 'BUCKET'; pl: string; terminal: boolean; status: 'STABLE' | 'PROPOSED' }> = {
 ${STATES.map((s) => `  ${s.id}: { n: ${s.n}, kind: ${q(s.kind)}, pl: ${q(s.pl)}, terminal: ${!!s.terminal}, status: ${q(s.status)} },`).join('\n')}
 };

@@ -72,6 +72,30 @@ export async function updateSession(request: NextRequest) {
       url.searchParams.set('email', user.email || '')
       return NextResponse.redirect(url)
     }
+
+    // BLOCKER 4 / AC1.5 (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #1): zablokowane konto
+    // audytora (audytorzy.is_active = false) nie przechodzi bramki, mimo poprawnych
+    // danych logowania i obecności w AuthorizedUser. Field App poza zakresem repo (R1)
+    // — bramka jest ta sama, co dziś sprawdza samą obecność w AuthorizedUser.
+    const { data: blockedAuditor, error: blockedAuditorError } = await supabase
+      .from('audytorzy')
+      .select('id')
+      .eq('email', user.email)
+      .eq('is_active', false)
+      .maybeSingle()
+
+    // BLOCKER (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #2): fail-closed. Jeśli zapytanie
+    // padnie, nie wiemy, czy konto jest zablokowane — traktujemy to jak potwierdzoną
+    // blokadę, spójnie z getCurrentActorRole() (który też jest fail-closed na `null`).
+    if (blockedAuditorError || blockedAuditor) {
+      await supabase.auth.signOut()
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('denied', 'true')
+      url.searchParams.set('blocked', 'true')
+      url.searchParams.set('email', user.email || '')
+      return NextResponse.redirect(url)
+    }
   }
 
   if (user && request.nextUrl.pathname === '/login') {

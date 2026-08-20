@@ -33,6 +33,11 @@ const warnings = [];
 
 for (const p of cfg.forbiddenPatterns) {
   if (p.appliesTo && !new RegExp(p.appliesTo).test(rel)) continue;
+  // Decyzja człowieka 2026-08-20, ticket CRM-SAFE-RECORD-ACTIONS.
+  // Reguła oznaczona `allowInWriteHook: true` jest pomijana WYŁĄCZNIE tutaj — w bramce zapisu.
+  // Pola tego celowo NIE czyta ani tools/kk-naming.mjs (--check-baseline), ani tools/guard-core.mjs,
+  // więc skan repozytorium i bramka commitowa pozostają nienaruszone.
+  if (p.allowInWriteHook === true) continue;
   if (p.allowIn && p.allowIn.some((a) => rel.includes(a) || basename(rel).includes(a))) continue;
   const re = new RegExp(p.re, 'gm');
   const hits = payload.match(re);

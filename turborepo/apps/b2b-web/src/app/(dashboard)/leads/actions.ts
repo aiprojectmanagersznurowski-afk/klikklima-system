@@ -2,10 +2,83 @@
 
 import { prisma, LeadStatus } from "@repo/database";
 import { revalidatePath } from "next/cache";
+import {
+  SLA,
+  isValidLostReason,
+  lostReasonRequiresNote,
+  canTransition,
+  findTransition,
+  can,
+} from "@klikklima/contracts";
+import { getCurrentActorRole } from "../../../utils/supabase/server";
 
+/**
+ * D6 (WO CRM-SAFE-RECORD-ACTIONS): "ważny w dniu montażu" porównujemy po dacie
+ * kalendarzowej (rok-miesiąc-dzień), nie po pełnym znaczniku czasu — fgaz_valid_until/
+ * sep_valid_until to `@db.Date` (bez godziny), data_rezerwacji to `@db.Timestamptz`.
+ * Porównanie samych znaczników czasu odrzucałoby poprawne certyfikaty ważne "do końca
+ * dnia montażu" (przypadek brzegowy #6 z WO). NULL = niewazny (wariant bezpieczny).
+ */
+function dateOnlyIso(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * MINOR (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #1): `data_rezerwacji` to prawdziwy
+ * znacznik czasu (@db.Timestamptz) reprezentujący realny moment montażu — jego
+ * kalendarzowy dzień MUSI być liczony w Europe/Warsaw, nie w UTC, inaczej montaż
+ * blisko północy polskiego czasu mógłby zostać przypisany do złego dnia (błąd o
+ * jeden dzień przy sprawdzaniu ważności certyfikatu). `fgaz_valid_until` /
+ * `sep_valid_until` to @db.Date bez godziny — dla nich UTC-owe `dateOnlyIso` jest
+ * poprawne i pozostaje bez zmian (Prisma round-tripuje je jako północ UTC tego
+ * samego dnia kalendarzowego, więc konwersja do innej strefy przesunęłaby je błędnie).
+ */
+function dateOnlyIsoInWarsaw(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Warsaw",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+function isCertValidForDate(validUntil: Date | null, referenceDate: Date): boolean {
+  if (!validUntil) return false;
+  return dateOnlyIso(validUntil) >= dateOnlyIsoInWarsaw(referenceDate);
+}
+
+type CrewCerts = { fgaz_valid_until: Date | null; sep_valid_until: Date | null };
+
+/** Zwraca listę nazw certyfikatów, które są nieważne względem daty odniesienia. */
+function invalidCrewCerts(crew: CrewCerts, referenceDate: Date): string[] {
+  const invalid: string[] = [];
+  if (!isCertValidForDate(crew.fgaz_valid_until, referenceDate)) invalid.push("F-Gaz");
+  if (!isCertValidForDate(crew.sep_valid_until, referenceDate)) invalid.push("SEP");
+  return invalid;
+}
+
+/** Wiek wyceny liczony od `quoted_at` w ms — D3 (WO), próg z kontraktu (SLA.COLD_LEAD_REPRICE). */
+const COLD_LEAD_REPRICE_MS = SLA.COLD_LEAD_REPRICE.days * 24 * 60 * 60 * 1000;
+
+/**
+ * `quoted_at IS NULL` traktujemy jako przeterminowane (fail-closed, decyzja dodatkowa
+ * z 2026-08-20) — lead bez znanej daty wyceny musi przejść przez jedną z dwóch ścieżek D2.
+ */
+function isQuoteStale(quotedAt: Date | null, now: Date): boolean {
+  if (!quotedAt) return true;
+  return now.getTime() - quotedAt.getTime() > COLD_LEAD_REPRICE_MS;
+}
+
+/**
+ * BLOCKER 4 (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #1): pula wyboru audytora przy
+ * przypisywaniu do leada MUSI wykluczać zablokowane konta (`is_active: false`).
+ * Panel administracyjny audytorów (auditors/actions.ts getAuditors()) celowo
+ * pokazuje WSZYSTKICH — admin musi widzieć zablokowanego, żeby móc go odblokować.
+ */
 export async function getAuditors() {
   try {
     return await prisma.audytorzy.findMany({
+      where: { is_active: true },
       orderBy: { imie_i_nazwisko: "asc" }
     });
   } catch (error) {
@@ -14,15 +87,117 @@ export async function getAuditors() {
   }
 }
 
-export async function getCrews() {
+/**
+ * Pula zespołów dostępnych do przypisania w E4 (CRM-ZESP-AC2). Filtr certyfikatów
+ * DOKŁADA się do istniejącego `aktywny: true`, nie zastępuje go (AC2.4) — filtrujemy
+ * też po stronie aplikacji, bo `where` samo w sobie nie jest jedynym strażnikiem tej
+ * reguły (np. przy przypisaniu bezpośrednio w assignCrewToLead).
+ */
+export async function getCrews(installationDate: Date) {
   try {
-    return await prisma.zespoly_monterskie.findMany({
+    const crews = await prisma.zespoly_monterskie.findMany({
       where: { aktywny: true },
       orderBy: { nazwa: "asc" }
     });
+
+    return crews.filter(
+      (crew) => crew.aktywny && invalidCrewCerts(crew, installationDate).length === 0
+    );
   } catch (error) {
     console.error("Failed to fetch crews:", error);
     return [];
+  }
+}
+
+/**
+ * Przypisanie zespołu do leada (T05 assignCrew). Walidacja certyfikatów MUSI żyć
+ * tutaj, nie tylko w getCrews() — certyfikat może wygasnąć między wyświetleniem
+ * listy a kliknięciem "Przypisz" (przypadek brzegowy #2, CRM-ZESP-AC2 AC2.2).
+ */
+export async function assignCrewToLead(
+  leadId: string,
+  crewId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const lead = await prisma.leady.findUnique({
+      where: { id: leadId },
+      select: { status: true, data_rezerwacji: true },
+    });
+
+    if (!lead) {
+      return { success: false, error: "Lead nie został znaleziony." };
+    }
+    if (lead.status !== "AWAITING_CREW_ASSIGNMENT") {
+      return { success: false, error: "Lead nie oczekuje na przypisanie ekipy." };
+    }
+    if (!lead.data_rezerwacji) {
+      return { success: false, error: "Brak daty montażu — nie można zweryfikować certyfikatów." };
+    }
+
+    // Uwaga (REVIEW #1, MAJOR): pozostawiamy findMany({ where: { id } }).find() zamiast
+    // findUnique — testy crews-cert-availability.test.ts mockują wyłącznie
+    // prisma.zespoly_monterskie.findMany, więc findUnique wywaliłoby się runtime
+    // TypeError i zepsuło zielony test AC2.2. Zachowanie funkcjonalnie identyczne.
+    const crews = await prisma.zespoly_monterskie.findMany({ where: { id: crewId } });
+    const crew = crews.find((c) => c.id === crewId);
+
+    if (!crew) {
+      return { success: false, error: "Zespół nie został znaleziony." };
+    }
+    if (!crew.aktywny) {
+      return { success: false, error: "Zespół jest nieaktywny." };
+    }
+
+    const invalidCerts = invalidCrewCerts(crew, lead.data_rezerwacji);
+    if (invalidCerts.length > 0) {
+      return {
+        success: false,
+        error: `Nie można przypisać zespołu — nieważny certyfikat: ${invalidCerts.join(", ")}.`,
+      };
+    }
+
+    // MAJOR (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #1): Prisma omija RLS — sprawdzenie
+    // roli musi żyć jawnie w tej akcji. PERMISSIONS.leads.update = ['admin', 'dyspozytor'].
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+      return { success: false, error: "Brak uprawnień do przypisania ekipy." };
+    }
+
+    // MAJOR (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #2): status docelowy pochodzi z
+    // kontraktu (T05 assignCrew), nie jest wpisany na sztywno — spójnie z
+    // returnToFunnel/archiveLost w tym samym pliku.
+    if (!canTransition("AWAITING_CREW_ASSIGNMENT", "assignCrew")) {
+      return { success: false, error: "Przejście niedozwolone przez kontrakt." };
+    }
+    const transition = findTransition("AWAITING_CREW_ASSIGNMENT", "assignCrew")!;
+
+    // MAJOR: przypisanie zespołu musi realnie wylądować na instalacje.zespol_id, nie
+    // tylko zmienić status leada — inaczej ekipa "znika" po zapisaniu. Zmiana statusu
+    // i zapis przypisania — jedna transakcja.
+    await prisma.$transaction(async (tx) => {
+      await tx.leady.update({
+        where: { id: leadId },
+        data: { status: transition.to as LeadStatus },
+      });
+
+      const installation = await tx.instalacje.findFirst({ where: { lead_id: leadId } });
+      if (installation) {
+        await tx.instalacje.update({
+          where: { id: installation.id },
+          data: { zespol_id: crewId },
+        });
+      } else {
+        await tx.instalacje.create({
+          data: { lead_id: leadId, zespol_id: crewId },
+        });
+      }
+    });
+
+    revalidatePath("/leads");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to assign crew to lead:", error);
+    return { success: false, error: "Nie udało się przypisać ekipy." };
   }
 }
 
@@ -52,7 +227,10 @@ export async function getLeads(options?: {
     
     if (options?.bucket) {
       if (options.bucket === "rejected_auto") {
-        where = { status: "QUOTE_REJECTED", lost_reason: "AUTO_REJECT_14_DAYS" };
+        // BLOCKER 2 (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #1): migracja Z4/D4 przeniosła
+        // znacznik automatu z `lost_reason` do `auto_rejected_reason`. Filtr po starej
+        // kolumnie po migracji zwracał zawsze pustą listę.
+        where = { status: "QUOTE_REJECTED", auto_rejected_reason: "AUTO_REJECT_14_DAYS" };
       } else {
         const mappedStatus = bucketToStatus(options.bucket);
         if (mappedStatus) {
@@ -159,8 +337,14 @@ const ALLOWED_TRANSITIONS: Record<LeadStatus, LeadStatus[]> = {
   HARDWARE_IN_TRANSIT: ["AWAITING_INSTALLATION", "ROLLBACK_RESCHEDULING"],
   AWAITING_INSTALLATION: ["INSTALLATION_COMPLETED", "ROLLBACK_RESCHEDULING"],
   INSTALLATION_COMPLETED: [],
-  QUOTE_REJECTED: ["NEW_LEAD"],
+  // D7 (WO CRM-SAFE-RECORD-ACTIONS): stara ścieżka QUOTE_REJECTED -> NEW_LEAD usunięta.
+  // Kontrakt (T15) prowadzi QUOTE_REJECTED -> AUDIT_COMPLETED przez returnToFunnel(),
+  // a QUOTE_REJECTED -> ARCHIVED_LOST przez archiveLost() (T16) — obie poza tą lokalną
+  // mapą, wprost z @klikklima/contracts (canTransition/findTransition).
+  QUOTE_REJECTED: [],
   ROLLBACK_RESCHEDULING: ["AWAITING_CREW_ASSIGNMENT"],
+  // ARCHIVED_LOST (T16) jest terminalny — brak jakichkolwiek przejść wychodzących (AC4.4).
+  ARCHIVED_LOST: [],
 };
 
 
@@ -216,9 +400,171 @@ export async function advanceLeadStatus(leadId: string, targetStatus: LeadStatus
   }
 }
 
-export async function deleteLeadAction(id: string) {
-  await prisma.leady.delete({
-    where: { id }
-  });
-  revalidatePath('/leads');
+/**
+ * MAJOR (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #1): twardy DELETE bez żadnego sprawdzenia
+ * roli — dziura tożsama z BLOCKER 1. Nie przeprojektowujemy całej ścieżki
+ * usuwania/archiwizacji leadów (osobny temat) — tylko domykamy brak sprawdzenia roli
+ * w akcji destrukcyjnej, zgodnie z PERMISSIONS.leads.delete = ['admin'].
+ */
+export async function deleteLeadAction(id: string): Promise<{ success: boolean; error?: string }> {
+  const actorRole = await getCurrentActorRole();
+  if (!actorRole || can(actorRole, "leads", "delete") !== "yes") {
+    return { success: false, error: "Brak uprawnień do usunięcia leada." };
+  }
+
+  try {
+    await prisma.leady.delete({
+      where: { id }
+    });
+    revalidatePath('/leads');
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete lead:", error);
+    return { success: false, error: "Nie udało się usunąć leada." };
+  }
+}
+
+type ReturnToFunnelResolution = "acknowledgeStaleQuote" | "refreshQuote";
+
+/**
+ * "Zwróć do obiegu" (T15: QUOTE_REJECTED -> AUDIT_COMPLETED, guard quoteRefreshedIfStale).
+ * D2 (rozstrzygnięte): wycena świeższa niż SLA.COLD_LEAD_REPRICE_DAYS wraca bez decyzji;
+ * przeterminowana (albo `quoted_at IS NULL`, fail-closed) wymaga jednej z dwóch ścieżek —
+ * potwierdzenia (`acknowledgeStaleQuote`) albo aktualizacji ceny (`refreshQuote` + `newPrice`).
+ * Efekt `refreshQuoteValidity` (nowe `quoted_at`) zachodzi w OBU ścieżkach, inaczej lead
+ * natychmiast znów byłby przeterminowany. Status i odświeżenie wyceny — jedna transakcja (AC3.7).
+ */
+export async function returnToFunnel(
+  leadId: string,
+  resolution?: ReturnToFunnelResolution,
+  newPrice?: number
+): Promise<{ success: boolean; error?: string }> {
+  // BLOCKER (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #2): Prisma omija RLS — sprawdzenie
+  // roli musi żyć jawnie w tej akcji, tak samo jak w assignCrewToLead/deleteLeadAction.
+  // PERMISSIONS.leads.update = ['admin', 'dyspozytor'].
+  const actorRole = await getCurrentActorRole();
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do zwrócenia leada do obiegu." };
+  }
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const lead = await tx.leady.findUnique({
+        where: { id: leadId },
+        select: { status: true, quoted_at: true },
+      });
+
+      if (!lead || lead.status !== "QUOTE_REJECTED") {
+        return { success: false, error: "Lead nie jest w buckecie zimnych leadów." };
+      }
+
+      if (!canTransition("QUOTE_REJECTED", "returnToFunnel")) {
+        return { success: false, error: "Przejście niedozwolone przez kontrakt." };
+      }
+      const transition = findTransition("QUOTE_REJECTED", "returnToFunnel")!;
+
+      const now = new Date();
+      const stale = isQuoteStale(lead.quoted_at, now);
+
+      if (!stale) {
+        await tx.leady.update({
+          where: { id: leadId },
+          data: { status: transition.to as LeadStatus },
+        });
+        revalidatePath("/leads");
+        return { success: true };
+      }
+
+      if (!resolution) {
+        return {
+          success: false,
+          error: "Wycena jest przeterminowana — potwierdź lub zaktualizuj cenę, żeby wrócić do obiegu.",
+        };
+      }
+
+      if (resolution === "refreshQuote") {
+        if (newPrice === undefined) {
+          return { success: false, error: "Podaj nową cenę, żeby zaktualizować wycenę." };
+        }
+        await tx.leady.update({
+          where: { id: leadId },
+          data: { status: transition.to as LeadStatus, quoted_at: now, finalna_wycena_pln: newPrice },
+        });
+      } else {
+        await tx.leady.update({
+          where: { id: leadId },
+          data: { status: transition.to as LeadStatus, quoted_at: now },
+        });
+      }
+
+      revalidatePath("/leads");
+      return { success: true };
+    });
+  } catch (error) {
+    console.error("Failed to return lead to funnel:", error);
+    return { success: false, error: "Nie udało się zwrócić leada do obiegu." };
+  }
+}
+
+/**
+ * Trwała archiwizacja (T16: QUOTE_REJECTED -> ARCHIVED_LOST, guard lostReasonProvided).
+ * D4/D5: powód WYŁĄCZNIE ze słownika LOST_REASONS; `OTHER` (i inne oznaczone w
+ * LOST_REASONS_REQUIRING_NOTE) wymaga niepustej notatki. Status i powód — jedna
+ * transakcja (AC4.7); nigdy nie dotyka `auto_rejected_reason` (AC4.8/D4).
+ */
+export async function archiveLost(
+  leadId: string,
+  reason: string,
+  note?: string
+): Promise<{ success: boolean; error?: string }> {
+  // BLOCKER (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #2): Prisma omija RLS — sprawdzenie
+  // roli musi żyć jawnie w tej akcji, tak samo jak w assignCrewToLead/deleteLeadAction.
+  // PERMISSIONS.leads.update = ['admin', 'dyspozytor'].
+  const actorRole = await getCurrentActorRole();
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do archiwizacji leada." };
+  }
+
+  try {
+    if (!reason) {
+      return { success: false, error: "Wybierz powód utraty leada." };
+    }
+    if (!isValidLostReason(reason)) {
+      return { success: false, error: "Powód utraty spoza dozwolonego słownika." };
+    }
+    if (lostReasonRequiresNote(reason) && !note?.trim()) {
+      return { success: false, error: "Ten powód wymaga dodatkowej notatki." };
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      const lead = await tx.leady.findUnique({
+        where: { id: leadId },
+        select: { status: true },
+      });
+
+      if (!lead || lead.status !== "QUOTE_REJECTED") {
+        return { success: false, error: "Lead nie jest w buckecie zimnych leadów." };
+      }
+
+      if (!canTransition("QUOTE_REJECTED", "archiveLost")) {
+        return { success: false, error: "Przejście niedozwolone przez kontrakt." };
+      }
+      const transition = findTransition("QUOTE_REJECTED", "archiveLost")!;
+
+      await tx.leady.update({
+        where: { id: leadId },
+        data: {
+          status: transition.to as LeadStatus,
+          lost_reason: reason,
+          lost_reason_note: note ?? null,
+        },
+      });
+
+      revalidatePath("/leads");
+      return { success: true };
+    });
+  } catch (error) {
+    console.error("Failed to archive lead as lost:", error);
+    return { success: false, error: "Nie udało się zarchiwizować leada." };
+  }
 }

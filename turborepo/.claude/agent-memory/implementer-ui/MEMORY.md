@@ -1,0 +1,2 @@
+- [react-hook-form not installed in b2b-web](feedback_no_react_hook_form_in_b2b.md) — CLAUDE.md mandates RHF+zod but repo has zero installs; use single-object useState instead, flag the gap.
+- [CRM-SAFE-RECORD-ACTIONS UI status](project_crm_safe_record_actions.md) — what shipped in GREEN 3/3 UI turn, and that E4 crew-assignment UI does not exist yet (deferred, needs own WO).

@@ -2,10 +2,26 @@
 import { prisma } from "@repo/database";
 import { revalidatePath } from "next/cache";
 
+/**
+ * BLOCKER 4 (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #1, AC1.6): pula wyboru w UI
+ * (getAuditors() w leads/actions.ts) już wyklucza zablokowanych audytorów, ale
+ * to nie chroni przed żądaniem wysłanym wprost do tej Server Action z pominięciem
+ * UI — trzeba odrzucić przypisanie zablokowanego audytora również tutaj.
+ */
 export async function updateLeadAuditor(leadId: string, audytorId: string | null) {
   try {
     const lead = await prisma.leady.findUnique({ where: { id: leadId } });
     if (!lead) return { success: false, error: "Lead not found" };
+
+    if (audytorId) {
+      const audytor = await prisma.audytorzy.findUnique({
+        where: { id: audytorId },
+        select: { is_active: true },
+      });
+      if (!audytor || !audytor.is_active) {
+        return { success: false, error: "Audytor jest zablokowany — nie można go przypisać." };
+      }
+    }
 
     let newStatus = lead.status;
     if (audytorId && lead.status === "NEW_LEAD") {

@@ -1,0 +1,2 @@
+- [Pułapki rozjazdu kod↔kontrakt](repo-drift-traps.md) — równoległa maszyna stanów w B2B, braki w enumie Prisma, nieistniejące tabele i aplikacje
+- [Źródła prawdy w kontraktach](contract-sources-of-truth.md) — gdzie szukać progów/guardów/słowników i które wpisy czekają na zatwierdzenie człowieka

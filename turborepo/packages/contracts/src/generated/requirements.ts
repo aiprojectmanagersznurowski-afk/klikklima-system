@@ -178,7 +178,7 @@ export const REQUIREMENTS = [
   {
     "id": "CRM-AUDYT-AC1",
     "domain": "crm",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "b2b_crm_specifications.md#5",
     "statement": "Administrator może zablokować lub usunąć konto audytora; usunięcie wymaga wcześniejszego przepięcia leadów."
@@ -210,7 +210,7 @@ export const REQUIREMENTS = [
   {
     "id": "CRM-ZESP-AC2",
     "domain": "crm",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "b2b_crm_specifications.md#6",
     "statement": "Zespół z nieważnym certyfikatem jest automatycznie ukrywany z puli brygad przy przypisywaniu w E4."
@@ -234,7 +234,7 @@ export const REQUIREMENTS = [
   {
     "id": "CRM-ZIMNE-AC2",
     "domain": "crm",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "b2b_crm_specifications.md#7",
     "statement": "Akcja „Zwróć do obiegu\" wymaga potwierdzenia lub odświeżenia ceny po 30 dniach w bucketcie."
@@ -242,7 +242,7 @@ export const REQUIREMENTS = [
   {
     "id": "CRM-ZIMNE-AC3",
     "domain": "crm",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "b2b_crm_specifications.md#7",
     "statement": "Trwała archiwizacja wymaga powodu utraty, który zasila moduł analityczny."

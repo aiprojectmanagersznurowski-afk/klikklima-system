@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert } from "lucide-react";
+import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadStatus, leady as Lead, audytorzy as Auditor } from "@repo/database";
 import { format } from "date-fns";
@@ -19,6 +19,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { updateLeadAuditor } from "./[id]/actions";
 import { advanceLeadStatus , deleteLeadAction } from "./actions";
+import { ReturnToFunnelDialog } from "./return-to-funnel-dialog";
+import { ArchiveLostDialog } from "./archive-lost-dialog";
+import { can, type Role } from "@klikklima/contracts";
 
 type StageFilter = LeadStatus | "ALL";
 
@@ -64,37 +67,53 @@ const CONTEXT_ACTIONS: Record<LeadStatus, { label: string; target: LeadStatus; i
     { label: "Rollback (Problem)", target: "ROLLBACK_RESCHEDULING", variant: "destructive" },
   ],
   INSTALLATION_COMPLETED: [],
-  QUOTE_REJECTED: [
-    { label: "Reaktywuj → Nowy lead", target: "NEW_LEAD" },
-  ],
+  // D7 (WO CRM-SAFE-RECORD-ACTIONS): stara ścieżka "Reaktywuj → Nowy lead" usunięta.
+  // Kontrakt (T15) prowadzi QUOTE_REJECTED -> AUDIT_COMPLETED przez returnToFunnel(),
+  // które wymaga dialogu z decyzją o cenie (implementer-ui, poza zakresem tej zmiany).
+  QUOTE_REJECTED: [],
   ROLLBACK_RESCHEDULING: [
     { label: "Powrót do lejka → E4", target: "AWAITING_CREW_ASSIGNMENT" },
   ],
+  // ARCHIVED_LOST (T16) jest terminalny — brak akcji kontekstowych (AC4.4).
+  ARCHIVED_LOST: [],
 };
 
-export function LeadsClient({ 
-  initialLeads, 
+export function LeadsClient({
+  initialLeads,
   auditors,
   totalPages,
   currentPage,
   initialStatus,
-  stageCounts
-}: { 
-  initialLeads: Lead[]; 
+  stageCounts,
+  actorRole,
+}: {
+  initialLeads: Lead[];
   auditors: Auditor[];
   totalPages: number;
   currentPage: number;
   initialStatus: StageFilter;
   stageCounts: Record<string, number>;
+  actorRole: Role | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition()
+  // Przypadek brzegowy #4 (WO CRM-SAFE-RECORD-ACTIONS): akcje destrukcyjne/cofające
+  // ukryte w UI dla ról bez uprawnienia — serwer i tak odrzuca, to tylko warstwa UX.
+  const canUpdateLeads = !!actorRole && can(actorRole, "leads", "update") === "yes";
+  const canDeleteLeads = !!actorRole && can(actorRole, "leads", "delete") === "yes";
+
+  const [returnDialogLeadId, setReturnDialogLeadId] = useState<string | null>(null);
+  const [archiveDialogLeadId, setArchiveDialogLeadId] = useState<string | null>(null);
 
   const handleDelete = (id: string) => {
     if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
       startTransition(async () => {
         try {
-          await deleteLeadAction(id);
+          const result = await deleteLeadAction(id);
+          if (!result.success) {
+            alert(result.error ?? "Nie udało się usunąć leada.");
+            return;
+          }
           window.location.reload();
         } catch (e) {
           alert("Wystąpił błąd podczas usuwania rekordu.");
@@ -352,15 +371,19 @@ export function LeadsClient({
                                   </DropdownMenuItem>
                                 </>
                               )}
-                            
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                onClick={() => handleDelete(lead.id)}
-                              >
-                                <ShieldAlert className="mr-2 size-4" />
-                                <span>Usuń (Tylko Admin)</span>
-                              </DropdownMenuItem>
+
+                              {canDeleteLeads && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                    onClick={() => handleDelete(lead.id)}
+                                  >
+                                    <ShieldAlert className="mr-2 size-4" />
+                                    <span>Usuń (Tylko Admin)</span>
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
@@ -385,46 +408,81 @@ export function LeadsClient({
                               </Button>
                             </Link>
                             
-                            {actions.length > 0 && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" title="Akcje">
-                                    <MoreHorizontal size={16} />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-64">
-                                  <DropdownMenuLabel>Zmień etap</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  {actions.map((action) => (
-                                    <DropdownMenuItem
-                                      key={action.target}
-                                      onSelect={() => handleAdvanceStatus(lead.id, action.target)}
-                                      className={`cursor-pointer flex items-center gap-2 ${
-                                        action.variant === "destructive" 
-                                          ? "text-destructive focus:text-destructive focus:bg-destructive/10" 
-                                          : ""
-                                      }`}
-                                    >
-                                      {action.variant === "destructive" ? (
-                                        <AlertTriangle size={14} className="shrink-0" />
-                                      ) : action.target === "NEW_LEAD" || action.target === "AWAITING_CREW_ASSIGNMENT" ? (
-                                        <RotateCcw size={14} className="shrink-0" />
-                                      ) : (
-                                        <ArrowRight size={14} className="shrink-0" />
-                                      )}
-                                      {action.label}
-                                    </DropdownMenuItem>
-                                  ))}
-                                
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                onClick={() => handleDelete(lead.id)}
-                              >
-                                <ShieldAlert className="mr-2 size-4" />
-                                <span>Usuń (Tylko Admin)</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
+                            {(() => {
+                              const isColdLead = lead.status === "QUOTE_REJECTED";
+                              const showColdActions = isColdLead && canUpdateLeads;
+                              const showMenu = actions.length > 0 || showColdActions || canDeleteLeads;
+                              if (!showMenu) return null;
+                              return (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" title="Akcje">
+                                      <MoreHorizontal size={16} />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-64">
+                                    {actions.length > 0 && (
+                                      <>
+                                        <DropdownMenuLabel>Zmień etap</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {actions.map((action) => (
+                                          <DropdownMenuItem
+                                            key={action.target}
+                                            onSelect={() => handleAdvanceStatus(lead.id, action.target)}
+                                            className={`cursor-pointer flex items-center gap-2 ${
+                                              action.variant === "destructive"
+                                                ? "text-destructive focus:text-destructive focus:bg-destructive/10"
+                                                : ""
+                                            }`}
+                                          >
+                                            {action.variant === "destructive" ? (
+                                              <AlertTriangle size={14} className="shrink-0" />
+                                            ) : action.target === "NEW_LEAD" || action.target === "AWAITING_CREW_ASSIGNMENT" ? (
+                                              <RotateCcw size={14} className="shrink-0" />
+                                            ) : (
+                                              <ArrowRight size={14} className="shrink-0" />
+                                            )}
+                                            {action.label}
+                                          </DropdownMenuItem>
+                                        ))}
+                                      </>
+                                    )}
+
+                                    {showColdActions && (
+                                      <>
+                                        <DropdownMenuLabel>Zimny lead</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          className="cursor-pointer flex items-center gap-2"
+                                          onSelect={() => setReturnDialogLeadId(lead.id)}
+                                        >
+                                          <RotateCcw size={14} className="shrink-0" />
+                                          Zwróć do obiegu
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          className="cursor-pointer flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+                                          onSelect={() => setArchiveDialogLeadId(lead.id)}
+                                        >
+                                          <Archive size={14} className="shrink-0" />
+                                          Archiwizuj (Lost)
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
+
+                                    {canDeleteLeads && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                          onClick={() => handleDelete(lead.id)}
+                                        >
+                                          <ShieldAlert className="mr-2 size-4" />
+                                          <span>Usuń (Tylko Admin)</span>
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>
@@ -470,6 +528,35 @@ export function LeadsClient({
           </div>
         )}
       </div>
+
+      {returnDialogLeadId && (
+        <ReturnToFunnelDialog
+          leadId={returnDialogLeadId}
+          quotedAt={leads.find((l) => l.id === returnDialogLeadId)?.quoted_at ?? null}
+          open={!!returnDialogLeadId}
+          onOpenChange={(next) => {
+            if (!next) setReturnDialogLeadId(null);
+          }}
+          onSuccess={() => {
+            setReturnDialogLeadId(null);
+            startTransition(() => router.refresh());
+          }}
+        />
+      )}
+
+      {archiveDialogLeadId && (
+        <ArchiveLostDialog
+          leadId={archiveDialogLeadId}
+          open={!!archiveDialogLeadId}
+          onOpenChange={(next) => {
+            if (!next) setArchiveDialogLeadId(null);
+          }}
+          onSuccess={() => {
+            setArchiveDialogLeadId(null);
+            startTransition(() => router.refresh());
+          }}
+        />
+      )}
     </div>
   );
 }

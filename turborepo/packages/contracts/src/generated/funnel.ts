@@ -26,6 +26,11 @@ export const LOST_REASON_PL: Record<LostReason, string> = {
 /** Archiwizacja bez powodu ze słownika jest odrzucana — guard lostReasonProvided (T16). */
 export const isValidLostReason = (v: string): v is LostReason => (LOST_REASONS as readonly string[]).includes(v);
 
+/** Powody wymagające niepustej notatki w leads.lost_reason_note (D5). Nie hardkoduj 'OTHER'. */
+export const LOST_REASONS_REQUIRING_NOTE = ["OTHER"] as const;
+export const lostReasonRequiresNote = (v: LostReason): boolean =>
+  (LOST_REASONS_REQUIRING_NOTE as readonly string[]).includes(v);
+
 export const STATE_META: Record<LeadStatus, { n: number; kind: 'STAGE' | 'BUCKET'; pl: string; terminal: boolean; status: 'STABLE' | 'PROPOSED' }> = {
   NEW_LEAD: { n: 1, kind: "STAGE", pl: "Nowy lead", terminal: false, status: "STABLE" },
   AWAITING_AUDIT: { n: 2, kind: "STAGE", pl: "Oczekiwanie na audyt", terminal: false, status: "STABLE" },

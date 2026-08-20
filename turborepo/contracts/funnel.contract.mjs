@@ -47,7 +47,13 @@ export const GUARDS = [
   { id: 'crewCertsValid',             desc: 'F-Gaz i SEP zespołu ważne w dniu montażu — inaczej ekipa ukryta w E4.' },
   { id: 'crewCalendarFree',           desc: 'Zespół nie ma kolizji w kalendarzu.' },
   { id: 'trackingIdPresent',          desc: 'Podano numer listu przewozowego przy wysyłce kurierem.' },
-  { id: 'quoteRefreshedIfStale',      desc: 'Wycena starsza niż SLA.COLD_LEAD_REPRICE_DAYS wymaga odświeżenia cen.' },
+  // D2 (2026-08-20): guard sprawdza WARUNEK KOŃCOWY, nie blokuje wejścia do dialogu.
+  // Wycena świeższa niż próg — przechodzi bez pytania. Wycena przeterminowana — przechodzi
+  // WYŁĄCZNIE po jednej z dwóch jawnych decyzji z `resolutions`. Brak decyzji = odmowa.
+  // Wiek wyceny liczony od leads.quoted_at (D3), nie od wejścia do bucketu.
+  { id: 'quoteRefreshedIfStale',      desc: 'Wycena starsza niż SLA.COLD_LEAD_REPRICE_DAYS przechodzi wyłącznie po jawnej decyzji: potwierdzenie starej ceny albo jej odświeżenie.',
+    resolutions: ['acknowledgeStaleQuote', 'refreshQuote'],
+    note: 'Obie ścieżki są legalne i obie restartują okno ważności wyceny (do:refreshQuoteValidity) — różnią się tym, czy zmieniła się kwota. Odstępstwo od pierwotnego brzmienia CRM-ZIMNE-AC2, zatwierdzone przez człowieka jako D2 w WO CRM-SAFE-RECORD-ACTIONS.' },
   { id: 'lostReasonProvided',         desc: 'Podano powód utraty (zasila moduł analityczny).' },
   { id: 'installationIsTwoPhase',     desc: 'Wycena oznaczona przez audytora jako TWO_PHASE (mieszkanie w stanie deweloperskim).' },
   { id: 'phaseOneNotCompleted',       desc: 'Etap I nie jest jeszcze zamknięty — chroni przed dwukrotnym zamknięciem tego samego etapu.' },
@@ -166,10 +172,19 @@ export const TRANSITIONS = [
 
 /**
  * Słownik zamknięty powodów utraty (ADR-004, wymaganie CRM-ZIMNE-AC3).
- * `b2b_crm_specifications.md` §7 podaje wyłącznie przykłady („Konkurencja", „Za drogo"),
- * więc lista poniżej jest propozycją do potwierdzenia przez człowieka.
+ * `b2b_crm_specifications.md` §7 podaje wyłącznie przykłady („Konkurencja", „Za drogo").
+ * Lista poniżej została ZATWIERDZONA przez człowieka bez zmian merytorycznych
+ * (D5, 2026-08-20, WO CRM-SAFE-RECORD-ACTIONS) — nie jest już propozycją i nie czeka na decyzję.
+ * Rozszerzenie lub zawężenie tej listy wymaga osobnego ADR.
+ *
  * Pole `lost_reason` przyjmuje WYŁĄCZNIE te wartości — wolny tekst uniemożliwia analitykę,
- * po którą to wymaganie w ogóle powstało.
+ * po którą to wymaganie w ogóle powstało. Techniczny znacznik automatu 14-dniowego
+ * NIE należy do tego słownika i mieszka w osobnej kolumnie `leads.auto_rejected_reason` (D4),
+ * dzięki czemu nie zaśmieca statystyki powodów utraty (AC4.8).
+ *
+ * `requiresNote: true` oznacza, że wybór tej wartości wymaga niepustej notatki
+ * w `leads.lost_reason_note` (D5). Walidację obowiązkowości wykonuje Server Action;
+ * kontrakt określa, KTÓRE wartości jej wymagają — nie wolno tego hardkodować w kodzie.
  */
 export const LOST_REASONS = [
   { id: 'COMPETITOR',        pl: 'Wybrał konkurencję' },
@@ -177,7 +192,7 @@ export const LOST_REASONS = [
   { id: 'POSTPONED',         pl: 'Odłożone w czasie' },
   { id: 'NO_CONTACT',        pl: 'Brak kontaktu z klientem' },
   { id: 'TECHNICAL_BLOCKER', pl: 'Przeszkoda techniczna po stronie obiektu' },
-  { id: 'OTHER',             pl: 'Inny (wymaga notatki)' },
+  { id: 'OTHER',             pl: 'Inny (wymaga notatki)', requiresNote: true },
 ];
 
 export const START_STATE = 'NEW_LEAD';

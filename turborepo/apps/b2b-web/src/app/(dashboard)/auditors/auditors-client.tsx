@@ -3,7 +3,8 @@
 import React, { useTransition,  useState } from "react"
 import { Search, ShieldCheck, UserCheck, MoreHorizontal, FileCheck, MapPin , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { AuditorSummary , deleteAuditorAction } from "./actions"
+import { AuditorSummary , deleteAuditorAction, toggleAuditorActiveAction } from "./actions"
+import { can, type Role } from "@klikklima/contracts"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +15,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { differenceInDays } from "date-fns"
 
-export function AuditorsClient({ initialAuditors }: { initialAuditors: AuditorSummary[] }) {
+export function AuditorsClient({
+  initialAuditors,
+  actorRole,
+}: {
+  initialAuditors: AuditorSummary[]
+  actorRole: Role | null
+}) {
   const [auditors] = useState<AuditorSummary[]>(initialAuditors)
   const [searchQuery, setSearchQuery] = useState("")
 
@@ -28,17 +35,48 @@ export function AuditorsClient({ initialAuditors }: { initialAuditors: AuditorSu
   });
 
   const [isPending, startTransition] = useTransition();
+  const canUpdateAuditors = !!actorRole && can(actorRole, "auditors", "update") === "yes";
+  const canDeleteAuditors = !!actorRole && can(actorRole, "auditors", "delete") === "yes";
+
   const handleDelete = (id: string) => {
+    if (!actorRole) {
+      alert("Brak uprawnień do usunięcia audytora.");
+      return;
+    }
     if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
       startTransition(async () => {
         try {
-          await deleteAuditorAction(id);
+          const result = await deleteAuditorAction(id);
+          if (!result.success) {
+            const blocking = result.blockingLeads?.map(l => `${l.id} (${l.clientName ?? "brak nazwy"})`).join(", ");
+            alert(result.error + (blocking ? `\nBlokujące leady: ${blocking}` : ""));
+            return;
+          }
           window.location.reload();
         } catch (e) {
           alert("Wystąpił błąd podczas usuwania rekordu.");
         }
       });
     }
+  }
+
+  const handleToggleActive = (id: string, currentlyActive: boolean) => {
+    const confirmMessage = currentlyActive
+      ? "Zawiesić konto tego audytora? Straci dostęp i zniknie z puli wyboru do nowych leadów."
+      : "Odblokować konto tego audytora? Wróci do puli wyboru i odzyska dostęp.";
+    if (!confirm(confirmMessage)) return;
+    startTransition(async () => {
+      try {
+        const result = await toggleAuditorActiveAction(id);
+        if (!result.success) {
+          alert(result.error);
+          return;
+        }
+        window.location.reload();
+      } catch (e) {
+        alert("Wystąpił błąd podczas zmiany statusu audytora.");
+      }
+    });
   }
 
   return (
@@ -108,17 +146,28 @@ export function AuditorsClient({ initialAuditors }: { initialAuditors: AuditorSu
                           <DropdownMenuLabel>Zarządzanie</DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => alert("Wkrótce w Fazie 2")}>Edytuj Audytora</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:text-destructive">Zawieś Konto</DropdownMenuItem>
-                        
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                onClick={() => handleDelete(auditor.id)}
+
+                          {canUpdateAuditors && (
+                            <>
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => handleToggleActive(auditor.id, auditor.is_active)}
                               >
-                                <ShieldAlert className="mr-2 size-4" />
-                                <span>Usuń (Tylko Admin)</span>
+                                {auditor.is_active ? "Zawieś Konto" : "Odblokuj Konto"}
                               </DropdownMenuItem>
-                            </DropdownMenuContent>
+                              <DropdownMenuSeparator />
+                            </>
+                          )}
+                          {canDeleteAuditors && (
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                              onClick={() => handleDelete(auditor.id)}
+                            >
+                              <ShieldAlert className="mr-2 size-4" />
+                              <span>Usuń (Tylko Admin)</span>
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                     
