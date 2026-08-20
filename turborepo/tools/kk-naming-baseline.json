@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T12:33:37.125Z",
+  "generatedAt": "2026-08-20T16:56:38.058Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 10,
@@ -34,7 +34,8 @@
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/page.tsx::adr002-pl-tables": 5,
     "apps/b2b-web/src/app/(dashboard)/leads/actions.ts::adr002-pl-columns": 14,
     "apps/b2b-web/src/app/(dashboard)/leads/actions.ts::adr002-pl-tables": 24,
-    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-columns": 11,
+    "apps/b2b-web/src/app/(dashboard)/leads/assign-crew-dialog.tsx::adr002-pl-columns": 4,
+    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-columns": 13,
     "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-tables": 4,
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-tables": 11,
@@ -51,7 +52,7 @@
     "apps/b2b-web/tests/leads-auditor-pool.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/leads-return-to-funnel.test.ts::adr002-pl-columns": 2,
     "apps/b2b-web/tests/leads-return-to-funnel.test.ts::adr002-pl-tables": 2,
-    "apps/b2b-web/tests/middleware-auditor-blocked.test.ts::adr002-pl-tables": 1,
+    "apps/b2b-web/tests/middleware-auditor-blocked.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/storage-signed-urls.test.ts::adr002-pl-tables": 6,
     "apps/b2c-web/app/actions/getBestsellers.ts::adr002-pl-columns": 4,
     "apps/b2c-web/app/actions/getBestsellers.ts::adr002-pl-tables": 1,
@@ -83,12 +84,12 @@
     "insert_6000_leads_part3.sql::adr002-pl-columns": 12,
     "insert_6000_leads_part3.sql::adr002-pl-tables": 12,
     "packages/database/prisma/schema.prisma::adr002-pl-columns": 47,
-    "packages/database/prisma/schema.prisma::adr002-pl-tables": 39,
+    "packages/database/prisma/schema.prisma::adr002-pl-tables": 40,
     "packages/database/schema.sql::adr002-pl-columns": 13,
     "packages/database/schema.sql::adr002-pl-tables": 12,
     "setup_combinations.sql::adr002-pl-columns": 6,
     "supabase/migrations/20260820120100_crm_safe_record_actions_columns.sql::adr002-pl-tables": 9,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1120
+  "total": 1128
 }

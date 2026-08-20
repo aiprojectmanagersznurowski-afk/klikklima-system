@@ -153,6 +153,9 @@ describe('returnToFunnel - "Zwroc do obiegu" (CRM-ZIMNE-AC2, T15)', () => {
 
   // @REQ: CRM-ZIMNE-AC2
   it('AC3.4 - granica: dokladnie prog dni (30) przechodzi bez decyzji, prog+1 dnia wymaga decyzji', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-20T10:00:00.000Z'));
+    
     leadFindUniqueMock.mockResolvedValueOnce(coldLead({ quoted_at: daysAgo(COLD_LEAD_REPRICE_DAYS) }));
     const atThreshold = await returnToFunnel('lead-1');
     expect(atThreshold.success).toBe(true);
