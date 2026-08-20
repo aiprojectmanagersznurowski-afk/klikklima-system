@@ -15,6 +15,13 @@ export default defineConfig({
       '@klikklima/contracts': fileURLToPath(
         new URL('./packages/contracts/src/generated/index.ts', import.meta.url),
       ),
+      // server-only rzuca zawsze poza warunkiem exports "react-server" (Next.js go
+      // ustawia przy buildzie; Vitest nie). REVIEW SERVICE-ROLE-LEADS-PAGE: globalne
+      // `resolve.conditions: ['react-server']` naprawiało to, ale zmieniało rozwiązywanie
+      // modułów dla CAŁEGO monorepo — w tym react@19, który ma własny wariant
+      // "react-server" bez useState/useEffect/createContext. Zamiast warunku globalnego,
+      // podmieniamy WYŁĄCZNIE ten jeden pakiet na no-opowy stub — zero wpływu na resztę.
+      'server-only': fileURLToPath(new URL('./tools/stubs/server-only.ts', import.meta.url)),
     },
   },
   test: {

@@ -11,8 +11,35 @@ import { AssignAuditor } from "./assign-auditor";
 import { EditLeadModal } from "./edit-lead-modal";
 import { DeleteLeadButton } from "./delete-lead-button";
 import { getAuditors } from "../actions";
+import { signStoragePaths } from "@/lib/storage/signed-urls";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * `odpowiedzi_triage` to `Json?` w Prisma (kształt kontrolowany przez B2C Triage,
+ * nie przez ten panel) — nie mamy generowanego typu, więc opisujemy oczekiwany
+ * kształt jawnie zamiast rzutować przez `any`. Wszystkie pola opcjonalne: rekord
+ * może pochodzić ze starszej wersji triage lub być pusty.
+ */
+interface TriageDeviceUnit {
+  brand?: string;
+  model_code?: string;
+  series_name?: string;
+  cooling_capacity_kw?: number | string;
+  color?: string;
+}
+
+interface TriageAnswers {
+  location?: string;
+  buildingState?: string;
+  roomCount?: number | string;
+  hasBalcony?: boolean;
+  floor?: number | null;
+  roomSizes?: Record<string, number | string>;
+  selectedExternalUnit?: TriageDeviceUnit;
+  selectedInternalUnits?: TriageDeviceUnit[];
+  selectedDeviceLine?: string;
+}
 
 export default async function LeadDetailsPage({ 
   params,
@@ -37,7 +64,7 @@ export default async function LeadDetailsPage({
     return notFound();
   }
 
-  const triage = (lead.odpowiedzi_triage as any) || {};
+  const triage: TriageAnswers = (lead.odpowiedzi_triage as TriageAnswers | null) || {};
 
   const name = lead.klient?.imie_i_nazwisko || "Brak danych";
   const phone = lead.klient?.telefon || "Brak danych";
@@ -67,31 +94,12 @@ export default async function LeadDetailsPage({
   // zapytanie, żeby istniała tylko jedna definicja "puli wyboru".
   const audytorzy = await getAuditors();
 
-  const { createClient } = await import("@supabase/supabase-js");
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
   // Bulk generate signed URLs for auditors
   const auditorPaths = audytorzy
     .map(a => a.zdjecie_url)
     .filter((url): url is string => Boolean(url));
-  
-  let signedUrlsMap: Record<string, string> = {};
-  if (auditorPaths.length > 0) {
-    const { data } = await supabase.storage
-      .from("audytorzy")
-      .createSignedUrls(auditorPaths, 60 * 60);
-    
-    if (data) {
-      data.forEach(item => {
-        if (!item.error && item.signedUrl && item.path) {
-          signedUrlsMap[item.path as string] = item.signedUrl;
-        }
-      });
-    }
-  }
+
+  const signedUrlsMap = await signStoragePaths("audytorzy", auditorPaths, 60 * 60);
 
   const auditorsWithAvatars = audytorzy.map((auditor) => ({
     ...auditor,
@@ -251,7 +259,7 @@ export default async function LeadDetailsPage({
 
         {/* Sidebar - Prawa kolumna */}
         <div className="lg:col-span-1 space-y-6">
-          <AssignAuditor leadId={lead.id} currentAuditorId={lead.audytor_id} auditors={auditorsWithAvatars as any} />
+          <AssignAuditor leadId={lead.id} currentAuditorId={lead.audytor_id} auditors={auditorsWithAvatars} />
         </div>
       </div>
     </div>

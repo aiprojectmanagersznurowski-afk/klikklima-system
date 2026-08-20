@@ -418,7 +418,7 @@ export const REQUIREMENTS = [
   {
     "id": "SEC-SERVICE-KEY-SERVER-ONLY",
     "domain": "security",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "system_architecture.md#3",
     "statement": "Klucz serwisowy Supabase nigdy nie trafia do bundla klienckiego."

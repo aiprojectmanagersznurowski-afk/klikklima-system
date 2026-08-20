@@ -16,6 +16,8 @@ Stałe pułapki tego repo, weryfikowane wielokrotnie:
 - Nie ma tabel `quotes` ani `audit_log`, mimo że kontrakt (`DELETE_POLICIES`, `AUDIT_REQUIREMENTS.mustLog`) na nie liczy.
 - Server Actions w `(dashboard)/*/actions.ts` nie sprawdzają roli, a Prisma omija RLS. Każdy WO dotykający DELETE musi to wywołać jawnie.
 - `apps/` zawiera tylko `b2b-web` i `b2c-web` — **Field App nie istnieje**, więc kryteria „nie loguje się do Field App" nie są testowalne end-to-end.
+- `tools/kk-precommit-scan.mjs` raportuje **pierwsze** dopasowanie na plik — wcześniejsza reguła (np. `as-any`) maskuje kolejne (`service-key`). „Skaner zielony" po naprawie jednego naruszenia nie znaczy „plik czysty"; przeskanuj ponownie.
+- Reguła `service-key` obejmuje wyłącznie `.tsx` pod `app|components|hooks`. Przeniesienie kodu z kluczem serwisowym do `.ts` ucisza bramkę, nie zwiększając bezpieczeństwa — w WO żądaj dowodu izolacji (`server-only`), nie samego exit 0.
 - Pole `leady.lost_reason` jest przeciążone: trzyma zarówno powody ze słownika `LOST_REASONS`, jak i techniczny znacznik `AUTO_REJECT_14_DAYS` używany do filtrowania bucketu.
 
 Powiązane: [[contract-sources-of-truth]]
