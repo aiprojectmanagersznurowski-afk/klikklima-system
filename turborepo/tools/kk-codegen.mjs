@@ -145,10 +145,15 @@ export function byId(id: NotificationId): NotificationDef {
 `;
 
 // ─────────────────────────── sla.ts ───────────────────────────
+// Lista musi odpowiadać MEASURES w tools/kk-validate.mjs (pomniejszonej o 'bands', które nie jest skalarem).
+// Kształt nieobecny tutaj nie powoduje błędu: JSON.stringify wycina undefined, więc próg trafiłby
+// do sla.ts jako sam scope — liczba znika po cichu, kontrakt i dokumentacja zostają zielone.
+const MEASURE_SCALARS = ['days', 'count', 'hourOfDay', 'meters'];
+
 files[`${config.generatedTsDir}/sla.ts`] = `${BANNER}
 export const SLA = {
 ${SLA_POLICIES.map((p) => {
-  const scalar = ['days', 'count', 'hourOfDay'].find((k) => p[k] !== undefined);
+  const scalar = MEASURE_SCALARS.find((k) => p[k] !== undefined);
   return `  ${p.id}: ${JSON.stringify(scalar ? { [scalar]: p[scalar], scope: p.scope } : { scope: p.scope, metric: p.metric, bands: p.bands })},`;
 }).join('\n')}
 } as const;
@@ -361,6 +366,19 @@ ${triageTable}
 Próg kierujący na ekran Eksperta: **ROOM_COUNT_EXPERT_THRESHOLD = ${ROOM_COUNT_EXPERT_THRESHOLD}**.
 
 ${disqTable}
+
+## Progi SLA (czasowe, ilościowe i przestrzenne)
+
+Każdy próg ma nazwę i dokładnie jeden kształt pomiaru (R21). Literał liczbowy w kodzie zamiast importu z kontraktu to przyszła rozbieżność między modułami.
+
+| ID | Pomiar | Wartość | Zasięg | Wymagania |
+|---|---|---|---|---|
+${SLA_POLICIES.map((p) => {
+  const key = MEASURE_SCALARS.find((k) => p[k] !== undefined);
+  const measure = key || (p.bands ? 'bands' : '—');
+  const value = key ? String(p[key]) : (p.bands ? `${p.bands.length} pasm (${p.metric})` : '—');
+  return `| \`${p.id}\` | ${measure} | ${value} | ${p.scope} | ${(p.req || []).join(', ')} |`;
+}).join('\n')}
 
 ## Elementy oczekujące na decyzję człowieka
 

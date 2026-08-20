@@ -118,6 +118,23 @@ Próg kierujący na ekran Eksperta: **ROOM_COUNT_EXPERT_THRESHOLD = 4**.
 | `COMMERCIAL_PROPERTY` | BUILDING_TYPE EQUALS COMMERCIAL | EXPERT_SCREEN | B2C-TRIAGE-DISQUALIFY |
 | `ROOM_COUNT_AT_OR_ABOVE_THRESHOLD` | ROOM_COUNT GTE 4 | EXPERT_SCREEN | B2C-TRIAGE-DISQUALIFY |
 
+## Progi SLA (czasowe, ilościowe i przestrzenne)
+
+Każdy próg ma nazwę i dokładnie jeden kształt pomiaru (R21). Literał liczbowy w kodzie zamiast importu z kontraktu to przyszła rozbieżność między modułami.
+
+| ID | Pomiar | Wartość | Zasięg | Wymagania |
+|---|---|---|---|---|
+| `LOGISTICS_INSTALL` | bands | 3 pasm (daysUntilInstallation) | Logistyka — wiersze tabeli wysyłek względem daty montażu | SLA-LOG-COLORS, UI-SLA-NO-GREEN |
+| `INCIDENT_RESPONSE` | bands | 1 pasm (hoursSinceCreated) | Usterki — brak akcji od zgłoszenia | CRM-UST-AC3 |
+| `QUOTE_VALIDITY` | days | 14 | Ważność wyceny przed zrzuceniem do bucketu Zimnych leadów | SLA-QUOTE-14D |
+| `COLD_LEAD_REPRICE` | days | 30 | Po tylu dniach w bucketcie „Zwróć do obiegu" wymaga odświeżenia ceny | CRM-ZIMNE-AC2 |
+| `SERVICE_REMINDER_LEAD` | days | 30 | Ile dni przed next_service_date wysyłamy N10 | CRM-SRV-TRIGGER |
+| `CERT_EXPIRY_WARNING` | days | 30 | Ile dni przed wygaśnięciem F-Gaz/SEP alarmujemy administratora | CRM-AUDYT-AC3, CRM-ZESP-AC1 |
+| `AUDITOR_DAILY_CAP` | count | 5 | Maksymalna liczba audytów przypisanych jednemu audytorowi na dzień | CRM-AUDYT-AC2 |
+| `INSTALL_DAY_ALERT` | hourOfDay | 16 | Godzina, po której niezakończona dzisiejsza instalacja podświetla się na pomarańczowo | CRM-INST-AC2 |
+| `GEOFENCE_UNLOCK_RADIUS` | meters | 20 | Promień w metrach od punktu docelowego, w którym Field App odblokowuje rozpoczęcie i zakończenie zlecenia | FLD-GEO-UNLOCK |
+| `GEOFENCE_EN_ROUTE_RADIUS` | meters | 3000 | Promień w metrach (3 km), którego przecięcie w oknie dnia wizyty wyzwala klientowi SMS „w drodze" — N3/N7/N13/N17 | FLD-GEO-EN-ROUTE |
+
 ## Elementy oczekujące na decyzję człowieka
 
 _Brak._

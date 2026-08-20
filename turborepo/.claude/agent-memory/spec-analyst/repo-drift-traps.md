@@ -21,3 +21,10 @@ Stałe pułapki tego repo, weryfikowane wielokrotnie:
 - Pole `leady.lost_reason` jest przeciążone: trzyma zarówno powody ze słownika `LOST_REASONS`, jak i techniczny znacznik `AUTO_REJECT_14_DAYS` używany do filtrowania bucketu.
 
 Powiązane: [[contract-sources-of-truth]]
+
+Dopisane 2026-08-21 (planowanie fazy 0 Field App):
+- **`tools/kk-codegen.mjs` po cichu gubi wartość progu SLA o nieznanym kształcie.** Lista skalarów (`['days','count','hourOfDay']`) jest osobna od `MEASURES` w `kk-validate.mjs`. Próg z polem spoza tej listy przechodzi walidację, a do `generated/sla.ts` trafia sam `scope`, bez liczby i bez błędu. Rozszerzając `MEASURES`, zawsze sprawdź obie listy.
+- **`kk-trace.mjs` traktuje `BLOCKED` inaczej tylko w jednym miejscu**: wyłącza je z ostrzeżenia „HIGH RISK bez testu". W `violations` liczy się status `DONE`/`IMPLEMENTING` bez testu. To jedyna semantyka `BLOCKED` w repo — poza tym status nic nie znaczy.
+- **`apps/b2c-web/app/actions/leads.ts` wstawia do `adresy` kolumny `lat`/`lng`, które nie istnieją** (migracja z `75da8c5` dodała `latitude`/`longitude`). `field_app_requirements.md#6.3` twierdzi, że ta ścieżka „zapisuje współrzędne" — opisuje intencję, nie skutek. Jedyne wywołanie zapisu leada z UI to `saveLead` w `Step8Booking.tsx:195`.
+- **Asymetria flag aktywności:** `audytorzy.is_active` kontra `zespoly_monterskie.aktywny`. Bramka logowania czyta tylko pierwszą; drugiej nie czyta nic w celach autoryzacji.
+- **`contracts/rbac.contract.mjs` nie zna kolumn, tylko zasoby.** Każde `audytor:own` w `update` na `auditors` daje pracownikowi dostęp również do `is_active`. Planując pole edytowalne przez pracownika, pytaj, czy nie musi mieszkać w osobnej encji.

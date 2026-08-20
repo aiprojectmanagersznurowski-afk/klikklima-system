@@ -222,7 +222,12 @@ for (const n of NOTIFICATIONS) {
 // R21 — „SLA" musi znaczyć coś konkretnego (ADR-011)
 // Cztery różne mechanizmy nosiły tę samą nazwę. Każda polityka deklaruje dokładnie jeden
 // kształt pomiaru, ma zasięg i wskazuje wymaganie — inaczej nie wiadomo, co właściwie mierzy.
-const MEASURES = ['bands', 'days', 'count', 'hourOfDay'];
+// 'meters' — jedyna jednostka odległości w kontrakcie (decyzja człowieka D-B, 2026-08-21).
+// Świadomie NIE ma 'kilometers': dwie jednostki tej samej wielkości fizycznej wymuszają przeliczanie
+// w kodzie, czyli dokładnie to, przed czym ADR-011 i reguła magic-sla-days mają chronić.
+// Każde rozszerzenie tej listy musi być odzwierciedlone w tools/kk-codegen.mjs (lista skalarów przy sla.ts),
+// inaczej próg przechodzi walidację, a w wygenerowanym pliku zostaje sam opis bez liczby.
+const MEASURES = ['bands', 'days', 'count', 'hourOfDay', 'meters'];
 for (const p of SLA_POLICIES) {
   const declared = MEASURES.filter((k) => p[k] !== undefined);
   if (declared.length !== 1) {
@@ -347,6 +352,43 @@ for (const c of PROPERTY_CONDITIONS) {
   const expected = TWO_PHASE_PREMISE.includes(c.id);
   if (c.suggestsTwoPhase !== expected) {
     err('R27-two-phase-premise', `PROPERTY_CONDITIONS ${c.id}: suggestsTwoPhase = ${c.suggestsTwoPhase}, a decyzja z 2026-08-19 mówi ${expected}. Przesłankę montażu dwuetapowego niosą dokładnie: ${TWO_PHASE_PREMISE.join(', ')}.`);
+  }
+}
+
+// R28 — skalarny próg SLA musi mieć wartość możliwą do spełnienia (WO FLD-GATE-HARDEN, decyzja człowieka 2026-08-21).
+// R21 pilnuje, ŻE polityka mierzy dokładnie jedną rzecz. Nie pilnuje, CZY zmierzona liczba jest możliwa:
+// `meters: -20` i `meters: 0` przechodziły bramkę do dziś, a promień ujemny albo zerowy to geofencing,
+// którego nie da się odblokować — wykryty dopiero przez montera stojącego pod adresem klienta.
+// Zakres celowo obejmuje WSZYSTKIE skalary, nie tylko 'meters': mechanizmem pomyłki jest ręcznie wpisany
+// literał, ten sam dla dni, sztuk i metrów. Reguła zawężona do jednej jednostki umiera w dniu dodania
+// progu w innej — a wtedy nikt jej nie odnowi, bo bramka świeci na zielono.
+// Granice: 'hourOfDay' to pora doby (0-23), reszta to wielkości dodatnie. Górnej granicy dla dni, sztuk
+// i metrów świadomie NIE ma — próg „za duży" jest decyzją biznesową, a nie niemożliwością.
+// Całkowitość: pół dnia, pół sztuki i pół metra przy dokładności GPS rzędu kilku metrów nie znaczą nic.
+const SCALAR_RANGES = {
+  days:      { min: 1, max: null,  unit: 'dni' },
+  count:     { min: 1, max: null,  unit: 'sztuk' },
+  hourOfDay: { min: 0, max: 23,    unit: 'godzina doby' },
+  meters:    { min: 1, max: null,  unit: 'metrów' },
+};
+// Fail-safe: skalar dopuszczony w MEASURES, ale bez zakresu, przechodziłby R28 niezauważony.
+for (const key of MEASURES) {
+  if (key !== 'bands' && !SCALAR_RANGES[key]) {
+    err('R28-sla-range', `Skalar "${key}" jest dopuszczony w MEASURES, ale nie ma granic w SCALAR_RANGES. Nowa jednostka bez zakresu to reguła, która jej nie sprawdza.`);
+  }
+}
+for (const p of SLA_POLICIES) {
+  for (const [key, range] of Object.entries(SCALAR_RANGES)) {
+    const v = p[key];
+    if (v === undefined) continue;
+    const span = range.max === null ? `>= ${range.min}` : `${range.min}-${range.max}`;
+    if (!Number.isInteger(v)) {
+      err('R28-sla-range', `${p.id}: ${key} = ${JSON.stringify(v)} nie jest liczbą całkowitą (${range.unit}, dopuszczalne ${span}).`);
+      continue;
+    }
+    if (v < range.min || (range.max !== null && v > range.max)) {
+      err('R28-sla-range', `${p.id}: ${key} = ${v} poza dopuszczalnym zakresem ${span} (${range.unit}). Próg spoza zakresu to warunek, którego w terenie nic nie spełni.`);
+    }
   }
 }
 

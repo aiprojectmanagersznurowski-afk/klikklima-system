@@ -1,2 +1,4 @@
-- [Pułapki rozjazdu kod↔kontrakt](repo-drift-traps.md) — równoległa maszyna stanów w B2B, braki w enumie Prisma, nieistniejące tabele i aplikacje
+- [Pułapki rozjazdu kod↔kontrakt](repo-drift-traps.md) — równoległa maszyna stanów w B2B, dziury w bramce, kolumny, których nie ma, dokumenty opisujące intencję zamiast skutku
 - [Źródła prawdy w kontraktach](contract-sources-of-truth.md) — gdzie szukać progów/guardów/słowników i które wpisy czekają na zatwierdzenie człowieka
+- [Rozmiar Work Ordera](feedback-workorder-sizing.md) — dziel WO po artefakcie i roli; jeden wielki WO zużywa limit iteracji GREEN
+- [Mapa faz Field App](project-fieldapp-roadmap.md) — fazy 0-6 to inna oś niż wersje v1/v2/v3; „to faza N" jest ważnym powodem odmowy rozszerzenia zakresu

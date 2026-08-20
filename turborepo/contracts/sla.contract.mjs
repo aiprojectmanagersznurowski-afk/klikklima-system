@@ -34,6 +34,15 @@ export const SLA_POLICIES = [
   { id: 'CERT_EXPIRY_WARNING',   scope: 'Ile dni przed wygaśnięciem F-Gaz/SEP alarmujemy administratora', days: 30, req: ['CRM-AUDYT-AC3', 'CRM-ZESP-AC1'] },
   { id: 'AUDITOR_DAILY_CAP',     scope: 'Maksymalna liczba audytów przypisanych jednemu audytorowi na dzień', count: 5, req: ['CRM-AUDYT-AC2'] },
   { id: 'INSTALL_DAY_ALERT',     scope: 'Godzina, po której niezakończona dzisiejsza instalacja podświetla się na pomarańczowo', hourOfDay: 16, req: ['CRM-INST-AC2'] },
+
+  // ── Progi przestrzenne Field App (rozdział 6 field_app_requirements.md, D4) ──
+  // Pułapka nr 5 z CLAUDE.md („wszystkie progi czasowe pochodzą z kontraktu") dotyczy tak samo progów
+  // przestrzennych. Jedna jednostka dla obu — metry (decyzja człowieka D-B, 2026-08-21): jeżeli w kontrakcie
+  // istnieje wyłącznie `meters`, nie da się pomylić metra z kilometrem ani wprowadzić przeliczania do kodu.
+  // Świadomy koszt: literał 3000 czyta się gorzej niż „3 km" — dlatego jednostkę mówi słowami `scope`.
+  // Specyfikacja rekomendowała nazwy z sufiksem (_M, _KM); sufiksy odrzucone razem z drugą jednostką.
+  { id: 'GEOFENCE_UNLOCK_RADIUS',   scope: 'Promień w metrach od punktu docelowego, w którym Field App odblokowuje rozpoczęcie i zakończenie zlecenia', meters: 20,   req: ['FLD-GEO-UNLOCK'] },
+  { id: 'GEOFENCE_EN_ROUTE_RADIUS', scope: 'Promień w metrach (3 km), którego przecięcie w oknie dnia wizyty wyzwala klientowi SMS „w drodze" — N3/N7/N13/N17', meters: 3000, req: ['FLD-GEO-EN-ROUTE'] },
 ];
 
 /**

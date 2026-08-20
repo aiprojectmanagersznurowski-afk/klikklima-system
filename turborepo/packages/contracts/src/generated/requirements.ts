@@ -3,7 +3,7 @@
 // Regeneracja: node tools/kk-codegen.mjs
 // Każda ręczna zmiana zostanie wykryta przez `kk-codegen --check` i odrzucona w CI.
 
-export const REQUIREMENT_IDS = ["FNL-E1-E2", "FNL-E2-E3", "FNL-E3-E4", "FNL-E3-BUCKET", "FNL-E4-E5", "FNL-E5-E6", "FNL-E5-BYPASS", "FNL-E6-E7", "FNL-E7-E8", "FNL-ROLLBACK", "FNL-ROLLBACK-EXIT", "FNL-NO-ILLEGAL-TRANSITIONS", "CRM-KLI-AC1", "CRM-KLI-AC2", "CRM-KLI-AC3", "CRM-INST-AC1", "CRM-INST-AC2", "CRM-SRV-TRIGGER", "CRM-UST-AC1", "CRM-UST-AC2", "CRM-UST-AC3", "CRM-AUDYT-AC1", "CRM-AUDYT-AC2", "CRM-AUDYT-AC3", "CRM-ZESP-AC1", "CRM-ZESP-AC2", "CRM-ZESP-AC3", "CRM-ZIMNE-AC1", "CRM-ZIMNE-AC2", "CRM-ZIMNE-AC3", "CRM-BOOK-HISTORY", "CRM-REGION-AUTO", "FNL-2PHASE", "FNL-2PHASE-BOOKING", "FNL-2PHASE-INVOICE", "NTF-PUSH-TOKEN", "NTF-I7-SLA", "SRV-SOURCE-OF-TRUTH", "SRV-REMINDER-ONCE", "CRM-ZESP-REP", "CRM-DELETE-ADMIN-ONLY", "CRM-CONTEXT-MENU", "SLA-QUOTE-14D", "SLA-LOG-COLORS", "UI-SLA-NO-GREEN", "UI-NO-HARDCODED-COLORS", "UI-ICONS-LUCIDE-ONLY", "UI-FORMS-RHF-ZOD", "SRV-NEXT-DATE", "SEC-SSO-GUARD", "SEC-RLS-AUDITOR-SCOPE", "SEC-SERVICE-KEY-SERVER-ONLY", "SEC-RODO-DELETE", "SEC-AUDIT-LOG", "NTF-QUEUE-WINDOW", "NTF-POLY", "NTF-HISTORY", "NTF-RETRY", "NTF-CATALOG-PARITY", "B2C-LEAD-ENTRY", "B2C-LEAD-ATOMIC", "B2C-BOOKING-SLOT", "B2C-CONSENT-RODO", "B2C-RLS-PUBLIC", "B2C-TRIAGE-STEPS", "B2C-TRIAGE-DISQUALIFY", "B2C-TRIAGE-CONDITIONAL", "B2C-SOFT-LEAD", "B2C-BOOKING-VALIDATION", "B2C-PRICE-FROM", "B2C-CATALOG-LIST", "B2C-DEVICE-MODAL", "B2C-CONTENT-PAGES", "B2C-NAV-STATE"] as const;
+export const REQUIREMENT_IDS = ["FNL-E1-E2", "FNL-E2-E3", "FNL-E3-E4", "FNL-E3-BUCKET", "FNL-E4-E5", "FNL-E5-E6", "FNL-E5-BYPASS", "FNL-E6-E7", "FNL-E7-E8", "FNL-ROLLBACK", "FNL-ROLLBACK-EXIT", "FNL-NO-ILLEGAL-TRANSITIONS", "CRM-KLI-AC1", "CRM-KLI-AC2", "CRM-KLI-AC3", "CRM-INST-AC1", "CRM-INST-AC2", "CRM-SRV-TRIGGER", "CRM-UST-AC1", "CRM-UST-AC2", "CRM-UST-AC3", "CRM-AUDYT-AC1", "CRM-AUDYT-AC2", "CRM-AUDYT-AC3", "CRM-ZESP-AC1", "CRM-ZESP-AC2", "CRM-ZESP-AC3", "CRM-ZIMNE-AC1", "CRM-ZIMNE-AC2", "CRM-ZIMNE-AC3", "CRM-BOOK-HISTORY", "CRM-REGION-AUTO", "FNL-2PHASE", "FNL-2PHASE-BOOKING", "FNL-2PHASE-INVOICE", "NTF-PUSH-TOKEN", "NTF-I7-SLA", "SRV-SOURCE-OF-TRUTH", "SRV-REMINDER-ONCE", "CRM-ZESP-REP", "CRM-DELETE-ADMIN-ONLY", "CRM-CONTEXT-MENU", "SLA-QUOTE-14D", "SLA-LOG-COLORS", "UI-SLA-NO-GREEN", "UI-NO-HARDCODED-COLORS", "UI-ICONS-LUCIDE-ONLY", "UI-FORMS-RHF-ZOD", "SRV-NEXT-DATE", "SEC-SSO-GUARD", "SEC-RLS-AUDITOR-SCOPE", "SEC-SERVICE-KEY-SERVER-ONLY", "SEC-RODO-DELETE", "SEC-AUDIT-LOG", "NTF-QUEUE-WINDOW", "NTF-POLY", "NTF-HISTORY", "NTF-RETRY", "NTF-CATALOG-PARITY", "B2C-LEAD-ENTRY", "B2C-LEAD-ATOMIC", "B2C-BOOKING-SLOT", "B2C-CONSENT-RODO", "B2C-RLS-PUBLIC", "B2C-TRIAGE-STEPS", "B2C-TRIAGE-DISQUALIFY", "B2C-TRIAGE-CONDITIONAL", "B2C-SOFT-LEAD", "B2C-BOOKING-VALIDATION", "B2C-PRICE-FROM", "B2C-CATALOG-LIST", "B2C-DEVICE-MODAL", "B2C-CONTENT-PAGES", "B2C-NAV-STATE", "FLD-GEO-COORDS", "FLD-GEO-UNLOCK", "FLD-GEO-EN-ROUTE", "FLD-GPS-RODO", "FLD-AUTH-BLOCKED", "FLD-CONSENT-ACCEPT", "FLD-LEGAL-DOC-VERSION", "FLD-PHOTO-SET"] as const;
 export type RequirementId = (typeof REQUIREMENT_IDS)[number];
 
 export const REQUIREMENTS = [
@@ -181,7 +181,7 @@ export const REQUIREMENTS = [
     "status": "DONE",
     "risk": "HIGH",
     "source": "b2b_crm_specifications.md#5",
-    "statement": "Administrator może zablokować lub usunąć konto audytora; usunięcie wymaga wcześniejszego przepięcia leadów."
+    "statement": "Administrator może zablokować lub usunąć konto audytora w panelu B2B; usunięcie wymaga wcześniejszego przepięcia leadów."
   },
   {
     "id": "CRM-AUDYT-AC2",
@@ -598,5 +598,69 @@ export const REQUIREMENTS = [
     "risk": "LOW",
     "source": "docs/prompts/figma_landing_page_ui_prompt.md",
     "statement": "Powrót z podstrony przywraca pozycję przewijania strony głównej."
+  },
+  {
+    "id": "FLD-GEO-COORDS",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "field_app_requirements.md#6.3",
+    "statement": "Adres klienta przechowuje współrzędne geograficzne, a ścieżka tworzenia leada w B2C zapisuje je zamiast odrzucać po drodze."
+  },
+  {
+    "id": "FLD-GEO-UNLOCK",
+    "domain": "field",
+    "status": "BLOCKED",
+    "risk": "HIGH",
+    "source": "field_app_requirements.md#6.1",
+    "statement": "Field App odblokowuje rozpoczęcie i zakończenie zlecenia dopiero wtedy, gdy pozycja GPS pracownika mieści się w promieniu SLA.GEOFENCE_UNLOCK_RADIUS od punktu docelowego."
+  },
+  {
+    "id": "FLD-GEO-EN-ROUTE",
+    "domain": "field",
+    "status": "BLOCKED",
+    "risk": "HIGH",
+    "source": "field_app_requirements.md#6.2",
+    "statement": "Przecięcie promienia SLA.GEOFENCE_EN_ROUTE_RADIUS w oknie dnia wizyty wyzwala klientowi SMS „w drodze\"; Field App jest producentem zdarzenia, nie nowym typem powiadomienia."
+  },
+  {
+    "id": "FLD-GPS-RODO",
+    "domain": "field",
+    "status": "BLOCKED",
+    "risk": "HIGH",
+    "source": "field_app_requirements.md#6.4",
+    "statement": "GPS pracownika jest zbierany wyłącznie w oknie aktywnego, przypisanego zlecenia i zapisywany jako zdarzenia punktowe, nigdy jako ciągły ślad trasy."
+  },
+  {
+    "id": "FLD-AUTH-BLOCKED",
+    "domain": "field",
+    "status": "BLOCKED",
+    "risk": "HIGH",
+    "source": "field_app_requirements.md#4.1",
+    "statement": "Konto pracownika z odebranym dostępem (is_active = false) nie przechodzi bramki logowania do aplikacji terenowej."
+  },
+  {
+    "id": "FLD-CONSENT-ACCEPT",
+    "domain": "field",
+    "status": "BLOCKED",
+    "risk": "HIGH",
+    "source": "field_app_requirements.md#4.1",
+    "statement": "Pracownik akceptuje zgody RODO i regulamin przed podjęciem pierwszego zlecenia; zapisywany jest moment akceptacji i wersja zaakceptowanego dokumentu."
+  },
+  {
+    "id": "FLD-LEGAL-DOC-VERSION",
+    "domain": "field",
+    "status": "BLOCKED",
+    "risk": "MEDIUM",
+    "source": "field_app_requirements.md#4.1",
+    "statement": "Administrator ma w panelu miejsce, w którym wgrywa i wersjonuje treść zgód RODO oraz regulaminu pracowniczego — dziś takie miejsce nie istnieje nigdzie w systemie."
+  },
+  {
+    "id": "FLD-PHOTO-SET",
+    "domain": "field",
+    "status": "BLOCKED",
+    "risk": "MEDIUM",
+    "source": "field_app_requirements.md#8",
+    "statement": "Zamknięcie montażu wymaga kompletu dokładnie czterech zdjęć: jednostka wewnętrzna, jednostka zewnętrzna, budynek z oddali, odpływ skroplin."
   }
 ] as const;
