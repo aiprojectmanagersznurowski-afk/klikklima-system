@@ -20,14 +20,21 @@ export const config = {
 
   // Uprawnienia zapisu per rola agenta (egzekwowane przez .claude/hooks/guard-paths.mjs)
   agentWriteScopes: {
-    'spec-analyst': ['.claude/state/', 'docs/workorders/'],
-    'contract-steward': ['contracts/', 'packages/contracts/', 'packages/database/prisma/', 'supabase/migrations/', 'docs/architecture/generated/', '.claude/state/', 'tools/'],
+    'spec-analyst': ['.claude/state/', 'docs/workorders/', '.claude/agent-memory/'],
+    'contract-steward': ['contracts/', 'packages/contracts/', 'packages/database/prisma/', 'supabase/migrations/', 'docs/architecture/generated/', '.claude/state/', 'tools/', '.claude/agent-memory/'],
     'test-author': ['tests/', 'e2e/', '__tests__/', '.claude/state/', 'apps/**/tests/', 'packages/**/tests/'],
     'implementer-server': ['apps/', 'packages/', '.claude/state/'],
     'implementer-ui': ['apps/', 'packages/ui/', '.claude/state/'],
     'e2e-runner': ['.claude/state/', 'test-results/'],
     'doc-scribe': ['docs/', '.claude/state/', 'README.md'],
-    // reviewer i rls-security-auditor nie mają Write/Edit w ogóle (patrz frontmatter agenta)
+    // reviewer i rls-security-auditor: frontmatter obu deklaruje `tools` BEZ Write/Edit, ale
+    // efektywnie je dostają. Dopóki nie było ich tutaj, guard-paths nie ograniczał ich WCALE
+    // (`scopes` undefined => sprawdzenie pomijane), więc agenci opisani jako „tylko do odczytu"
+    // byli jedynymi, którzy mogli pisać w całym repozytorium. Zweryfikowane 2026-08-20:
+    // reviewer zapisał trzy pliki w .claude/agent-memory/reviewer/. Wąski zakres zamyka tę
+    // odwrotność, zostawiając im pamięć, z której realnie korzystają między turami.
+    'reviewer': ['.claude/agent-memory/'],
+    'rls-security-auditor': ['.claude/agent-memory/'],
   },
 
   // Ścieżki testowe — implementerom nie wolno ich dotykać

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T16:56:38.058Z",
+  "generatedAt": "2026-08-20T21:43:55.864Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 10,
@@ -89,7 +89,8 @@
     "packages/database/schema.sql::adr002-pl-tables": 12,
     "setup_combinations.sql::adr002-pl-columns": 6,
     "supabase/migrations/20260820120100_crm_safe_record_actions_columns.sql::adr002-pl-tables": 9,
+    "supabase/migrations/20260820130000_fld_geo_coords_address_coordinates.sql::adr002-pl-tables": 3,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1128
+  "total": 1131
 }

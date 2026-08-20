@@ -55,6 +55,13 @@ model adresy {
   klient_id    String?  @db.Uuid
   klient       klienci? @relation(fields: [klient_id], references: [id], onDelete: SetNull)
   ulica_miasto String?
+  // FLD-GEO-COORDS: współrzędne WGS84 (EPSG:4326) punktu docelowego wizyty.
+  // Źródło: geokodowanie Google Places w kroku rezerwacji B2C. Nullable świadomie —
+  // adresy sprzed tej migracji i adresy wpisane ręcznie w panelu B2B nie mają geokodowania.
+  // Typ double precision, nie Decimal: te wartości służą do liczenia odległości
+  // (Haversine / PostGIS), nigdy do porównań na równość. Patrz raport FLD-GEO-COORDS.
+  latitude     Float?   @db.DoublePrecision
+  longitude    Float?   @db.DoublePrecision
   created_at   DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
   leady   leady[]
@@ -369,4 +376,13 @@ model usterki_incidents {
   opis_usterki     String?
   zdjecia_url      Json?
   created_at       DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+}
+
+model cennik_uslug {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nazwa_uslugi    String   @unique
+  jm              String
+  koszt_b2c_netto Decimal  @db.Decimal
+  koszt_b2b_netto Decimal? @db.Decimal
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
 }
