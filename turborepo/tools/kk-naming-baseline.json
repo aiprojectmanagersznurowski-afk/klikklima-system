@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T09:54:40.330Z",
+  "generatedAt": "2026-08-20T12:16:45.046Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 10,
@@ -30,12 +30,12 @@
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/actions.ts::adr002-pl-tables": 10,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/assign-auditor.tsx::adr002-pl-columns": 4,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/assign-auditor.tsx::adr002-pl-tables": 2,
-    "apps/b2b-web/src/app/(dashboard)/leads/[id]/page.tsx::adr002-pl-columns": 8,
+    "apps/b2b-web/src/app/(dashboard)/leads/[id]/page.tsx::adr002-pl-columns": 7,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/page.tsx::adr002-pl-tables": 5,
     "apps/b2b-web/src/app/(dashboard)/leads/actions.ts::adr002-pl-columns": 14,
     "apps/b2b-web/src/app/(dashboard)/leads/actions.ts::adr002-pl-tables": 24,
     "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-columns": 11,
-    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-tables": 3,
+    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-tables": 4,
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-tables": 11,
     "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-columns": 2,

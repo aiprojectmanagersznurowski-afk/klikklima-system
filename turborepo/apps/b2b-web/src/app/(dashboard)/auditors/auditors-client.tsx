@@ -179,18 +179,18 @@ export function AuditorsClient({
 
                     <div className="mt-5 space-y-3 flex-1">
                       <div className="flex items-center gap-2">
-                        <ShieldCheck className={`size-4 ${auditor.certyfikat_fgaz && !fgazWarning ? 'text-green-500' : auditor.certyfikat_fgaz && fgazWarning ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                        <ShieldCheck className={`size-4 ${auditor.certyfikat_fgaz && !fgazWarning ? 'text-primary' : auditor.certyfikat_fgaz && fgazWarning ? 'text-amber-500' : 'text-muted-foreground'}`} />
                         <span className="text-sm font-medium">
-                          F-GAZ: {auditor.certyfikat_fgaz ? 
+                          F-GAZ: {auditor.certyfikat_fgaz ?
                             <span className={fgazWarning ? "text-amber-600 dark:text-amber-500 font-bold" : "text-foreground"}>
                               {auditor.certyfikat_fgaz} {fgazText}
-                            </span> : 
+                            </span> :
                             <span className="text-destructive">Brak</span>}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <FileCheck className={`size-4 ${auditor.uprawnienia_sep ? 'text-green-500' : 'text-muted-foreground'}`} />
-                        <span className="text-sm font-medium">SEP 1kV: {auditor.uprawnienia_sep ? <span className="text-green-600 dark:text-green-500">Tak</span> : <span className="text-destructive">Brak</span>}</span>
+                        <FileCheck className={`size-4 ${auditor.uprawnienia_sep ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className="text-sm font-medium">SEP 1kV: {auditor.uprawnienia_sep ? <span className="text-primary">Tak</span> : <span className="text-destructive">Brak</span>}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="size-4 text-muted-foreground" />

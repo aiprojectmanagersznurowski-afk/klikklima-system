@@ -23,6 +23,26 @@ const CODE = /\.(ts|tsx|js|jsx|mjs|sql|prisma|css)$/;
  *  - tools/ i hooki — zawierają wzorce zakazane jako wyrażenia regularne reguł.
  */
 const SKIP = [config.contractsDir, config.generatedTsDir, 'tools/', '.claude/hooks/', '.agents/hooks/'];
+/**
+ * Reguły ADR-002 (adr002-*) są tu pomijane ŚWIADOMIE — nie są rozluźnione, tylko
+ * sprawdzane precyzyjniej gdzie indziej: krok 3 tego samego `.githooks/pre-commit`
+ * uruchamia `node tools/kk-naming.mjs --check-baseline`, który blokuje PRZYROST ponad
+ * zamrożony dług (tools/kk-naming-baseline.json, ~1045 naruszeń sprzed ADR-002).
+ *
+ * Bez tego pominięcia ten skaner blokowałby KAŻDY commit dotykający pliku z długiem już
+ * zaakceptowanym — dokładnie tak, jak kk-naming.mjs blokował przed własną naprawą
+ * (ticket KK-NAMING-BASELINE), i dokładnie dlatego commit CRM-SAFE-RECORD-ACTIONS musiał
+ * pójść przez --no-verify. Bramka czerwona na starcie nie niesie sygnału, tylko uczy
+ * pomijania jej przez --no-verify.
+ *
+ * Pozostałe reguły (as-any, ts-ignore, skipped-test, hardcoded-hex, non-lucide-icons,
+ * green-sla, service-key, adr001-*, adr003-*, adr008-*, adr010-*, magic-sla*) NIE mają
+ * mechanizmu baseline i zostają tu absolutne, z zerową tolerancją.
+ */
+const baselineTrackedRuleIds = (config.forbiddenPatterns || [])
+  .filter((p) => p.id.startsWith('adr002-'))
+  .map((p) => p.id);
+
 const files = process.argv.slice(2)
   .filter((f) => CODE.test(f))
   .filter((f) => !SKIP.some((s) => f.startsWith(s.replace(/^\.\//, ''))));
@@ -31,7 +51,7 @@ let fail = 0;
 for (const f of files) {
   let content;
   try { content = readFileSync(f, 'utf8'); } catch { continue; }
-  const v = checkWrite(f, content);
+  const v = checkWrite(f, content, { skipRules: baselineTrackedRuleIds });
   if (v.blocked) {
     console.log(`  ✗ ${f}`);
     console.log(`      ${v.reason}`);

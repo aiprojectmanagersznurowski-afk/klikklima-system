@@ -54,12 +54,17 @@ const isContractPath = (rel) => (config?.contractProtectedPaths || []).some((p) 
  *                        FALSE przy skanie commita i repozytorium: wygenerowane artefakty
  *                        MUSZĄ trafić do gita, więc blokowanie ich przy commicie
  *                        uniemożliwiłoby zapisanie legalnej zmiany kontraktu.
+ * opts.skipRules       — lista ID reguł treściowych (sekcja 3) do pominięcia. Wyłącznie dla
+ *                        wywołujących, którzy pilnują tych samych reguł WŁASNYM, bardziej
+ *                        precyzyjnym mechanizmem (np. kk-precommit-scan.mjs pomija reguły
+ *                        adr002-*, bo baseline nazewnictwa sprawdza osobny krok pre-commit).
+ *                        Domyślnie pusta — brak tej opcji nie zmienia zachowania niczego.
  *
  * Dla zgodności trzeci argument może być nadal łańcuchem z nazwą roli.
  */
 export function checkWrite(rawPath, content = '', opts = {}) {
   if (typeof opts === 'string' || opts === null) opts = { role: opts, enforceContract: true };
-  const { role = null, enforceContract = false } = opts;
+  const { role = null, enforceContract = false, skipRules = [] } = opts;
   if (!config) return { blocked: false };
   const rel = toRelative(rawPath);
   if (!rel) return { blocked: false };
@@ -110,6 +115,9 @@ export function checkWrite(rawPath, content = '', opts = {}) {
 
   // 3. Wzorce zakazane w treści
   for (const p of config.forbiddenPatterns || []) {
+    // Reguła pominięta na jawne życzenie wywołującego — patrz opts.skipRules powyżej.
+    // Pominięcie jest zawsze świadome i zawsze musi mieć zastępczą bramkę po stronie wywołującego.
+    if (skipRules.includes(p.id)) continue;
     if (p.severity === 'warn') continue;
     if (!new RegExp(p.appliesTo).test(rel)) continue;
     if ((p.allowIn || []).some((a) => rel.includes(a))) continue;

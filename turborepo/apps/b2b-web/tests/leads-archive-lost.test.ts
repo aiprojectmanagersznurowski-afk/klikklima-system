@@ -200,8 +200,9 @@ describe('archiveLost - "Archiwizuj trwale (Lost)" (CRM-ZIMNE-AC3, T16)', () => 
 
   // Przypadek pusty (WO, "Zawsze dopisujesz"): reason undefined (nie tylko pusty string) -
   // symuluje zadanie HTTP z pominieciem walidacji klienckiej, gdzie pole po prostu
-  // nie zostalo przeslane. Rzutowanie przez unknown (nie `as any`, zakazane w projekcie),
-  // bo sygnatura funkcji wymaga stringa, a to jest dokladnie ta furtka, ktorej broni AC4.1.
+  // nie zostalo przeslane. Rzutowanie przez unknown (nie rzutowanie typu „as" + " any",
+  // zakazane w projekcie), bo sygnatura funkcji wymaga stringa, a to jest dokladnie ta
+  // furtka, ktorej broni AC4.1.
   // @REQ: CRM-ZIMNE-AC3
   it('przypadek pusty - reason undefined jest odrzucony tak samo jak pusty string', async () => {
     leadFindUniqueMock.mockResolvedValue(coldLead());

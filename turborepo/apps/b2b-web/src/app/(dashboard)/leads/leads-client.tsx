@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LeadStatus, leady as Lead, audytorzy as Auditor } from "@repo/database";
+import { LeadStatus, Prisma, audytorzy as Auditor } from "@repo/database";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import Link from "next/link";
@@ -22,6 +22,21 @@ import { advanceLeadStatus , deleteLeadAction } from "./actions";
 import { ReturnToFunnelDialog } from "./return-to-funnel-dialog";
 import { ArchiveLostDialog } from "./archive-lost-dialog";
 import { can, type Role } from "@klikklima/contracts";
+
+/**
+ * Kształt leada z relacjami faktycznie dołączanymi przez `getLeads()` w
+ * `leads/actions.ts` (klient, adres, instalacje.zespol, audytor). Zamiast pięciu
+ * osobnych rzutowań przez `any` na dostęp do relacji, typujemy je raz przez
+ * `Prisma.leadyGetPayload`.
+ */
+type Lead = Prisma.leadyGetPayload<{
+  include: {
+    klient: true;
+    adres: true;
+    instalacje: { include: { zespol: true } };
+    audytor: true;
+  };
+}>;
 
 type StageFilter = LeadStatus | "ALL";
 
@@ -137,7 +152,7 @@ export function LeadsClient({
     
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      const clientName = ((lead as any).klient?.imie_i_nazwisko || "").toLowerCase();
+      const clientName = (lead.klient?.imie_i_nazwisko || "").toLowerCase();
       const id = lead.id.toLowerCase();
       if (!clientName.includes(q) && !id.includes(q)) return false;
     }
@@ -286,13 +301,13 @@ export function LeadsClient({
                   </tr>
                 ) : (
                   filteredLeads.map(lead => {
-                    const clientName = (lead as any).klient?.imie_i_nazwisko || "Brak danych klienta";
-                    const fullAddress = (lead as any).adres?.ulica_miasto || "Brak miasta";
+                    const clientName = lead.klient?.imie_i_nazwisko || "Brak danych klienta";
+                    const fullAddress = lead.adres?.ulica_miasto || "Brak miasta";
                     const dateFormatted = format(new Date(lead.created_at), "d MMM yyyy, HH:mm", { locale: pl });
                     const auditDate = lead.data_rezerwacji ? format(new Date(lead.data_rezerwacji), "d MMM yyyy, HH:mm", { locale: pl }) : null;
                     const estimatedQuote = lead.estymowana_wycena || "Brak";
-                    const auditor = (lead as any).audytor;
-                    const teamName = (lead as any).instalacje?.[0]?.zespol?.nazwa || "Brak";
+                    const auditor = lead.audytor;
+                    const teamName = lead.instalacje?.[0]?.zespol?.nazwa || "Brak";
 
                     const isNewLead = lead.status === "NEW_LEAD";
                     const hoursSinceCreation = (new Date().getTime() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60);
