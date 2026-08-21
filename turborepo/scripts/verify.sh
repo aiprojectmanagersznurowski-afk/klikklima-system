@@ -60,6 +60,22 @@ step "Kontrakt: wygenerowany TS jest ładowalny" node tools/kk-smoke.mjs
 # omijania. Pełny obraz długu na żądanie: node tools/kk-naming.mjs
 step "Kontrakt: nazewnictwo ADR-002 (przyrost ponad baseline)" node tools/kk-naming.mjs --check-baseline
 
+# ── Warstwa 1b: zgodność schematu z ŻYWĄ bazą ────────────────────────
+# Jedyna kontrola w całej bramce, która porównuje repozytorium z rzeczywistością, a nie
+# repozytorium samo ze sobą. Powstała 2026-08-21 po tym, jak przez jedną sesję cztery razy
+# okazało się, że dokumentacja opisuje bazę w czasie przeszłym: schema.sql deklarował kolumny
+# `lat`/`lng`, których nigdy nie było, ADR-012 twierdził że model „urósł do 27 encji" przy 18
+# realnych, a odpowiedź na „czy to jest w bazie" wymagała zaglądania do dashboardu. Bez tej
+# bramki rozjazd wraca po cichu i wychodzi dopiero na produkcji.
+#
+# Pomijana, gdy nie ma DATABASE_URL (CI bez sekretu) — nie ma wtedy czego porównywać, a
+# uczciwe POMINIĘTE jest lepsze niż czerwień z braku poświadczeń.
+optional "Baza: schema.prisma zgodny z żywą bazą" "grep -q '^DATABASE_URL=' .env" \
+  npx prisma migrate diff \
+    --from-schema-datamodel packages/database/prisma/schema.prisma \
+    --to-schema-datasource packages/database/prisma/schema.prisma \
+    --exit-code
+
 # ── Warstwa 2: statyczna analiza ─────────────────────────────────────
 # ADAPTER: repozytorium jedzie na npm (workspaces + package-lock.json), nie na pnpm.
 # Sonda sprawdza dodatkowo, czy skrypt ISTNIEJE w package.json — dzięki temu brak
