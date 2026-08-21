@@ -11,6 +11,16 @@ export interface SaveLeadData {
   bookingDate: string;
   bookingSlot: string;
   triageData: any;
+  lat?: number;
+  lng?: number;
+}
+
+// FLD-GEO-COORDS: normalizuje współrzędne do number|null przed insertem na `adresy`.
+// `??` (nie `||`), żeby 0 (poprawna wartość) nie stał się `null`; `Number(...)`, żeby
+// wejście typu string (np. z ręcznie sklejonego żądania) trafiło do kolumny
+// `double precision` jako liczba, nie jako tekst.
+function toNullableCoordinate(value: number | string | undefined): number | null {
+  return value === undefined ? null : Number(value);
 }
 
 export async function saveLead(data: SaveLeadData) {
@@ -28,12 +38,15 @@ export async function saveLead(data: SaveLeadData) {
 
     if (klientError) throw new Error(`Błąd tworzenia klienta: ${klientError.message}`);
 
-    // 2. Zapisz adres powiązany z klientem
+    // 2. Zapisz adres powiązany z klientem (FLD-GEO-COORDS: latitude/longitude w
+    // TYM SAMYM insercie co reszta adresu — B2C-LEAD-ATOMIC).
     const { data: adres, error: adresError } = await supabase
       .from('adresy')
       .insert({
         klient_id: klient.id,
-        ulica_miasto: data.address
+        ulica_miasto: data.address,
+        latitude: toNullableCoordinate(data.lat),
+        longitude: toNullableCoordinate(data.lng)
       })
       .select('id')
       .single();

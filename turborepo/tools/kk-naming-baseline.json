@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T21:43:55.864Z",
+  "generatedAt": "2026-08-21T07:34:20.807Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 10,
@@ -70,6 +70,9 @@
     "apps/b2c-web/app/actions/saveLead.ts::adr002-pl-tables": 3,
     "apps/b2c-web/insert_scraped.sql::adr002-pl-columns": 338,
     "apps/b2c-web/lib/articles.ts::adr002-pl-columns": 1,
+    "apps/b2c-web/tests/actions/saveLead.test.ts::adr002-pl-columns": 1,
+    "apps/b2c-web/tests/actions/saveLead.test.ts::adr002-pl-tables": 6,
+    "apps/b2c-web/tests/actions/submitFinalTriage.test.ts::adr002-pl-tables": 5,
     "debug_triage.ts::adr002-pl-columns": 2,
     "fix_fk.sql::adr002-pl-columns": 2,
     "fix_fk.sql::adr002-pl-tables": 2,
@@ -92,5 +95,5 @@
     "supabase/migrations/20260820130000_fld_geo_coords_address_coordinates.sql::adr002-pl-tables": 3,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1131
+  "total": 1143
 }

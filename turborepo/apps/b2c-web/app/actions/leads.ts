@@ -76,8 +76,11 @@ export async function submitFinalTriage(triageData: any, contactData: any, addre
         {
           klient_id: clientId,
           ulica_miasto: addressData.fullAddress,
-          lat: addressData.lat,
-          lng: addressData.lng,
+          // FLD-GEO-COORDS / WO B2C-LEAD-GEO-PERSIST R2: kolumny to latitude/longitude
+          // (schema.prisma:63-64), nie lat/lng — insert pod tymi ostatnimi wywalał się
+          // na `addressError` przy każdym wywołaniu.
+          latitude: addressData.lat,
+          longitude: addressData.lng,
         }
       ]);
 
