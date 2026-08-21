@@ -31,6 +31,7 @@ export const PERMISSIONS: Record<string, Partial<Record<Capability, string[]>>> 
   notes: { read: ["admin","dyspozytor"], create: ["admin","dyspozytor"], update: ["admin","dyspozytor"], delete: ["admin"] },
   vehicles: { read: ["admin","dyspozytor"], create: ["admin"], update: ["admin"], delete: ["admin"] },
   soft_leads: { read: ["admin","dyspozytor"], create: ["admin","dyspozytor"], update: ["admin","dyspozytor"], delete: ["admin"] },
+  availability_declarations: { read: ["admin","dyspozytor","audytor:own","monter:own"], create: ["admin","audytor:own","monter:own"], update: ["admin","audytor:own","monter:own"], delete: ["admin"] },
 };
 
 export const DELETE_POLICIES = [

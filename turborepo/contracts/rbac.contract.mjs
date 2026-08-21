@@ -13,6 +13,9 @@ export const RESOURCES = [
   'auditors', 'crews', 'shipments', 'notification_queue', 'message_templates', 'authorized_users', 'audit_log',
   // ── ADR-012 (2026-08-18) ──
   'bookings', 'absences', 'regions', 'documents', 'invoices', 'contact_log', 'notes', 'vehicles', 'soft_leads',
+  // ── FLD-AVAILABILITY-SPLIT (D-A, 2026-08-21) ──
+  // Odpowiada tabeli public.availability_declarations (migracja 20260821120000).
+  'availability_declarations',
 ];
 
 /** capability: read | create | update | delete | assign */
@@ -42,6 +45,21 @@ export const MATRIX = [
   { resource: 'notes',              read: ['admin', 'dyspozytor'],                     create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor'], delete: ['admin'] },
   { resource: 'vehicles',           read: ['admin', 'dyspozytor'],                     create: ['admin'],               update: ['admin'],               delete: ['admin'] },
   { resource: 'soft_leads',         read: ['admin', 'dyspozytor'],                     create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor'], delete: ['admin'] },
+  // ── FLD-AVAILABILITY-SPLIT: zasób dodany 2026-08-21 (decyzja D-A + rozstrzygnięcie R2) ──
+  // Jedyny zasób, na którym role terenowe mają `update`. Istnieje po to, żeby to prawo NIE niosło
+  // ze sobą prawa zapisu do audytorzy.is_active i audytorzy.leave_status: macierz nie rozróżnia
+  // kolumn, więc rozdzielenie musi przebiegać po granicy tabeli.
+  //
+  // `auditors.update` i `crews.update` powyżej zostają ['admin'] — TO JEST SEDNO tego wiersza.
+  // Dopisanie tam 'audytor:own' skasowałoby cały sens zmiany: pracownik odzyskałby ścieżkę
+  // do zdjęcia sobie blokady administracyjnej i urlopu wpisanego przez kadry.
+  //
+  // `create` z wariantem :own jest konieczne, nie ozdobne: pracownik dodany po migracji nie ma
+  // jeszcze wiersza deklaracji (backfill objął wyłącznie stan z dnia wdrożenia), więc pierwsza
+  // zmiana dostępności jest wstawieniem, a nie aktualizacją.
+  // `delete` wyłącznie admin (R13) — pracownik nie kasuje własnej deklaracji, tylko ją przełącza;
+  // usunięcie wiersza znaczy „dostępny", więc byłoby drugą, cichą ścieżką do tego samego skutku.
+  { resource: 'availability_declarations', read: ['admin', 'dyspozytor', 'audytor:own', 'monter:own'], create: ['admin', 'audytor:own', 'monter:own'], update: ['admin', 'audytor:own', 'monter:own'], delete: ['admin'] },
 ];
 
 /** Polityki kluczy obcych przy usuwaniu — database_model.md §4.2 */

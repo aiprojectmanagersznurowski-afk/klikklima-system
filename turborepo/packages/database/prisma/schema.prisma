@@ -202,6 +202,16 @@ model zespoly_monterskie {
   // Nowe pola - Finanse
   iban                      String?
 
+  // FLD-AVAILABILITY-SPLIT (D-A, 2026-08-21): status kadrowy ekipy — właściciel ADMINISTRATOR.
+  // Symetrycznie do audytorzy.leave_status. Rozdzielenie musi objąć obie encje, mimo że dziś
+  // żadna bramka autoryzacyjna nie czyta zespoly_monterskie.aktywny (R3 w WO) — brak konsumenta
+  // po stronie ekip to luka do domknięcia, a nie powód, żeby zostawić ekipy bez tego pojęcia.
+  // Pole `aktywny` powyżej zostaje pod tą nazwą: dług KK-NAMING-BASELINE jest zamrożony.
+  leave_status              LeaveStatus @default(ACTIVE)
+
+  // FLD-AVAILABILITY-SPLIT: deklaracja dostępności ekipy — patrz komentarz przy audytorzy.
+  availability_declaration  AvailabilityDeclaration?
+
   created_at         DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
   instalacje        instalacje[]
@@ -321,6 +331,58 @@ enum ShippingStatus {
   DELIVERED
 }
 
+/// FLD-AVAILABILITY-SPLIT (D-A, 2026-08-21): zamknięty słownik statusu kadrowego pracownika.
+/// Właściciel: administrator. Wartości wg b2b_crm_specifications.md §5 i database_model.md:624
+/// (Aktywny / Urlop / Zwolnienie). Prawdziwy typ enum w PostgreSQL, nie tekst — wartość spoza
+/// słownika odrzuca baza, a nie dopiero walidacja aplikacyjna (AC6).
+/// ACTIVE nie znaczy „konto aktywne" (to jest is_active) ani „pracownik dostępny"
+/// (to jest availability_declarations.is_available) — znaczy wyłącznie „brak wpisanej nieobecności".
+enum LeaveStatus {
+  ACTIVE
+  ON_LEAVE
+  SICK_LEAVE
+}
+
+/// FLD-AVAILABILITY-SPLIT (D-A + R2, 2026-08-21): deklaracja dostępności pracownika terenowego.
+/// WŁAŚCICIEL: PRACOWNIK. To jedyna tabela, na której role terenowe dostają `update` (wariant :own
+/// w contracts/rbac.contract.mjs). Osobna tabela, a nie kolumna na audytorzy/zespoly_monterskie,
+/// bo macierz RBAC i RLS operują na tabelach, nie na kolumnach: gdyby deklaracja była kolumną,
+/// prawo do jej zapisu niosłoby ze sobą prawo do zapisu is_active i leave_status.
+///
+/// Jeden wiersz na pracownika, wskazywany dokładnie jednym z dwóch kluczy obcych (CHECK
+/// availability_declarations_one_owner w migracji — Prisma nie wyraża CHECK-ów, więc żyje on
+/// wyłącznie w SQL i NIE wolno go zgubić przy ewentualnym `prisma migrate diff`).
+/// Brak wiersza znaczy „dostępny" (fail-open) — odwrotnie niż is_active, gdzie brak/blokada
+/// znaczy odmowa (fail-closed). Migracja zakłada wiersze wszystkim istniejącym pracownikom (AC7).
+///
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model AvailabilityDeclaration {
+  // Nazwy pól wg ADR-002 (camelCase + @map), bo to model NOWY — nie dziedziczy zamrożonego
+  // długu nazewniczego modeli polskich. Kolumny w bazie są snake_case tak samo jak wszędzie.
+  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  auditorId   String?             @unique @map("auditor_id") @db.Uuid
+  auditor     audytorzy?          @relation(fields: [auditorId], references: [id], onDelete: Cascade)
+
+  crewId      String?             @unique @map("crew_id") @db.Uuid
+  crew        zespoly_monterskie? @relation(fields: [crewId], references: [id], onDelete: Cascade)
+
+  /// Deklaracja pracownika: „jestem dostępny" / „jestem teraz niedostępny".
+  /// Boolean, a nie enum, świadomie: dwie wartości to pełny słownik tego pojęcia, a każda trzecia
+  /// wartość, jaka przyszłaby komuś do głowy (URLOP, ZWOLNIENIE), należy do leave_status albo do
+  /// absences. Typ domyka słownik tak samo jak enum (AC6).
+  isAvailable Boolean             @default(true) @map("is_available")
+
+  createdAt   DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+
+  /// Moment ostatniej zmiany deklaracji. timestamptz, bo „niedostępny od teraz" bez strefy
+  /// czasowej to ten sam błąd co porównywanie certyfikatów po dacie kalendarzowej.
+  /// To znacznik techniczny — nie wyznacza granicy doby roboczej i nie wolno go do tego użyć.
+  updatedAt   DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("availability_declarations")
+}
+
 model audytorzy {
   id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   imie_i_nazwisko String
@@ -351,6 +413,20 @@ model audytorzy {
   // wyboru przy przypisywaniu. Odwracalna (AC1.7). Nazwa angielska wg ADR-002,
   // mimo polskiej nazwy tabeli — dług KK-NAMING-BASELINE jest zamrożony.
   is_active               Boolean  @default(true)
+
+  // FLD-AVAILABILITY-SPLIT (D-A, 2026-08-21): status kadrowy — właściciel ADMINISTRATOR.
+  // To NIE jest deklaracja pracownika: urlop i zwolnienie wpisuje administrator, a pracownik
+  // nie ma do tej kolumny prawa zapisu (auditors.update zostaje ['admin'] w rbac.contract.mjs).
+  // Świadomie NIE nazywa się availability_status: „dostępność" należy do pracownika i mieszka
+  // w osobnej tabeli. Docelowo (ADR-012, faza 4) urlop przenosi się do datowanej tabeli absences;
+  // ta kolumna jest nośnikiem zgrubnym do tego czasu.
+  leave_status            LeaveStatus @default(ACTIVE)
+
+  // FLD-AVAILABILITY-SPLIT: deklaracja dostępności pracownika mieszka w OSOBNEJ tabeli
+  // (availability_declarations), a nie w kolumnie tutaj. To jedyny układ, w którym prawo zapisu
+  // do własnej dostępności nie niesie ze sobą prawa zapisu do is_active — macierz RBAC operuje
+  // na zasobach (tabelach), nie na kolumnach, a RLS też działa na poziomie tabeli.
+  availability_declaration AvailabilityDeclaration?
 
   // Z6: relacja poniżej zostaje na onDelete: SetNull — świadomie, NIE zmieniać na Restrict.
   // Blokada usunięcia audytora dotyczy WYŁĄCZNIE rekordów w statusach AWAITING_AUDIT /

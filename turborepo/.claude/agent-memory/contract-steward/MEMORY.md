@@ -4,3 +4,4 @@
 - [Dług na regułach absolutnych w pre-commit](project_precommit_absolute_debt.md) — po naprawie baseline zostały as-any i green-sla; jedyny powód --no-verify.
 - [Semantyka statusu BLOCKED](project_blocked_status_semantics.md) — co znaczy BLOCKED w rejestrze wymagań i dlaczego walidator ma odtąd 7 stałych ostrzeżeń R16.
 - [Żywotność reguł bramki](feedback_gate_rule_liveness.md) — nowa reguła walidatora zawsze ze stałą mutacją w kk-selftest, zakres szeroki, dowodem jest komunikat.
+- [Baseline nazewnictwa przy migracjach](project_naming_baseline_on_migrations.md) — każda migracja na polskich tabelach blokuje pre-commit; baseline aktualizuje człowiek.
