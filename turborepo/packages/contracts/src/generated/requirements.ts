@@ -642,18 +642,18 @@ export const REQUIREMENTS = [
   {
     "id": "FLD-CONSENT-ACCEPT",
     "domain": "field",
-    "status": "BLOCKED",
+    "status": "TODO",
     "risk": "HIGH",
     "source": "field_app_requirements.md#4.1",
-    "statement": "Pracownik akceptuje zgody RODO i regulamin przed podjęciem pierwszego zlecenia; zapisywany jest moment akceptacji i wersja zaakceptowanego dokumentu."
+    "statement": "System rejestruje akceptację dokumentów prawnych przez pracownika terenowego: kto, którą wersję i kiedy — w sposób nieodwracalny i odporny na późniejszą zmianę treści."
   },
   {
     "id": "FLD-LEGAL-DOC-VERSION",
     "domain": "field",
-    "status": "BLOCKED",
-    "risk": "MEDIUM",
+    "status": "TODO",
+    "risk": "HIGH",
     "source": "field_app_requirements.md#4.1",
-    "statement": "Administrator ma w panelu miejsce, w którym wgrywa i wersjonuje treść zgód RODO oraz regulaminu pracowniczego — dziś takie miejsce nie istnieje nigdzie w systemie."
+    "statement": "Administrator ma miejsce, w którym wgrywa i wersjonuje treść zgód RODO oraz regulaminu pracowniczego; wersja opublikowana jest niezmienna, a obowiązująca jest zawsze dokładnie jedna na rodzaj dokumentu."
   },
   {
     "id": "FLD-AVAIL-SELF",

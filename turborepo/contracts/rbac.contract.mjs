@@ -16,6 +16,12 @@ export const RESOURCES = [
   // ── FLD-AVAILABILITY-SPLIT (D-A, 2026-08-21) ──
   // Odpowiada tabeli public.availability_declarations (migracja 20260821120000).
   'availability_declarations',
+  // ── FLD-CONSENT-DOCS (D-C, 2026-08-21) ──
+  // Odpowiadają tabelom public.legal_document_versions i public.employee_consents
+  // (migracja 20260821130000). D-C: NOWY zasób, nie rozszerzenie `documents` — tamten ma
+  // `create` przyznane audytorowi i monterowi, więc rozszerzenie zlałoby „tworzę dokument"
+  // z „akceptuję dokument" w jednym zasobie, a macierz nie rozróżnia rodzajów w obrębie zasobu.
+  'legal_document_versions', 'employee_consents',
 ];
 
 /** capability: read | create | update | delete | assign */
@@ -60,6 +66,36 @@ export const MATRIX = [
   // `delete` wyłącznie admin (R13) — pracownik nie kasuje własnej deklaracji, tylko ją przełącza;
   // usunięcie wiersza znaczy „dostępny", więc byłoby drugą, cichą ścieżką do tego samego skutku.
   { resource: 'availability_declarations', read: ['admin', 'dyspozytor', 'audytor:own', 'monter:own'], create: ['admin', 'audytor:own', 'monter:own'], update: ['admin', 'audytor:own', 'monter:own'], delete: ['admin'] },
+  // ── FLD-CONSENT-DOCS: zasoby dodane 2026-08-21 (decyzje D-C i D-D) ──
+  //
+  // legal_document_versions — treść zgód RODO i regulaminu, wersjonowana.
+  // `read` bez wariantu :own i dla wszystkich ról: dokument prawny nie jest „czyjś". Pracownik
+  // MUSI przeczytać treść, żeby ją zaakceptować, a akceptacja treści, do której nie ma dostępu,
+  // byłaby bezwartościowa dowodowo — czyli byłaby zaprzeczeniem powodu, dla którego ten rejestr istnieje.
+  // `create`/`update`/`delete` wyłącznie admin (AC7): wgranie i opublikowanie wersji to czynność
+  // administratora, sprawdzana po stronie serwera. Ukrycie przycisku w UI nie jest zabezpieczeniem,
+  // bo Prisma omija RLS (pułapka 1 w CLAUDE.md).
+  // `update` dla admina istnieje, bo publikacja i wycofanie wersji TO JEST update kolumny is_current.
+  // Niezmienności treści opublikowanej NIE pilnuje ten wiersz — macierz nie rozróżnia kolumn —
+  // tylko wyzwalacz legal_document_versions_freeze_published_trg w bazie (AC1).
+  { resource: 'legal_document_versions', read: ['admin', 'dyspozytor', 'audytor', 'monter'], create: ['admin'], update: ['admin'], delete: ['admin'] },
+  //
+  // employee_consents — rejestr akceptacji. APPEND-ONLY, profil audit_log.
+  // `update: []` i `delete: []` — NIKT, łącznie z adminem. To jest świadoma decyzja, a nie skutek
+  // złapania przez regułę: mutacja R22-audit-append-only w kk-selftest.mjs jest przypięta do
+  // literalnego wiersza `audit_log`, więc TEGO zasobu by nie złapała. Powód jest ten sam co tam:
+  // rejestr, który administrator może poprawić, nie jest dowodem niczego, a poprawiony wpis zgody
+  // to dowód wobec organu wystawiony po fakcie. Zmiana zdania = nowy wiersz (nowa akceptacja),
+  // nigdy edycja starego. W bazie odpowiada temu wyzwalacz employee_consents_append_only_trg (AC5).
+  // `delete: []` przechodzi R13 (reguła dopuszcza pustą listę, jak przy audit_log). Retencja RODO
+  // (AUDIT_REQUIREMENTS.retentionDays) to purge operacyjny po upływie okresu, a nie uprawnienie roli.
+  // `create` dla ról terenowych bez wariantu :own — wariant :own zapisałby „pracownik akceptuje
+  // własną zgodę", ale właściciela wiersza wyznacza tu dopiero para (auditor_id | crew_id), której
+  // macierz nie widzi; ograniczenie „tylko za siebie" musi wyrazić polityka RLS i Server Action.
+  // `admin` w `create` jest celowo NIEOBECNY: administrator nie akceptuje zgody w imieniu pracownika.
+  // To jedyny wiersz w tej macierzy, w którym admina nie ma w `create`, i to jest sedno — akceptacja
+  // wpisana przez kogoś innego niż pracownik nie jest akceptacją.
+  { resource: 'employee_consents', read: ['admin', 'audytor:own', 'monter:own'], create: ['audytor', 'monter'], update: [], delete: [] },
 ];
 
 /** Polityki kluczy obcych przy usuwaniu — database_model.md §4.2 */

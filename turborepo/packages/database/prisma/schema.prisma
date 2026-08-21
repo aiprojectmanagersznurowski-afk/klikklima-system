@@ -212,6 +212,10 @@ model zespoly_monterskie {
   // FLD-AVAILABILITY-SPLIT: deklaracja dostępności ekipy — patrz komentarz przy audytorzy.
   availability_declaration  AvailabilityDeclaration?
 
+  // FLD-CONSENT-DOCS (2026-08-21): akceptacje dokumentów prawnych, symetrycznie do audytorów.
+  // onDelete: Restrict — patrz komentarz przy audytorzy.consents.
+  consents                  EmployeeConsent[]
+
   created_at         DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
   instalacje        instalacje[]
@@ -428,6 +432,15 @@ model audytorzy {
   // na zasobach (tabelach), nie na kolumnach, a RLS też działa na poziomie tabeli.
   availability_declaration AvailabilityDeclaration?
 
+  // FLD-CONSENT-DOCS (2026-08-21): akceptacje dokumentów prawnych. Relacja na onDelete: Restrict
+  // (patrz EmployeeConsent.auditor) — usunięcie audytora z historią akceptacji jest ODRZUCANE przez
+  // bazę, bo skasowałoby dowód, że zgody były udzielone w chwili wykonywania pracy (R2 w WO).
+  // To zaostrza dotychczasowy stan: BLOCK_UNTIL_REASSIGNED z rbac.contract.mjs blokował usunięcie
+  // tylko przy wiszących leadach i tylko w Server Action. Ścieżki „usuń mimo wszystko" nie ma
+  // celowo — analogiczna do SEC-RODO-DELETE anonimizacja pracownika jest luką zarejestrowaną
+  // w FLD-CONSENT-ACCEPT, nie czymś, co ta migracja dopisuje po cichu.
+  consents        EmployeeConsent[]
+
   // Z6: relacja poniżej zostaje na onDelete: SetNull — świadomie, NIE zmieniać na Restrict.
   // Blokada usunięcia audytora dotyczy WYŁĄCZNIE rekordów w statusach AWAITING_AUDIT /
   // AUDIT_COMPLETED i żyje w Server Action; baza nie rozróżnia statusu, więc Restrict
@@ -461,4 +474,127 @@ model cennik_uslug {
   koszt_b2c_netto Decimal  @db.Decimal
   koszt_b2b_netto Decimal? @db.Decimal
   created_at      DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// FLD-CONSENT-DOCS (D-C, 2026-08-21): zamknięty słownik rodzajów dokumentu prawnego.
+/// ENUM, a nie tabela słownikowa — świadomie. Dodanie rodzaju dokumentu nie jest wprowadzeniem
+/// danych przez administratora, tylko zmianą kontraktu: faza 3 (Field App) musi wiedzieć, KTÓRYCH
+/// rodzajów wymaga przed wpuszczeniem pracownika do zlecenia, a warunek „komplet zgód" potrzebuje
+/// stabilnego identyfikatora. Gdyby rodzaje były wierszami, ten warunek zależałby od tego, co ktoś
+/// wpisał w CRUD-zie. Tabela (id, kind, title) nie niosłaby przy tym ani jednego atrybutu ponad enum.
+/// Cena zamierzona: rozszerzenie słownika wymaga migracji z ALTER TYPE ... ADD VALUE w osobnym pliku.
+enum LegalDocumentKind {
+  RODO_CONSENT
+  EMPLOYEE_TERMS
+}
+
+/// FLD-CONSENT-DOCS (FLD-LEGAL-DOC-VERSION): wersjonowana treść zgód RODO i regulaminu pracowniczego.
+/// WŁAŚCICIEL: ADMIN (rbac.contract.mjs: create/update/delete wyłącznie `admin`, AC7).
+///
+/// R3 (plik czy tekst) rozstrzygnięte na TEKST W BAZIE: obiekt w Storage jest mutowalny w miejscu,
+/// więc nadpisanie pliku po cichu zmienia treść wersji już opublikowanej i łamie AC1 dokładnie tam,
+/// gdzie AC1 ma znaczenie (dowód, co pracownik wtedy widział). W bazie niezmienność da się wymusić
+/// wyzwalaczem, na buckecie nie da się wcale. Dodatkowo: bucketu na dokumenty prawne dziś nie ma
+/// (są tylko awatarowe), a Field App i tak musi wyrenderować treść w oknie akceptacji.
+///
+/// Niezmienność wersji OPUBLIKOWANEJ jest własnością modelu, nie dyscypliną Server Action:
+/// wyzwalacz legal_document_versions_freeze_published_trg (migracja 20260821130000) dopuszcza na
+/// opublikowanym wierszu zmianę wyłącznie isCurrent. Nowa treść = NOWA WERSJA (AC1).
+/// Prisma tego ograniczenia nie widzi i nie potrafi wyrazić — nie wolno go zgubić przy
+/// ewentualnym `prisma migrate diff`.
+///
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model LegalDocumentVersion {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  documentKind LegalDocumentKind @map("document_kind")
+
+  /// Jawny numer wersji, rosnący w obrębie rodzaju dokumentu — to jest „wersja" zapisywana przy
+  /// akceptacji w sensie dokumentowym, a NIE data modyfikacji pliku (kryterium FLD-LEGAL-DOC-VERSION).
+  /// Technicznym wskazaniem w rejestrze akceptacji pozostaje klucz obcy do id (AC3).
+  versionNo    Int               @map("version_no")
+
+  content      String
+
+  /// NULL = szkic. Szkic wolno edytować i usunąć; publikacja zamraża treść.
+  publishedAt  DateTime?         @map("published_at") @db.Timestamptz(6)
+
+  /// „Obowiązująca w tej chwili". Częściowy indeks unikalny w bazie
+  /// (legal_document_versions_current_per_kind_key, WHERE is_current) dopuszcza DOKŁADNIE JEDNĄ
+  /// taką wersję na rodzaj dokumentu — AC2 wymuszone przez bazę, nie przez sprawdzenie w kodzie,
+  /// bo „sprawdź, czy jest inna obowiązująca, potem ustaw" przegrywa wyścig dwóch publikacji.
+  /// Prisma nie potrafi wyrazić indeksu częściowego: ograniczenie żyje wyłącznie w SQL.
+  isCurrent    Boolean           @default(false) @map("is_current")
+
+  createdAt    DateTime          @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime          @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  consents     EmployeeConsent[]
+
+  @@unique([documentKind, versionNo], map: "legal_document_versions_document_kind_version_no_key")
+  @@map("legal_document_versions")
+}
+
+/// FLD-CONSENT-DOCS (FLD-CONSENT-ACCEPT): rejestr akceptacji — kto, którą wersję, kiedy.
+///
+/// APPEND-ONLY, profil audit_log: macierz RBAC nie daje `update` NIKOMU, łącznie z adminem,
+/// a wyzwalacz employee_consents_append_only_trg odrzuca UPDATE także dla zapisu z pominięciem
+/// Server Action (Prisma omija RLS — baza jest ostatnią warstwą, która cokolwiek gwarantuje).
+/// Rejestr, który administrator może poprawić, nie jest dowodem niczego. To jest zarazem AC5
+/// wymuszone strukturalnie: publikacja nowej wersji nie ma ścieżki, którą mogłaby unieważnić
+/// istniejące akceptacje.
+///
+/// R1 — „pracownik" nie jest dziś encją: dwa nullowalne klucze obce + CHECK num_nonnulls(...) = 1,
+/// ten sam wzorzec co AvailabilityDeclaration, bo `audytorzy` i `zespoly_monterskie` nie mają
+/// wspólnego rekordu osoby. Konsekwencja wypowiedziana wprost: ta sama osoba występująca w obu
+/// rolach akceptuje DWA RAZY. Odpowiedź „raz" wymaga encji osoby, której nie ma, a sklejenie po
+/// adresie e-mail dawałoby dowód wskazujący na rekord, którego pracownik nigdy nie widział.
+///
+/// Egzekwowanie „brak zgód = brak zlecenia" NIE mieszka tutaj: decyzja D-D (2026-08-21) umieściła
+/// je w Field App (faza 3). Ten model dowozi wyłącznie odpytywalność — „czy pracownik ma aktualną
+/// akceptację" to złączenie po versionId do wersji z isCurrent = true.
+///
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model EmployeeConsent {
+  id         String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// AC9 / R2: onDelete Restrict, NIE Cascade i NIE SetNull. Usunięcie konta pracownika nie może
+  /// skasować dowodu, że zgoda była udzielona w chwili wykonywania pracy, a wpis osierocony
+  /// („ktoś zaakceptował") nie jest dowodem niczego. To wzmacnia w bazie politykę
+  /// BLOCK_UNTIL_REASSIGNED, którą rbac.contract.mjs deklaruje dla `auditors` i `crews` — dotąd
+  /// żyła wyłącznie w Server Action. Różnica wobec AvailabilityDeclaration (tam Cascade) jest
+  /// zamierzona: deklaracja bez pracownika nie znaczy nic, akceptacja bez pracownika to skasowany dowód.
+  auditorId  String?             @map("auditor_id") @db.Uuid
+  auditor    audytorzy?          @relation(fields: [auditorId], references: [id], onDelete: Restrict)
+
+  crewId     String?             @map("crew_id") @db.Uuid
+  crew       zespoly_monterskie? @relation(fields: [crewId], references: [id], onDelete: Restrict)
+
+  /// AC3: wskazanie wersji kluczem obcym, nie tekstem ani numerem — wskazanie nieistniejącej wersji
+  /// odrzuca baza. AC6: Restrict — wersji, do której odwołuje się jakakolwiek akceptacja, nie da się
+  /// usunąć (SetNull byłby tu tak samo zły jak Cascade: AC3 wymaga, żeby wskazanie wersji dawało się
+  /// rozstrzygnąć zawsze).
+  /// Wyzwalacz employee_consents_version_must_be_current_trg dopuszcza przy INSERT wyłącznie wersję
+  /// obowiązującą w chwili zapisu — to jest odpowiedź na przypadek brzegowy „publikacja nowej wersji
+  /// w trakcie akceptowania starej": spóźniona akceptacja odbija się od bazy zamiast po cichu zapisać
+  /// treść, której pracownik nie widział. Server Action MUSI więc przyjmować versionId jawnie
+  /// z frontendu, a nie doklejać „najnowszą wersję" po stronie serwera.
+  versionId  String              @map("version_id") @db.Uuid
+  version    LegalDocumentVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+
+  /// timestamptz, nie date: „zaakceptował przed przypisaniem" liczy się na znacznikach, nie na
+  /// datach kalendarzowych. Nigdy nie zmieniany (append-only).
+  acceptedAt DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @map("accepted_at") @db.Timestamptz(6)
+
+  /// Brak updatedAt — nie ma czego aktualizować w tabeli, której nikt nie aktualizuje.
+  ///
+  /// AC4: unikalność (pracownik, wersja) jako ograniczenie bazy, nie „sprawdź i wstaw" — dwa
+  /// równoległe żądania akceptacji tej samej wersji dają dokładnie jeden wiersz. Dwa indeksy,
+  /// bo właściciel siedzi w jednej z dwóch kolumn: w indeksie wielokolumnowym NULL-e są
+  /// rozróżnialne, więc wiersze ekipowe nie kolidują z audytorskimi.
+  @@unique([auditorId, versionId], map: "employee_consents_auditor_id_version_id_key")
+  @@unique([crewId, versionId], map: "employee_consents_crew_id_version_id_key")
+  @@index([versionId], map: "employee_consents_version_id_idx")
+  @@map("employee_consents")
 }

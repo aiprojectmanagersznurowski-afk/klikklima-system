@@ -1,6 +1,6 @@
 ---
 name: blocked-status-semantics
-description: Przyjęta semantyka statusu BLOCKED w rejestrze wymagań i świadomie zaakceptowany koszt 7 stałych ostrzeżeń R16-proposed
+description: Przyjęta semantyka statusu BLOCKED w rejestrze wymagań, ścieżka wyjścia BLOCKED->TODO i koszt stałych ostrzeżeń R16-proposed (dziś 5)
 metadata:
   type: project
 ---
@@ -15,8 +15,15 @@ używa jej wyłącznie do wyłączenia wymagania z ostrzeżenia „HIGH RISK bez
 był świadomy: `TODO` dorzuciłoby sześć stałych alarmów HIGH-risk do raportu, który już ma ich ~25 i przez to jest coraz
 mniej czytany.
 
+**Ścieżka wyjścia (potwierdzona 2026-08-21):** `BLOCKED` schodzi do `TODO` w chwili, gdy WO dowiezie NOŚNIK wymagania
+(schemat + kontrakt), nawet jeśli sama funkcja jest dopiero fazy 3 — tak wyszły `FLD-CONSENT-ACCEPT`
+i `FLD-LEGAL-DOC-VERSION` przy WO `FLD-CONSENT-DOCS`. Przy takim przejściu kryteria akceptacji trzeba PRZECIĄĆ:
+zostaje to, co WO faktycznie dowozi i da się przetestować dziś, a egzekwowanie z fazy 3 wychodzi do osobnego,
+przyszłego ID (wzorem `FLD-AUTH-BLOCKED`, które przejęło bramkę logowania z `CRM-AUDYT-AC1`).
+
 **Koszt, o którym trzeba pamiętać:** każde `BLOCKED` generuje ostrzeżenie `R16-proposed`. Liczba ostrzeżeń
-`kk-validate` wzrosła z 0 do 7 i taka zostanie do fazy 3. Dziś to nieszkodliwe — **żadna bramka nie uruchamia
+`kk-validate` wzrosła z 0 do 7, a po WO `FLD-CONSENT-DOCS` spadła do 5 (zostają FLD-GEO-UNLOCK, FLD-GEO-EN-ROUTE,
+FLD-GPS-RODO, FLD-AUTH-BLOCKED, FLD-PHOTO-SET). Dziś to nieszkodliwe — **żadna bramka nie uruchamia
 `kk-validate --strict`** (sprawdzone: `scripts/verify.sh`, `.github/workflows/kk-gate.yml`, `.githooks/pre-commit`,
 `package.json`). Dodanie `--strict` do którejkolwiek z nich zapali je wszystkie na czerwono.
 

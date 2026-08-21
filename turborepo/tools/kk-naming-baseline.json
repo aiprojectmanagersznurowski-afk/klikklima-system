@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-21T11:26:43.162Z",
+  "generatedAt": "2026-08-21T13:14:43.168Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 10,
@@ -87,14 +87,15 @@
     "insert_6000_leads_part3.sql::adr002-pl-columns": 12,
     "insert_6000_leads_part3.sql::adr002-pl-tables": 12,
     "packages/database/prisma/schema.prisma::adr002-pl-columns": 47,
-    "packages/database/prisma/schema.prisma::adr002-pl-tables": 42,
+    "packages/database/prisma/schema.prisma::adr002-pl-tables": 44,
     "setup_combinations.sql::adr002-pl-columns": 6,
     "supabase/migrations/00000000000000_baseline.sql::adr002-pl-columns": 47,
     "supabase/migrations/00000000000000_baseline.sql::adr002-pl-tables": 30,
     "supabase/migrations/20260820120100_crm_safe_record_actions_columns.sql::adr002-pl-tables": 9,
     "supabase/migrations/20260820130000_fld_geo_coords_address_coordinates.sql::adr002-pl-tables": 3,
     "supabase/migrations/20260821120000_fld_availability_split.sql::adr002-pl-tables": 10,
+    "supabase/migrations/20260821130000_fld_consent_docs.sql::adr002-pl-tables": 2,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1207
+  "total": 1211
 }
