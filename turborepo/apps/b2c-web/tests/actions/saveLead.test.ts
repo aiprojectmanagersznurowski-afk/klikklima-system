@@ -44,6 +44,26 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * nie ma wpisu dla tego pliku (nowy plik testowy), więc `kk-naming.mjs --check-baseline`
  * pokaże dla niego przyrost > 0 — to jest oczekiwane i zaakceptowane w WO ("Ograniczenia"),
  * zgłoszone w podsumowaniu, baseline NIE jest aktualizowany przez tego agenta.
+ *
+ * Addendum (2026-08-24, BEZ własnego WO — następstwo naprawy bezpieczeństwa `SEC-RLS-BASELINE`,
+ * migracja `supabase/migrations/20260824185845_security_enable_rls_baseline.sql`, już
+ * scommitowana): `klienciInsertSpy`/`adresyInsertSpy` NIE zwracają już
+ * `{ select: () => ({ single: async () => ({ data: { id }, error: null }) }) }`.
+ * Powód: `INSERT ... RETURNING` (czyli `.insert().select().single()`) wymaga u wykonującej
+ * roli polityki RLS **SELECT**, nie tylko INSERT — zweryfikowane bezpośrednio na żywej
+ * bazie jako rola `anon`. `klienci`/`adresy` mają dziś świadomie WYŁĄCZNIE politykę INSERT
+ * dla `anon`; polityka SELECT `USING (true)` ujawniałaby dane kontaktowe WSZYSTKICH
+ * klientów przez REST API, więc nie jest opcją. Docelowa implementacja (kolejna tura,
+ * `implementer-server`) generuje `id` sama (`crypto.randomUUID()`), wstawia je jawnie w
+ * insert i NIE woła `.select()` — dlatego mock musi zwracać kształt odpowiedzi na sam
+ * `.insert(row)` bez łańcucha: `vi.fn(async (_row) => ({ error: null }))`. Nowe testy na
+ * końcu pliku (bez `@REQ:` — to nie jest część żadnego WO, patrz uzasadnienie przy nich)
+ * dowodzą, że `id` faktycznie jest generowane W KODZIE (kształt UUID) i konsekwentnie
+ * przekazywane dalej (adresy.klient_id, leady.klient_id/adres_id) — a nie odczytywane z
+ * odpowiedzi insertu, której po tej naprawie już nie ma. Insert na `leady` nie zmienia
+ * kształtu (już dziś nie ma `.select()`) — `leadyInsertSpy` dostaje tu jedynie jawny typ
+ * parametru, żeby dało się odczytać przekazany wiersz w nowych asercjach (patrz komentarz
+ * przy typowaniu `Record<string, unknown>` niżej).
  */
 
 const {
@@ -60,17 +80,13 @@ const {
   // `[0]` w testach niżej pada pod `tsc --noEmit` na TS2493/TS18048, mimo że w runtime
   // (Vitest/esbuild, bez type-checkingu) wszystko działa poprawnie. Ten sam wzorzec zanieczyszcza
   // dziś wyjście `tsc` w `crews-cert-availability.test.ts` — nie powielamy go tutaj.
-  const klienciInsertSpy = vi.fn((_row: Record<string, unknown>) => ({
-    select: vi.fn(() => ({
-      single: vi.fn(async () => ({ data: { id: 'klient-test-1' }, error: null })),
-    })),
-  }));
+  //
+  // Kształt zwrotny (SEC-RLS-BASELINE, patrz addendum na górze pliku): bezpośrednio
+  // awaitowalny obiekt `{ error: null }`, BEZ `.select()` — insert po naprawie RLS nie
+  // odczytuje już nic zwrotnie, bo tabela nie ma polityki SELECT dla `anon`.
+  const klienciInsertSpy = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
 
-  const adresyInsertSpy = vi.fn((_row: Record<string, unknown>) => ({
-    select: vi.fn(() => ({
-      single: vi.fn(async () => ({ data: { id: 'adres-test-1' }, error: null })),
-    })),
-  }));
+  const adresyInsertSpy = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
 
   // B2C-LEAD-ATOMIC: jeżeli implementacja sięgnie po drugi zapis (update) na adresy
   // zamiast wpisać współrzędne w ten sam insert, ten spy rzuca — test i tak by już
@@ -82,7 +98,10 @@ const {
     );
   });
 
-  const leadyInsertSpy = vi.fn(async () => ({ error: null }));
+  // Kształt bez zmian (insert na `leady` już dziś nie ma `.select()`) — jedyna zmiana to
+  // jawny typ parametru, potrzebny, żeby nowe asercje (na końcu pliku) mogły bezpiecznie
+  // odczytać `adres_id`/`klient_id` z przekazanego wiersza.
+  const leadyInsertSpy = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
 
   const calendarSpy = vi.fn(async () => ({ success: true, eventLink: 'stub' }));
 
@@ -118,6 +137,11 @@ const basePayload = () => ({
   bookingSlot: '08:00 - 10:00',
   triageData: {},
 });
+
+// Kształt UUID v4 (i wariantów RFC 4122 ogólnie — nie wymuszamy wersji/wariantu w bitach
+// kontrolnych, wystarczy odróżnić od pustego stringa/placeholdera) zwracanego przez
+// `crypto.randomUUID()`.
+const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 describe('saveLead — persystencja współrzędnych adresu (WO B2C-LEAD-GEO-PERSIST)', () => {
   beforeEach(() => {
@@ -175,6 +199,12 @@ describe('saveLead — persystencja współrzędnych adresu (WO B2C-LEAD-GEO-PER
     // Polska nigdy nie leży na zerowym południku (WO) — 0 jest tu wyłącznie sondą operatora.
     await saveLead({ ...basePayload(), lat: 0, lng: 21.0122287 });
 
+    // Guard (SEC-RLS-BASELINE): bez tej asercji, jeśli implementacja jeszcze woła
+    // `.select()` na mocku bez tej metody i cała operacja pada wcześniej, indeksowanie
+    // `mock.calls[0][0]` niżej rzuca surowy `TypeError` zamiast czytelnej asercji —
+    // ten guard zamienia to na jednoznaczny, czytelny fail.
+    expect(adresyInsertSpy).toHaveBeenCalledTimes(1);
+
     const insertArg = adresyInsertSpy.mock.calls[0][0];
 
     expect(insertArg.latitude).not.toBeNull();
@@ -199,11 +229,63 @@ describe('saveLead — persystencja współrzędnych adresu (WO B2C-LEAD-GEO-PER
 
     await saveLead(payload as unknown as Parameters<typeof saveLead>[0]);
 
+    // Guard (SEC-RLS-BASELINE) — patrz uzasadnienie w teście AC4 powyżej.
+    expect(adresyInsertSpy).toHaveBeenCalledTimes(1);
+
     const insertArg = adresyInsertSpy.mock.calls[0][0];
 
     expect(typeof insertArg.latitude).toBe('number');
     expect(insertArg.latitude).toBe(52.2296756);
     expect(typeof insertArg.longitude).toBe('number');
     expect(insertArg.longitude).toBe(21.0122287);
+  });
+
+  // Poniższe dwa testy NIE mają `@REQ:` — nie są częścią żadnego Work Orderu (patrz
+  // addendum na górze pliku: to następstwo naprawy `SEC-RLS-BASELINE`, zgłoszone wprost
+  // jako zadanie poza WO). Umieszczone jako osobne `it()`, nie dopisane do AC1: AC1
+  // dowodzi geokodowania (latitude/longitude — logika, która się NIE zmienia), a te dwa
+  // testy dowodzą czegoś innego — że `id` powiązań między `klienci`/`adresy`/`leady` jest
+  // generowane W KODZIE i świadomie przekazywane dalej, a nie odczytywane z odpowiedzi
+  // insertu (`.select().single()`), której po naprawie RLS już nie ma. Osobne `it()`
+  // dają też niezależne, czytelne komunikaty błędu dla dwóch różnych twierdzeń (kształt
+  // UUID kontra spójność powiązań), zamiast maskowania drugiego przez pierwsze w jednym
+  // teście.
+
+  it('id przekazane jako klient_id do insertu na adresy jest DOKŁADNIE tym samym id, które trafiło do insertu na klienci — a leady.klient_id/adres_id zgadzają się analogicznie z klienci/adresy (nie coś odczytane z odpowiedzi insertu)', async () => {
+    await saveLead({ ...basePayload(), lat: 52.2296756, lng: 21.0122287 });
+
+    expect(klienciInsertSpy).toHaveBeenCalledTimes(1);
+    const klientRow = klienciInsertSpy.mock.calls[0][0];
+
+    expect(adresyInsertSpy).toHaveBeenCalledTimes(1);
+    const adresRow = adresyInsertSpy.mock.calls[0][0];
+
+    // Sedno tej zmiany: adresy.klient_id to TO SAMO id co w insercie klienci —
+    // implementacja musi przekazać wygenerowane id dalej samodzielnie, bo po naprawie
+    // RLS nic go już nie odczyta zwrotnie z odpowiedzi bazy (insert nie ma `.select()`).
+    expect(adresRow.klient_id).toBe(klientRow.id);
+
+    expect(leadyInsertSpy).toHaveBeenCalledTimes(1);
+    const leadRow = leadyInsertSpy.mock.calls[0][0];
+
+    expect(leadRow.klient_id).toBe(klientRow.id);
+    expect(leadRow.adres_id).toBe(adresRow.id);
+  });
+
+  it('id przekazane do insertu klienci/adresy wygląda jak UUID (dowód, że to crypto.randomUUID(), nie pusty string ani inny placeholder)', async () => {
+    await saveLead({ ...basePayload(), lat: 52.2296756, lng: 21.0122287 });
+
+    expect(klienciInsertSpy).toHaveBeenCalledTimes(1);
+    const klientRow = klienciInsertSpy.mock.calls[0][0];
+    // `typeof` osobno od `toMatch()`: `toMatch()` sam waliduje typ argumentu i rzuca
+    // `TypeError` zamiast `AssertionError`, gdy dostanie `undefined` — ten guard daje
+    // czytelną, jednoznaczną asercję zamiast błędu wewnętrznego matchera.
+    expect(typeof klientRow.id).toBe('string');
+    expect(klientRow.id).toMatch(UUID_SHAPE);
+
+    expect(adresyInsertSpy).toHaveBeenCalledTimes(1);
+    const adresRow = adresyInsertSpy.mock.calls[0][0];
+    expect(typeof adresRow.id).toBe('string');
+    expect(adresRow.id).toMatch(UUID_SHAPE);
   });
 });

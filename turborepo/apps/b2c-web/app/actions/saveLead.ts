@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { supabase } from "@/lib/supabaseClient";
 import { createCalendarEvent } from "./calendar";
 
@@ -26,30 +27,34 @@ function toNullableCoordinate(value: number | string | undefined): number | null
 export async function saveLead(data: SaveLeadData) {
   try {
     // 1. Zapisz klienta
-    const { data: klient, error: klientError } = await supabase
+    // SEC-RLS-BASELINE: `id` generowane tu, nie odczytywane przez `.select().single()`
+    // (INSERT ... RETURNING) — `anon` ma na `klienci` wyłącznie politykę INSERT, nie SELECT,
+    // żeby REST API nie ujawniało danych kontaktowych wszystkich klientów.
+    const klientId = randomUUID();
+    const { error: klientError } = await supabase
       .from('klienci')
       .insert({
+        id: klientId,
         imie_i_nazwisko: data.name,
         email: data.email,
         telefon: data.phone
-      })
-      .select('id')
-      .single();
+      });
 
     if (klientError) throw new Error(`Błąd tworzenia klienta: ${klientError.message}`);
 
     // 2. Zapisz adres powiązany z klientem (FLD-GEO-COORDS: latitude/longitude w
     // TYM SAMYM insercie co reszta adresu — B2C-LEAD-ATOMIC).
-    const { data: adres, error: adresError } = await supabase
+    // SEC-RLS-BASELINE: analogicznie do klienci — `id` generowane tu, brak `.select()`.
+    const adresId = randomUUID();
+    const { error: adresError } = await supabase
       .from('adresy')
       .insert({
-        klient_id: klient.id,
+        id: adresId,
+        klient_id: klientId,
         ulica_miasto: data.address,
         latitude: toNullableCoordinate(data.lat),
         longitude: toNullableCoordinate(data.lng)
-      })
-      .select('id')
-      .single();
+      });
 
     if (adresError) throw new Error(`Błąd tworzenia adresu: ${adresError.message}`);
 
@@ -71,8 +76,8 @@ export async function saveLead(data: SaveLeadData) {
     const { error: leadError } = await supabase
       .from('leady')
       .insert({
-        klient_id: klient.id,
-        adres_id: adres.id,
+        klient_id: klientId,
+        adres_id: adresId,
         odpowiedzi_triage: data.triageData,
         estymowana_wycena: estimatedQuote,
         status: 'NEW_LEAD',
