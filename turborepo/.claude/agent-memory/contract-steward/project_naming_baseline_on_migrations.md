@@ -27,3 +27,20 @@ człowiekowi w podsumowaniu dokładną liczbę oraz gotową komendę. Sam baseli
 w rejestrze długu, czyli decyzja człowieka, a przy okazji jedyny moment, w którym ktoś patrzy, czy przyrost
 to faktycznie referencje do starych nazw, a nie nowa polska nazwa przemycona do schematu.
 Powiązane: [[precommit-absolute-debt]], [[contract-write-blocker]].
+
+**Cennik trafień (zmierzone 2026-08-24, `SEC-RLS-BASELINE`, delta +21 z jednego pliku):** skaner
+liczy WYŁĄCZNIE linie kodu — komentarze `--` w `.sql` są pomijane, więc nagłówek migracji może
+swobodnie wymieniać `klienci`/`leady`/`audytorzy` w uzasadnieniu i nie kosztuje ani jednego trafienia.
+Koszt to funkcja liczby STATEMENTÓW: tabela z polityką = 3 trafienia (`ALTER` + `DROP POLICY`
++ `CREATE POLICY`), tabela z samym `ENABLE ROW LEVEL SECURITY` = 1. Praktyczny wniosek: nie ma sensu
+skracać komentarzy, żeby ratować licznik — trzeba skracać liczbę odwołań w SQL, a tych zwykle skrócić
+się nie da.
+
+**Pułapka przy raportowaniu (2026-08-22, WO FLD-AVAILABILITY-SPLIT uzup.):** `--check-baseline` podaje
+deltę ZBIORCZĄ dla całego drzewa roboczego, więc miesza moje pliki z niezacommitowaną pracą
+`implementer-server` i `test-author`. Przykład: łączna delta +26, z czego moja migracja to +2 — reszta
+siedziała w `tests/availability-*.test.ts` i `(dashboard)/{auditors,crews}/actions.ts`. Zawsze rozbijam
+liczbę per plik i podaję człowiekowi WŁASNY wkład osobno, inaczej wygląda to jak regres spowodowany
+zmianą kontraktu. Sama migracja dokładająca tylko `CREATE UNIQUE INDEX` kosztuje +2 (po jednym `ON public.<tabela>`);
+komentarze po polsku nie podbijają licznika, dopóki nie zawierają porzuconej nazwy tabeli — `schema.prisma`
+z samym `@unique` miał deltę 0.
