@@ -449,12 +449,12 @@ export async function advanceLeadStatus(leadId: string, targetStatus: LeadStatus
  * w akcji destrukcyjnej, zgodnie z PERMISSIONS.leads.delete = ['admin'].
  */
 export async function deleteLeadAction(id: string): Promise<{ success: boolean; error?: string }> {
-  const actorRole = await getCurrentActorRole();
-  if (!actorRole || can(actorRole, "leads", "delete") !== "yes") {
-    return { success: false, error: "Brak uprawnień do usunięcia leada." };
-  }
-
   try {
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, "leads", "delete") !== "yes") {
+      return { success: false, error: "Brak uprawnień do usunięcia leada." };
+    }
+
     await prisma.leady.delete({
       where: { id }
     });

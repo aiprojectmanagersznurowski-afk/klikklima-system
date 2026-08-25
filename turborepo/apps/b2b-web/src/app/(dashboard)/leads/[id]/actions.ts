@@ -1,15 +1,26 @@
 "use server";
 import { prisma } from "@repo/database";
 import { revalidatePath } from "next/cache";
+import { can } from "@klikklima/contracts";
+import { getCurrentActorRole } from "../../../../utils/supabase/server";
 
 /**
  * BLOCKER 4 (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #1, AC1.6): pula wyboru w UI
  * (getAuditors() w leads/actions.ts) już wyklucza zablokowanych audytorów, ale
  * to nie chroni przed żądaniem wysłanym wprost do tej Server Action z pominięciem
  * UI — trzeba odrzucić przypisanie zablokowanego audytora również tutaj.
+ *
+ * CRM-LEAD-UPDATE-ADMIN-DISPATCHER: Prisma omija RLS — sprawdzenie roli musi być
+ * jawne, PRZED jakimkolwiek zapytaniem do Prismy. PERMISSIONS.leads.update =
+ * ['admin', 'dyspozytor'].
  */
 export async function updateLeadAuditor(leadId: string, audytorId: string | null) {
   try {
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+      return { success: false, error: "Brak uprawnień do edycji leada." };
+    }
+
     const lead = await prisma.leady.findUnique({ where: { id: leadId } });
     if (!lead) return { success: false, error: "Lead not found" };
 
@@ -57,6 +68,11 @@ export async function updateLeadData(
   }
 ) {
   try {
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+      return { success: false, error: "Brak uprawnień do edycji leada." };
+    }
+
     const lead = await prisma.leady.findUnique({
       where: { id: leadId },
       include: { klient: true, adres: true }
@@ -122,19 +138,6 @@ export async function updateLeadData(
   } catch (error) {
     console.error("Failed to update lead data:", error);
     return { success: false, error: "Nie udało się zapisać danych." };
-  }
-}
-
-export async function deleteLead(leadId: string) {
-  try {
-    await prisma.leady.delete({
-      where: { id: leadId },
-    });
-    revalidatePath("/leads");
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to delete lead:", error);
-    return { success: false, error: "Nie udało się usunąć leada." };
   }
 }
 

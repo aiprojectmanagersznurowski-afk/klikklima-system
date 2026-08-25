@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-25T17:04:41.919Z",
+  "generatedAt": "2026-08-25T17:26:17.812Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 12,
@@ -27,7 +27,7 @@
     "apps/b2b-web/src/app/(dashboard)/installations/installations-client.tsx::adr002-pl-tables": 1,
     "apps/b2b-web/src/app/(dashboard)/layout.tsx::adr002-pl-tables": 1,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/actions.ts::adr002-pl-columns": 8,
-    "apps/b2b-web/src/app/(dashboard)/leads/[id]/actions.ts::adr002-pl-tables": 10,
+    "apps/b2b-web/src/app/(dashboard)/leads/[id]/actions.ts::adr002-pl-tables": 9,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/assign-auditor.tsx::adr002-pl-columns": 5,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/page.tsx::adr002-pl-columns": 8,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/page.tsx::adr002-pl-tables": 5,
@@ -57,10 +57,13 @@
     "apps/b2b-web/tests/leads-archive-lost.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/leads-auditor-pool.test.ts::adr002-pl-columns": 1,
     "apps/b2b-web/tests/leads-auditor-pool.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/leads-delete-admin-only.test.ts::adr002-pl-tables": 1,
     "apps/b2b-web/tests/leads-pool-minimize.test.ts::adr002-pl-columns": 23,
     "apps/b2b-web/tests/leads-pool-minimize.test.ts::adr002-pl-tables": 7,
     "apps/b2b-web/tests/leads-return-to-funnel.test.ts::adr002-pl-columns": 2,
     "apps/b2b-web/tests/leads-return-to-funnel.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/leads-update-data-gate.test.ts::adr002-pl-columns": 4,
+    "apps/b2b-web/tests/leads-update-data-gate.test.ts::adr002-pl-tables": 3,
     "apps/b2b-web/tests/legal-document-consent.test.ts::adr002-pl-tables": 3,
     "apps/b2b-web/tests/middleware-auditor-blocked.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/storage-signed-urls.test.ts::adr002-pl-tables": 6,
@@ -109,5 +112,5 @@
     "supabase/migrations/20260824185845_security_enable_rls_baseline.sql::adr002-pl-tables": 21,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1355
+  "total": 1362
 }

@@ -3,7 +3,7 @@
 import React, { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, Loader2 } from "lucide-react";
-import { deleteLead } from "./actions";
+import { deleteLeadAction } from "../actions";
 import { useRouter } from "next/navigation";
 
 export function DeleteLeadButton({ leadId }: { leadId: string }) {
@@ -13,7 +13,7 @@ export function DeleteLeadButton({ leadId }: { leadId: string }) {
   const handleDelete = () => {
     if (confirm("Czy na pewno chcesz trwale usunąć tego leada?")) {
       startTransition(async () => {
-        const res = await deleteLead(leadId);
+        const res = await deleteLeadAction(leadId);
         if (res.success) {
           router.push("/leads");
         } else {
