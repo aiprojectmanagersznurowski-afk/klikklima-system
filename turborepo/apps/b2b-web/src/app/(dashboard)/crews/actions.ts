@@ -48,12 +48,31 @@ export async function getCrews(): Promise<CrewSummary[]> {
   }));
 }
 
-export async function updateCrewAvatar(crewId: string, path: string) {
-  await prisma.zespoly_monterskie.update({
-    where: { id: crewId },
-    data: { zdjecie_url: path }
-  });
-  revalidatePath('/crews');
+export type UpdateCrewAvatarResult = { success: boolean; error?: string };
+
+/**
+ * CRM-CREW-UPDATE-ADMIN-ONLY: aktualizacja zdjęcia ekipy wyłącznie dla admina —
+ * rola pochodzi z sesji serwera (`getCurrentActorRole()`), nigdy z argumentu
+ * wywołania (Prisma omija RLS, klient mógłby podać dowolną rolę wprost z
+ * przeglądarki). Wzorem `deleteAuditorAction`/`toggleAuditorActiveAction`.
+ */
+export async function updateCrewAvatar(crewId: string, path: string): Promise<UpdateCrewAvatarResult> {
+  try {
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, 'crews', 'update') !== 'yes') {
+      return { success: false, error: "Brak uprawnień do zmiany zdjęcia ekipy." };
+    }
+
+    await prisma.zespoly_monterskie.update({
+      where: { id: crewId },
+      data: { zdjecie_url: path }
+    });
+    revalidatePath('/crews');
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update crew avatar:", error);
+    return { success: false, error: "Wystąpił błąd podczas zapisu zdjęcia ekipy." };
+  }
 }
 
 export type SetSelfAvailabilityResult = { success: boolean; error?: string; isAvailable?: boolean };
@@ -104,9 +123,71 @@ export async function setSelfAvailabilityAction(
   return { success: true, isAvailable: declaration.isAvailable };
 }
 
-export async function deleteCrewAction(id: string) {
-  await prisma.zespoly_monterskie.delete({
-    where: { id }
-  });
-  revalidatePath('/crews');
+export type DeleteCrewResult = {
+  success: boolean;
+  error?: string;
+  blockingInstallations?: { id: string; status: string }[];
+};
+
+/**
+ * Statusy instalacji, które blokują usunięcie ekipy (D-DELETE-POLICIES,
+ * strategy: BLOCK_UNTIL_REASSIGNED). `InstallationStatus` jest enumem Prisma
+ * (schema.prisma), nie eksportem @klikklima/contracts — kontrakt obejmuje
+ * maszynę stanów lejka/SLA/RBAC/powiadomienia, nie każdy enum bazy.
+ */
+const BLOCKING_INSTALLATION_STATUSES = ["PLANNED", "IN_PROGRESS"] as const;
+
+/**
+ * CRM-DELETE-ADMIN-ONLY (crews): usuwa ekipę, o ile nie ma przy niej
+ * blokujących instalacji (PLANNED/IN_PROGRESS). Sprawdzenie roli
+ * (PERMISSIONS.crews.delete = ['admin']) i sprawdzenie blokujących instalacji
+ * muszą żyć w JEDNEJ transakcji Prisma z samym DELETE — przepięcie ostatniej
+ * instalacji i usunięcie ekipy zlecone równolegle nie mogą się zazębić.
+ * Wzorem `deleteAuditorAction` (auditors/actions.ts).
+ */
+export async function deleteCrewAction(id: string): Promise<DeleteCrewResult> {
+  try {
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, 'crews', 'delete') !== 'yes') {
+      return { success: false, error: "Brak uprawnień do usunięcia ekipy." };
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const crew = await tx.zespoly_monterskie.findUnique({
+        where: { id },
+        include: { instalacje: true },
+      });
+
+      if (!crew) {
+        return { success: false, error: "Ekipa nie została znaleziona." };
+      }
+
+      const blockingInstallations = crew.instalacje.filter((installation: { status: string | null }) =>
+        BLOCKING_INSTALLATION_STATUSES.includes(installation.status as (typeof BLOCKING_INSTALLATION_STATUSES)[number])
+      );
+
+      if (blockingInstallations.length > 0) {
+        return {
+          success: false,
+          error: "Nie można usunąć ekipy — ma przypisane aktywne instalacje. Przepnij je najpierw na inną ekipę.",
+          blockingInstallations: blockingInstallations.map((installation: { id: string; status: string | null }) => ({
+            id: installation.id,
+            status: installation.status ?? '',
+          })),
+        };
+      }
+
+      await tx.zespoly_monterskie.delete({ where: { id } });
+      return { success: true };
+    });
+
+    if (result.success) {
+      revalidatePath('/crews');
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Failed to delete crew:", error);
+    return { success: false, error: "Wystąpił błąd podczas usuwania ekipy." };
+  }
 }
