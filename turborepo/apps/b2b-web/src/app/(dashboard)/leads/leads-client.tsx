@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LeadStatus, Prisma, audytorzy as Auditor } from "@repo/database";
+import { LeadStatus, Prisma } from "@repo/database";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import Link from "next/link";
@@ -30,14 +30,32 @@ import { can, type Role } from "@klikklima/contracts";
  * osobnych rzutowań przez `any` na dostęp do relacji, typujemy je raz przez
  * `Prisma.leadyGetPayload`.
  */
-type Lead = Prisma.leadyGetPayload<{
-  include: {
-    klient: true;
-    adres: true;
-    instalacje: { include: { zespol: true } };
-    audytor: true;
-  };
-}>;
+type Lead = Omit<
+  Prisma.leadyGetPayload<{
+    include: {
+      klient: true;
+      adres: true;
+      instalacje: { include: { zespol: true } };
+      audytor: true;
+    };
+  }>,
+  "audytor"
+> & {
+  // SEC-ASSIGNMENT-POOL-MINIMIZE: zawężenie WYŁĄCZNIE tego pola — `audytor.iban`/`nip`/
+  // itd. nie mają prawa trafić do klienta. `getLeads()` (osobny przeciek, poza zakresem)
+  // nadal woła `include: { audytor: true }`, więc runtime kształt jest szerszy niż typ —
+  // to świadome zawężenie granicy, nie zmiana zapytania.
+  audytor: { id: string; imie_i_nazwisko: string } | null;
+};
+
+/**
+ * SEC-ASSIGNMENT-POOL-MINIMIZE: `getAuditors()` (leads/actions.ts) zwraca od tej
+ * zmiany wyłącznie {id, imie_i_nazwisko, zdjecie_url}, nie pełny model `audytorzy` —
+ * ten komponent i tak czyta z puli wyłącznie `id`/`imie_i_nazwisko`. Typ musi
+ * odzwierciedlać rzeczywisty, zawężony kształt, inaczej `leads/page.tsx` przekazujący
+ * wynik `getAuditors()` w tym propie nie skompiluje się.
+ */
+type AuditorPoolEntry = { id: string; imie_i_nazwisko: string; zdjecie_url: string | null };
 
 type StageFilter = LeadStatus | "ALL";
 
@@ -106,7 +124,7 @@ export function LeadsClient({
   actorRole,
 }: {
   initialLeads: Lead[];
-  auditors: Auditor[];
+  auditors: AuditorPoolEntry[];
   totalPages: number;
   currentPage: number;
   initialStatus: StageFilter;

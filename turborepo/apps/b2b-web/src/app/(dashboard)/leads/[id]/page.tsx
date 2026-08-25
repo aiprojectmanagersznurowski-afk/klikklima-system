@@ -102,7 +102,8 @@ export default async function LeadDetailsPage({
   const signedUrlsMap = await signStoragePaths("audytorzy", auditorPaths, 60 * 60);
 
   const auditorsWithAvatars = audytorzy.map((auditor) => ({
-    ...auditor,
+    id: auditor.id,
+    imie_i_nazwisko: auditor.imie_i_nazwisko,
     avatarUrl: auditor.zdjecie_url ? signedUrlsMap[auditor.zdjecie_url as string] : null,
   }));
 

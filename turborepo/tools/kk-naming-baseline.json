@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-25T12:12:16.137Z",
+  "generatedAt": "2026-08-25T14:15:13.203Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 11,
@@ -28,15 +28,14 @@
     "apps/b2b-web/src/app/(dashboard)/layout.tsx::adr002-pl-tables": 1,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/actions.ts::adr002-pl-columns": 8,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/actions.ts::adr002-pl-tables": 10,
-    "apps/b2b-web/src/app/(dashboard)/leads/[id]/assign-auditor.tsx::adr002-pl-columns": 4,
-    "apps/b2b-web/src/app/(dashboard)/leads/[id]/assign-auditor.tsx::adr002-pl-tables": 2,
-    "apps/b2b-web/src/app/(dashboard)/leads/[id]/page.tsx::adr002-pl-columns": 7,
+    "apps/b2b-web/src/app/(dashboard)/leads/[id]/assign-auditor.tsx::adr002-pl-columns": 5,
+    "apps/b2b-web/src/app/(dashboard)/leads/[id]/page.tsx::adr002-pl-columns": 8,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/page.tsx::adr002-pl-tables": 5,
-    "apps/b2b-web/src/app/(dashboard)/leads/actions.ts::adr002-pl-columns": 14,
+    "apps/b2b-web/src/app/(dashboard)/leads/actions.ts::adr002-pl-columns": 21,
     "apps/b2b-web/src/app/(dashboard)/leads/actions.ts::adr002-pl-tables": 24,
     "apps/b2b-web/src/app/(dashboard)/leads/assign-crew-dialog.tsx::adr002-pl-columns": 4,
-    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-columns": 13,
-    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-tables": 4,
+    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-columns": 15,
+    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-tables": 3,
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-tables": 11,
     "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-columns": 2,
@@ -53,9 +52,13 @@
     "apps/b2b-web/tests/crews-admin-gates.test.ts::adr002-pl-tables": 10,
     "apps/b2b-web/tests/crews-cert-availability.test.ts::adr002-pl-columns": 2,
     "apps/b2b-web/tests/crews-cert-availability.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/lead-detail-page-pool-spread.test.ts::adr002-pl-columns": 19,
+    "apps/b2b-web/tests/lead-detail-page-pool-spread.test.ts::adr002-pl-tables": 13,
     "apps/b2b-web/tests/leads-archive-lost.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/leads-auditor-pool.test.ts::adr002-pl-columns": 1,
     "apps/b2b-web/tests/leads-auditor-pool.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/leads-pool-minimize.test.ts::adr002-pl-columns": 23,
+    "apps/b2b-web/tests/leads-pool-minimize.test.ts::adr002-pl-tables": 7,
     "apps/b2b-web/tests/leads-return-to-funnel.test.ts::adr002-pl-columns": 2,
     "apps/b2b-web/tests/leads-return-to-funnel.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/middleware-auditor-blocked.test.ts::adr002-pl-tables": 2,
@@ -105,5 +108,5 @@
     "supabase/migrations/20260824185845_security_enable_rls_baseline.sql::adr002-pl-tables": 21,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1280
+  "total": 1350
 }

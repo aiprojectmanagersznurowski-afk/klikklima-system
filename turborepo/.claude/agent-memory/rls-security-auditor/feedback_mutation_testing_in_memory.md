@@ -1,6 +1,6 @@
 ---
 name: feedback-mutation-testing-in-memory
-description: Jak robić testy mutacyjne Server Action BEZ zapisu do repo — przepis (typescript transpileModule + new Function) i lista mutantów, które musi zabić każda bateria testów bramki roli
+description: Jak robić testy mutacyjne Server Action BEZ zapisu do repo — przepis (typescript transpileModule + new Function) oraz listy mutantów dla bramki roli i dla minimalizacji danych (select/kształt)
 metadata:
   type: feedback
 ---
@@ -43,3 +43,22 @@ wewnątrz używaj template literals, nie `\"`), a w skrypcie:
   uprawnienia na podmienionym zasobie;
 - przesunięcie zapytania Prismy PRZED bramkę — dowodzi, że asercje „`findUnique` nie został
   wywołany" realnie pilnują kolejności, a nie są ozdobą.
+
+**Minimalna lista mutantów dla minimalizacji danych** (`select` + zawężający `map`, wymagania
+klasy SEC-…-MINIMIZE; zwalidowana 2026-08-25 na SEC-ASSIGNMENT-POOL-MINIMIZE, baseline 0/9):
+- **`select` usunięty, `map` zostaje** — najważniejszy. Wynik jest identycznie wąski, więc
+  KAŻDY test kształtu przechodzi. Zabija go WYŁĄCZNIE asercja na argumentach zapytania
+  (`findManyMock.mock.calls[0][0].select`). Bateria bez tej asercji jest ślepa na kod, który
+  wciąga IBAN do pamięci serwera i dopiero potem go odrzuca;
+- **`select` dociąga jedno pole wrażliwe, `map` bez zmian** — jak wyżej, ten sam jedyny zabójca;
+- **`map` → `({ ...a })`** — zabija go tylko porównanie ZBIORÓW kluczy; asercja „żaden klucz
+  nie jest wrażliwy" go przepuszcza, gdy dołożone pola są niewrażliwe (`is_active`,
+  `availability_declaration`). To empiryczny dowód, po co kontrakt żąda równości zbiorów;
+- **usunięcie filtra biznesowego przy zachowanym zawężeniu** (dostępność pracownika, ważność
+  certyfikatu) — zawężanie kolumn to dokładnie ta klasa zmiany, przy której filtr znika
+  bezgłośnie, bo zniknięcie nie psuje kompilacji. Testy filtrów muszą być w tej samej baterii;
+- **funkcja zwraca `[]`** — kontrola pozytywna; bez niej cały zestaw przechodzi dla naprawy,
+  która zabiera użytkownikowi możliwość wyboru.
+Warstwę „props z Server Componentu do komponentu klienckiego" testuj osobno: wystarczy
+przepisać inline samo wyrażenie budujące propsy i puścić przez nie wariant `{...x, extra}`
+i wariant z jawnym wyliczeniem pól — nie trzeba odtwarzać mockowania modułów z vitest.

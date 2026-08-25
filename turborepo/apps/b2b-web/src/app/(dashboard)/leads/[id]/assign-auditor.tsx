@@ -4,9 +4,10 @@ import React, { useState, useTransition } from "react";
 import { updateLeadAuditor } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, UserPlus } from "lucide-react";
-import { audytorzy } from "@repo/database";
 
-export function AssignAuditor({ leadId, currentAuditorId, auditors }: { leadId: string; currentAuditorId: string | null; auditors: audytorzy[] }) {
+type AssignableAuditor = { id: string; imie_i_nazwisko: string; avatarUrl: string | null };
+
+export function AssignAuditor({ leadId, currentAuditorId, auditors }: { leadId: string; currentAuditorId: string | null; auditors: AssignableAuditor[] }) {
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
   const [optimisticAuditor, setOptimisticAuditor] = useState(currentAuditorId);
@@ -42,8 +43,8 @@ export function AssignAuditor({ leadId, currentAuditorId, auditors }: { leadId: 
               >
                 <div className="flex items-center gap-2">
                   <div className="flex-shrink-0 h-6 w-6">
-                    {(auditor as any).avatarUrl ? (
-                      <img className="h-6 w-6 rounded-full object-cover" src={(auditor as any).avatarUrl} alt={auditor.imie_i_nazwisko} />
+                    {auditor.avatarUrl ? (
+                      <img className="h-6 w-6 rounded-full object-cover" src={auditor.avatarUrl} alt={auditor.imie_i_nazwisko} />
                     ) : (
                       <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
                         <span className="text-blue-600 font-semibold text-[10px]">
@@ -75,8 +76,8 @@ export function AssignAuditor({ leadId, currentAuditorId, auditors }: { leadId: 
             {optimisticAuditor ? (
               <div className="flex items-center gap-3">
                 <div className="flex-shrink-0 h-8 w-8">
-                  {(auditors.find((a) => a.id === optimisticAuditor) as any)?.avatarUrl ? (
-                    <img className="h-8 w-8 rounded-full object-cover" src={(auditors.find((a) => a.id === optimisticAuditor) as any)?.avatarUrl} alt={currentAuditorName} />
+                  {auditors.find((a) => a.id === optimisticAuditor)?.avatarUrl ? (
+                    <img className="h-8 w-8 rounded-full object-cover" src={auditors.find((a) => a.id === optimisticAuditor)?.avatarUrl ?? undefined} alt={currentAuditorName} />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
                       {currentAuditorName?.charAt(0)}
