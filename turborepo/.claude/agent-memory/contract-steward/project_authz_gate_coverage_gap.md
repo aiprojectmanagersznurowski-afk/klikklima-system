@@ -30,6 +30,15 @@ importował już `can` i `getCurrentActorRole` na potrzeby `setSelfAvailabilityA
 Obecność `can(` w pliku NIE dowodzi więc, że plik jest pokryty — przyszła reguła skanu musi liczyć
 wywołania per akcja mutująca, nie per plik, inaczej przepuści dokładnie ten przypadek.
 
+Czwarte wystąpienie (2026-08-25, `CRM-LEAD-UPDATE-ADMIN-DISPATCHER`): luka siedziała w pliku
+BLIŹNIACZYM wobec już naprawionego — `leads/actions.ts` sprawdza rolę w trzech akcjach,
+a `leads/[id]/actions.ts` w żadnej z trzech. Retrofit szedł po plikach otwartych w review, nie po
+zasobach z macierzy, więc segment ścieżki (`[id]/`) wystarczył, żeby plik wypadł z zakresu.
+Przy tej okazji: zdolność `assign` istnieje w `Capability` i w macierzy (`leads.assign = [admin]`,
+`bookings.assign`), ale ŻADEN kod w repo nie woła `can()` z tą zdolnością — przypisania idą przez
+`update`, co przy `leads` daje inny zestaw ról (admin+dyspozytor) niż `assign` (admin). To otwarte
+pytanie dla człowieka, nie defekt do cichej naprawy podmianą argumentu.
+
 **How to apply:** Przy każdym wymaganiu dotyczącym uprawnień pytaj osobno „czy macierz to mówi"
 i „czy jakikolwiek kod to czyta" — to dwa różne stany i pierwszy bywa zielony przy drugim
 pustym. Jeżeli kiedyś powstanie WO na regułę skanu (Server Action mutująca zasób z `RESOURCES`
