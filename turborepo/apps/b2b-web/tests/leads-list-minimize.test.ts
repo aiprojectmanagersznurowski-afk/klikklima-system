@@ -84,6 +84,7 @@ const SENSITIVE_FIELD_NAMES = new Set([
 const CLIENT_KEYS = ['id', 'imie_i_nazwisko'];
 const ADDRESS_KEYS = ['ulica_miasto'];
 const CREW_IN_INSTALLATION_KEYS = ['nazwa'];
+const AUDITOR_KEYS = ['id', 'imie_i_nazwisko'];
 
 /** Rekord klienta TAKI, JAKI DZIŚ zwraca `include: { klient: true }` bez select — komplet
  * kolumn kontaktowych i osobowych. */
@@ -128,13 +129,29 @@ const fullInstallationRecord = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+/** Rekord audytora TAKI, JAKI DZIŚ zwróciłoby `audytor: true` (mutant SEC-ASSIGNMENT-POOL-
+ * MINIMIZE) — komplet danych osobowych/rozliczeniowych, których lista dyspozytora nie ma
+ * prawa nieść (por. fullCrewRecord powyżej, ta sama luka co dla zespol_id). Używany tu
+ * WYŁĄCZNIE jako fixture wejściowa (co zwróciłby Prisma bez select) — asercje sprawdzają,
+ * że `getLeads()` i sam kształt zapytania to zawężają, niezależnie od tego, co zwróci mock. */
+const fullAuditorRecord = (overrides: Record<string, unknown> = {}) => ({
+  id: 'audytor-1',
+  imie_i_nazwisko: 'Jan Kowalski',
+  telefon: '+48601333444',
+  email: 'jan.kowalski@klikklima.pl',
+  iban: 'PL61109010140000071219812874',
+  nip: '1234567890',
+  is_active: true,
+  ...overrides,
+});
+
 const fullLeadRecord = (overrides: Record<string, unknown> = {}) => ({
   id: 'lead-1',
   status: 'AWAITING_CREW_ASSIGNMENT',
   klient: fullClientRecord(),
   adres: fullAddressRecord(),
   instalacje: [fullInstallationRecord()],
-  audytor: null,
+  audytor: fullAuditorRecord(),
   ...overrides,
 });
 
@@ -177,6 +194,21 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
 
     const zespol = leads[0].instalacje[0].zespol as object;
     expect(new Set(Object.keys(zespol))).toEqual(new Set(CREW_IN_INSTALLATION_KEYS));
+  });
+
+  // Domknięcie luki z recenzji rls-security-auditor po SEC-LEADS-LIST-MINIMIZE: `audytor`
+  // jest już zawężony przez SEC-ASSIGNMENT-POOL-MINIMIZE, ale żaden test w TYM zapytaniu
+  // (getLeads(), a nie puli przypisania z leads-pool-minimize.test.ts) tego nie pilnował —
+  // mutant `audytor: true` (pełny rekord z iban/nip/telefon/email) przechodził cały pakiet
+  // bez czerwonego testu. Dowód KSZTAŁTEM (Object.keys jako równość zbiorów), tym samym
+  // wzorem co klient/adres/zespol powyżej — nie samym `toBeUndefined()` na polach wrażliwych.
+  // @REQ: SEC-ASSIGNMENT-POOL-MINIMIZE
+  it('lead.audytor ma DOKŁADNIE zbiór kluczy {id, imie_i_nazwisko} — bez iban/nip/telefon/email', async () => {
+    leadFindManyMock.mockResolvedValue([fullLeadRecord()]);
+
+    const { leads } = await getLeads();
+
+    expect(new Set(Object.keys(leads[0].audytor as object))).toEqual(new Set(AUDITOR_KEYS));
   });
 
   // Kryterium #2: pola wrażliwe nie występują pod ŻADNĄ nazwą — iteracja po kluczach klienta
@@ -246,6 +278,22 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
     for (const key of zespolSelectedKeys) {
       expect(SENSITIVE_FIELD_NAMES.has(key)).toBe(false);
     }
+  });
+
+  // Domknięcie luki z recenzji rls-security-auditor po SEC-LEADS-LIST-MINIMIZE: asercja na
+  // KSZTAŁCIE ARGUMENTÓW wywołania (select.audytor jako obiekt select, nie `true`), nie tylko
+  // na wyjściu funkcji — inaczej mutant `audytor: true` z narrowedLeads.map() jawnie
+  // przycinającym pola mógłby ukryć wyciek na poziomie zapytania (mapowanie jest DRUGĄ
+  // linią obrony, pierwszą jest samo `select` przekazane do Prismy, patrz komentarz w
+  // actions.ts przy SEC-LEADS-LIST-MINIMIZE).
+  // @REQ: SEC-ASSIGNMENT-POOL-MINIMIZE
+  it('prisma.leady.findMany() jest wołane z select.audytor jako obiektem { select: { id, imie_i_nazwisko } }, nie `true`', async () => {
+    leadFindManyMock.mockResolvedValue([fullLeadRecord()]);
+
+    await getLeads();
+
+    const callArgs = leadFindManyMock.mock.calls[0]?.[0] ?? {};
+    expect(callArgs.select.audytor).toEqual({ select: { id: true, imie_i_nazwisko: true } });
   });
 
   // Kryterium #4: where/orderBy/skip/take/groupBy NIETKNIĘTE — zawężenie kolumn nie może

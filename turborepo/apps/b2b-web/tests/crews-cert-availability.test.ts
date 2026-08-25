@@ -168,7 +168,7 @@ describe('assignCrewToLead - walidacja serwerowa przy pominieciu UI (CRM-ZESP-AC
     // Odczyt zespolu wewnatrz assignCrewToLead - ten sam ksztalt zapytania co getCrews,
     // wiec ten sam mock findMany moze posluzyc jako findUnique-like zrodlo danych.
     crewFindManyMock.mockResolvedValue([
-      crewWithCerts({ id: 'crew-1', fgaz_valid_until: new Date('2020-01-01') }),
+      crewWithCerts({ fgaz_valid_until: new Date('2020-01-01') }),
     ]);
 
     const result = await assignCrewToLead('lead-1', 'crew-1');
@@ -186,7 +186,7 @@ describe('assignCrewToLead - walidacja serwerowa przy pominieciu UI (CRM-ZESP-AC
   it('przypadek brzegowy - certyfikat wygasa miedzy wyswietleniem listy a klikni?ciem: serwer odrzuca', async () => {
     leadFindUniqueMock.mockResolvedValue({ id: 'lead-1', status: 'AWAITING_CREW_ASSIGNMENT', data_rezerwacji: INSTALLATION_DATE });
     crewFindManyMock.mockResolvedValue([
-      crewWithCerts({ id: 'crew-1', sep_valid_until: new Date(INSTALLATION_DATE.getTime() - 1) }),
+      crewWithCerts({ sep_valid_until: new Date(INSTALLATION_DATE.getTime() - 1) }),
     ]);
 
     const result = await assignCrewToLead('lead-1', 'crew-1');
