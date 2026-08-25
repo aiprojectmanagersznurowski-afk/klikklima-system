@@ -59,6 +59,13 @@ klasy SEC-…-MINIMIZE; zwalidowana 2026-08-25 na SEC-ASSIGNMENT-POOL-MINIMIZE, 
   bezgłośnie, bo zniknięcie nie psuje kompilacji. Testy filtrów muszą być w tej samej baterii;
 - **funkcja zwraca `[]`** — kontrola pozytywna; bez niej cały zestaw przechodzi dla naprawy,
   która zabiera użytkownikowi możliwość wyboru.
+- **relacja objęta INNYM wymaganiem MINIMIZE** — ślepa plamka między plikami testowymi.
+  Każdy plik testu zawęża sobie zakres zdaniem „to pole jest już domknięte przez inne ID,
+  tu go nie testujemy", a plik tamtego ID mockuje inną funkcję. Efekt: pole jest poprawnie
+  zawężone w kodzie i ZERO testów tego pilnuje. Zweryfikowane 2026-08-25 na
+  SEC-LEADS-LIST-MINIMIZE: `getLeads().audytor` (rozszerzenie z powrotem do `true` przepuszcza
+  `iban`/`nip`/`telefon`/`email` audytora, baterie obu ID zielone). Przy każdym MINIMIZE
+  zmutuj też relacje wyłączone z zakresu — to najtańsze miejsce na regresję.
 Warstwę „props z Server Componentu do komponentu klienckiego" testuj osobno: wystarczy
 przepisać inline samo wyrażenie budujące propsy i puścić przez nie wariant `{...x, extra}`
 i wariant z jawnym wyliczeniem pól — nie trzeba odtwarzać mockowania modułów z vitest.

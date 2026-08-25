@@ -39,12 +39,16 @@ type Lead = Omit<
       audytor: true;
     };
   }>,
-  "audytor"
+  "klient" | "adres" | "instalacje" | "audytor"
 > & {
-  // SEC-ASSIGNMENT-POOL-MINIMIZE: zawężenie WYŁĄCZNIE tego pola — `audytor.iban`/`nip`/
-  // itd. nie mają prawa trafić do klienta. `getLeads()` (osobny przeciek, poza zakresem)
-  // nadal woła `include: { audytor: true }`, więc runtime kształt jest szerszy niż typ —
-  // to świadome zawężenie granicy, nie zmiana zapytania.
+  // SEC-LEADS-LIST-MINIMIZE / SEC-ASSIGNMENT-POOL-MINIMIZE: `getLeads()` zawęża te
+  // cztery relacje przez `select` zagnieżdżony (nie `include` pełnego rekordu) —
+  // dane kontaktowe/rozliczeniowe klienta, ekipy i współrzędne adresu nie mają prawa
+  // trafić do przeglądarki dyspozytora. Typ musi odzwierciedlać rzeczywisty, węższy
+  // kształt zwracany przez zapytanie.
+  klient: { id: string; imie_i_nazwisko: string | null } | null;
+  adres: { ulica_miasto: string | null } | null;
+  instalacje: { zespol: { nazwa: string } | null }[];
   audytor: { id: string; imie_i_nazwisko: string } | null;
 };
 

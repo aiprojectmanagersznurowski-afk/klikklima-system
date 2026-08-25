@@ -293,15 +293,41 @@ export async function getLeads(options?: {
         ],
         skip,
         take: limit,
-        include: {
-          klient: true,
-          adres: true,
+        // SEC-LEADS-LIST-MINIMIZE: `select` zagnieżdżony na każdym poziomie zamiast
+        // `include` pełnych relacji — lista leadów nie ma prawa nieść danych
+        // kontaktowych/rozliczeniowych klienta, ekipy ani współrzędnych adresu.
+        // Pola samego leada NIE są zawężane (wymaganie dotyczy wyłącznie relacji),
+        // więc wypisujemy je wszystkie jawnie, bo `select` (w odróżnieniu od
+        // `include`) nie zwraca skalarów niejawnie.
+        select: {
+          id: true,
+          klient_id: true,
+          adres_id: true,
+          odpowiedzi_triage: true,
+          wybrana_konfiguracja: true,
+          estymowana_wycena: true,
+          status: true,
+          audytor_id: true,
+          data_rezerwacji: true,
+          finalna_wycena_pln: true,
+          przewidywany_czas_montazu: true,
+          notatki_wewnetrzne: true,
+          bucket_entered_at: true,
+          quoted_at: true,
+          lost_reason: true,
+          lost_reason_note: true,
+          auto_rejected_reason: true,
+          last_followup_date: true,
+          created_at: true,
+          updated_at: true,
+          klient: { select: { id: true, imie_i_nazwisko: true } },
+          adres: { select: { ulica_miasto: true } },
           instalacje: {
-            include: {
-              zespol: true
-            }
+            select: {
+              zespol: { select: { nazwa: true } },
+            },
           },
-          audytor: true
+          audytor: { select: { id: true, imie_i_nazwisko: true } },
         }
       }),
       prisma.leady.count({ where }),
@@ -324,8 +350,21 @@ export async function getLeads(options?: {
     const allCount = Object.values(stageCounts).reduce((sum, c) => sum + c, 0);
     stageCounts["ALL"] = allCount;
 
+    // SEC-LEADS-LIST-MINIMIZE: reshape jawnie na wyjściu, spójnie z getAuditors()/
+    // getCrews() w tym pliku — `select` zawęża zapytanie, mapowanie jest drugą linią
+    // obrony (i jedyną, którą widać w testach mockujących samo findMany()).
+    const narrowedLeads = leads.map((lead) => ({
+      ...lead,
+      klient: lead.klient ? { id: lead.klient.id, imie_i_nazwisko: lead.klient.imie_i_nazwisko } : null,
+      adres: lead.adres ? { ulica_miasto: lead.adres.ulica_miasto } : null,
+      instalacje: (lead.instalacje ?? []).map((inst) => ({
+        zespol: inst.zespol ? { nazwa: inst.zespol.nazwa } : null,
+      })),
+      audytor: lead.audytor ? { id: lead.audytor.id, imie_i_nazwisko: lead.audytor.imie_i_nazwisko } : null,
+    }));
+
     return {
-      leads,
+      leads: narrowedLeads,
       totalCount,
       totalPages: Math.ceil(totalCount / limit),
       stageCounts
