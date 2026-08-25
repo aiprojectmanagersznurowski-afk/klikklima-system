@@ -44,3 +44,6 @@ playwright-report/
 .claude/state/run-log.jsonl
 .claude/state/contract-window.json
 .claude/state/current-workorder.json
+
+# Supabase CLI local cache (nie mylić z supabase/migrations/, które JEST śledzone)
+supabase/.temp/

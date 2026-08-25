@@ -77,10 +77,17 @@ function isQuoteStale(quotedAt: Date | null, now: Date): boolean {
  */
 export async function getAuditors() {
   try {
-    return await prisma.audytorzy.findMany({
+    const auditors = await prisma.audytorzy.findMany({
       where: { is_active: true },
-      orderBy: { imie_i_nazwisko: "asc" }
+      orderBy: { imie_i_nazwisko: "asc" },
+      include: { availability_declaration: true },
     });
+
+    // FLD-AVAIL-SELF (AC4, WO FLD-AVAILABILITY-SPLIT): pracownik, który zadeklarował
+    // się jako niedostępny, nie trafia do puli przypisania. Fail-open: brak wiersza
+    // deklaracji = dostępny (odwrotnie niż is_active, gdzie brak/blokada = odmowa) —
+    // inaczej audytor dodany po migracji nigdy nie trafiłby do puli.
+    return auditors.filter((a) => a.availability_declaration?.isAvailable !== false);
   } catch (error) {
     console.error("Failed to fetch auditors:", error);
     return [];
@@ -97,11 +104,18 @@ export async function getCrews(installationDate: Date) {
   try {
     const crews = await prisma.zespoly_monterskie.findMany({
       where: { aktywny: true },
-      orderBy: { nazwa: "asc" }
+      orderBy: { nazwa: "asc" },
+      include: { availability_declaration: true },
     });
 
+    // FLD-AVAIL-SELF (AC4, R3, WO FLD-AVAILABILITY-SPLIT): dokłada się do istniejącego
+    // filtra certyfikatów/aktywny, nie tworzy drugiego, równoległego mechanizmu.
+    // Fail-open: brak wiersza deklaracji = dostępny.
     return crews.filter(
-      (crew) => crew.aktywny && invalidCrewCerts(crew, installationDate).length === 0
+      (crew) =>
+        crew.aktywny &&
+        invalidCrewCerts(crew, installationDate).length === 0 &&
+        crew.availability_declaration?.isAvailable !== false
     );
   } catch (error) {
     console.error("Failed to fetch crews:", error);

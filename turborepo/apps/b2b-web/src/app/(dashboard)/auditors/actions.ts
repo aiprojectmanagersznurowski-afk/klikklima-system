@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { prisma } from "@repo/database"
 import { can } from "@klikklima/contracts"
-import { getCurrentActorRole } from "../../../utils/supabase/server"
+import { getCurrentActorRole, createClient } from "../../../utils/supabase/server"
 
 /**
  * D1 (WO CRM-SAFE-RECORD-ACTIONS): leady "wiszące" przy audytorze to WYŁĄCZNIE te
@@ -83,6 +83,54 @@ export async function toggleAuditorActiveAction(id: string): Promise<ToggleAudit
 
   revalidatePath('/auditors');
   return { success: true, is_active: updated.is_active };
+}
+
+export type SetSelfAvailabilityResult = { success: boolean; error?: string; isAvailable?: boolean };
+
+/**
+ * FLD-AVAIL-SELF / FLD-AVAIL-RESTORE (WO FLD-AVAILABILITY-SPLIT, D-A): audytor
+ * deklaruje WŁASNĄ dostępność operacyjną — rozłączną z `is_active` (blokada
+ * administratora, Z2) i z `leave_status` (kadrowe, też administrator). Zasób RBAC to
+ * `availability_declarations` (rbac.contract.mjs), a `auditors.update` zostaje
+ * wyłącznie ['admin'] — dlatego ta akcja NIGDY nie wywołuje `prisma.audytorzy.update`.
+ *
+ * `can()` przy wariancie `:own` NIE sprawdza właścicielstwa rekordu — robi to ta
+ * akcja: identyfikacja "czyj to rekord" idzie przez e-mail z sesji (wzorem
+ * middleware.ts), a znalezione WŁASNE `id` (nie argument `id`) trafia do zapisu.
+ * Bez tego porównania audytor A mógłby jawnie podać `id` audytora B.
+ */
+export async function setSelfAvailabilityAction(
+  id: string,
+  isAvailable: boolean
+): Promise<SetSelfAvailabilityResult> {
+  const actorRole = await getCurrentActorRole();
+  // MAJOR (REVIEW #1, rls-security-auditor): `availability_declarations` jest jednym
+  // zasobem RBAC dla DWÓCH encji (audytorzy + zespoly_monterskie) — `can() !== 'no'`
+  // przepuszcza tu też 'monter', bo macierz nie rozróżnia plików. Wiązanie roli z
+  // encją musi więc żyć w kodzie akcji, nie w `can()`.
+  if (actorRole !== 'audytor' || can(actorRole, 'availability_declarations', 'update') !== 'own') {
+    return { success: false, error: "Brak uprawnień do zmiany własnej dostępności." };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) {
+    return { success: false, error: "Brak sesji użytkownika." };
+  }
+
+  const own = await prisma.audytorzy.findUnique({ where: { email: user.email } });
+  if (!own || own.id !== id) {
+    return { success: false, error: "Nie można zmienić dostępności innego audytora." };
+  }
+
+  const declaration = await prisma.availabilityDeclaration.upsert({
+    where: { auditorId: own.id },
+    create: { auditorId: own.id, isAvailable },
+    update: { isAvailable },
+  });
+
+  revalidatePath('/auditors');
+  return { success: true, isAvailable: declaration.isAvailable };
 }
 
 export type DeleteAuditorResult = {

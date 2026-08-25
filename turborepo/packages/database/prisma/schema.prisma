@@ -178,7 +178,11 @@ model zespoly_monterskie {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nazwa              String
   telefon_kontaktowy String?
-  email              String?
+  // @unique wymagane przez identyfikacje "czyj to rekord z sesji" (FLD-AVAILABILITY-SPLIT):
+  // findUnique po e-mailu z sesji jest jedynym sposobem rozstrzygniecia, czy przekazane id
+  // nalezy do wywolujacego. Pole zostaje NULLABLE - pracownik bez e-maila nie ma sciezki
+  // samoobslugi i jest to swiadome ograniczenie, nie luka do naprawienia w tym WO.
+  email              String?  @unique
   aktywny            Boolean  @default(true)
   
   // Nowe pola - Biznes
@@ -391,7 +395,11 @@ model audytorzy {
   id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   imie_i_nazwisko String
   telefon         String?
-  email           String?
+  // @unique wymagane przez identyfikacje "czyj to rekord z sesji" (FLD-AVAILABILITY-SPLIT):
+  // findUnique po e-mailu z sesji jest jedynym sposobem rozstrzygniecia, czy przekazane id
+  // nalezy do wywolujacego. Pole zostaje NULLABLE - pracownik bez e-maila nie ma sciezki
+  // samoobslugi i jest to swiadome ograniczenie, nie luka do naprawienia w tym WO.
+  email           String?  @unique
   nazwa_firmy     String?
   nip             String?
   adres           String?
