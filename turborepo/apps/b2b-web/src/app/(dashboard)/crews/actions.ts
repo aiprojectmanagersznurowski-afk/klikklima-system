@@ -123,6 +123,50 @@ export async function setSelfAvailabilityAction(
   return { success: true, isAvailable: declaration.isAvailable };
 }
 
+export type AcceptLegalDocumentVersionResult = {
+  success: boolean;
+  error?: string;
+  id?: string;
+  acceptedAt?: Date;
+};
+
+/**
+ * FLD-CONSENT-ACCEPT (WO FLD-CONSENT-DOCS): ekipa akceptuje WŁASNĄ, konkretną
+ * wersję dokumentu prawnego wskazaną wprost przez `versionId` — symetrycznie do
+ * auditors/actions.ts. Rola i właścicielstwo rekordu idą przez sesję (e-mail),
+ * nigdy przez argument wywołania. Rejestr jest append-only: brak sprawdzenia
+ * "czy już istnieje" przed insertem — ochronę przed duplikatem daje wyłącznie
+ * ograniczenie unikalności w bazie.
+ */
+export async function acceptLegalDocumentVersionAction(
+  versionId: string
+): Promise<AcceptLegalDocumentVersionResult> {
+  const actorRole = await getCurrentActorRole();
+  if (actorRole !== 'monter' || can(actorRole, 'employee_consents', 'create') !== 'yes') {
+    return { success: false, error: "Brak uprawnień do akceptacji dokumentu." };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) {
+    return { success: false, error: "Brak sesji użytkownika." };
+  }
+
+  const own = await prisma.zespoly_monterskie.findUnique({ where: { email: user.email } });
+  if (!own) {
+    return { success: false, error: "Nie znaleziono własnego rekordu ekipy." };
+  }
+
+  try {
+    const consent = await prisma.employeeConsent.create({
+      data: { crewId: own.id, versionId },
+    });
+    return { success: true, id: consent.id, acceptedAt: consent.acceptedAt };
+  } catch (error) {
+    return { success: false, error: "Nie udało się zapisać akceptacji dokumentu." };
+  }
+}
+
 export type DeleteCrewResult = {
   success: boolean;
   error?: string;

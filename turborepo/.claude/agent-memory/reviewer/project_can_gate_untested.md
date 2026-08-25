@@ -23,6 +23,15 @@ w FLD-AVAILABILITY-SPLIT rozstrzygnęła R2 właśnie tak: reguła ma żyć w ma
 w kodzie akcji, żeby `rls-security-auditor` miał co sprawdzać". Dziś zmiana macierzy
 (np. odebranie `audytor:own` na `availability_declarations`) nie zapaliłaby żadnego testu.
 
+**Uściślenie zmierzone 2026-08-25 (review WO FLD-CONSENT-DOCS):** luka dotyczy WYŁĄCZNIE bramek,
+w których obok `can()` stoi literał roli (`actorRole !== 'audytor'`). Tam `can()` jest behawioralnie
+bezczynne, więc jego wycięcie to mutant równoważny wobec bieżącego kontraktu (potwierdzone na
+`acceptLegalDocumentVersionAction` w auditors i crews — pakiet zielony). Gdy bramka ma sam
+`!actorRole || can(...)`, bez literału roli, mutacja do samego `!actorRole` PADA (potwierdzone na
+`create/update/publishLegalDocumentVersionAction` w settings/actions.ts). Czyli wzorzec
+„`!actorRole || can(...)`" jest testowalny i warto go rekomendować tam, gdzie rola nie musi być
+przypięta do encji.
+
 **How to apply:** nie zgłaszaj tego jako BLOCKER pojedynczego WO — to zastane, systemowe
 i wymaga decyzji człowieka (osobne WO: mockować `can` i asertować argumenty wywołania, czy
 zostawić). Zgłaszaj jako MAJOR z adnotacją „przedistniejące, poza zakresem", razem z innymi
