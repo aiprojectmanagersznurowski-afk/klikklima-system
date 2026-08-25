@@ -24,6 +24,12 @@ Druga warstwa tej samej ślepoty (2026-08-25, rozszerzenie `SEC-AUTHZ-USER-MGMT`
 source/statement). Dopisanie kryterium do istniejącego ID zostawia więc trace na zielono przy
 kryterium bez jednego testu, a treść kryterium jest widoczna wyłącznie w pliku `.mjs`.
 
+Trzecie wystąpienie tego samego wzorca (2026-08-25, `CRM-CREW-UPDATE-ADMIN-ONLY`): `crews/actions.ts`
+importował już `can` i `getCurrentActorRole` na potrzeby `setSelfAvailabilityAction`, a mimo to
+`updateCrewAvatar`, `deleteCrewAction` i `getCrews` w tym samym pliku nie sprawdzały niczego.
+Obecność `can(` w pliku NIE dowodzi więc, że plik jest pokryty — przyszła reguła skanu musi liczyć
+wywołania per akcja mutująca, nie per plik, inaczej przepuści dokładnie ten przypadek.
+
 **How to apply:** Przy każdym wymaganiu dotyczącym uprawnień pytaj osobno „czy macierz to mówi"
 i „czy jakikolwiek kod to czyta" — to dwa różne stany i pierwszy bywa zielony przy drugim
 pustym. Jeżeli kiedyś powstanie WO na regułę skanu (Server Action mutująca zasób z `RESOURCES`
