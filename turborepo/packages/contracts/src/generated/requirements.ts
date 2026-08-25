@@ -412,8 +412,8 @@ export const REQUIREMENTS = [
     "domain": "security",
     "status": "TODO",
     "risk": "HIGH",
-    "source": "review 2026-08-24 (rls-security-auditor, znalezisko poboczne przy FLD-AVAILABILITY-SPLIT) — brak źródła w dokumentach architektury; regułę niesie wyłącznie macierz w contracts/rbac.contract.mjs, która była poprawna, zanim powstało to wymaganie",
-    "statement": "Dodanie konta, usunięcie konta i przypisanie mu roli w authorized_users jest dostępne wyłącznie dla roli admin, a sama rola pochodzi z zamkniętego słownika ROLES — jedno i drugie egzekwowane po stronie serwera."
+    "source": "review 2026-08-24 (rls-security-auditor, znalezisko poboczne przy FLD-AVAILABILITY-SPLIT) — brak źródła w dokumentach architektury; regułę niesie wyłącznie macierz w contracts/rbac.contract.mjs, która była poprawna, zanim powstało to wymaganie; zakres rozszerzony 2026-08-25 o zdolność read (ten sam audytor, przy weryfikacji naprawy create/delete) — settings/page.tsx czytał pełną listę kont bez sprawdzenia roli, ten sam wzorzec błędu, inna zdolność",
+    "statement": "Dodanie konta, usunięcie konta i przypisanie mu roli w authorized_users jest dostępne wyłącznie dla roli admin, a sama rola pochodzi z zamkniętego słownika ROLES — jedno i drugie egzekwowane po stronie serwera. Tej samej regule podlega odczyt listy kont (e-maile i role wszystkich pracowników): authorized_users.read = [admin], egzekwowane po stronie serwera również na ścieżce renderowania widoku, nie tylko w Server Actions."
   },
   {
     "id": "SEC-RLS-AUDITOR-SCOPE",

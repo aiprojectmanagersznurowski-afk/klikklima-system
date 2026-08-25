@@ -1,6 +1,6 @@
 ---
 name: authz-gate-coverage-gap
-description: Retrofit sprawdzania ról w Server Actions panelu B2B jest częściowy, a żadna bramka tego nie wykrywa — macierz RBAC może być poprawna przy kodzie, który jej nigdy nie czyta
+description: Retrofit sprawdzania ról w panelu B2B jest częściowy, a żadna bramka tego nie wykrywa — macierz RBAC bywa poprawna przy kodzie, który jej nie czyta, a kk-trace zielone przy kryterium bez testu
 metadata:
   type: project
 ---
@@ -17,6 +17,12 @@ nie zawierało żadnego wywołania `can(`, mimo że mutują zasoby objęte macie
 macierzy, tylko z tego, że `settings/actions.ts` nigdy do macierzy nie zajrzał. Znalazł to
 dopiero człowiek przez review, a nie bramka — czyli mechanizm wykrywania tej klasy błędu
 w ogóle nie istnieje.
+
+Druga warstwa tej samej ślepoty (2026-08-25, rozszerzenie `SEC-AUTHZ-USER-MGMT` o zdolność
+`read`): `kk-trace.mjs` liczy pokrycie po ID wymagania, a `kk-codegen.mjs` NIE emituje pola
+`acceptance` do `packages/contracts/src/generated/requirements.ts` (tylko id/domain/status/risk/
+source/statement). Dopisanie kryterium do istniejącego ID zostawia więc trace na zielono przy
+kryterium bez jednego testu, a treść kryterium jest widoczna wyłącznie w pliku `.mjs`.
 
 **How to apply:** Przy każdym wymaganiu dotyczącym uprawnień pytaj osobno „czy macierz to mówi"
 i „czy jakikolwiek kod to czyta" — to dwa różne stany i pierwszy bywa zielony przy drugim
