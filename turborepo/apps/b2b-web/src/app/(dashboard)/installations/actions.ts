@@ -2,6 +2,8 @@
 
 import { prisma, InstallationStatus } from "@repo/database"
 import { revalidatePath } from "next/cache"
+import { can } from "@klikklima/contracts"
+import { getCurrentActorRole } from "../../../utils/supabase/server"
 
 export type InstallationSummary = {
   id: string;
@@ -53,39 +55,52 @@ export async function getInstallations(): Promise<InstallationSummary[]> {
   });
 }
 
-export async function updateInstallationStatus(id: string, newStatus: InstallationStatus) {
-  const inst = await prisma.instalacje.update({
-    where: { id },
-    data: { 
-      status: newStatus,
-      data_zakonczenia: newStatus === "COMPLETED" ? new Date() : undefined
+export async function updateInstallationStatus(id: string, newStatus: InstallationStatus): Promise<{ success: boolean; error?: string }> {
+  try {
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, "installations", "update") !== "yes") {
+      return { success: false, error: "Brak uprawnień do zmiany statusu instalacji." };
     }
-  });
 
-  // Jeżeli zakończona instalacja, możemy też zaktualizować status Leada na INSTALLATION_COMPLETED
-  if (newStatus === "COMPLETED") {
-    await prisma.leady.update({
-      where: { id: inst.lead_id },
-      data: { status: "INSTALLATION_COMPLETED" }
+    const inst = await prisma.instalacje.update({
+      where: { id },
+      data: {
+        status: newStatus,
+        data_zakonczenia: newStatus === "COMPLETED" ? new Date() : undefined
+      }
     });
+
+    // Jeżeli zakończona instalacja, możemy też zaktualizować status Leada na INSTALLATION_COMPLETED
+    if (newStatus === "COMPLETED") {
+      await prisma.leady.update({
+        where: { id: inst.lead_id },
+        data: { status: "INSTALLATION_COMPLETED" }
+      });
+    }
+
+    revalidatePath('/installations');
+    revalidatePath('/customers');
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update installation status:", error);
+    return { success: false, error: "Nie udało się zaktualizować statusu instalacji." };
   }
-
-  revalidatePath('/installations');
-  revalidatePath('/customers');
 }
 
-export async function assignCrew(installationId: string, crewId: string) {
-  await prisma.instalacje.update({
-    where: { id: installationId },
-    data: { zespol_id: crewId }
-  });
-  
-  revalidatePath('/installations');
-}
+export async function deleteInstallationAction(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, "installations", "delete") !== "yes") {
+      return { success: false, error: "Brak uprawnień do usunięcia instalacji." };
+    }
 
-export async function deleteInstallationAction(id: string) {
-  await prisma.instalacje.delete({
-    where: { id }
-  });
-  revalidatePath('/installations');
+    await prisma.instalacje.delete({
+      where: { id }
+    });
+    revalidatePath('/installations');
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete installation:", error);
+    return { success: false, error: "Nie udało się usunąć instalacji." };
+  }
 }

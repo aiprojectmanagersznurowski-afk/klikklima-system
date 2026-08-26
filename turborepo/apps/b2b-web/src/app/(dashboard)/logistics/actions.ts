@@ -4,6 +4,9 @@ import { prisma } from "@repo/database"
 import { revalidatePath } from "next/cache"
 import { differenceInDays, startOfDay } from "date-fns"
 import { LeadStatus } from "@repo/database"
+import { can } from "@klikklima/contracts"
+import { getCurrentActorRole } from "../../../utils/supabase/server"
+import { deleteLeadAction } from "../leads/actions"
 
 export type LogisticsLead = {
   id: string
@@ -77,7 +80,18 @@ export async function getLogisticsLeads(): Promise<LogisticsLead[]> {
   })
 }
 
-export async function shipLogisticsOrder(leadId: string, trackingNumber?: string) {
+export async function shipLogisticsOrder(leadId: string, trackingNumber?: string): Promise<{ success: boolean; error?: string }> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Nie udało się zweryfikować uprawnień." };
+  }
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do wysyłki zamówienia." };
+  }
+
   await prisma.$transaction(async (tx) => {
     // 1. Zmiana statusu na IN_TRANSIT
     await tx.leady.update({
@@ -102,9 +116,21 @@ export async function shipLogisticsOrder(leadId: string, trackingNumber?: string
 
   revalidatePath('/logistics');
   revalidatePath('/leads');
+  return { success: true };
 }
 
-export async function bypassLogisticsOrder(leadId: string) {
+export async function bypassLogisticsOrder(leadId: string): Promise<{ success: boolean; error?: string }> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Nie udało się zweryfikować uprawnień." };
+  }
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do zmiany statusu zamówienia." };
+  }
+
   // Przejście z Magazynu -> Oczekuje instalacji (z pominięciem kuriera)
   await prisma.leady.update({
     where: { id: leadId },
@@ -115,9 +141,21 @@ export async function bypassLogisticsOrder(leadId: string) {
 
   revalidatePath('/logistics');
   revalidatePath('/leads');
+  return { success: true };
 }
 
-export async function markAsDelivered(leadId: string) {
+export async function markAsDelivered(leadId: string): Promise<{ success: boolean; error?: string }> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Nie udało się zweryfikować uprawnień." };
+  }
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do oznaczenia dostawy." };
+  }
+
   await prisma.$transaction(async (tx) => {
     await tx.leady.update({
       where: { id: leadId },
@@ -142,9 +180,21 @@ export async function markAsDelivered(leadId: string) {
 
   revalidatePath('/logistics');
   revalidatePath('/leads');
+  return { success: true };
 }
 
-export async function rollbackLogisticsOrder(leadId: string, reason?: string) {
+export async function rollbackLogisticsOrder(leadId: string, reason?: string): Promise<{ success: boolean; error?: string }> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Nie udało się zweryfikować uprawnień." };
+  }
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do rollbacku zamówienia." };
+  }
+
   await prisma.leady.update({
     where: { id: leadId },
     data: {
@@ -158,11 +208,11 @@ export async function rollbackLogisticsOrder(leadId: string, reason?: string) {
 
   revalidatePath('/logistics');
   revalidatePath('/leads');
+  return { success: true };
 }
 
-export async function deleteLogisticsOrderAction(id: string) {
-  await prisma.leady.delete({
-    where: { id }
-  });
+export async function deleteLogisticsOrderAction(id: string): Promise<{ success: boolean; error?: string }> {
+  const result = await deleteLeadAction(id);
   revalidatePath('/logistics');
+  return result;
 }

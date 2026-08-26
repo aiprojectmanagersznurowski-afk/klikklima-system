@@ -32,7 +32,11 @@ export function Customer360Tabs({ customer }: { customer: any }) {
     if (ulicaMiasto && ulicaMiasto.trim() !== "") {
       startTransition(async () => {
         try {
-          await addCustomerAddress(customer.id, ulicaMiasto);
+          const result = await addCustomerAddress(customer.id, ulicaMiasto);
+          if (!result.success) {
+            alert(result.error);
+            return;
+          }
           alert("Adres dodany pomyślnie.");
         } catch (e) {
           alert("Wystąpił błąd podczas dodawania adresu.");

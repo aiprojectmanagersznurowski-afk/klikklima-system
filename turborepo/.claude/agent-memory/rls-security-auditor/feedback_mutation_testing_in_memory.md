@@ -36,6 +36,13 @@ wewnątrz używaj template literals, nie `\"`), a w skrypcie:
   przepuszcza rolę uwierzytelnioną, ale nieuprawnioną (`dyspozytor`/`audytor`/`monter`).
   Zestaw testujący tylko `null`/`undefined` jest na to ślepy i przechodzi na kodzie, który
   nigdy nie woła `can()`;
+- **`'yes'` → `'own'`: uwaga na polaryzację warunku.** Bramki w tym repo mają postać
+  `if (!role || can(...) !== 'yes') return deny`. Osłabienie do „przepuszczaj też `own`" to
+  mutant `can(...) === 'no'`, **nie** `can(...) !== 'no'` — ten drugi odwraca warunek i odrzuca
+  wszystkich, więc wygląda na „mutanta zabitego przez wszystkie testy", a naprawdę niczego nie
+  mierzy. Zweryfikowane 2026-08-26 na `updateInstallationStatus` (agent zlecający poprosił wprost
+  o wariant `!== 'no'`; dopiero `=== 'no'` przepuścił `monter`/`own` i został zabity przez test
+  montera). Zawsze dopisz kontrolę: mutant, którego oblewają WSZYSTKIE role, jest podejrzany.
 - podmiana `capability` w obrębie tej samej listy ról (`create` → `read` przy
   `authorized_users`) — mutant **równoważny**, żaden test go nie zabije i to nie jest defekt
   testów, tylko własność macierzy. Odnotuj jako ryzyko szczątkowe, nie jako blokadę;

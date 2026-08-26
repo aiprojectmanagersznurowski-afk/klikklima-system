@@ -375,36 +375,6 @@ export async function getLeads(options?: {
   }
 }
 
-export async function updateLeadStatus(leadId: string, newStatus: LeadStatus) {
-  try {
-    const lead = await prisma.leady.findUnique({
-      where: { id: leadId },
-      select: { audytor_id: true }
-    });
-
-    if (newStatus !== "NEW_LEAD" && !lead?.audytor_id) {
-      return { success: false, error: "Nie można przenieść leada bez przypisanego audytora. Najpierw przypisz audytora." };
-    }
-
-    if (newStatus === "NEW_LEAD" && lead?.audytor_id) {
-      await prisma.leady.update({
-        where: { id: leadId },
-        data: { status: newStatus, audytor_id: null },
-      });
-    } else {
-      await prisma.leady.update({
-        where: { id: leadId },
-        data: { status: newStatus },
-      });
-    }
-    revalidatePath("/leads");
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to update lead status:", error);
-    return { success: false, error: "Nie udało się zaktualizować statusu." };
-  }
-}
-
 /**
  * Dozwolone przejścia statusów w lejku sprzedażowym.
  * Klucz = obecny status, wartość = lista dozwolonych statusów docelowych.
@@ -431,7 +401,18 @@ const ALLOWED_TRANSITIONS: Record<LeadStatus, LeadStatus[]> = {
 
 
 /** Przesuwa leada do nowego statusu z walidacją dozwolonych przejść */
-export async function advanceLeadStatus(leadId: string, targetStatus: LeadStatus) {
+export async function advanceLeadStatus(leadId: string, targetStatus: LeadStatus): Promise<{ success: boolean; error?: string }> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Nie udało się zmienić statusu leada." };
+  }
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do zmiany statusu leada." };
+  }
+
   try {
     const lead = await prisma.leady.findUnique({
       where: { id: leadId },

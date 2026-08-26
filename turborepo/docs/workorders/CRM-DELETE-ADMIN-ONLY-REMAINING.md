@@ -1,3 +1,10 @@
+> ⚠️ **NIEAKTUALNY — ZASTĄPIONY 2026-08-26 przez `docs/workorders/SEC-AUTHZ-B2B-MUTATIONS.md`.**
+> Ten WO opisywał 5 ścieżek DELETE. Skaner `tools/kk-authz-gate.mjs` wykazał **14 mutacji Prismy
+> bez bramki `can()` w 6 plikach** — te same 5 plus 9 mutacji nie-DELETE, w tym dwie w
+> `leads/actions.ts` (`updateLeadStatus`, `advanceLeadStatus`). Nie implementować z tego pliku.
+> Zachowany dla dwóch analiz, do których nowy WO odsyła: warstwa RLS (deny-by-default, brak polityk
+> `FOR DELETE`) oraz sprzeczność `ANONYMIZE_OR_SET_NULL` ↔ twardy `prisma.klienci.delete`.
+
 # WO: CRM-DELETE-ADMIN-ONLY — pozostałe ścieżki usuwania w CRM (klienci, instalacje, serwisy, usterki + logistyka)
 
 ## Wymagania: CRM-DELETE-ADMIN-ONLY (status TODO, risk HIGH)

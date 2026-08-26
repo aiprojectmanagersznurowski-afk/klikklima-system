@@ -33,7 +33,7 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
   }
 
 
-  const handleAction = async (leadId: string, actionName: string, actionFn: () => Promise<void>) => {
+  const handleAction = async (leadId: string, actionName: string, actionFn: () => Promise<unknown>) => {
     startTransition(async () => {
       try {
         // Zabezpieczenie przed UI flickeringiem - zoptymalizowane w UI (optimistic update jeśli trzeba by)

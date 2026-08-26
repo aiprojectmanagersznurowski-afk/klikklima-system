@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache"
 import { prisma } from "@repo/database"
+import { can } from "@klikklima/contracts"
+import { getCurrentActorRole } from "../../../utils/supabase/server"
 
 export type IncidentSummary = {
   id: string;
@@ -37,9 +39,20 @@ export async function getIncidents(): Promise<IncidentSummary[]> {
   }));
 }
 
-export async function deleteIncidentAction(id: string) {
-  await prisma.usterki_incidents.delete({
-    where: { id }
-  });
-  revalidatePath('/incidents');
+export async function deleteIncidentAction(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, "incidents", "delete") !== "yes") {
+      return { success: false, error: "Brak uprawnień do usunięcia usterki." };
+    }
+
+    await prisma.usterki_incidents.delete({
+      where: { id }
+    });
+    revalidatePath('/incidents');
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete incident:", error);
+    return { success: false, error: "Nie udało się usunąć usterki." };
+  }
 }

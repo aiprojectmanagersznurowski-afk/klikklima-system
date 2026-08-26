@@ -25,7 +25,11 @@ export function CustomersClient({ initialCustomers }: { initialCustomers: Custom
     if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć klienta ${name}? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
       startTransition(async () => {
         try {
-          await deleteCustomerAction(id);
+          const result = await deleteCustomerAction(id);
+          if (!result.success) {
+            alert(result.error);
+            return;
+          }
           setCustomers(prev => prev.filter(c => c.id !== id));
           alert(`Klient ${name} został usunięty.`);
         } catch (e) {

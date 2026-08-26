@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache"
 import { prisma } from "@repo/database"
+import { can } from "@klikklima/contracts"
+import { getCurrentActorRole } from "../../../utils/supabase/server"
 
 export type ServiceSummary = {
   id: string;
@@ -46,9 +48,20 @@ export async function getUpcomingServices(): Promise<ServiceSummary[]> {
   }));
 }
 
-export async function deleteServiceAction(id: string) {
-  await prisma.serwisy.delete({
-    where: { id }
-  });
-  revalidatePath('/services');
+export async function deleteServiceAction(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, "services", "delete") !== "yes") {
+      return { success: false, error: "Brak uprawnień do usunięcia serwisu." };
+    }
+
+    await prisma.serwisy.delete({
+      where: { id }
+    });
+    revalidatePath('/services');
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete service:", error);
+    return { success: false, error: "Nie udało się usunąć serwisu." };
+  }
 }

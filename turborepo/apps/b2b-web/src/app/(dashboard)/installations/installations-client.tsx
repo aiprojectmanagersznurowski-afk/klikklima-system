@@ -25,7 +25,11 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
     if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
       startTransition(async () => {
         try {
-          await deleteInstallationAction(id);
+          const result = await deleteInstallationAction(id);
+          if (!result.success) {
+            alert(result.error);
+            return;
+          }
           window.location.reload();
         } catch (e) {
           alert("Wystąpił błąd podczas usuwania rekordu.");
@@ -38,7 +42,11 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
   const handleStatusChange = (id: string, newStatus: any) => {
     startTransition(async () => {
       try {
-        await updateInstallationStatus(id, newStatus);
+        const result = await updateInstallationStatus(id, newStatus);
+        if (!result.success) {
+          alert(result.error);
+          return;
+        }
         setInstallations(prev => prev.map(i => i.id === id ? { ...i, status: newStatus } : i));
         alert(`Status instalacji zaktualizowany na: ${newStatus}`);
       } catch (e) {

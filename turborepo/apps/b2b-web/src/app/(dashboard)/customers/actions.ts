@@ -2,6 +2,8 @@
 
 import { prisma } from "@repo/database"
 import { revalidatePath } from "next/cache"
+import { can } from "@klikklima/contracts"
+import { getCurrentActorRole } from "../../../utils/supabase/server"
 
 export type CustomerSummary = {
   id: string;
@@ -45,25 +47,47 @@ export async function getCustomers(): Promise<CustomerSummary[]> {
   });
 }
 
-export async function deleteCustomerAction(id: string) {
-  // UWAGA: Twarde usunięcie klienta (tylko admin)
-  // W Prisma dzięki onDelete: Cascade (jeśli jest) powiązane encje by zniknęły.
-  // Jeśli nie ma cascade, musimy zrobić to ręcznie. 
-  // Na razie polegamy na constraintach Prisma (np. setNull).
-  await prisma.klienci.delete({
-    where: { id }
-  });
+export async function deleteCustomerAction(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, "clients", "delete") !== "yes") {
+      return { success: false, error: "Brak uprawnień do usunięcia klienta." };
+    }
 
-  revalidatePath('/customers');
+    // UWAGA: Twarde usunięcie klienta (tylko admin)
+    // W Prisma dzięki onDelete: Cascade (jeśli jest) powiązane encje by zniknęły.
+    // Jeśli nie ma cascade, musimy zrobić to ręcznie.
+    // Na razie polegamy na constraintach Prisma (np. setNull).
+    await prisma.klienci.delete({
+      where: { id }
+    });
+
+    revalidatePath('/customers');
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete customer:", error);
+    return { success: false, error: "Nie udało się usunąć klienta." };
+  }
 }
 
-export async function addCustomerAddress(klientId: string, ulicaMiasto: string) {
-  await prisma.adresy.create({
-    data: {
-      klient_id: klientId,
-      ulica_miasto: ulicaMiasto
+export async function addCustomerAddress(klientId: string, ulicaMiasto: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const actorRole = await getCurrentActorRole();
+    if (!actorRole || can(actorRole, "clients", "update") !== "yes") {
+      return { success: false, error: "Brak uprawnień do dodania adresu." };
     }
-  });
-  
-  revalidatePath(`/customers/${klientId}`);
+
+    await prisma.adresy.create({
+      data: {
+        klient_id: klientId,
+        ulica_miasto: ulicaMiasto
+      }
+    });
+
+    revalidatePath(`/customers/${klientId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to add customer address:", error);
+    return { success: false, error: "Nie udało się dodać adresu." };
+  }
 }

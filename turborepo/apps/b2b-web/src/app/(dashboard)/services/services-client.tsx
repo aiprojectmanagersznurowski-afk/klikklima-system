@@ -34,7 +34,8 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
     if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
       startTransition(async () => {
         try {
-          await deleteServiceAction(id);
+          const result = await deleteServiceAction(id);
+          if (!result.success) throw new Error(result.error);
           window.location.reload();
         } catch (e) {
           alert("Wystąpił błąd podczas usuwania rekordu.");

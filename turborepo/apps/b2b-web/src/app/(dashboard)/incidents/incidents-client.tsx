@@ -34,7 +34,11 @@ export function IncidentsClient({ initialIncidents }: { initialIncidents: Incide
     if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
       startTransition(async () => {
         try {
-          await deleteIncidentAction(id);
+          const result = await deleteIncidentAction(id);
+          if (!result.success) {
+            alert(result.error);
+            return;
+          }
           window.location.reload();
         } catch (e) {
           alert("Wystąpił błąd podczas usuwania rekordu.");
