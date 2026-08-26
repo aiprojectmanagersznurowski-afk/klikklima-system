@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LeadStatus, Prisma } from "@repo/database";
+import { LeadStatus } from "@repo/database";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import Link from "next/link";
@@ -19,39 +19,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { updateLeadAuditor } from "./[id]/actions";
 import { advanceLeadStatus , deleteLeadAction } from "./actions";
-import type { getAuditors } from "./actions";
+import type { getAuditors, getLeads } from "./actions";
 import { ReturnToFunnelDialog } from "./return-to-funnel-dialog";
 import { ArchiveLostDialog } from "./archive-lost-dialog";
 import { AssignCrewDialog } from "./assign-crew-dialog";
 import { can, type Role } from "@klikklima/contracts";
 
 /**
- * Kształt leada z relacjami faktycznie dołączanymi przez `getLeads()` w
- * `leads/actions.ts` (klient, adres, instalacje.zespol, audytor). Zamiast pięciu
- * osobnych rzutowań przez `any` na dostęp do relacji, typujemy je raz przez
- * `Prisma.leadyGetPayload`.
+ * SEC-LEADS-LIST-SCALARS: wyprowadzone bezpośrednio z rzeczywistego zwracanego typu
+ * `getLeads()` (leads/actions.ts), wzorem `AuditorPoolEntry` niżej — zarówno skalary
+ * leada (zawężone do sześciu pól), jak i cztery relacje (zawężone wcześniej przez
+ * SEC-LEADS-LIST-MINIMIZE) pochodzą z jednego źródła prawdy. Dopisanie pola do
+ * `select` w `getLeads()` propaguje się tu automatycznie — nie utrzymujemy drugiej,
+ * ręcznej kopii kształtu.
  */
-type Lead = Omit<
-  Prisma.leadyGetPayload<{
-    include: {
-      klient: true;
-      adres: true;
-      instalacje: { include: { zespol: true } };
-      audytor: true;
-    };
-  }>,
-  "klient" | "adres" | "instalacje" | "audytor"
-> & {
-  // SEC-LEADS-LIST-MINIMIZE / SEC-ASSIGNMENT-POOL-MINIMIZE: `getLeads()` zawęża te
-  // cztery relacje przez `select` zagnieżdżony (nie `include` pełnego rekordu) —
-  // dane kontaktowe/rozliczeniowe klienta, ekipy i współrzędne adresu nie mają prawa
-  // trafić do przeglądarki dyspozytora. Typ musi odzwierciedlać rzeczywisty, węższy
-  // kształt zwracany przez zapytanie.
-  klient: { id: string; imie_i_nazwisko: string | null } | null;
-  adres: { ulica_miasto: string | null } | null;
-  instalacje: { zespol: { nazwa: string } | null }[];
-  audytor: { id: string; imie_i_nazwisko: string } | null;
-};
+type Lead = Awaited<ReturnType<typeof getLeads>>["leads"][number];
 
 /**
  * SEC-ASSIGNMENT-POOL-MINIMIZE (AC6): wyprowadzone bezpośrednio z prawdziwego
@@ -207,10 +189,9 @@ export function LeadsClient({
         
         return {
           ...l,
-          audytor_id: auditorId,
           status: newStatus,
           audytor: auditors.find(a => a.id === auditorId) || null
-        } as Lead;
+        };
       }
       return l;
     }));
@@ -231,7 +212,7 @@ export function LeadsClient({
     const previousLeads = [...leads];
     setLeads(current => current.map(l => {
       if (l.id === leadId) {
-        return { ...l, status: targetStatus } as Lead;
+        return { ...l, status: targetStatus };
       }
       return l;
     }));

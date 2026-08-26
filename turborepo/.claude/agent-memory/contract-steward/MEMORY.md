@@ -7,5 +7,5 @@
 - [Baseline nazewnictwa przy migracjach](project_naming_baseline_on_migrations.md) — każda migracja na polskich tabelach blokuje pre-commit; baseline aktualizuje człowiek.
 - [Incydent: RLS wyłączone na żywej bazie](project_rls_disabled_incident.md) — 16/18 tabel bez RLS, anon z pełnymi prawami; migracja SEC-RLS-BASELINE napisana, nieuruchomiona.
 - [Luka w pokryciu bramki uprawnień](project_authz_gate_coverage_gap.md) — poprawna macierz RBAC przy kodzie, który jej nie czyta; od 2026-08-26 wykrywa to kk-authz-gate.mjs.
-- [Dryf pola status w rejestrze wymagań](project_requirement_status_drift.md) — żadna bramka nie pilnuje `status`; wpis z kompletem testów zostaje TODO do ręcznej poprawki.
+- [Dryf pola status w rejestrze wymagań](project_requirement_status_drift.md) — żadna bramka nie pilnuje `status`; obecność testu przy ID nie dowodzi każdego kryterium acceptance.
 - [Obiekty bazy poza migracjami](project_live_db_objects_outside_migrations.md) — available_combinations żyje tylko na produkcji; SQL na takich obiektach wymaga osłony to_regclass.

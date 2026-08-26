@@ -73,6 +73,17 @@ klasy SEC-…-MINIMIZE; zwalidowana 2026-08-25 na SEC-ASSIGNMENT-POOL-MINIMIZE, 
   SEC-LEADS-LIST-MINIMIZE: `getLeads().audytor` (rozszerzenie z powrotem do `true` przepuszcza
   `iban`/`nip`/`telefon`/`email` audytora, baterie obu ID zielone). Przy każdym MINIMIZE
   zmutuj też relacje wyłączone z zakresu — to najtańsze miejsce na regresję.
+**Typ wyprowadzony (`Awaited<ReturnType<typeof …>>`) jest bramką TYLKO w jedną stronę.**
+Zmierzone 2026-08-26 nakładką na `CompilerHost` (patrz [[feedback-audit-execution-constraints]])
+na `leads-client.tsx`:
+- odczyt usuniętego pola (`l.audytor_id`, `l.notatki_wewnetrzne`) → **błąd TS2339/TS2551**,
+  czyli zawężenie jest realne, a usunięcie rzutowań `as Lead` nie jest iluzoryczne;
+- **dopisanie nadmiarowej właściwości** (`{ ...l, telefon: "…" , status }`) w callbacku
+  `current.map(…)` → **0 diagnostyk**. Brak excess property check, bo `map` wnioskuje `U`
+  z literału zamiast go kontekstować typem docelowym.
+Wniosek do powtarzania w werdyktach: przy każdym MINIMIZE bramką jest test kształtu, nie typ —
+i to jest fakt zmierzony, nie teza z Work Ordera. Nie akceptuj „typ tego pilnuje" bez tej próby.
+
 Warstwę „props z Server Componentu do komponentu klienckiego" testuj osobno: wystarczy
 przepisać inline samo wyrażenie budujące propsy i puścić przez nie wariant `{...x, extra}`
 i wariant z jawnym wyliczeniem pól — nie trzeba odtwarzać mockowania modułów z vitest.

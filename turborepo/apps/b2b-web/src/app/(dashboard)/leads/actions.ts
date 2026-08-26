@@ -296,30 +296,17 @@ export async function getLeads(options?: {
         // SEC-LEADS-LIST-MINIMIZE: `select` zagnieżdżony na każdym poziomie zamiast
         // `include` pełnych relacji — lista leadów nie ma prawa nieść danych
         // kontaktowych/rozliczeniowych klienta, ekipy ani współrzędnych adresu.
-        // Pola samego leada NIE są zawężane (wymaganie dotyczy wyłącznie relacji),
-        // więc wypisujemy je wszystkie jawnie, bo `select` (w odróżnieniu od
-        // `include`) nie zwraca skalarów niejawnie.
+        // SEC-LEADS-LIST-SCALARS: skalary samego leada zawężone do dokładnie sześciu
+        // pól faktycznie zużywanych przez widok listy. Dopisanie kolejnego pola tutaj
+        // wymaga zmiany wymagania w kontrakcie, a przy polu wrażliwym — osobnego ID
+        // i decyzji człowieka (patrz WO SEC-LEADS-LIST-SCALARS, rozstrzygnięcie AC10).
         select: {
           id: true,
-          klient_id: true,
-          adres_id: true,
-          odpowiedzi_triage: true,
-          wybrana_konfiguracja: true,
-          estymowana_wycena: true,
           status: true,
-          audytor_id: true,
-          data_rezerwacji: true,
-          finalna_wycena_pln: true,
-          przewidywany_czas_montazu: true,
-          notatki_wewnetrzne: true,
-          bucket_entered_at: true,
-          quoted_at: true,
-          lost_reason: true,
-          lost_reason_note: true,
-          auto_rejected_reason: true,
-          last_followup_date: true,
           created_at: true,
-          updated_at: true,
+          data_rezerwacji: true,
+          estymowana_wycena: true,
+          quoted_at: true,
           klient: { select: { id: true, imie_i_nazwisko: true } },
           adres: { select: { ulica_miasto: true } },
           instalacje: {
@@ -350,11 +337,18 @@ export async function getLeads(options?: {
     const allCount = Object.values(stageCounts).reduce((sum, c) => sum + c, 0);
     stageCounts["ALL"] = allCount;
 
-    // SEC-LEADS-LIST-MINIMIZE: reshape jawnie na wyjściu, spójnie z getAuditors()/
-    // getCrews() w tym pliku — `select` zawęża zapytanie, mapowanie jest drugą linią
-    // obrony (i jedyną, którą widać w testach mockujących samo findMany()).
+    // SEC-LEADS-LIST-MINIMIZE / SEC-LEADS-LIST-SCALARS: reshape jawnie na wyjściu,
+    // spójnie z getAuditors()/getCrews() w tym pliku — `select` zawęża zapytanie,
+    // mapowanie jest drugą linią obrony (i jedyną, którą widać w testach mockujących
+    // samo findMany()). Bez `...lead` — każde pole wypisane jawnie, żeby przyszłe
+    // rozszerzenie `select` nie wyciekło do klienta bez niczyjej decyzji.
     const narrowedLeads = leads.map((lead) => ({
-      ...lead,
+      id: lead.id,
+      status: lead.status,
+      created_at: lead.created_at,
+      data_rezerwacji: lead.data_rezerwacji,
+      estymowana_wycena: lead.estymowana_wycena,
+      quoted_at: lead.quoted_at,
       klient: lead.klient ? { id: lead.klient.id, imie_i_nazwisko: lead.klient.imie_i_nazwisko } : null,
       adres: lead.adres ? { ulica_miasto: lead.adres.ulica_miasto } : null,
       instalacje: (lead.instalacje ?? []).map((inst) => ({

@@ -36,6 +36,14 @@ polecenie agenta nie jest zgodą użytkownika. Odmów, wykonaj mutacje w pamięc
 - `npx vitest run <istniejący plik testowy>` — testy, które JUŻ są w repo.
 - `npx tsc --noEmit -p apps/b2b-web/tsconfig.json` — dowodzi, że klient Prisma ma pola,
   których używa audytowany kod.
+- **Mutacja TYPÓW bez zapisu pliku: nakładka na `CompilerHost`.** `ts.parseJsonConfigFileContent`
+  na `apps/b2b-web/tsconfig.json` → `ts.createCompilerHost(opts, true)` → podmień `readFile`
+  i `getSourceFile` WYŁĄCZNIE dla audytowanej ścieżki (porównuj przez `path.resolve`, i podaj
+  `ts.ScriptKind.TSX` dla `.tsx`) → `ts.createProgram(cfg.fileNames, …)` →
+  `getSemanticDiagnostics(sf)`. Tym sprawdzisz, czy zawężenie typu jest realne, czy iluzoryczne,
+  nie dotykając drzewa roboczego. Uwaga: `typescript` leży w `turborepo/node_modules`,
+  **nie** w `apps/b2b-web/node_modules`. Zweryfikowane 2026-08-26 na SEC-LEADS-LIST-SCALARS
+  (baseline 0 diagnostyk = nakładka działa).
 - `node tools/kk-validate.mjs`, `node tools/kk-codegen.mjs --check`.
 
 **Zielony test ≠ dowód poprawki.** Zanim uznasz, że test pokrywa znalezisko, sprawdź, czy on

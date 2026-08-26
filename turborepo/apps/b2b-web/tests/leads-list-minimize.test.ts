@@ -346,3 +346,203 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
     expect(leads[0].instalacje).toEqual([]);
   });
 });
+
+/**
+ * Wymaganie: SEC-LEADS-LIST-SCALARS (contracts/requirements.contract.mjs, status TODO).
+ *
+ * Sąsiedztwo zamknięte: SEC-LEADS-LIST-MINIMIZE (relacje w tym samym zapytaniu, powyżej —
+ * NIETKNIĘTE). To wymaganie zawęża SKALARY samego leada (dziś: 19 pól, docelowo: 6 — id,
+ * status, created_at, data_rezerwacji, estymowana_wycena, quoted_at) — patrz
+ * docs/workorders/SEC-LEADS-LIST-SCALARS.md, sekcja „Docelowy kształt".
+ *
+ * `auto_rejected_reason` jest przypadkiem brzegowym świadomym: zostaje w `where` (kubełek
+ * rejected_auto), znika wyłącznie z `select`/wyniku (AC brzegowe z WO).
+ *
+ * Fixture `fullLeadRecordWithAllScalars` reprezentuje to, co Prisma zwróciłaby DZIŚ bez
+ * żadnego zawężenia skalarów leada (`select` wypisujący wszystkie 19 pól) — z polami
+ * wrażliwymi (notatki_wewnetrzne, odpowiedzi_triage) wypełnionymi NIEPUSTĄ treścią, żeby
+ * `null`/`""` nie mogło udawać dowodu zawężenia.
+ */
+const LEAD_SCALAR_KEYS = ['id', 'status', 'created_at', 'data_rezerwacji', 'estymowana_wycena', 'quoted_at'];
+const LEAD_TOP_LEVEL_KEYS = [...LEAD_SCALAR_KEYS, 'klient', 'adres', 'instalacje', 'audytor'];
+
+/** Rekord leada TAKI, JAKI DZIŚ zwraca `select` wypisujący wszystkie 19 skalarów (mutant) —
+ * z polami wrażliwymi (notatki_wewnetrzne, odpowiedzi_triage) NIEPUSTYMI, żeby wartość
+ * pusta nie mogła udawać dowodu zawężenia (patrz WO, sekcja „Przypadki brzegowe"). */
+const fullLeadRecordWithAllScalars = (overrides: Record<string, unknown> = {}) => ({
+  id: 'lead-1',
+  klient_id: 'klient-1',
+  adres_id: 'adres-1',
+  odpowiedzi_triage: {
+    powierzchnia_m2: 45,
+    kontakt_dodatkowy: '+48601999888',
+    uwagi: 'Klient prosi o montaż w weekend',
+  },
+  wybrana_konfiguracja: { moc_kw: 3.5, model: 'Mitsubishi MSZ-LN35' },
+  estymowana_wycena: 8500,
+  status: 'AWAITING_CREW_ASSIGNMENT',
+  audytor_id: 'audytor-1',
+  data_rezerwacji: new Date('2026-09-01T09:00:00Z'),
+  finalna_wycena_pln: 8200,
+  przewidywany_czas_montazu: 240,
+  notatki_wewnetrzne: 'Klient prosił o kontakt tylko po 18:00, trudny dojazd do bramy.',
+  bucket_entered_at: new Date('2026-08-20T00:00:00Z'),
+  quoted_at: new Date('2026-08-22T00:00:00Z'),
+  lost_reason: 'PRICE_TOO_HIGH',
+  lost_reason_note: 'Klient znalazł tańszą ofertę u konkurencji',
+  auto_rejected_reason: 'AUTO_REJECT_14_DAYS',
+  last_followup_date: new Date('2026-08-24T00:00:00Z'),
+  created_at: new Date('2026-08-01T00:00:00Z'),
+  updated_at: new Date('2026-08-25T00:00:00Z'),
+  klient: fullClientRecord(),
+  adres: fullAddressRecord(),
+  instalacje: [fullInstallationRecord()],
+  audytor: fullAuditorRecord(),
+  ...overrides,
+});
+
+describe('getLeads() — minimalizacja SKALARÓW samego leada (SEC-LEADS-LIST-SCALARS)', () => {
+  beforeEach(() => {
+    leadFindManyMock.mockReset();
+    leadCountMock.mockReset();
+    leadGroupByMock.mockReset();
+    revalidatePathMock.mockReset();
+    leadCountMock.mockResolvedValue(1);
+    leadGroupByMock.mockResolvedValue([]);
+  });
+
+  // AC1 — dowód KSZTAŁTEM: równość zbiorów w obie strony wobec stałej zadeklarowanej w
+  // teście (AC10), nie `toContain`/`toMatchObject`/`toBeUndefined()` na pojedynczych polach.
+  // @REQ: SEC-LEADS-LIST-SCALARS
+  it('Object.keys(lead) jest RÓWNE jako zbiór dokładnie {id, status, created_at, data_rezerwacji, estymowana_wycena, quoted_at, klient, adres, instalacje, audytor} — bez i jednego pola więcej', async () => {
+    leadFindManyMock.mockResolvedValue([fullLeadRecordWithAllScalars()]);
+
+    const { leads } = await getLeads();
+
+    expect(leads).toHaveLength(1);
+    expect(new Set(Object.keys(leads[0]))).toEqual(new Set(LEAD_TOP_LEVEL_KEYS));
+  });
+
+  // AC3 — zawężenie zadeklarowane w SAMYM `select`, nie tylko w mapowaniu wyniku. Liczymy
+  // WYŁĄCZNIE klucze o wartości `true` (skalary) — relacje mają własne obiekty `select` i są
+  // pilnowane przez SEC-LEADS-LIST-MINIMIZE powyżej, nie duplikujemy tu tamtej asercji.
+  // @REQ: SEC-LEADS-LIST-SCALARS
+  it('prisma.leady.findMany() jest wołane z `select` zawierającym DOKŁADNIE sześć skalarów leada jako `true` — zero z 13 usuwanych pól', async () => {
+    leadFindManyMock.mockResolvedValue([fullLeadRecordWithAllScalars()]);
+
+    await getLeads();
+
+    const callArgs = leadFindManyMock.mock.calls[0]?.[0] ?? {};
+    expect(callArgs.select).toBeTruthy();
+
+    const scalarKeys = Object.entries(callArgs.select ?? {})
+      .filter(([, v]) => v === true)
+      .map(([k]) => k);
+
+    expect(new Set(scalarKeys)).toEqual(new Set(LEAD_SCALAR_KEYS));
+  });
+
+  // AC2 — kontrola negatywna jawna i nazwana osobno dla dwóch pól niosących ryzyko RODO:
+  // notatka wewnętrzna (tekst swobodny, niekontrolowany) i surowe odpowiedzi triage (zrzut
+  // formularza B2C, treść może wykraczać poza to, co ekran szczegółów pokazuje świadomie).
+  // Fixture ma te pola NIEPUSTE — wartość pusta nie może udawać dowodu zawężenia.
+  // @REQ: SEC-LEADS-LIST-SCALARS
+  it('lead.notatki_wewnetrzne NIE występuje w wyniku listy (ryzyko RODO — tekst swobodny niekontrolowany)', async () => {
+    leadFindManyMock.mockResolvedValue([fullLeadRecordWithAllScalars()]);
+
+    const { leads } = await getLeads();
+
+    expect(Object.keys(leads[0])).not.toContain('notatki_wewnetrzne');
+  });
+
+  // @REQ: SEC-LEADS-LIST-SCALARS
+  it('lead.odpowiedzi_triage NIE występuje w wyniku listy (ryzyko RODO — surowy zrzut formularza B2C)', async () => {
+    leadFindManyMock.mockResolvedValue([fullLeadRecordWithAllScalars()]);
+
+    const { leads } = await getLeads();
+
+    expect(Object.keys(leads[0])).not.toContain('odpowiedzi_triage');
+  });
+
+  // Przypadek brzegowy jawnie wskazany w WO jako najbardziej prawdopodobna cicha regresja:
+  // `auto_rejected_reason` musi zostać w `where` (kubełek rejected_auto), ale zniknąć z
+  // `select`/wyniku — jest potrzebny do filtrowania po stronie serwera, nie do renderowania.
+  // @REQ: SEC-LEADS-LIST-SCALARS
+  it('kubełek rejected_auto — `where` nadal zawiera auto_rejected_reason, ale pole znika z wyniku (`select`/`Object.keys`)', async () => {
+    leadFindManyMock.mockResolvedValue([fullLeadRecordWithAllScalars()]);
+
+    const { leads } = await getLeads({ bucket: 'rejected_auto' });
+
+    const callArgs = leadFindManyMock.mock.calls[0]?.[0] ?? {};
+    expect(callArgs.where).toEqual({ status: 'QUOTE_REJECTED', auto_rejected_reason: 'AUTO_REJECT_14_DAYS' });
+
+    expect(Object.keys(leads[0])).not.toContain('auto_rejected_reason');
+    const scalarKeys = Object.entries(callArgs.select ?? {})
+      .filter(([, v]) => v === true)
+      .map(([k]) => k);
+    expect(scalarKeys).not.toContain('auto_rejected_reason');
+  });
+
+  // AC5 — zapytanie poza `select` bez zmian, powtórzone tutaj z fixture zawierającą
+  // WSZYSTKIE 19 skalarów (żeby dowieść, że zawężenie select nie psuje where/orderBy/skip/
+  // take/groupBy nawet gdy mock zwraca pełny rekord — a nie tylko wąski jak w kryterium #4
+  // powyżej z SEC-LEADS-LIST-MINIMIZE).
+  // @REQ: SEC-LEADS-LIST-SCALARS
+  it('where/orderBy/skip/take oraz groupBy pozostają bit-w-bit identyczne mimo zawężenia select (fixture z pełnym rekordem skalarów)', async () => {
+    leadFindManyMock.mockResolvedValue([fullLeadRecordWithAllScalars()]);
+    leadCountMock.mockResolvedValue(7);
+    leadGroupByMock.mockResolvedValue([{ status: 'NEW_LEAD', _count: { id: 3 } }]);
+
+    const result = await getLeads({ status: 'NEW_LEAD', page: 2, limit: 10 });
+
+    const callArgs = leadFindManyMock.mock.calls[0]?.[0] ?? {};
+    expect(callArgs.where).toEqual({ status: 'NEW_LEAD' });
+    expect(callArgs.orderBy).toEqual([{ data_rezerwacji: 'asc' }, { created_at: 'desc' }]);
+    expect(callArgs.skip).toBe(10);
+    expect(callArgs.take).toBe(10);
+
+    expect(leadGroupByMock).toHaveBeenCalledTimes(1);
+    expect(result.stageCounts.NEW_LEAD).toBe(3);
+    expect(result.totalCount).toBe(7);
+  });
+
+  // Kontrola pozytywna (AC6/AC7) — wartości sześciu zachowanych skalarów przechodzą
+  // niezmienione (nie same klucze, ale i wartości), w tym `data_rezerwacji` jako obiekt
+  // `Date`, nie `string` (granica serwer/klient, AssignCrewDialog).
+  // @REQ: SEC-LEADS-LIST-SCALARS
+  it('kontrola pozytywna — sześć zachowanych skalarów niesie niezmienione wartości, data_rezerwacji jako Date', async () => {
+    const bookingDate = new Date('2026-09-01T09:00:00Z');
+    const quotedAt = new Date('2026-08-22T00:00:00Z');
+    leadFindManyMock.mockResolvedValue([
+      fullLeadRecordWithAllScalars({
+        id: 'lead-42',
+        status: 'AWAITING_CREW_ASSIGNMENT',
+        estymowana_wycena: 8500,
+        data_rezerwacji: bookingDate,
+        quoted_at: quotedAt,
+      }),
+    ]);
+
+    const { leads } = await getLeads();
+    const [lead] = leads;
+
+    expect(lead.id).toBe('lead-42');
+    expect(lead.status).toBe('AWAITING_CREW_ASSIGNMENT');
+    expect(lead.estymowana_wycena).toBe(8500);
+    expect(lead.data_rezerwacji).toBeInstanceOf(Date);
+    expect(lead.data_rezerwacji).toEqual(bookingDate);
+    expect(lead.quoted_at).toEqual(quotedAt);
+  });
+
+  // Przypadek pusty — `getLeads()` w gałęzi `catch` zwraca `{ leads: [], ... }`; test kształtu
+  // (AC1) musi to znieść bez rzucania na `leads[0]`.
+  // @REQ: SEC-LEADS-LIST-SCALARS
+  it('przypadek pusty — lista pusta ([]) nie rzuca przy próbie odczytu kształtu pierwszego elementu', async () => {
+    leadFindManyMock.mockResolvedValue([]);
+
+    const { leads } = await getLeads();
+
+    expect(leads).toEqual([]);
+    expect(() => Object.keys((leads as unknown[])[0] ?? {})).not.toThrow();
+  });
+});

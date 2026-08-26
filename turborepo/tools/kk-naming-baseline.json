@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-26T14:04:17.684Z",
+  "generatedAt": "2026-08-26T17:49:49.632Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 12,
@@ -31,11 +31,11 @@
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/assign-auditor.tsx::adr002-pl-columns": 5,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/page.tsx::adr002-pl-columns": 8,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/page.tsx::adr002-pl-tables": 5,
-    "apps/b2b-web/src/app/(dashboard)/leads/actions.ts::adr002-pl-columns": 27,
+    "apps/b2b-web/src/app/(dashboard)/leads/actions.ts::adr002-pl-columns": 23,
     "apps/b2b-web/src/app/(dashboard)/leads/actions.ts::adr002-pl-tables": 22,
     "apps/b2b-web/src/app/(dashboard)/leads/assign-crew-dialog.tsx::adr002-pl-columns": 4,
-    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-columns": 16,
-    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-tables": 5,
+    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-columns": 12,
+    "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-tables": 2,
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-tables": 10,
     "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-columns": 2,
@@ -62,8 +62,8 @@
     "apps/b2b-web/tests/leads-auditor-pool.test.ts::adr002-pl-columns": 1,
     "apps/b2b-web/tests/leads-auditor-pool.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/leads-delete-admin-only.test.ts::adr002-pl-tables": 1,
-    "apps/b2b-web/tests/leads-list-minimize.test.ts::adr002-pl-columns": 16,
-    "apps/b2b-web/tests/leads-list-minimize.test.ts::adr002-pl-tables": 13,
+    "apps/b2b-web/tests/leads-list-minimize.test.ts::adr002-pl-columns": 31,
+    "apps/b2b-web/tests/leads-list-minimize.test.ts::adr002-pl-tables": 17,
     "apps/b2b-web/tests/leads-pool-minimize.test.ts::adr002-pl-columns": 23,
     "apps/b2b-web/tests/leads-pool-minimize.test.ts::adr002-pl-tables": 7,
     "apps/b2b-web/tests/leads-return-to-funnel.test.ts::adr002-pl-columns": 2,
@@ -122,5 +122,5 @@
     "supabase/migrations/20260824185845_security_enable_rls_baseline.sql::adr002-pl-tables": 21,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1424
+  "total": 1432
 }
