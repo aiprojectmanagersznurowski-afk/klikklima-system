@@ -2,10 +2,18 @@
 
 import React, { useState, useTransition } from "react";
 import { updateLeadAuditor } from "./actions";
+import type { getAuditors } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, UserPlus } from "lucide-react";
 
-type AssignableAuditor = { id: string; imie_i_nazwisko: string; avatarUrl: string | null };
+// SEC-ASSIGNMENT-POOL-MINIMIZE (AC6): id/imie_i_nazwisko wyprowadzone z prawdziwego
+// zwracanego typu getAuditors() (leads/actions.ts), zamiast ręcznie skopiowane —
+// zmiana kształtu tam propaguje się tu automatycznie. `zdjecie_url` jest tu
+// zastępowane `avatarUrl`, bo page.tsx zamienia ścieżkę storage na podpisany URL
+// zanim przekaże pulę do tego komponentu (patrz `auditorsWithAvatars`).
+type AssignableAuditor = Omit<Awaited<ReturnType<typeof getAuditors>>[number], "zdjecie_url"> & {
+  avatarUrl: string | null;
+};
 
 export function AssignAuditor({ leadId, currentAuditorId, auditors }: { leadId: string; currentAuditorId: string | null; auditors: AssignableAuditor[] }) {
   const [isPending, startTransition] = useTransition();

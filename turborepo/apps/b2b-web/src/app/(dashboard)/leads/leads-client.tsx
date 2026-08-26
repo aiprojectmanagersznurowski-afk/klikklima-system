@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { updateLeadAuditor } from "./[id]/actions";
 import { advanceLeadStatus , deleteLeadAction } from "./actions";
+import type { getAuditors } from "./actions";
 import { ReturnToFunnelDialog } from "./return-to-funnel-dialog";
 import { ArchiveLostDialog } from "./archive-lost-dialog";
 import { AssignCrewDialog } from "./assign-crew-dialog";
@@ -53,13 +54,12 @@ type Lead = Omit<
 };
 
 /**
- * SEC-ASSIGNMENT-POOL-MINIMIZE: `getAuditors()` (leads/actions.ts) zwraca od tej
- * zmiany wyłącznie {id, imie_i_nazwisko, zdjecie_url}, nie pełny model `audytorzy` —
- * ten komponent i tak czyta z puli wyłącznie `id`/`imie_i_nazwisko`. Typ musi
- * odzwierciedlać rzeczywisty, zawężony kształt, inaczej `leads/page.tsx` przekazujący
- * wynik `getAuditors()` w tym propie nie skompiluje się.
+ * SEC-ASSIGNMENT-POOL-MINIMIZE (AC6): wyprowadzone bezpośrednio z prawdziwego
+ * zwracanego typu `getAuditors()` (leads/actions.ts), tak jak `assign-crew-dialog.tsx`
+ * robi to dla `getCrews()`. Zmiana kształtu tam propaguje się tu automatycznie,
+ * zamiast wymagać ręcznej aktualizacji dwóch kopii tego samego typu.
  */
-type AuditorPoolEntry = { id: string; imie_i_nazwisko: string; zdjecie_url: string | null };
+type AuditorPoolEntry = Awaited<ReturnType<typeof getAuditors>>[number];
 
 type StageFilter = LeadStatus | "ALL";
 
