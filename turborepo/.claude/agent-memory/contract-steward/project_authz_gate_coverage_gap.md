@@ -39,9 +39,20 @@ Przy tej okazji: zdolność `assign` istnieje w `Capability` i w macierzy (`lead
 `update`, co przy `leads` daje inny zestaw ról (admin+dyspozytor) niż `assign` (admin). To otwarte
 pytanie dla człowieka, nie defekt do cichej naprawy podmianą argumentu.
 
+**Detektor istnieje od 2026-08-26:** `tools/kk-authz-gate.mjs` (AST po `typescript`) skanuje
+`apps/b2b-web/**/actions.ts` i zgłasza eksportowane funkcje, które mutują przez Prismę
+(w tym przez `tx.` w `$transaction`) bez pary `getCurrentActorRole()` + `can()`. Wyjątek:
+`// AUTHZ-EXEMPT: <powód>` nad definicją. Liczy per funkcja, nie per plik — czyli łapie
+przypadek z akapitu trzeciego. Pierwsze uruchomienie: 14 podejrzanych z 33 funkcji mutujących.
+ŚWIADOMIE NIE podpięty do `scripts/verify.sh` — repo ma nienaprawiony dług, a bramka czerwona
+od pierwszego dnia nie niesie sygnału. Podpięcie dopiero po zamknięciu długu albo po dodaniu
+baseline'u wzorem `kk-naming.mjs`; wtedy obowiązuje [[gate-rule-liveness]].
+
+Czego detektor NIE dowodzi: że bramka jest POPRAWNA. `can(role, 'leads', 'update')` w akcji
+kasującej klienta przechodzi skan. Para zasób/zdolność zostaje sprawą review i testów.
+
 **How to apply:** Przy każdym wymaganiu dotyczącym uprawnień pytaj osobno „czy macierz to mówi"
 i „czy jakikolwiek kod to czyta" — to dwa różne stany i pierwszy bywa zielony przy drugim
-pustym. Jeżeli kiedyś powstanie WO na regułę skanu (Server Action mutująca zasób z `RESOURCES`
-bez wywołania `can()`), obowiązuje [[gate-rule-liveness]]: reguła wchodzi razem ze stałą mutacją
-w `kk-selftest.mjs`. Sam skan to narzędzie, nie kontrakt — nie dokładaj go przy okazji zmiany
-w `contracts/`.
+pustym. Dziś na drugie pytanie odpowiada `node tools/kk-authz-gate.mjs`; uruchom go, zanim
+uznasz jakikolwiek retrofit uprawnień za domknięty. Sam skan to narzędzie, nie kontrakt —
+nie dokładaj go przy okazji zmiany w `contracts/`.
