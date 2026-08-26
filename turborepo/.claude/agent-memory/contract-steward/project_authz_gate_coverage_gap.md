@@ -48,6 +48,15 @@ przypadek z akapitu trzeciego. Pierwsze uruchomienie: 14 podejrzanych z 33 funkc
 od pierwszego dnia nie niesie sygnału. Podpięcie dopiero po zamknięciu długu albo po dodaniu
 baseline'u wzorem `kk-naming.mjs`; wtedy obowiązuje [[gate-rule-liveness]].
 
+**Dług warstwy Server Action zamknięty 2026-08-26** — wszystkie 14 znalezisk naprawione,
+zarejestrowane RETROAKTYWNIE jako `SEC-AUTHZ-B2B-MUTATIONS` (status `DONE`, 6 plików testów).
+Kolejność „implementacja i testy najpierw, ID wymagania po fakcie" była w tym przypadku
+świadomą decyzją człowieka, nie obejściem procesu: skaner znalazł lukę bezpieczeństwa, a nie
+brak wpisu w rejestrze. Wpis wiąże regułę z tabelą docelową zapisu, nie z nazwą funkcji —
+poprzednie trzy wymagania zawężone do konkretnych akcji zostawiały dziurę przy czwartej.
+Podpięcie skanera do `scripts/verify.sh` jest teraz możliwe (baseline byłby pusty), ale
+pozostaje niezrobione. Warstwa UI i RLS z tego WO nadal otwarte.
+
 Czego detektor NIE dowodzi: że bramka jest POPRAWNA. `can(role, 'leads', 'update')` w akcji
 kasującej klienta przechodzi skan. Para zasób/zdolność zostaje sprawą review i testów.
 
