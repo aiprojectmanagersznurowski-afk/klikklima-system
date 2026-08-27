@@ -382,7 +382,7 @@ export function LeadsClient({
                               {auditors.map(a => (
                                 <DropdownMenuItem 
                                   key={a.id} 
-                                  onSelect={() => handleAssignAuditor(lead.id, a.id)}
+                                  onClick={() => handleAssignAuditor(lead.id, a.id)}
                                   className="flex items-center justify-between cursor-pointer"
                                 >
                                   <span>{a.imie_i_nazwisko}</span>
@@ -396,7 +396,7 @@ export function LeadsClient({
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
-                                    onSelect={() => handleAssignAuditor(lead.id, null)}
+                                    onClick={() => handleAssignAuditor(lead.id, null)}
                                     className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
                                   >
                                     Odznacz audytora
@@ -460,7 +460,7 @@ export function LeadsClient({
                                         {actions.map((action) => (
                                           <DropdownMenuItem
                                             key={action.target}
-                                            onSelect={() => handleAdvanceStatus(lead.id, action.target)}
+                                            onClick={() => handleAdvanceStatus(lead.id, action.target)}
                                             className={`cursor-pointer flex items-center gap-2 ${
                                               action.variant === "destructive"
                                                 ? "text-destructive focus:text-destructive focus:bg-destructive/10"
@@ -486,7 +486,7 @@ export function LeadsClient({
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
                                           className="cursor-pointer flex items-center gap-2"
-                                          onSelect={() => setAssignCrewDialogLeadId(lead.id)}
+                                          onClick={() => setAssignCrewDialogLeadId(lead.id)}
                                         >
                                           <Wrench size={14} className="shrink-0" />
                                           Przypisz ekipę monterską
@@ -500,14 +500,14 @@ export function LeadsClient({
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
                                           className="cursor-pointer flex items-center gap-2"
-                                          onSelect={() => setReturnDialogLeadId(lead.id)}
+                                          onClick={() => setReturnDialogLeadId(lead.id)}
                                         >
                                           <RotateCcw size={14} className="shrink-0" />
                                           Zwróć do obiegu
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                           className="cursor-pointer flex items-center gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
-                                          onSelect={() => setArchiveDialogLeadId(lead.id)}
+                                          onClick={() => setArchiveDialogLeadId(lead.id)}
                                         >
                                           <Archive size={14} className="shrink-0" />
                                           Archiwizuj (Lost)
