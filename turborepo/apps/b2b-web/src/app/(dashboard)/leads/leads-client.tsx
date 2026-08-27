@@ -4,8 +4,18 @@ import React, { useState, useEffect } from "react";
 import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadStatus } from "@repo/database";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { pl } from "date-fns/locale";
+
+// date-fns' format() reads the JS runtime's local timezone to render day/hour components.
+// Next.js server-renders this client component on Vercel (UTC) and hydrates it in the
+// visitor's browser (Europe/Warsaw) - two different local timezones for the same instant
+// produce different text, which is exactly React error #418 (hydration text mismatch).
+// Pinning the timezone explicitly makes the output identical everywhere this file runs.
+const APP_TIMEZONE = "Europe/Warsaw";
+function formatDate(date: Date | string, pattern: string) {
+  return formatInTimeZone(date, APP_TIMEZONE, pattern, { locale: pl });
+}
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
@@ -310,8 +320,8 @@ export function LeadsClient({
                   filteredLeads.map(lead => {
                     const clientName = lead.klient?.imie_i_nazwisko || "Brak danych klienta";
                     const fullAddress = lead.adres?.ulica_miasto || "Brak miasta";
-                    const dateFormatted = format(new Date(lead.created_at), "d MMM yyyy, HH:mm", { locale: pl });
-                    const auditDate = lead.data_rezerwacji ? format(new Date(lead.data_rezerwacji), "d MMM yyyy, HH:mm", { locale: pl }) : null;
+                    const dateFormatted = formatDate(lead.created_at, "d MMM yyyy, HH:mm");
+                    const auditDate = lead.data_rezerwacji ? formatDate(lead.data_rezerwacji, "d MMM yyyy, HH:mm") : null;
                     const estimatedQuote = lead.estymowana_wycena || "Brak";
                     const auditor = lead.audytor;
                     const teamName = lead.instalacje?.[0]?.zespol?.nazwa || "Brak";
