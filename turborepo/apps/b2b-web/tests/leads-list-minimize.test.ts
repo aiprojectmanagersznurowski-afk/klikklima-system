@@ -35,6 +35,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * Mockowanie `@repo/database` i `next/cache` wzorem leads-pool-minimize.test.ts /
  * availability-pool-filter.test.ts — `next/cache` mockowane defensywnie, bo cały moduł
  * actions.ts importuje `revalidatePath` na górze pliku.
+ *
+ * Dopisane po SEC-RLS-AUDITOR-SCOPE: `getLeads()` woła teraz `getCurrentActorRole()`
+ * (`../src/utils/supabase/server`, wzorem leads-auditor-scope.test.ts) i fail-closed
+ * odmawia bez zamockowanej roli. Ten plik testuje WYŁĄCZNIE minimalizację pól/skalarów
+ * (SEC-LEADS-LIST-MINIMIZE/SEC-LEADS-LIST-SCALARS), nie autoryzację — rola jest tu
+ * zamockowana na stałe jako 'dyspozytor' (pełny dostęp, bez filtra audytor_id), żeby
+ * każdy istniejący test kontynuował sprawdzanie dokładnie tego, co sprawdzał wcześniej.
+ * Autoryzacja/zawężenie audytora ma własny, zamknięty plik: leads-auditor-scope.test.ts.
  */
 
 const {
@@ -42,11 +50,13 @@ const {
   leadCountMock,
   leadGroupByMock,
   revalidatePathMock,
+  getCurrentActorRoleMock,
 } = vi.hoisted(() => ({
   leadFindManyMock: vi.fn(),
   leadCountMock: vi.fn(),
   leadGroupByMock: vi.fn(),
   revalidatePathMock: vi.fn(),
+  getCurrentActorRoleMock: vi.fn(),
 }));
 
 vi.mock('@repo/database', () => ({
@@ -60,8 +70,28 @@ vi.mock('@repo/database', () => ({
   LeadStatus: {},
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
+vi.mock('../src/utils/supabase/server', () => ({
+  getCurrentActorRole: getCurrentActorRoleMock,
+}));
 
 const { getLeads } = await import('../src/app/(dashboard)/leads/actions');
+
+/**
+ * Odmowa (`{ success: false, error }`) jest poza zakresem tego pliku (należy do
+ * SEC-RLS-AUDITOR-SCOPE / leads-auditor-scope.test.ts). Rola jest tu zawsze zamockowana
+ * na 'dyspozytor', więc `getLeads()` zawsze zwraca kształt sukcesu — to jawne zawężenie
+ * typu unii pozwala reszcie plików kontynuować destrukturyzację `leads` bez zmiany
+ * intencji testu (por. wzorzec narrowingu z WO).
+ */
+async function getLeadsExpectSuccess(...args: Parameters<typeof getLeads>) {
+  const result = await getLeads(...args);
+  // GetLeadsResult nie niesie klucza `success` w ogóle (patrz actions.ts) — tylko
+  // odmowa ma `{ success: false, error }`. Obecność `leads` jest dowodem sukcesu.
+  if (!('leads' in result)) {
+    throw new Error(`Nieoczekiwana odmowa w teście minimalizacji: ${result.error}`);
+  }
+  return result;
+}
 
 /**
  * Zbiór nazw pól wrażliwych. Forma niezależna od dzisiejszych nazw kolumn (ADR-002 czeka
@@ -161,8 +191,13 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
     leadCountMock.mockReset();
     leadGroupByMock.mockReset();
     revalidatePathMock.mockReset();
+    getCurrentActorRoleMock.mockReset();
     leadCountMock.mockResolvedValue(1);
     leadGroupByMock.mockResolvedValue([]);
+    // Poza zakresem tego pliku (SEC-RLS-AUDITOR-SCOPE): rola pełnego dostępu, bez
+    // filtra audytor_id, żeby testy minimalizacji kontynuowały sprawdzanie tego,
+    // co sprawdzały przed dodaniem bramki roli — patrz leads-auditor-scope.test.ts.
+    getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
   });
 
   // Kryterium #1 z kontraktu: dowód KSZTAŁTEM (Object.keys jako równość zbiorów), nie
@@ -171,7 +206,7 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
   it('lead.klient ma DOKŁADNIE zbiór kluczy {id, imie_i_nazwisko} — bez i jednej kolumny więcej', async () => {
     leadFindManyMock.mockResolvedValue([fullLeadRecord()]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
 
     expect(leads).toHaveLength(1);
     expect(new Set(Object.keys(leads[0].klient as object))).toEqual(new Set(CLIENT_KEYS));
@@ -181,7 +216,7 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
   it('lead.adres ma DOKŁADNIE zbiór kluczy {ulica_miasto} — bez id, bez współrzędnych', async () => {
     leadFindManyMock.mockResolvedValue([fullLeadRecord()]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
 
     expect(new Set(Object.keys(leads[0].adres as object))).toEqual(new Set(ADDRESS_KEYS));
   });
@@ -190,7 +225,7 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
   it('lead.instalacje[0].zespol ma DOKŁADNIE zbiór kluczy {nazwa} — bez iban/nip/kontaktów ekipy', async () => {
     leadFindManyMock.mockResolvedValue([fullLeadRecord()]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
 
     const zespol = leads[0].instalacje[0].zespol as object;
     expect(new Set(Object.keys(zespol))).toEqual(new Set(CREW_IN_INSTALLATION_KEYS));
@@ -206,7 +241,7 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
   it('lead.audytor ma DOKŁADNIE zbiór kluczy {id, imie_i_nazwisko} — bez iban/nip/telefon/email', async () => {
     leadFindManyMock.mockResolvedValue([fullLeadRecord()]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
 
     expect(new Set(Object.keys(leads[0].audytor as object))).toEqual(new Set(AUDITOR_KEYS));
   });
@@ -217,7 +252,7 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
   it('żaden zwrócony klucz klienta, adresu ani ekipy nie należy do zbioru pól wrażliwych (telefon, email, iban, nip, telefon_kontaktowy, latitude, longitude)', async () => {
     leadFindManyMock.mockResolvedValue([fullLeadRecord()]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
     const [lead] = leads;
 
     const leakedClientKeys = Object.keys(lead.klient as object).filter((k) => SENSITIVE_FIELD_NAMES.has(k));
@@ -304,7 +339,7 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
     leadCountMock.mockResolvedValue(7);
     leadGroupByMock.mockResolvedValue([{ status: 'NEW_LEAD', _count: { id: 3 } }]);
 
-    const result = await getLeads({ status: 'NEW_LEAD', page: 2, limit: 10 });
+    const result = await getLeadsExpectSuccess({ status: 'NEW_LEAD', page: 2, limit: 10 });
 
     const callArgs = leadFindManyMock.mock.calls[0]?.[0] ?? {};
     expect(callArgs.where).toEqual({ status: 'NEW_LEAD' });
@@ -329,7 +364,7 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
       }),
     ]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
 
     expect(leads[0].klient?.imie_i_nazwisko).toBe('Anna Wiśniewska');
     expect(leads[0].adres?.ulica_miasto).toBe('ul. Chłodnicza 5, Warszawa');
@@ -341,7 +376,7 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
   it('przypadek pusty — lead bez instalacji (instalacje: []) nie rzuca i zwraca pustą tablicę instalacji', async () => {
     leadFindManyMock.mockResolvedValue([fullLeadRecord({ instalacje: [] })]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
 
     expect(leads[0].instalacje).toEqual([]);
   });
@@ -407,8 +442,13 @@ describe('getLeads() — minimalizacja SKALARÓW samego leada (SEC-LEADS-LIST-SC
     leadCountMock.mockReset();
     leadGroupByMock.mockReset();
     revalidatePathMock.mockReset();
+    getCurrentActorRoleMock.mockReset();
     leadCountMock.mockResolvedValue(1);
     leadGroupByMock.mockResolvedValue([]);
+    // Poza zakresem tego pliku (SEC-RLS-AUDITOR-SCOPE): rola pełnego dostępu, bez
+    // filtra audytor_id, żeby testy minimalizacji kontynuowały sprawdzanie tego,
+    // co sprawdzały przed dodaniem bramki roli — patrz leads-auditor-scope.test.ts.
+    getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
   });
 
   // AC1 — dowód KSZTAŁTEM: równość zbiorów w obie strony wobec stałej zadeklarowanej w
@@ -417,7 +457,7 @@ describe('getLeads() — minimalizacja SKALARÓW samego leada (SEC-LEADS-LIST-SC
   it('Object.keys(lead) jest RÓWNE jako zbiór dokładnie {id, status, created_at, data_rezerwacji, estymowana_wycena, quoted_at, klient, adres, instalacje, audytor} — bez i jednego pola więcej', async () => {
     leadFindManyMock.mockResolvedValue([fullLeadRecordWithAllScalars()]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
 
     expect(leads).toHaveLength(1);
     expect(new Set(Object.keys(leads[0]))).toEqual(new Set(LEAD_TOP_LEVEL_KEYS));
@@ -450,7 +490,7 @@ describe('getLeads() — minimalizacja SKALARÓW samego leada (SEC-LEADS-LIST-SC
   it('lead.notatki_wewnetrzne NIE występuje w wyniku listy (ryzyko RODO — tekst swobodny niekontrolowany)', async () => {
     leadFindManyMock.mockResolvedValue([fullLeadRecordWithAllScalars()]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
 
     expect(Object.keys(leads[0])).not.toContain('notatki_wewnetrzne');
   });
@@ -459,7 +499,7 @@ describe('getLeads() — minimalizacja SKALARÓW samego leada (SEC-LEADS-LIST-SC
   it('lead.odpowiedzi_triage NIE występuje w wyniku listy (ryzyko RODO — surowy zrzut formularza B2C)', async () => {
     leadFindManyMock.mockResolvedValue([fullLeadRecordWithAllScalars()]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
 
     expect(Object.keys(leads[0])).not.toContain('odpowiedzi_triage');
   });
@@ -471,7 +511,7 @@ describe('getLeads() — minimalizacja SKALARÓW samego leada (SEC-LEADS-LIST-SC
   it('kubełek rejected_auto — `where` nadal zawiera auto_rejected_reason, ale pole znika z wyniku (`select`/`Object.keys`)', async () => {
     leadFindManyMock.mockResolvedValue([fullLeadRecordWithAllScalars()]);
 
-    const { leads } = await getLeads({ bucket: 'rejected_auto' });
+    const { leads } = await getLeadsExpectSuccess({ bucket: 'rejected_auto' });
 
     const callArgs = leadFindManyMock.mock.calls[0]?.[0] ?? {};
     expect(callArgs.where).toEqual({ status: 'QUOTE_REJECTED', auto_rejected_reason: 'AUTO_REJECT_14_DAYS' });
@@ -493,7 +533,7 @@ describe('getLeads() — minimalizacja SKALARÓW samego leada (SEC-LEADS-LIST-SC
     leadCountMock.mockResolvedValue(7);
     leadGroupByMock.mockResolvedValue([{ status: 'NEW_LEAD', _count: { id: 3 } }]);
 
-    const result = await getLeads({ status: 'NEW_LEAD', page: 2, limit: 10 });
+    const result = await getLeadsExpectSuccess({ status: 'NEW_LEAD', page: 2, limit: 10 });
 
     const callArgs = leadFindManyMock.mock.calls[0]?.[0] ?? {};
     expect(callArgs.where).toEqual({ status: 'NEW_LEAD' });
@@ -523,7 +563,7 @@ describe('getLeads() — minimalizacja SKALARÓW samego leada (SEC-LEADS-LIST-SC
       }),
     ]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
     const [lead] = leads;
 
     expect(lead.id).toBe('lead-42');
@@ -540,7 +580,7 @@ describe('getLeads() — minimalizacja SKALARÓW samego leada (SEC-LEADS-LIST-SC
   it('przypadek pusty — lista pusta ([]) nie rzuca przy próbie odczytu kształtu pierwszego elementu', async () => {
     leadFindManyMock.mockResolvedValue([]);
 
-    const { leads } = await getLeads();
+    const { leads } = await getLeadsExpectSuccess();
 
     expect(leads).toEqual([]);
     expect(() => Object.keys((leads as unknown[])[0] ?? {})).not.toThrow();

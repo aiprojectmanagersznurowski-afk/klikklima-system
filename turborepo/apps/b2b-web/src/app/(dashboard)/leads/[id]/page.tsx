@@ -1,5 +1,4 @@
 import React from "react";
-import { prisma } from "@repo/database";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -11,6 +10,7 @@ import { AssignAuditor } from "./assign-auditor";
 import { EditLeadModal } from "./edit-lead-modal";
 import { DeleteLeadButton } from "./delete-lead-button";
 import { getAuditors } from "../actions";
+import { getLeadDetail } from "./actions";
 import { signStoragePaths } from "@/lib/storage/signed-urls";
 
 export const dynamic = "force-dynamic";
@@ -52,17 +52,14 @@ export default async function LeadDetailsPage({
   const { edit } = await searchParams;
   const isEditMode = edit === 'true';
 
-  const lead = await prisma.leady.findUnique({
-    where: { id },
-    include: {
-      klient: true,
-      adres: true,
-    },
-  });
+  const detailResult = await getLeadDetail(id);
 
-  if (!lead) {
-    return notFound();
+  if (!detailResult.success) {
+    notFound();
+    return;
   }
+
+  const { lead } = detailResult;
 
   const triage: TriageAnswers = (lead.odpowiedzi_triage as TriageAnswers | null) || {};
 

@@ -51,6 +51,18 @@ import React from 'react';
  *  - `./edit-lead-modal`, `./delete-lead-button` (poza zakresem tego wymagania, muszą się
  *    dać rozwiązać jako moduł — zawierają własne `@/components/ui/*` nierozwiązywalne bez
  *    aliasu, stąd zastąpienie CAŁEGO modułu, nie tylko jego zależności)
+ *  - `../src/utils/supabase/server` (`getCurrentActorRole`, `createClient` — `getLeadDetail`,
+ *    świeżo wydzielone do `leads/[id]/actions.ts` przy zamykaniu SEC-RLS-AUDITOR-SCOPE,
+ *    NIE jest tu mockowane w całości: page.tsx woła prawdziwą implementację `getLeadDetail`
+ *    na zamockowanym `prisma.leady.findUnique`. `getCurrentActorRole()` samo w sobie ZAWSZE
+ *    woła `createClient()` z tego modułu — bez mocka rzuciłoby poza kontekstem żądania
+ *    Next.js, zanim jeszcze dojdzie do logiki, którą ten plik testuje (kształt propsów
+ *    <AssignAuditor>). Rola ustawiona na `'admin'` — `leads.read = ['admin', 'dyspozytor',
+ *    'audytor:own']`, więc `admin` to `access === 'yes'` bez gałęzi `'own'`, która
+ *    dodatkowo wołałaby `createClient()`/`auth.getUser()`/`prisma.audytorzy.findUnique`
+ *    wewnątrz `getLeadDetail` — dla `admin` te trzy pozostają nieużyte, patrz
+ *    `leads-detail-scope.test.ts` dla pełnego pokrycia wariantu `'own'`/odmów. Ten plik
+ *    sprawdza WYŁĄCZNIE zawężenie pól audytora w propsach, nie autoryzację samą w sobie.)
  *
  * Świadomie POZA zakresem tego pliku:
  *  - `getAuditors()` samo w sobie — osobny plik, osobna granica
@@ -64,11 +76,15 @@ const {
   getAuditorsMock,
   signStoragePathsMock,
   AssignAuditorMock,
+  getCurrentActorRoleMock,
+  createClientMock,
 } = vi.hoisted(() => ({
   leadFindUniqueMock: vi.fn(),
   getAuditorsMock: vi.fn(),
   signStoragePathsMock: vi.fn(),
   AssignAuditorMock: vi.fn(() => null),
+  getCurrentActorRoleMock: vi.fn(),
+  createClientMock: vi.fn(),
 }));
 
 vi.mock('@repo/database', () => ({
@@ -76,6 +92,10 @@ vi.mock('@repo/database', () => ({
 }));
 vi.mock('../src/app/(dashboard)/leads/actions', () => ({
   getAuditors: getAuditorsMock,
+}));
+vi.mock('../src/utils/supabase/server', () => ({
+  getCurrentActorRole: getCurrentActorRoleMock,
+  createClient: createClientMock,
 }));
 vi.mock('@/lib/storage/signed-urls', () => ({
   signStoragePaths: signStoragePathsMock,
@@ -169,7 +189,13 @@ describe('leads/[id]/page.tsx — propsy <AssignAuditor auditors={...}> (SEC-ASS
     getAuditorsMock.mockReset();
     signStoragePathsMock.mockReset();
     AssignAuditorMock.mockClear();
+    getCurrentActorRoleMock.mockReset();
+    createClientMock.mockReset();
     leadFindUniqueMock.mockResolvedValue(LEAD_FIXTURE);
+    // Rola z pełnym dostępem (leads.read === 'yes', bez gałęzi 'own') — te testy
+    // dowodzą zawężenia pól audytora w propsach <AssignAuditor>, nie autoryzacji
+    // getLeadDetail() samej w sobie (patrz leads-detail-scope.test.ts).
+    getCurrentActorRoleMock.mockResolvedValue('admin');
   });
 
   // Kryterium #5 z kontraktu: pole potrzebne WYŁĄCZNIE serwerowo (`zdjecie_url`) nie

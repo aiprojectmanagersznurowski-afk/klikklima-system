@@ -1,4 +1,5 @@
 import React from "react";
+import { notFound } from "next/navigation";
 import { LeadsClient } from "./leads-client";
 import { getLeads, getAuditors } from "./actions";
 import { LeadStatus } from "@repo/database";
@@ -25,6 +26,13 @@ export default async function LeadsPage(props: {
     page, 
     limit: 50 
   });
+  // SEC-RLS-AUDITOR-SCOPE: getLeads() zwraca { success: false, error } dla ról
+  // bez uprawnień do odczytu (monter) i przypadków fail-closed.
+  if (!("leads" in result)) {
+    notFound();
+    return;
+  }
+
   const auditors = await getAuditors();
   const actorRole = await getCurrentActorRole();
 

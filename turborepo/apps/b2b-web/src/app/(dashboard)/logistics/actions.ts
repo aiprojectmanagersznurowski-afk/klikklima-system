@@ -20,7 +20,25 @@ export type LogisticsLead = {
   trackingNumber: string | null
 }
 
-export async function getLogisticsLeads(): Promise<LogisticsLead[]> {
+/**
+ * SEC-RLS-AUDITOR-SCOPE (D4): /logistics jest zamknięte dla audytora i montera
+ * całkowicie — w przeciwieństwie do getLeads() nie ma tu zakresu `:own`, więc
+ * jedyne dozwolone role to admin/dyspozytor (`can(role, 'leads', 'read') === 'yes'`).
+ * Fail-closed: brak roli albo rzucony wyjątek → odmowa, `prisma.leady.findMany`
+ * nie jest wołane wcale.
+ */
+export async function getLogisticsLeads(): Promise<LogisticsLead[] | { success: false; error: string }> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Nie udało się zweryfikować uprawnień." };
+  }
+  if (!actorRole || can(actorRole, "leads", "read") !== "yes") {
+    return { success: false, error: "Brak uprawnień do przeglądania listy logistyki." };
+  }
+
   const leads = await prisma.leady.findMany({
     where: {
       status: {

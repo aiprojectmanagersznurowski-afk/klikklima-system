@@ -15,7 +15,10 @@ Zweryfikowane 2026-08-25 na SEC-AUTHZ-USER-MGMT: 11 mutantów, wynik zgodny z `n
 
 **How to apply — przepis (`tsx` NIE jest zainstalowany lokalnie, `typescript` TAK):**
 `node --input-type=module --eval "$(cat <<'EOF' … EOF)"` (heredoc z cudzysłowem = brak escapowania;
-wewnątrz używaj template literals, nie `\"`), a w skrypcie:
+wewnątrz używaj template literals, nie `\"`). **Przy dłuższych skryptach `--eval "$(cat <<EOF)"`
+potrafi wywalić się na parsowaniu bashu („unexpected EOF while looking for matching `)`") — wtedy
+podaj skrypt na STDIN: `node --input-type=module - <<'ENDOFSCRIPT' … ENDOFSCRIPT`. Działa
+identycznie i jest odporne na nawiasy/regexy w treści (2026-08-26).** W skrypcie:
 1. `ts.transpileModule(readFileSync('packages/contracts/src/generated/rbac.ts'))` →
    `await import('data:text/javascript;base64,' + …)` = PRAWDZIWE `can()`/`ROLES`/`PERMISSIONS`.
 2. Wczytaj prawdziwy `actions.ts`, podmień fragment stringiem (**rzuć wyjątkiem, jeśli wzorzec
@@ -48,8 +51,25 @@ wewnątrz używaj template literals, nie `\"`), a w skrypcie:
   testów, tylko własność macierzy. Odnotuj jako ryzyko szczątkowe, nie jako blokadę;
 - podmiana `resource` (`authorized_users` → `leads`) — łapie tylko ta rola, która ma szersze
   uprawnienia na podmienionym zasobie;
+- **tożsamość brana z ARGUMENTU akcji zamiast z sesji** (`{ audytor_id: options?.audytor_id ?? own.id }`)
+  — przy filtrach `:own` to najgroźniejszy mutant po `undefined` w `where`, i przeżywa całą
+  baterię, jeśli żaden test nie wywoła akcji z podstawionym cudzym identyfikatorem w
+  argumencie. Zweryfikowane 2026-08-26 na `getLeads()` (20 testów, mutant przeżył). Test
+  „kontrola negatywna: `where.audytor_id` nie równa się cudzemu id" go NIE zabija, bo nie
+  podaje tego id na wejściu — musi być argument;
 - przesunięcie zapytania Prismy PRZED bramkę — dowodzi, że asercje „`findUnique` nie został
-  wywołany" realnie pilnują kolejności, a nie są ozdobą.
+  wywołany" realnie pilnują kolejności, a nie są ozdobą. **Uwaga: `tools/kk-authz-gate.mjs`
+  sprawdza wyłącznie OBECNOŚĆ `can()` w akcji, nie jego KOLEJNOŚĆ względem zapytań** —
+  akcja z bramką na końcu przechodzi bramkę statyczną i jednocześnie jest oraclem stanu dla
+  roli bez uprawnień (zweryfikowane 2026-08-26 na `assignCrewToLead`: `monter` dostaje
+  „Lead nie został znaleziony" vs „nieważny certyfikat: F-Gaz, SEP" zanim `can()` w ogóle
+  zostanie zapytane). Przy każdej akcji z bramką na końcu odpal wariant „rola nieuprawniona
+  + dwa różne stany bazy" i porównaj komunikaty.
+- **rozróżnienie kształtu odmowy dla „rekord nie istnieje" vs „cudzy rekord"** — mutant dla
+  wymagań z kryterium nieodróżnialności (WO AC4 przy `/leads/[id]`). Zabija go WYŁĄCZNIE
+  asercja porównująca CAŁE obiekty obu odmów (`expect(a).toEqual(b)`); zestaw sprawdzający
+  osobno `result.success === false` dla obu przypadków jest na to ślepy. Zweryfikowane
+  2026-08-26 na `getLeadDetail()`.
 
 **Minimalna lista mutantów dla minimalizacji danych** (`select` + zawężający `map`, wymagania
 klasy SEC-…-MINIMIZE; zwalidowana 2026-08-25 na SEC-ASSIGNMENT-POOL-MINIMIZE, baseline 0/9):

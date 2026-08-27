@@ -1,23 +1,39 @@
 ---
-name: project-auditor-scope-unimplemented
-description: SEC-RLS-AUDITOR-SCOPE (risk HIGH) nie ma implementacji w getLeads() ani pokrycia testami, a trzy inne wymagania powołują się na nie jako na „już zrobione" — nie powtarzaj tego założenia
+name: project-auditor-scope-status
+description: SEC-RLS-AUDITOR-SCOPE — stan na 2026-08-26 po rundzie 2: lista, karta /leads/[id], is_active i /logistics zamknięte i zweryfikowane wykonaniem; otwarte zostaje wyłącznie AC10 (eskalacja bokiem przez supabase-js anon)
 metadata:
   type: project
 ---
 
-`SEC-RLS-AUDITOR-SCOPE` (audytor widzi wyłącznie swoje leady, risk HIGH) jest na 2026-08-26
-**niezaimplementowane w ścieżce listy leadów i niepokryte testem**: `node tools/kk-trace.mjs`
-pokazuje je z myślnikiem (brak trafień), a `getLeads()` nie ma ani bramki roli, ani zawężenia
-po audytorze w `where` — `page.tsx` czyta `getCurrentActorRole()` tylko po to, żeby przekazać
-rolę do UI.
+`SEC-RLS-AUDITOR-SCOPE` (risk HIGH, status w kontrakcie nadal `TODO`) po dwóch rundach
+recenzji `rls-security-auditor` z 2026-08-26 ma zamknięte:
+- `getLeads()` — filtr `audytor_id` w `findMany`/`count`/`groupBy`, tożsamość z sesji,
+  odmowa dla montera, fail-closed, odrzucenie `is_active === false`;
+- `getLogisticsLeads()` — pełna odmowa dla audytora i montera (AC5 kontraktu);
+- `getLeadDetail(id)` w `leads/[id]/actions.ts` + `notFound()` w `[id]/page.tsx`
+  (AC4/AC5 z WO) — jeden wspólny kształt odmowy dla leada cudzego i nieistniejącego.
 
-**Why:** trzy wymagania z rodziny MINIMIZE (`SEC-ASSIGNMENT-POOL-MINIMIZE`,
-`SEC-LEADS-LIST-MINIMIZE`, `SEC-LEADS-LIST-SCALARS`) mają w polu `source` zdanie „Dostęp do
-listy jest już poprawnie ograniczony rolą i zakresem audytora (SEC-RLS-AUDITOR-SCOPE), więc to
-nie jest luka RBAC". To zdanie jest podstawą, na której obniżano im ryzyko do MEDIUM — i jest
-niezweryfikowane. Prisma omija RLS, więc baza tego nie nadrobi.
+Zweryfikowane wykonaniem (mutacje w pamięci, baseline 0 padnięć): zabici mutanci
+„usuń filtr własności", „rozróżnij komunikat cudzy vs nieistniejący", „usuń `is_active`",
+„osłab bramkę do `!actorRole`", „zapytanie przed bramką", „usuń `if (!own)`".
+Przeżywa wyłącznie mutant „tożsamość z ARGUMENTU akcji" — nieeksploatowalny, bo
+`getLeadDetail(id: string)` ma jeden parametr (fakt statyczny, nie zasługa testów).
 
-**How to apply:** nie powtarzaj tej przesłanki w werdyktach. Przy każdym audycie w
-`leads/actions.ts` odnotuj to jako osobne, wciąż otwarte znalezisko (nie jako blocker dla
-cudzego WO, bo to zastane). Sprawdź `kk-trace` zamiast wierzyć polu `source`.
-Powiązane: [[feedback-mutation-testing-in-memory]].
+**Co ZOSTAŁO otwarte:**
+- **AC10 „ESKALACJA BOKIEM"** — kontrakt żąda testu zamrażającego stan z migracji
+  `20260824185845_security_enable_rls_baseline.sql` (`leady`: RLS ON, jedyna polityka to
+  INSERT dla `anon`, brak SELECT). Taki test nie istnieje w `apps/b2b-web/tests`; w tym
+  środowisku nie ma `docker`/`psql`/`supabase`, więc jedyne wykonalne zamrożenie to
+  asercja statyczna nad plikiem migracji.
+- Kolejność bramki w `assignCrewToLead` (`leads/actions.ts`) — `can()` po zapytaniach
+  o leada i ekipę; poza zakresem tego ID, patrz [[feedback-mutation-testing-in-memory]].
+
+**Why:** trzy wymagania MINIMIZE (`SEC-ASSIGNMENT-POOL-MINIMIZE`, `SEC-LEADS-LIST-MINIMIZE`,
+`SEC-LEADS-LIST-SCALARS`) w polu `source` powołują się na to ID jako dowód, że „dostęp jest
+już ograniczony rolą i zakresem audytora" — po rundzie 2 zdanie to jest prawdziwe dla listy,
+karty szczegółów i logistyki.
+
+**How to apply:** przy kolejnym audycie w `leads/` nie powtarzaj znalezisk o karcie
+szczegółów ani o `is_active` — są naprawione. Jedyne, czego trzeba pilnować przed
+przejściem wymagania na DONE, to AC10 (AC13 kontraktu wymienia tylko `where` + fail-closed,
+ale AC10 nadal jest kryterium akceptacji).

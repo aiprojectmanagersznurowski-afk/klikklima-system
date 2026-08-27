@@ -10,7 +10,7 @@ import {
   findTransition,
   can,
 } from "@klikklima/contracts";
-import { getCurrentActorRole } from "../../../utils/supabase/server";
+import { getCurrentActorRole, createClient } from "../../../utils/supabase/server";
 
 /**
  * D6 (WO CRM-SAFE-RECORD-ACTIONS): "ważny w dniu montażu" porównujemy po dacie
@@ -253,12 +253,85 @@ function bucketToStatus(bucket: string): LeadStatus | null {
   }
 }
 
-export async function getLeads(options?: { 
-  status?: LeadStatus | "ALL", 
+/**
+ * SEC-RLS-AUDITOR-SCOPE: Prisma omija RLS — dostęp do listy leadów (i pochodnych
+ * liczników) musi być jawnie zawężony w kodzie akcji. `can(actorRole, 'leads', 'read')`
+ * zwraca 'yes' dla admin/dyspozytor (bez zmian), 'own' dla audytor (zawężenie po
+ * audytor_id własnego rekordu, dociągniętego przez email sesji — wzorem
+ * setSelfAvailabilityAction w auditors/actions.ts) i 'no' dla reszty (monter) →
+ * odmowa jawna (D2), nie cicha pusta lista. Fail-closed: brak roli, rzucony wyjątek,
+ * albo audytor bez powiązanego rekordu w `audytorzy` (email z sesji nie pasuje do
+ * żadnego wiersza) — zawsze odmowa, nigdy `where` zbudowane z `undefined`.
+ */
+/**
+ * MAJOR 1 (recenzja `rls-security-auditor` po zamknięciu GREEN 1/3): kształt sukcesu
+ * pisany jawnie, pole po polu — dokładnie to, co dziś buduje `narrowedLeads` niżej.
+ * `leads: any[]` cofało zawężenie typu zamknięte przez SEC-LEADS-LIST-MINIMIZE/
+ * SEC-LEADS-LIST-SCALARS (odczyt usuniętego pola przestawał dawać błąd kompilacji).
+ * Discriminowana unia jawna (nie `Extract<Awaited<ReturnType<typeof getLeads>>, …>`
+ * wywnioskowane z ciała funkcji) — TypeScript przy wnioskowaniu zwrotu z wielu
+ * niejednorodnych `return` w jednej funkcji dokleja do każdego wariantu unii
+ * brakujące klucze jako `?: undefined` (obserwowalne przez `tsc`), co psuje
+ * zawężanie operatorem `in` w miejscach wywołania (`leads/page.tsx`,
+ * `leads-list-minimize.test.ts`) — jawna unia tego nie robi.
+ */
+export type GetLeadsResult =
+  | {
+      leads: Array<{
+        id: string;
+        status: LeadStatus | null;
+        created_at: Date;
+        data_rezerwacji: Date | null;
+        estymowana_wycena: string | null;
+        quoted_at: Date | null;
+        klient: { id: string; imie_i_nazwisko: string | null } | null;
+        adres: { ulica_miasto: string | null } | null;
+        instalacje: Array<{ zespol: { nazwa: string } | null }>;
+        audytor: { id: string; imie_i_nazwisko: string } | null;
+      }>;
+      totalCount: number;
+      totalPages: number;
+      stageCounts: Record<string, number>;
+    }
+  | { success: false; error: string };
+
+export async function getLeads(options?: {
+  status?: LeadStatus | "ALL",
   bucket?: string,
-  page?: number, 
-  limit?: number 
-}) {
+  page?: number,
+  limit?: number
+}): Promise<GetLeadsResult> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Nie udało się zweryfikować uprawnień." };
+  }
+
+  const access = actorRole ? can(actorRole, "leads", "read") : "no";
+  if (access !== "yes" && access !== "own") {
+    return { success: false, error: "Brak uprawnień do przeglądania leadów." };
+  }
+
+  let scopeWhere: { audytor_id: string } | undefined;
+  if (access === "own") {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) {
+      return { success: false, error: "Brak sesji użytkownika." };
+    }
+
+    const own = await prisma.audytorzy.findUnique({
+      where: { email: user.email },
+      select: { id: true, is_active: true },
+    });
+    if (!own || own.is_active === false) {
+      return { success: false, error: "Nie znaleziono powiązanego konta audytora." };
+    }
+    scopeWhere = { audytor_id: own.id };
+  }
+
   try {
     const page = options?.page || 1;
     const limit = options?.limit || 50;
@@ -283,6 +356,10 @@ export async function getLeads(options?: {
       where = { status: options.status };
     }
     // If status === "ALL" or no filter → where stays empty (all leads)
+
+    if (scopeWhere) {
+      where = { ...where, ...scopeWhere };
+    }
 
     const [leads, totalCount, statusGroups] = await Promise.all([
       prisma.leady.findMany({
@@ -320,6 +397,7 @@ export async function getLeads(options?: {
       prisma.leady.count({ where }),
       prisma.leady.groupBy({
         by: ['status'],
+        where: scopeWhere,
         _count: {
           id: true
         }

@@ -2,7 +2,67 @@
 import { prisma } from "@repo/database";
 import { revalidatePath } from "next/cache";
 import { can } from "@klikklima/contracts";
-import { getCurrentActorRole } from "../../../../utils/supabase/server";
+import { getCurrentActorRole, createClient } from "../../../../utils/supabase/server";
+
+/**
+ * SEC-RLS-AUDITOR-SCOPE (MAJOR 3, recenzja `rls-security-auditor` po zamknięciu GREEN
+ * 1/3): `page.tsx` wołało `prisma.leady.findUnique` bezpośrednio, bez żadnej bramki
+ * roli ani filtra własności — każde zalogowane konto, w tym audytor spoza sprawy i
+ * monter, dostawało pełny rekord po wpisaniu dowolnego `id` w URL. `leads.read =
+ * ['admin', 'dyspozytor', 'audytor:own']` (contracts/rbac.contract.mjs) — wariant
+ * `'own'` wymaga dociągnięcia własnej tożsamości audytora tym samym wzorcem co w
+ * `getLeads()` (leads/actions.ts): `createClient()` + `supabase.auth.getUser()` +
+ * `prisma.audytorzy.findUnique({ where: { email }, select: { id, is_active } })`.
+ *
+ * AC4 (nieodróżnialność): lead cudzy i lead nieistniejący muszą zwracać DOKŁADNIE
+ * ten sam kształt odmowy — audytor zgadujący cudze ID nie może w ten sposób odkryć,
+ * że rekord w ogóle istnieje.
+ */
+export async function getLeadDetail(id: string) {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false as const, error: "Nie udało się zweryfikować uprawnień." };
+  }
+
+  const access = actorRole ? can(actorRole, "leads", "read") : "no";
+  if (access !== "yes" && access !== "own") {
+    return { success: false as const, error: "Brak uprawnień do przeglądania leada." };
+  }
+
+  let ownId: string | undefined;
+  if (access === "own") {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) {
+      return { success: false as const, error: "Brak sesji użytkownika." };
+    }
+
+    const own = await prisma.audytorzy.findUnique({
+      where: { email: user.email },
+      select: { id: true, is_active: true },
+    });
+    if (!own || own.is_active === false) {
+      return { success: false as const, error: "Nie znaleziono powiązanego konta audytora." };
+    }
+    ownId = own.id;
+  }
+
+  const DENIED = { success: false as const, error: "Lead nie został znaleziony." };
+
+  const lead = await prisma.leady.findUnique({
+    where: { id },
+    include: { klient: true, adres: true },
+  });
+
+  if (!lead || (access === "own" && lead.audytor_id !== ownId)) {
+    return DENIED;
+  }
+
+  return { success: true as const, lead };
+}
 
 /**
  * BLOCKER 4 (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #1, AC1.6): pula wyboru w UI

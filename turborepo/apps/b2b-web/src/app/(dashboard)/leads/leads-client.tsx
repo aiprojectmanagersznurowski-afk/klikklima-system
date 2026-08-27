@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { updateLeadAuditor } from "./[id]/actions";
 import { advanceLeadStatus , deleteLeadAction } from "./actions";
-import type { getAuditors, getLeads } from "./actions";
+import type { getAuditors, GetLeadsResult } from "./actions";
 import { ReturnToFunnelDialog } from "./return-to-funnel-dialog";
 import { ArchiveLostDialog } from "./archive-lost-dialog";
 import { AssignCrewDialog } from "./assign-crew-dialog";
@@ -33,7 +33,7 @@ import { can, type Role } from "@klikklima/contracts";
  * `select` w `getLeads()` propaguje się tu automatycznie — nie utrzymujemy drugiej,
  * ręcznej kopii kształtu.
  */
-type Lead = Awaited<ReturnType<typeof getLeads>>["leads"][number];
+type Lead = Extract<GetLeadsResult, { leads: unknown }>["leads"][number];
 
 /**
  * SEC-ASSIGNMENT-POOL-MINIMIZE (AC6): wyprowadzone bezpośrednio z prawdziwego
