@@ -60,16 +60,24 @@ function DropdownMenuLabel({
 }: MenuPrimitive.GroupLabel.Props & {
   inset?: boolean
 }) {
+  // Base UI's Menu.GroupLabel throws ("MenuGroupContext is missing") unless it has a
+  // Menu.Group/Menu.RadioGroup ancestor - unlike the Radix-style API this wrapper otherwise
+  // mimics, where a standalone label needs no group. Every caller in this repo (leads, crews,
+  // auditors, customers, installations, logistics, services, incidents) uses DropdownMenuLabel
+  // as a bare heading, not as an actual grouped-items label, so the group is supplied here
+  // rather than requiring every call site to wrap itself.
   return (
-    <MenuPrimitive.GroupLabel
-      data-slot="dropdown-menu-label"
-      data-inset={inset}
-      className={cn(
-        "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
-        className
-      )}
-      {...props}
-    />
+    <MenuPrimitive.Group>
+      <MenuPrimitive.GroupLabel
+        data-slot="dropdown-menu-label"
+        data-inset={inset}
+        className={cn(
+          "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
+          className
+        )}
+        {...props}
+      />
+    </MenuPrimitive.Group>
   )
 }
 
