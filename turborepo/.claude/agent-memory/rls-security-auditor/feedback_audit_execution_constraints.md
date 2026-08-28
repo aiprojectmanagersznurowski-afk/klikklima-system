@@ -54,6 +54,10 @@ w ogóle ROZRÓŻNIA wersję podatną od naprawionej — przepis i lista mutant�
 (tzw. vacuous pass). Zespół zna już ten problem pod nazwą BLOCKER 2 / „vacuous truth"
 w `availability-self-declaration.test.ts`.
 
-Czego NIE da się wykonać: zapytań SQL — w tym środowisku nie ma `docker`, `psql` ani
-`supabase` CLI, więc nie ma lokalnej instancji do odpytania jako konkretna rola. Napisz to
-w werdykcie zamiast udawać, że polityka została sprawdzona. Patrz [[project-rls-baseline-landed]].
+**SKOREGOWANE 2026-08-28: zapytania SQL JEDNAK da się wykonać.** Wcześniejsza wersja tej
+pamięci twierdziła, że się nie da (brak `docker`/`psql`/`supabase` CLI — to nadal prawda).
+Ale `packages/database/.env` ma `DATABASE_URL` do ŻYWEJ bazy, a `@prisma/client` jest
+zainstalowany — czyli `prisma.$queryRawUnsafe` daje pełny dostęp do `pg_policies`,
+`pg_class.relrowsecurity`, `storage.buckets` i `information_schema.role_table_grants`.
+Przepis na wykonanie polityki JAKO konkretna rola: [[feedback-rls-probe-as-role]].
+Nie pisz już w werdykcie „nie mam jak sprawdzić polityki" — masz.

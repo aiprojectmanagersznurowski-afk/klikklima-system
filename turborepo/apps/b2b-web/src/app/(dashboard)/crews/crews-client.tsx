@@ -1,9 +1,20 @@
 "use client"
 
 import React, { useTransition,  useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Search, ShieldCheck, Wrench, MoreHorizontal, FileCheck, MapPin, Upload , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CrewSummary, updateCrewAvatar , deleteCrewAction } from "./actions"
+import {
+  CrewSummary,
+  CrewEditRecord,
+  updateCrewAvatar,
+  deleteCrewAction,
+  createCrewAction,
+  updateCrewAction,
+  getCrewForEdit,
+} from "./actions"
+import { AddCrewModal, type AddCrewModalSaveResult } from "./components/AddCrewModal"
+import { can, type Role } from "@klikklima/contracts"
 import { createClient } from "@/utils/supabase/client"
 import {
   DropdownMenu,
@@ -17,12 +28,28 @@ import Link from "next/link"
 
 export type CrewSummaryWithAvatar = CrewSummary & { avatarUrl?: string | null };
 
-export function CrewsClient({ initialCrews }: { initialCrews: CrewSummaryWithAvatar[] }) {
+type EditState =
+  | { status: "loading" }
+  | { status: "ready"; id: string; data: CrewEditRecord }
+
+export function CrewsClient({
+  initialCrews,
+  actorRole,
+}: {
+  initialCrews: CrewSummaryWithAvatar[]
+  actorRole: Role | null
+}) {
+  const router = useRouter()
   const [crews] = useState<CrewSummaryWithAvatar[]>(initialCrews)
   const [searchQuery, setSearchQuery] = useState("")
   const [isUploading, setIsUploading] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadingCrewId, setUploadingCrewId] = useState<string | null>(null)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editState, setEditState] = useState<EditState | null>(null)
+
+  const canCreateCrews = !!actorRole && can(actorRole, "crews", "create") === "yes";
+  const canUpdateCrews = !!actorRole && can(actorRole, "crews", "update") === "yes";
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -83,6 +110,82 @@ export function CrewsClient({ initialCrews }: { initialCrews: CrewSummaryWithAva
     }
   }
 
+  const handleOpenEdit = (id: string) => {
+    setEditState({ status: "loading" });
+    startTransition(async () => {
+      const data = await getCrewForEdit(id);
+      if (!data) {
+        alert("Nie udało się pobrać danych ekipy do edycji.");
+        setEditState(null);
+        return;
+      }
+      setEditState({ status: "ready", id, data });
+    });
+  }
+
+  const uploadCrewPhoto = async (
+    id: string,
+    file: File
+  ): Promise<{ success: true; path: string } | { success: false; error: string }> => {
+    try {
+      const supabase = createClient();
+      const ext = file.name.split('.').pop();
+      const fileName = `${id}-${Date.now()}.${ext}`;
+      const { data, error } = await supabase.storage.from('zespoly').upload(fileName, file);
+      if (error) throw error;
+      return { success: true, path: data.path };
+    } catch (e) {
+      return { success: false, error: "Błąd podczas wgrywania zdjęcia ekipy." };
+    }
+  }
+
+  /**
+   * D-A2: `createCrewAction` nie przyjmuje zdjęcia w ogóle (kolumna
+   * zdjecie_url nie jest w jego `data`) — dla nowej ekipy zdjęcie idzie
+   * dwuetapowo: utwórz rekord tekstowy -> jeśli wybrano plik, wgraj go i
+   * dopisz ścieżkę osobnym wywołaniem `updateCrewAvatar` (już istniejące,
+   * jednokolumnowe). Dla edycji ścieżka trafia jako trzeci argument
+   * `updateCrewAction`, zgodnie z jego dzisiejszą sygnaturą.
+   */
+  const handleSaveCrew = async (
+    formData: FormData,
+    photoFile: File | null,
+    editingId: string | null
+  ): Promise<AddCrewModalSaveResult> => {
+    if (!editingId) {
+      const created = await createCrewAction(formData);
+      if (!created.success || !created.id) {
+        return { success: false, error: created.error ?? "Nie udało się utworzyć ekipy." };
+      }
+      if (photoFile) {
+        const uploadResult = await uploadCrewPhoto(created.id, photoFile);
+        if (uploadResult.success) {
+          await updateCrewAvatar(created.id, uploadResult.path);
+        }
+        // Nieudany upload nie unieważnia już utworzonego rekordu — zdjęcie
+        // można dograć później z poziomu edycji.
+      }
+      router.refresh();
+      return { success: true };
+    }
+
+    let newPhotoPath: string | undefined;
+    if (photoFile) {
+      const uploadResult = await uploadCrewPhoto(editingId, photoFile);
+      if (!uploadResult.success) {
+        return { success: false, error: uploadResult.error };
+      }
+      newPhotoPath = uploadResult.path;
+    }
+
+    const updated = await updateCrewAction(editingId, formData, newPhotoPath);
+    if (!updated.success) {
+      return { success: false, error: updated.error };
+    }
+    router.refresh();
+    return { success: true };
+  }
+
   return (
     <div className="h-full flex flex-col max-w-[1800px] mx-auto animate-in fade-in duration-300">
       <div className="flex justify-between items-center bg-card p-6 border-b border-border">
@@ -98,10 +201,12 @@ export function CrewsClient({ initialCrews }: { initialCrews: CrewSummaryWithAva
             accept="image/*" 
             className="hidden" 
           />
-          <Button className="rounded-md font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm flex items-center gap-2" onClick={() => alert("Dodawanie w Fazie 2")}>
-            <Wrench className="size-4" />
-            Dodaj Zespół
-          </Button>
+          {canCreateCrews && (
+            <Button className="rounded-md font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm flex items-center gap-2" onClick={() => setIsAddModalOpen(true)}>
+              <Wrench className="size-4" />
+              Dodaj Zespół
+            </Button>
+          )}
         </div>
       </div>
 
@@ -151,7 +256,9 @@ export function CrewsClient({ initialCrews }: { initialCrews: CrewSummaryWithAva
                       <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuLabel>Zarządzanie</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => alert("Wkrótce w Fazie 2")}>Edytuj Zespół</DropdownMenuItem>
+                        {canUpdateCrews && (
+                          <DropdownMenuItem onClick={() => handleOpenEdit(crew.id)}>Edytuj Zespół</DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => triggerFileUpload(crew.id)}>
                           <Upload className="size-4 mr-2" /> Wgraj zdjęcie zespołu
                         </DropdownMenuItem>
@@ -204,6 +311,28 @@ export function CrewsClient({ initialCrews }: { initialCrews: CrewSummaryWithAva
           )}
         </div>
       </div>
+
+      {isAddModalOpen && (
+        <AddCrewModal
+          open={isAddModalOpen}
+          onOpenChange={setIsAddModalOpen}
+          onSave={(formData, photoFile) => handleSaveCrew(formData, photoFile, null)}
+        />
+      )}
+
+      {editState && (
+        <AddCrewModal
+          open={!!editState}
+          isLoadingInitialData={editState.status === "loading"}
+          initialData={editState.status === "ready" ? editState.data : undefined}
+          onOpenChange={(next) => {
+            if (!next) setEditState(null);
+          }}
+          onSave={(formData, photoFile) =>
+            handleSaveCrew(formData, photoFile, editState.status === "ready" ? editState.id : null)
+          }
+        />
+      )}
     </div>
   );
 }

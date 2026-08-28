@@ -1,10 +1,21 @@
 "use client"
 
 import React, { useTransition,  useState } from "react"
+import { useRouter } from "next/navigation"
 import { Search, ShieldCheck, UserCheck, MoreHorizontal, FileCheck, MapPin , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { AuditorSummary , deleteAuditorAction, toggleAuditorActiveAction } from "./actions"
+import {
+  AuditorSummary,
+  AuditorEditRecord,
+  deleteAuditorAction,
+  toggleAuditorActiveAction,
+  createAuditorAction,
+  updateAuditorAction,
+  getAuditorForEdit,
+} from "./actions"
+import { AddAuditorModal, type AddAuditorModalSaveResult } from "./components/AddAuditorModal"
 import { can, type Role } from "@klikklima/contracts"
+import { createClient } from "@/utils/supabase/client"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +26,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { differenceInDays } from "date-fns"
 
+type EditState =
+  | { status: "loading" }
+  | { status: "ready"; id: string; data: AuditorEditRecord }
+
 export function AuditorsClient({
   initialAuditors,
   actorRole,
@@ -22,8 +37,11 @@ export function AuditorsClient({
   initialAuditors: AuditorSummary[]
   actorRole: Role | null
 }) {
+  const router = useRouter()
   const [auditors] = useState<AuditorSummary[]>(initialAuditors)
   const [searchQuery, setSearchQuery] = useState("")
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editState, setEditState] = useState<EditState | null>(null)
 
   const filtered = auditors.filter(a => {
     if (searchQuery) {
@@ -35,6 +53,7 @@ export function AuditorsClient({
   });
 
   const [isPending, startTransition] = useTransition();
+  const canCreateAuditors = !!actorRole && can(actorRole, "auditors", "create") === "yes";
   const canUpdateAuditors = !!actorRole && can(actorRole, "auditors", "update") === "yes";
   const canDeleteAuditors = !!actorRole && can(actorRole, "auditors", "delete") === "yes";
 
@@ -79,6 +98,82 @@ export function AuditorsClient({
     });
   }
 
+  const handleOpenEdit = (id: string) => {
+    setEditState({ status: "loading" });
+    startTransition(async () => {
+      const data = await getAuditorForEdit(id);
+      if (!data) {
+        alert("Nie udało się pobrać danych audytora do edycji.");
+        setEditState(null);
+        return;
+      }
+      setEditState({ status: "ready", id, data });
+    });
+  }
+
+  /**
+   * D-A2: zdjęcie jest wgrywane do Supabase Storage PO zapisaniu pól
+   * tekstowych, niezależnie od trybu (create/update) — dla nowego rekordu
+   * unikamy generowania nazwy pliku przed istnieniem `id`, a dla edycji ta
+   * sama ścieżka "zapisz pola -> ewentualnie dograj zdjęcie" jest prostsza
+   * do utrzymania niż dwie rozbieżne gałęzie kodu.
+   */
+  const handleSaveAuditor = async (
+    formData: FormData,
+    photoFile: File | null,
+    editingId: string | null
+  ): Promise<AddAuditorModalSaveResult> => {
+    if (!editingId) {
+      const created = await createAuditorAction(formData);
+      if (!created.success || !created.id) {
+        return { success: false, error: created.error ?? "Nie udało się utworzyć audytora." };
+      }
+      if (photoFile) {
+        const uploadResult = await uploadAuditorPhoto(created.id, photoFile);
+        if (uploadResult.success) {
+          formData.append('zdjecie_url', uploadResult.path);
+          await updateAuditorAction(created.id, formData);
+        }
+        // Nieudany upload zdjęcia przy tworzeniu nie unieważnia już
+        // utworzonego rekordu tekstowego — użytkownik może dograć zdjęcie
+        // później z poziomu edycji (AC-A22 dotyczy wprost trybu edycji).
+      }
+      router.refresh();
+      return { success: true };
+    }
+
+    if (photoFile) {
+      const uploadResult = await uploadAuditorPhoto(editingId, photoFile);
+      if (!uploadResult.success) {
+        return { success: false, error: uploadResult.error };
+      }
+      formData.append('zdjecie_url', uploadResult.path);
+    }
+
+    const updated = await updateAuditorAction(editingId, formData);
+    if (!updated.success) {
+      return { success: false, error: updated.error };
+    }
+    router.refresh();
+    return { success: true };
+  }
+
+  const uploadAuditorPhoto = async (
+    id: string,
+    file: File
+  ): Promise<{ success: true; path: string } | { success: false; error: string }> => {
+    try {
+      const supabase = createClient();
+      const ext = file.name.split('.').pop();
+      const fileName = `${id}-${Date.now()}.${ext}`;
+      const { data, error } = await supabase.storage.from('audytorzy').upload(fileName, file);
+      if (error) throw error;
+      return { success: true, path: data.path };
+    } catch (e) {
+      return { success: false, error: "Błąd podczas wgrywania zdjęcia audytora." };
+    }
+  }
+
   return (
     <div className="h-full flex flex-col max-w-[1800px] mx-auto animate-in fade-in duration-300">
       <div className="flex justify-between items-center bg-card p-6 border-b border-border">
@@ -87,10 +182,12 @@ export function AuditorsClient({
           <p className="text-sm text-muted-foreground mt-1">Baza terenowych audytorów (Wyceny i wizje lokalne).</p>
         </div>
         <div className="flex gap-3">
-          <Button className="rounded-md font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm flex items-center gap-2" onClick={() => alert("Dodawanie w Fazie 2")}>
-            <UserCheck className="size-4" />
-            Dodaj Audytora
-          </Button>
+          {canCreateAuditors && (
+            <Button className="rounded-md font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm flex items-center gap-2" onClick={() => setIsAddModalOpen(true)}>
+              <UserCheck className="size-4" />
+              Dodaj Audytora
+            </Button>
+          )}
         </div>
       </div>
 
@@ -145,7 +242,9 @@ export function AuditorsClient({
                         <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuLabel>Zarządzanie</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => alert("Wkrótce w Fazie 2")}>Edytuj Audytora</DropdownMenuItem>
+                          {canUpdateAuditors && (
+                            <DropdownMenuItem onClick={() => handleOpenEdit(auditor.id)}>Edytuj Audytora</DropdownMenuItem>
+                          )}
 
                           {canUpdateAuditors && (
                             <>
@@ -210,6 +309,28 @@ export function AuditorsClient({
           )}
         </div>
       </div>
+
+      {isAddModalOpen && (
+        <AddAuditorModal
+          open={isAddModalOpen}
+          onOpenChange={setIsAddModalOpen}
+          onSave={(formData, photoFile) => handleSaveAuditor(formData, photoFile, null)}
+        />
+      )}
+
+      {editState && (
+        <AddAuditorModal
+          open={!!editState}
+          isLoadingInitialData={editState.status === "loading"}
+          initialData={editState.status === "ready" ? editState.data : undefined}
+          onOpenChange={(next) => {
+            if (!next) setEditState(null);
+          }}
+          onSave={(formData, photoFile) =>
+            handleSaveAuditor(formData, photoFile, editState.status === "ready" ? editState.id : null)
+          }
+        />
+      )}
     </div>
   );
 }

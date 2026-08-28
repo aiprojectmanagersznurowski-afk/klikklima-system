@@ -167,6 +167,195 @@ export async function acceptLegalDocumentVersionAction(
   }
 }
 
+export type CreateCrewResult = { success: boolean; error?: string; id?: string };
+
+// Ochrona przed podwójnym kliknięciem "Zapisz": jeśli ten sam obiekt FormData
+// jest przekazany zanim poprzednie wywołanie się zakończyło, druga próba
+// dołącza do tego samego w locie zapytania zamiast tworzyć drugi rekord.
+const createCrewInFlight = new WeakMap<FormData, Promise<CreateCrewResult>>();
+
+/**
+ * CRM-ZESP-KARTOTEKA: tworzenie kartoteki zespołu montażowego z panelu B2B.
+ * Bramka `can(role,'crews','create')==='yes'`, rola wyłącznie z sesji
+ * (wzorem deleteCrewAction). 12 pól formularza — brak adresu z
+ * autouzupełnianiem i brak preferowane_marki (różnica od audytora, tabela nie
+ * ma tych kolumn). `liczba_brygad` jest NOT NULL @default(1) — puste pole daje
+ * 1, nie null.
+ */
+export async function createCrewAction(formData: FormData): Promise<CreateCrewResult> {
+  const actorRole = await getCurrentActorRole();
+  if (!actorRole || can(actorRole, 'crews', 'create') !== 'yes') {
+    return { success: false, error: "Brak uprawnień do utworzenia ekipy." };
+  }
+
+  const nazwa = String(formData.get('name') ?? '').trim();
+  if (!nazwa) {
+    return { success: false, error: "Nazwa ekipy jest wymagana." };
+  }
+
+  const inFlight = createCrewInFlight.get(formData);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const emailRaw = String(formData.get('email') ?? '').trim();
+  const radiusRaw = String(formData.get('radius') ?? '').trim();
+  const teamsCountRaw = String(formData.get('teamsCount') ?? '').trim();
+
+  const callPromise = (async (): Promise<CreateCrewResult> => {
+    try {
+      const created = await prisma.zespoly_monterskie.create({
+        data: {
+          nazwa,
+          telefon_kontaktowy: String(formData.get('phone') ?? '') || null,
+          email: emailRaw || null,
+          nip: String(formData.get('nip') ?? '') || null,
+          koordynator_imie_nazwisko: String(formData.get('coordinator') ?? '') || null,
+          certyfikat_fgaz: String(formData.get('fgazCert') ?? '') || null,
+          uprawnienia_sep: formData.get('sep') === 'true',
+          kod_pocztowy_bazowy: String(formData.get('zipCode') ?? '') || null,
+          promien_dzialania_km: radiusRaw ? Number(radiusRaw) : null,
+          liczba_brygad: teamsCountRaw ? Number(teamsCountRaw) : 1,
+          posiada_wiertnice: formData.get('drillingRig') === 'true',
+          iban: String(formData.get('iban') ?? '') || null,
+        },
+      });
+
+      revalidatePath('/crews');
+      return { success: true, id: created.id };
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+        return { success: false, error: "Ten adres e-mail jest już przypisany do innej ekipy." };
+      }
+      return { success: false, error: "Nie udało się utworzyć ekipy." };
+    } finally {
+      createCrewInFlight.delete(formData);
+    }
+  })();
+
+  createCrewInFlight.set(formData, callPromise);
+  return callPromise;
+}
+
+export type CrewEditRecord = {
+  nazwa: string;
+  telefon_kontaktowy: string | null;
+  email: string | null;
+  nip: string | null;
+  koordynator_imie_nazwisko: string | null;
+  certyfikat_fgaz: string | null;
+  uprawnienia_sep: boolean;
+  kod_pocztowy_bazowy: string | null;
+  promien_dzialania_km: number | null;
+  liczba_brygad: number;
+  posiada_wiertnice: boolean;
+  iban: string | null;
+  zdjecie_url: string | null;
+};
+
+/**
+ * CRM-ZESP-KARTOTEKA: pobiera komplet 12 pól formularza edycji zespołu.
+ * Bramka `can(role,'crews','update')==='yes'`. Świadomie NIE zwraca
+ * aktywny/leave_status — pola administracyjne spoza formularza.
+ */
+export async function getCrewForEdit(id: string): Promise<CrewEditRecord | null> {
+  const actorRole = await getCurrentActorRole();
+  if (!actorRole || can(actorRole, 'crews', 'update') !== 'yes') {
+    return null;
+  }
+
+  const crew = await prisma.zespoly_monterskie.findUnique({ where: { id } });
+  if (!crew) {
+    return null;
+  }
+
+  let zdjecie_url = crew.zdjecie_url;
+  if (zdjecie_url) {
+    const { signStoragePaths } = await import("@/lib/storage/signed-urls");
+    const signedUrls = await signStoragePaths("zespoly", [zdjecie_url], 60 * 60);
+    zdjecie_url = signedUrls[zdjecie_url] ?? zdjecie_url;
+  }
+
+  return {
+    nazwa: crew.nazwa,
+    telefon_kontaktowy: crew.telefon_kontaktowy,
+    email: crew.email,
+    nip: crew.nip,
+    koordynator_imie_nazwisko: crew.koordynator_imie_nazwisko,
+    certyfikat_fgaz: crew.certyfikat_fgaz,
+    uprawnienia_sep: crew.uprawnienia_sep,
+    kod_pocztowy_bazowy: crew.kod_pocztowy_bazowy,
+    promien_dzialania_km: crew.promien_dzialania_km,
+    liczba_brygad: crew.liczba_brygad,
+    posiada_wiertnice: crew.posiada_wiertnice,
+    iban: crew.iban,
+    zdjecie_url,
+  };
+}
+
+export type UpdateCrewResult = { success: boolean; error?: string };
+
+/**
+ * CRM-ZESP-KARTOTEKA: edycja kartoteki zespołu. Bramka
+ * `can(role,'crews','update')==='yes'`. `newPhotoPath` to już wgrana ścieżka
+ * Supabase Storage — brak argumentu zachowuje istniejące zdjecie_url bez
+ * zmian (nie ustawia null). Nigdy nie woła prisma.zespoly_monterskie.create.
+ */
+export async function updateCrewAction(
+  id: string,
+  formData: FormData,
+  newPhotoPath?: string
+): Promise<UpdateCrewResult> {
+  const actorRole = await getCurrentActorRole();
+  if (!actorRole || can(actorRole, 'crews', 'update') !== 'yes') {
+    return { success: false, error: "Brak uprawnień do edycji ekipy." };
+  }
+
+  const existing = await prisma.zespoly_monterskie.findUnique({ where: { id } });
+  if (!existing) {
+    return { success: false, error: "Ekipa nie została znaleziona." };
+  }
+
+  const nazwa = String(formData.get('name') ?? '').trim();
+  if (!nazwa) {
+    return { success: false, error: "Nazwa ekipy jest wymagana." };
+  }
+
+  const emailRaw = String(formData.get('email') ?? '').trim();
+  const radiusRaw = String(formData.get('radius') ?? '').trim();
+  const teamsCountRaw = String(formData.get('teamsCount') ?? '').trim();
+
+  const data: Record<string, unknown> = {
+    nazwa,
+    telefon_kontaktowy: String(formData.get('phone') ?? '') || null,
+    email: emailRaw || null,
+    nip: String(formData.get('nip') ?? '') || null,
+    koordynator_imie_nazwisko: String(formData.get('coordinator') ?? '') || null,
+    certyfikat_fgaz: String(formData.get('fgazCert') ?? '') || null,
+    uprawnienia_sep: formData.get('sep') === 'true',
+    kod_pocztowy_bazowy: String(formData.get('zipCode') ?? '') || null,
+    promien_dzialania_km: radiusRaw ? Number(radiusRaw) : null,
+    liczba_brygad: teamsCountRaw ? Number(teamsCountRaw) : 1,
+    posiada_wiertnice: formData.get('drillingRig') === 'true',
+    iban: String(formData.get('iban') ?? '') || null,
+  };
+
+  if (newPhotoPath) {
+    data.zdjecie_url = newPhotoPath;
+  }
+
+  try {
+    await prisma.zespoly_monterskie.update({ where: { id }, data });
+    revalidatePath('/crews');
+    return { success: true };
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return { success: false, error: "Ten adres e-mail jest już przypisany do innej ekipy." };
+    }
+    return { success: false, error: "Nie udało się zapisać zmian ekipy." };
+  }
+}
+
 export type DeleteCrewResult = {
   success: boolean;
   error?: string;

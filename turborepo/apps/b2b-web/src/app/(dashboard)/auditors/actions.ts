@@ -181,6 +181,211 @@ export async function acceptLegalDocumentVersionAction(
   }
 }
 
+export type CreateAuditorResult = { success: boolean; error?: string; id?: string };
+
+/**
+ * CRM-AUDYT-KARTOTEKA: tworzenie kartoteki audytora z panelu B2B. Bramka
+ * `can(role,'auditors','create')==='yes'`, rola wyłącznie z sesji (wzorem
+ * deleteAuditorAction). Klucze FormData to nazwy kolumn Prisma w snake_case
+ * (kontrakt cytuje je wprost) — patrz decyzja rozstrzygająca w WO
+ * CRM-KARTOTEKI-CREATE-AND-CREW-ASSIGN, punkt 1.
+ */
+export async function createAuditorAction(formData: FormData): Promise<CreateAuditorResult> {
+  const actorRole = await getCurrentActorRole();
+  if (!actorRole || can(actorRole, 'auditors', 'create') !== 'yes') {
+    return { success: false, error: "Brak uprawnień do utworzenia audytora." };
+  }
+
+  const imie_i_nazwisko = String(formData.get('imie_i_nazwisko') ?? '').trim();
+  if (!imie_i_nazwisko) {
+    return { success: false, error: "Imię i nazwisko jest wymagane." };
+  }
+
+  const preferowaneMarkiRaw = formData.get('preferowane_marki');
+  let preferowane_marki: string[] = [];
+  if (typeof preferowaneMarkiRaw === 'string' && preferowaneMarkiRaw !== '') {
+    try {
+      const parsed = JSON.parse(preferowaneMarkiRaw);
+      if (!Array.isArray(parsed)) {
+        return { success: false, error: "Niepoprawny format preferowanych marek." };
+      }
+      preferowane_marki = parsed;
+    } catch {
+      return { success: false, error: "Niepoprawny format preferowanych marek." };
+    }
+  }
+
+  const emailRaw = String(formData.get('email') ?? '').trim();
+  const doswiadczenieRaw = String(formData.get('doswiadczenie_hvac_lata') ?? '').trim();
+  const promienRaw = String(formData.get('max_promien_dojazdu_km') ?? '').trim();
+
+  try {
+    const created = await prisma.audytorzy.create({
+      data: {
+        imie_i_nazwisko,
+        telefon: String(formData.get('telefon') ?? '') || null,
+        email: emailRaw || null,
+        adres: String(formData.get('adres') ?? '') || null,
+        nazwa_firmy: String(formData.get('nazwa_firmy') ?? '') || null,
+        nip: String(formData.get('nip') ?? '') || null,
+        certyfikat_fgaz: String(formData.get('certyfikat_fgaz') ?? '') || null,
+        doswiadczenie_hvac_lata: doswiadczenieRaw ? Number(doswiadczenieRaw) : null,
+        uprawnienia_sep: formData.get('uprawnienia_sep') === 'true',
+        preferowane_marki,
+        kod_pocztowy_bazowy: String(formData.get('kod_pocztowy_bazowy') ?? '') || null,
+        max_promien_dojazdu_km: promienRaw ? Number(promienRaw) : null,
+        iban: String(formData.get('iban') ?? '') || null,
+        zdjecie_url: String(formData.get('zdjecie_url') ?? '') || null,
+      },
+    });
+
+    revalidatePath('/auditors');
+    return { success: true, id: created.id };
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return { success: false, error: "Ten adres e-mail jest już przypisany do innego audytora." };
+    }
+    return { success: false, error: "Nie udało się utworzyć audytora." };
+  }
+}
+
+export type AuditorEditRecord = {
+  imie_i_nazwisko: string;
+  telefon: string | null;
+  email: string | null;
+  adres: string | null;
+  nazwa_firmy: string | null;
+  nip: string | null;
+  certyfikat_fgaz: string | null;
+  doswiadczenie_hvac_lata: number | null;
+  uprawnienia_sep: boolean;
+  preferowane_marki: string[];
+  kod_pocztowy_bazowy: string | null;
+  max_promien_dojazdu_km: number | null;
+  iban: string | null;
+  zdjecie_url: string | null;
+};
+
+/**
+ * CRM-AUDYT-KARTOTEKA: pobiera komplet pól formularza edycji audytora. Bramka
+ * `can(role,'auditors','update')==='yes'`. Świadomie NIE zwraca is_active ani
+ * leave_status — to pola administracyjne spoza formularza (patrz komentarz
+ * nagłówkowy testu).
+ */
+export async function getAuditorForEdit(id: string): Promise<AuditorEditRecord | null> {
+  const actorRole = await getCurrentActorRole();
+  if (!actorRole || can(actorRole, 'auditors', 'update') !== 'yes') {
+    return null;
+  }
+
+  const auditor = await prisma.audytorzy.findUnique({ where: { id } });
+  if (!auditor) {
+    return null;
+  }
+
+  let zdjecie_url = auditor.zdjecie_url;
+  if (zdjecie_url) {
+    const { signStoragePaths } = await import("@/lib/storage/signed-urls");
+    const signedUrls = await signStoragePaths("audytorzy", [zdjecie_url], 60 * 60);
+    zdjecie_url = signedUrls[zdjecie_url] ?? zdjecie_url;
+  }
+
+  return {
+    imie_i_nazwisko: auditor.imie_i_nazwisko,
+    telefon: auditor.telefon,
+    email: auditor.email,
+    adres: auditor.adres,
+    nazwa_firmy: auditor.nazwa_firmy,
+    nip: auditor.nip,
+    certyfikat_fgaz: auditor.certyfikat_fgaz,
+    doswiadczenie_hvac_lata: auditor.doswiadczenie_hvac_lata,
+    uprawnienia_sep: auditor.uprawnienia_sep,
+    preferowane_marki: auditor.preferowane_marki,
+    kod_pocztowy_bazowy: auditor.kod_pocztowy_bazowy,
+    max_promien_dojazdu_km: auditor.max_promien_dojazdu_km,
+    iban: auditor.iban,
+    zdjecie_url,
+  };
+}
+
+export type UpdateAuditorResult = { success: boolean; error?: string };
+
+/**
+ * CRM-AUDYT-KARTOTEKA: edycja kartoteki audytora. Bramka
+ * `can(role,'auditors','update')==='yes'`. Nigdy nie wysyła is_active/leave_status
+ * do prisma.audytorzy.update (pola administracyjne, wyścig z
+ * toggleAuditorActiveAction). Brak podanego zdjecie_url zachowuje istniejącą
+ * ścieżkę bez zmian.
+ */
+export async function updateAuditorAction(id: string, formData: FormData): Promise<UpdateAuditorResult> {
+  const actorRole = await getCurrentActorRole();
+  if (!actorRole || can(actorRole, 'auditors', 'update') !== 'yes') {
+    return { success: false, error: "Brak uprawnień do edycji audytora." };
+  }
+
+  const existing = await prisma.audytorzy.findUnique({ where: { id } });
+  if (!existing) {
+    return { success: false, error: "Audytor nie został znaleziony." };
+  }
+
+  const imie_i_nazwisko = String(formData.get('imie_i_nazwisko') ?? '').trim();
+  if (!imie_i_nazwisko) {
+    return { success: false, error: "Imię i nazwisko jest wymagane." };
+  }
+
+  const preferowaneMarkiRaw = formData.get('preferowane_marki');
+  let preferowane_marki: string[] = [];
+  if (typeof preferowaneMarkiRaw === 'string' && preferowaneMarkiRaw !== '') {
+    try {
+      const parsed = JSON.parse(preferowaneMarkiRaw);
+      if (!Array.isArray(parsed)) {
+        return { success: false, error: "Niepoprawny format preferowanych marek." };
+      }
+      preferowane_marki = parsed;
+    } catch {
+      return { success: false, error: "Niepoprawny format preferowanych marek." };
+    }
+  }
+
+  const emailRaw = String(formData.get('email') ?? '').trim();
+  const doswiadczenieRaw = String(formData.get('doswiadczenie_hvac_lata') ?? '').trim();
+  const promienRaw = String(formData.get('max_promien_dojazdu_km') ?? '').trim();
+
+  const data: Record<string, unknown> = {
+    imie_i_nazwisko,
+    telefon: String(formData.get('telefon') ?? '') || null,
+    email: emailRaw || null,
+    adres: String(formData.get('adres') ?? '') || null,
+    nazwa_firmy: String(formData.get('nazwa_firmy') ?? '') || null,
+    nip: String(formData.get('nip') ?? '') || null,
+    certyfikat_fgaz: String(formData.get('certyfikat_fgaz') ?? '') || null,
+    doswiadczenie_hvac_lata: doswiadczenieRaw ? Number(doswiadczenieRaw) : null,
+    uprawnienia_sep: formData.get('uprawnienia_sep') === 'true',
+    kod_pocztowy_bazowy: String(formData.get('kod_pocztowy_bazowy') ?? '') || null,
+    max_promien_dojazdu_km: promienRaw ? Number(promienRaw) : null,
+    iban: String(formData.get('iban') ?? '') || null,
+  };
+
+  if (formData.has('preferowane_marki')) {
+    data.preferowane_marki = preferowane_marki;
+  }
+
+  if (formData.has('zdjecie_url')) {
+    data.zdjecie_url = String(formData.get('zdjecie_url') ?? '') || null;
+  }
+
+  try {
+    await prisma.audytorzy.update({ where: { id }, data });
+    revalidatePath('/auditors');
+    return { success: true };
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      return { success: false, error: "Ten adres e-mail jest już przypisany do innego audytora." };
+    }
+    return { success: false, error: "Nie udało się zapisać zmian audytora." };
+  }
+}
+
 export type DeleteAuditorResult = {
   success: boolean;
   error?: string;
