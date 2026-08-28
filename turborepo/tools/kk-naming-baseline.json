@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-26T20:41:24.605Z",
+  "generatedAt": "2026-08-28T08:02:27.120Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 12,
@@ -124,7 +124,8 @@
     "supabase/migrations/20260821130000_fld_consent_docs.sql::adr002-pl-tables": 2,
     "supabase/migrations/20260822120000_fld_availability_split_employee_email_unique.sql::adr002-pl-tables": 2,
     "supabase/migrations/20260824185845_security_enable_rls_baseline.sql::adr002-pl-tables": 21,
+    "supabase/migrations/20260828120000_kartoteki_storage_policies.sql::adr002-pl-tables": 3,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1492
+  "total": 1495
 }

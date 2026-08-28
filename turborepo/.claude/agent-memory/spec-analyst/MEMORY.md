@@ -2,3 +2,4 @@
 - [Źródła prawdy w kontraktach](contract-sources-of-truth.md) — gdzie szukać progów/guardów/słowników i które wpisy czekają na zatwierdzenie człowieka
 - [Rozmiar Work Ordera](feedback-workorder-sizing.md) — dziel WO po artefakcie i roli; jeden wielki WO zużywa limit iteracji GREEN
 - [Mapa faz Field App](project-fieldapp-roadmap.md) — fazy 0-6 to inna oś niż wersje v1/v2/v3; „to faza N" jest ważnym powodem odmowy rozszerzenia zakresu
+- [Rozstrzyganie decyzji w WO](feedback-scope-decisions-kartoteki.md) — dopisuj datowane sekcje zamiast przepisywać; create+edit idą razem, gdy dzielą mapowanie
