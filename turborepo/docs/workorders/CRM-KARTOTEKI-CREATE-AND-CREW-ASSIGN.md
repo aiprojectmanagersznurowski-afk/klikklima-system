@@ -293,3 +293,95 @@ Część A i część B są **rozłączne** i powinny iść jako dwa osobne prze
 Część A jest gotowa do startu **po** rozstrzygnięciu D-A1/D-A2 i rejestracji dwóch wymagań.
 **Aktualizacja 2026-08-28:** D-A1 i D-A2 są rozstrzygnięte, a zakres Części A obejmuje odtąd **tworzenie i edycję** (D-A4). Otwarte przed startem zostają: rejestracja wymagań (teraz czterech, patrz „CZĘŚĆ A — rozszerzenie"), potwierdzenie R-A1 (bucket `audytorzy`), weryfikacja R-A2 (RLS na `storage.objects`) i decyzja R-A3 (skąd formularz edycji bierze pełny rekord).
 Część B jest **zablokowana** do czasu rozstrzygnięcia D-B1 i D-B2; przed nimi nie ma sensu pisać ani testów, ani kodu.
+
+---
+
+# ERRATA A-2 (2026-08-31) — brakujące daty ważności certyfikatów w formularzach kartotek
+
+Zgłoszenie użytkownika: formularze „Dodaj/Edytuj Zespół" i „Dodaj/Edytuj Audytora" nie mają pól `fgaz_valid_until` / `sep_valid_until`, więc nowo założony rekord ma je `NULL`.
+
+## Wymagania: CRM-ZESP-KARTOTEKA, CRM-AUDYT-KARTOTEKA (oba wymagają korekty `acceptance` — patrz „Zmiana kontraktu")
+
+## Ustalenia (zweryfikowane w kodzie 2026-08-31)
+
+1. **To jest błąd rejestracji wymagania, nie tylko implementacji.** Oba wpisy w `contracts/requirements.contract.mjs` mówią w `statement` „komplet **12 pól** kartoteki", a kryteria akceptacji wyliczają pola imiennie (AC-A11/AC-A13: „WSZYSTKIMI 12 polami"). Dwie kolumny dat ważności nie występują w żadnym kryterium ani po stronie audytora, ani zespołu. Implementer zbudował dokładnie to, co było zarejestrowane. Naprawa samego kodu bez korekty kontraktu zostawiłaby kryteria mówiące „12", podczas gdy formularz ma 14 pól.
+
+2. **Semantyka `NULL` — dla ZESPOŁU zgłoszenie jest trafne, dla AUDYTORA nie.**
+   `apps/b2b-web/src/app/(dashboard)/leads/actions.ts:44-57`:
+   ```ts
+   function isCertValidForDate(validUntil: Date | null, referenceDate: Date): boolean {
+     if (!validUntil) return false;   // NULL = NIEWAŻNY (fail-closed, D6)
+     return dateOnlyIso(validUntil) >= dateOnlyIsoInWarsaw(referenceDate);
+   }
+   ```
+   `invalidCrewCerts()` jest wołane w dwóch miejscach: w `getCrews(installationDate)` (filtr puli, linia 137) i ponownie w `assignCrewToLead` (linia 193, przed zapisem). Zespół z `NULL` **nigdy nie pojawi się w puli i nie da się go przypisać** — pełna blokada, dokładnie jak opisał użytkownik.
+   **Dla audytora analogicznej funkcji NIE MA.** `getAuditors()` (`leads/actions.ts:79-99`) filtruje wyłącznie po `is_active` i `availability_declaration`; nie pobiera `fgaz_valid_until` ani `sep_valid_until` i nie sprawdza certyfikatów w ogóle. Jedyny konsument `fgaz_valid_until` po stronie audytora to `AuditorSummary` (`auditors/actions.ts:21,51`) → plakietka ostrzegawcza „wygasa za N dni" w `auditors-client.tsx:220-221`, gdzie `NULL` daje po prostu brak plakietki. `sep_valid_until` audytora nie jest dziś czytane NIGDZIE.
+   **Wniosek:** dla audytora nie ma regresji funkcjonalnej — jest luka danych (nie da się udokumentować ważności, plakietka milczy). Nie wolno przy okazji dorabiać audytorowi bramki certyfikatowej: to byłaby nowa reguła biznesowa bez źródła w dokumentach (patrz „Poza zakresem").
+
+3. **Parowanie pól.** `certyfikat_fgaz` to `String?` — numer/oznaczenie certyfikatu (renderowany jako tekst w `crews-client.tsx:288`). `uprawnienia_sep` to `Boolean` — „ma / nie ma". `fgaz_valid_until` i `sep_valid_until` to `DateTime? @db.Date` na obu modelach (`schema.prisma:203-204` dla `zespoly_monterskie`, `418-419` dla `audytorzy`). Są to logicznie pary: numer/flaga + data ważności. Muszą stać obok siebie.
+
+4. **Brak wzorca pola daty w repo.** `grep 'type="date"'` w `apps/b2b-web/src` nie zwraca ani jednego trafienia. To pierwszy formularz z datą w panelu — mapowanie trzeba ustalić tutaj, bo stanie się wzorcem.
+
+## Kontekst kodu
+- Istnieje: kolumny w schemacie (obie encje), `isCertValidForDate`/`invalidCrewCerts` (`leads/actions.ts`), odczyt `fgaz_valid_until` w `AuditorSummary`, plakietka w `auditors-client.tsx`.
+- Brakuje: inputów w `AddCrewModal.tsx` i `AddAuditorModal.tsx`, pól w schematach Zod obu modali, mapowania w `createCrewAction`/`updateCrewAction`/`getCrewForEdit` (`crews/actions.ts`) i `createAuditorAction`/`updateAuditorAction`/`getAuditorForEdit` (`auditors/actions.ts`) — 6 miejsc.
+
+## Zmiana kontraktu
+**WYMAGANA.** Bez niej kryteria akceptacji obu wymagań pozostają wewnętrznie sprzeczne z kodem („12 pól" vs 14) i `kk-trace` liczy pokrycie dla nieistniejącego zakresu. Zakres zmiany (rola `contract-steward`, okno kontraktowe):
+- `CRM-ZESP-KARTOTEKA.statement` i `CRM-AUDYT-KARTOTEKA.statement`: „komplet 12 pól" → „komplet 14 pól".
+- W obu wpisach zaktualizować kryteria mówiące „WSZYSTKIMI 12 polami" (AC-A11) i „wszystkie 12 kolumn" (AC-A13) na 14.
+- Dopisać do `acceptance` obu wpisów kryteria AC-E1..AC-E5 z tej erraty.
+- W `source` obu wpisów dopisać odwołanie do niniejszej erraty A-2 (2026-08-31) z powodem: pola pominięte przy pierwotnej rejestracji.
+- **Zmiana schematu, migracja i macierz uprawnień NIE są potrzebne** — kolumny już istnieją, operacja pozostaje admin-only w niezmienionej macierzy.
+
+## Pola do dodania
+
+| Encja | Kolumna | Nazwa pola w FormData | Kontrolka | Zod | Mapowanie |
+|---|---|---|---|---|---|
+| `zespoly_monterskie` | `fgaz_valid_until` | `fgazValidUntil` | `<input type="date">` | `z.string().optional()` + regex `^\d{4}-\d{2}-\d{2}$` gdy niepuste | `'' → null`, inaczej `new Date(\`${v}T00:00:00.000Z\`)` |
+| `zespoly_monterskie` | `sep_valid_until` | `sepValidUntil` | jw. | jw. | jw. |
+| `audytorzy` | `fgaz_valid_until` | `fgaz_valid_until` | jw. | jw. | jw. |
+| `audytorzy` | `sep_valid_until` | `sep_valid_until` | jw. | jw. | jw. |
+
+Konwencja nazw pól formularza celowo **naśladuje sąsiada w tym samym pliku**, a nie ujednolica oba modale: `AddCrewModal` używa camelCase (`fgazCert`, `zipCode`), `AddAuditorModal` używa nazw kolumn (`certyfikat_fgaz`). Ujednolicanie nazw pól to osobne zadanie i nie należy tutaj.
+
+**Mapowanie musi trafić do UTC-owej północy.** `@db.Date` jest round-tripowane przez Prismę jako północ UTC danego dnia kalendarzowego, a `isCertValidForDate` porównuje `dateOnlyIso(validUntil)` (UTC) z dniem montażu liczonym w `Europe/Warsaw` — komentarz przy `dateOnlyIsoInWarsaw` (`leads/actions.ts:26-35`) mówi to wprost. `new Date('2027-01-01')` daje północ UTC i jest poprawne; `new Date('2027-01-01T00:00:00')` (bez `Z`) zinterpretuje się w strefie serwera i przy dodatnim offsecie cofnie datę o dzień.
+
+## Układ w UI
+- **AddCrewModal.tsx** (dziś linie ok. 246-256): sekcja certyfikatów staje się siatką dwukolumnową. Wiersz 1: „Nr certyfikatu F-GAZ" (istniejący `fgazCert`) | „F-GAZ ważny do" (nowy). Wiersz 2: checkbox „Uprawnienia SEP do 1kV" (istniejący `sep`) | „SEP ważny do" (nowy). Pod sekcją stała nota pomocnicza: „Puste pole = brak ważnego certyfikatu. Zespół bez obu dat nie pojawi się na liście wyboru ekipy przy montażu." — bo to jedyna informacja, która tłumaczy administratorowi, dlaczego świeżo dodana ekipa znika z puli.
+- **AddAuditorModal.tsx**: ta sama para wierszy obok istniejących `certyfikat_fgaz` i `uprawnienia_sep`. Nota pomocnicza **inna** i nie może kłamać o blokadzie: „Puste pole = brak udokumentowanej ważności; audytor pozostaje w puli przypisania." Kopiowanie noty od zespołu byłoby fałszem wobec obecnego zachowania `getAuditors()`.
+- Pole daty przyjmuje `defaultValue` z `initialData` w formacie `YYYY-MM-DD` (`toISOString().slice(0,10)`); `null` → pusty string.
+
+## Kryteria akceptacji (AC-E)
+- [ ] AC-E1: Zespół utworzony przez formularz z wypełnionymi obiema datami ważności (przyszłymi) pojawia się na liście wyboru ekipy dla leada z datą montażu wcześniejszą niż obie daty, i daje się do niego przypisać — bez ręcznego UPDATE w bazie. To jest test na całą ścieżkę: formularz → kolumna → `invalidCrewCerts` → pula.
+- [ ] AC-E2: Zespół utworzony z pustymi polami dat NIE pojawia się w puli i próba przypisania go zwraca błąd wymieniający oba certyfikaty („F-Gaz, SEP") — zachowanie `NULL = nieważny` pozostaje niezmienione, errata go dokumentuje, nie odwraca.
+- [ ] AC-E3: Otwarcie formularza edycji rekordu z ustawionymi datami pokazuje je w polach, a zapis bez żadnej zmiany zostawia obie kolumny z tą samą wartością co przed (rozszerzenie AC-A13 na nowe pola — to jest test na okrojony `initialData` w `getCrewForEdit`/`getAuditorForEdit`).
+- [ ] AC-E4: Wyczyszczenie daty w trybie edycji zapisuje `NULL`, a nie pozostawia poprzedniej wartości i nie zapisuje `Invalid Date` — dotyczy obu encji i obu kolumn.
+- [ ] AC-E5: Data wpisana jako `2027-01-01` przy serwerze w strefie `Europe/Warsaw` odczytuje się z bazy jako `2027-01-01` (nie `2026-12-31`) i jest tak samo interpretowana przez `isCertValidForDate`.
+- [ ] AC-E6: Audytor utworzony z pustymi datami ważności nadal trafia do puli `getAuditors()` — errata NIE wprowadza dla audytora bramki certyfikatowej. Kryterium jest zabezpieczeniem przed „naprawą dla symetrii".
+- [ ] AC-E7: Ustawienie audytorowi `fgaz_valid_until` z formularza zmienia plakietkę na liście `/auditors` (`auditors-client.tsx`) — pole jest realnie konsumowane, nie tylko zapisywane.
+
+## Przypadki brzegowe, które MUSZĄ mieć test
+- Pusty string z `FormData` → `null` (nie `new Date('')` = `Invalid Date`, które Prisma odrzuci runtime'owo, ani `new Date(0)` = 1970, co po cichu ustawiłoby certyfikat wygasły 56 lat temu).
+- Data w przeszłości: **dozwolona, zapisuje się bez błędu walidacji**. Uzasadnienie: rekord ma dokumentować stan faktyczny, a wygasły certyfikat jest stanem faktycznym; skutek (wypadnięcie z puli) realizuje `invalidCrewCerts`, nie walidator formularza. Dopuszczalne — i zalecane — ostrzeżenie nieblokujące w UI. Zablokowanie zapisu uniemożliwiłoby wprowadzenie zaległych danych i wymusiło obejście przez bazę.
+- Data równa dniu montażu: ważny (`>=`), zgodnie z istniejącym testem `crews-cert-availability.test.ts:135-147`. Nowe pole nie może tego przesunąć.
+- Data dzień przed montażem: nieważny.
+- Jedna data wypełniona, druga pusta: rekord zapisuje się, a komunikat odmowy przypisania wymienia **tylko** brakujący certyfikat.
+- Format spoza `YYYY-MM-DD` przesłany z pominięciem kontrolki (Server Action jest publicznym endpointem): odrzucenie po stronie serwera, zero zmienionych kolumn — nie `Invalid Date` w `data`.
+- Rok czterocyfrowy poza sensownym zakresem (`0001`, `9999` — `<input type="date">` na to pozwala): decyzja poniżej.
+- Rozszerzenie AC-A13 (zapis bez zmian nie gubi nic) musi objąć obie nowe kolumny w obu encjach.
+
+## Poza zakresem
+- Dodanie audytorowi filtra certyfikatów w `getAuditors()` lub w akcji przypisania. Nowa reguła biznesowa, brak źródła w dokumentach, wymaga decyzji człowieka i własnego ID.
+- Wyświetlanie `sep_valid_until` audytora gdziekolwiek w UI (dziś nie jest czytane; errata dodaje zapis, nie widok).
+- Powiadomienie/alert o zbliżającym się wygaśnięciu certyfikatu (kolejka powiadomień, cron) — osobna domena, osobne wymaganie.
+- Ujednolicenie konwencji nazw pól `FormData` między oboma modalami.
+- Jakakolwiek zmiana `isCertValidForDate`, `invalidCrewCerts` i ich strefowania. Errata karmi istniejący mechanizm danymi, nie przepisuje go.
+- Migracja uzupełniająca daty dla rekordów już istniejących w bazie.
+- Część B tego WO (przypisanie ekipy poza E4) — nadal odłożona.
+
+## Ryzyka i nieznane
+- **Rekordy historyczne.** Nie sprawdzałem, ile zespołów w bazie ma dziś `NULL` w obu kolumnach. Jeżeli jest ich dużo, to znaczy, że pula ekip w E4 jest realnie pusta i użytkownik zgłosił skutek, którego przyczyną jest brak danych, a nie sam brak pola. Uzupełnienie danych jest zadaniem operacyjnym (admin przez formularz po tej poprawce), nie migracją — ale ktoś musi to policzyć przed zamknięciem tematu.
+- **Zakres roku.** Czy ograniczać `min`/`max` na kontrolce (np. 1990-2100)? `<input type="date">` bez ograniczeń przepuszcza rok `0001`. Skłaniam się do `max` = dziś + 20 lat i braku `min`, ale to nie wynika z żadnego dokumentu. **WYMAGA DECYZJI: zakres dopuszczalnych lat dla dat ważności certyfikatów (albo świadome „bez ograniczeń").**
+- **Ostrzeżenie o dacie przeszłej.** Powyżej zaproponowałem „dozwolone + ostrzeżenie nieblokujące". Żaden dokument tego nie rozstrzyga. Jeżeli człowiek uzna, że data przeszła ma być twardym błędem walidacji, AC-E2 i sekcja przypadków brzegowych wymagają przepisania — dlatego to jest pytanie do rozstrzygnięcia PRZED napisaniem testów, nie po.
+- **Kolejność z oknem kontraktowym.** Poprawka `acceptance` dotyczy dwóch wpisów o statusie `TODO`. Jeżeli implementacja pierwotnych `CRM-*-KARTOTEKA` jest w toku, korekta kontraktu w trakcie przebiegu pętli unieważni bieżące pokrycie. Bezpieczniej: domknąć pierwotny zakres, potem errata jako osobny przebieg.
