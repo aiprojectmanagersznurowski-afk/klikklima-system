@@ -115,6 +115,14 @@ function buildFullFormData(overrides: Record<string, string> = {}): FormData {
     max_promien_dojazdu_km: '50',
     iban: 'PL61109010140000071219812874',
     zdjecie_url: 'audytorzy/aud-1-123456.jpg',
+    // ERRATA A-2 (2026-08-31): fgaz_valid_until / sep_valid_until — daty ważności
+    // certyfikatów, dodane przez korektę kontraktu CRM-AUDYT-KARTOTEKA (12 -> 14 pól).
+    // Konwencja nazw pól FormData po stronie audytora naśladuje sąsiada w tym samym
+    // pliku (nazwy kolumn Prisma, snake_case), zgodnie z tabelą w erracie WO.
+    // Wartości domyślne w przyszłości, żeby istniejące testy "sukces" pozostały
+    // niezmienione (nadmiarowe klucze nie wpływają na asercje objectContaining/toMatchObject).
+    fgaz_valid_until: '2027-06-15',
+    sep_valid_until: '2028-01-01',
   };
   const merged = { ...base, ...overrides };
   for (const [key, value] of Object.entries(merged)) {
@@ -133,6 +141,10 @@ const EXISTING_AUDITOR_RECORD = {
   nip: '1234567890',
   certyfikat_fgaz: 'FGAZ/1/2024',
   fgaz_valid_until: null,
+  // ERRATA A-2 (2026-08-31): sep_valid_until dodane przez korektę kontraktu
+  // (12 -> 14 pól). Dziś NIE jest czytane nigdzie poza zapisem (AC-E6/poza zakresem
+  // w erracie) — obecność w mocku nie zmienia żadnego istniejącego zachowania.
+  sep_valid_until: null,
   doswiadczenie_hvac_lata: 5,
   uprawnienia_sep: true,
   preferowane_marki: ['Daikin', 'Mitsubishi'],
@@ -415,6 +427,64 @@ describe('createAuditorAction / updateAuditorAction / getAuditorForEdit — kart
     });
   });
 
+  describe('createAuditorAction — daty ważności certyfikatów (ERRATA A-2, CRM-AUDYT-KARTOTEKA)', () => {
+    // AC-E1/AC-E5: poprawna data kalendarzowa w obu polach -> Date w północ UTC
+    // TEGO SAMEGO dnia kalendarzowego. Porównanie przez toISOString(), nie przez
+    // konstrukcję Date z literałem porównawczym (zależne od strefy uruchomienia).
+    // @REQ: CRM-AUDYT-KARTOTEKA
+    it('poprawne fgaz_valid_until i sep_valid_until zapisują się jako Date w północ UTC danego dnia', async () => {
+      auditorCreateMock.mockResolvedValue({ ...EXISTING_AUDITOR_RECORD, id: 'aud-new' });
+      const fd = buildFullFormData({ fgaz_valid_until: '2027-06-15', sep_valid_until: '2028-01-01' });
+
+      await createAuditorAction(fd);
+
+      const call = auditorCreateMock.mock.calls[0]?.[0];
+      expect((call?.data?.fgaz_valid_until as Date)?.toISOString?.()).toBe('2027-06-15T00:00:00.000Z');
+      expect((call?.data?.sep_valid_until as Date)?.toISOString?.()).toBe('2028-01-01T00:00:00.000Z');
+    });
+
+    // Pusty string z <input type="date"> -> NULL, nigdy Invalid Date ani epoka 1970.
+    // @REQ: CRM-AUDYT-KARTOTEKA
+    it('puste fgaz_valid_until i sep_valid_until zapisują się jako NULL, nie Invalid Date ani epoka 1970', async () => {
+      auditorCreateMock.mockResolvedValue({ ...EXISTING_AUDITOR_RECORD, id: 'aud-new' });
+      const fd = buildFullFormData({ fgaz_valid_until: '', sep_valid_until: '' });
+
+      await createAuditorAction(fd);
+
+      expect(auditorCreateMock).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ fgaz_valid_until: null, sep_valid_until: null }) }),
+      );
+    });
+
+    // Decyzja człowieka z erraty (2026-08-31): data w przeszłości DOZWOLONA.
+    // @REQ: CRM-AUDYT-KARTOTEKA
+    it('data w przeszłości w fgaz_valid_until jest dozwolona — zapis kończy się sukcesem', async () => {
+      auditorCreateMock.mockResolvedValue({ ...EXISTING_AUDITOR_RECORD, id: 'aud-new' });
+      const fd = buildFullFormData({ fgaz_valid_until: '2020-01-01' });
+
+      const result = await createAuditorAction(fd);
+
+      expect(result.success).toBe(true);
+      const call = auditorCreateMock.mock.calls[0]?.[0];
+      expect((call?.data?.fgaz_valid_until as Date)?.toISOString?.()).toBe('2020-01-01T00:00:00.000Z');
+    });
+
+    // AC-E6: te pola NIE mogą stać się nową bramką walidacyjną dla audytora —
+    // errata karmi wyłącznie zapis danymi, getAuditors() nadal ich nie czyta.
+    // Audytor z obiema datami NULL (albo przeszłą datą) nadal tworzy się poprawnie.
+    // Zabezpieczenie przed "naprawą dla symetrii" zgłoszoną jako poza zakresem w WO.
+    // @REQ: CRM-AUDYT-KARTOTEKA
+    it('AC-E6: audytor z pustymi datami ważności certyfikatów nadal tworzy się poprawnie (brak nowej bramki)', async () => {
+      auditorCreateMock.mockResolvedValue({ ...EXISTING_AUDITOR_RECORD, id: 'aud-new', fgaz_valid_until: null, sep_valid_until: null });
+      const fd = buildFullFormData({ fgaz_valid_until: '', sep_valid_until: '' });
+
+      const result = await createAuditorAction(fd);
+
+      expect(result.success).toBe(true);
+      expect(auditorCreateMock).toHaveBeenCalled();
+    });
+  });
+
   describe('getAuditorForEdit — bramka RBAC', () => {
     // @REQ: CRM-AUDYT-KARTOTEKA
     it('kontrola pozytywna kontraktu — tylko admin ma update na auditors w macierzy RBAC', () => {
@@ -515,6 +585,25 @@ describe('createAuditorAction / updateAuditorAction / getAuditorForEdit — kart
       auditorFindUniqueMock.mockResolvedValue(null);
 
       await expect(getAuditorForEdit('nie-istnieje')).resolves.toBeFalsy();
+    });
+
+    // AC-E3 (ERRATA A-2, 2026-08-31): otwarcie formularza edycji musi pokazać obie
+    // daty ważności certyfikatów — rozszerzenie na 14 pól.
+    // @REQ: CRM-AUDYT-KARTOTEKA
+    it('zwraca fgaz_valid_until i sep_valid_until z rekordu', async () => {
+      const withDates = {
+        ...EXISTING_AUDITOR_RECORD,
+        fgaz_valid_until: new Date('2027-06-15T00:00:00.000Z'),
+        sep_valid_until: new Date('2028-01-01T00:00:00.000Z'),
+      };
+      auditorFindUniqueMock.mockResolvedValue(withDates);
+
+      const result = await getAuditorForEdit('aud-1');
+
+      expect(result).toMatchObject({
+        fgaz_valid_until: withDates.fgaz_valid_until,
+        sep_valid_until: withDates.sep_valid_until,
+      });
     });
   });
 
@@ -802,6 +891,77 @@ describe('createAuditorAction / updateAuditorAction / getAuditorForEdit — kart
       expect(typeof result.error).toBe('string');
       expect(auditorUpdateMock).not.toHaveBeenCalled();
       expect(auditorCreateMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateAuditorAction — daty ważności certyfikatów (ERRATA A-2, CRM-AUDYT-KARTOTEKA)', () => {
+    const EXISTING_WITH_DATES = {
+      ...EXISTING_AUDITOR_RECORD,
+      fgaz_valid_until: new Date('2026-01-01T00:00:00.000Z'),
+      sep_valid_until: new Date('2026-01-01T00:00:00.000Z'),
+    };
+
+    // AC-E1/AC-E5 w trybie edycji: poprawna data -> Date w północ UTC.
+    // @REQ: CRM-AUDYT-KARTOTEKA
+    it('poprawne fgaz_valid_until i sep_valid_until w edycji zapisują się jako Date w północ UTC', async () => {
+      auditorFindUniqueMock.mockResolvedValue(EXISTING_WITH_DATES);
+      auditorUpdateMock.mockResolvedValue(EXISTING_WITH_DATES);
+
+      await updateAuditorAction('aud-1', buildFullFormData({ fgaz_valid_until: '2027-06-15', sep_valid_until: '2028-01-01' }));
+
+      const call = auditorUpdateMock.mock.calls.at(-1)?.[0];
+      expect((call?.data?.fgaz_valid_until as Date)?.toISOString?.()).toBe('2027-06-15T00:00:00.000Z');
+      expect((call?.data?.sep_valid_until as Date)?.toISOString?.()).toBe('2028-01-01T00:00:00.000Z');
+    });
+
+    // AC-E4: wyczyszczenie daty w edycji zapisuje NULL, nie Invalid Date.
+    // @REQ: CRM-AUDYT-KARTOTEKA
+    it('wyczyszczenie fgaz_valid_until i sep_valid_until w edycji zapisuje NULL, nie Invalid Date', async () => {
+      auditorFindUniqueMock.mockResolvedValue(EXISTING_WITH_DATES);
+      auditorUpdateMock.mockResolvedValue({ ...EXISTING_WITH_DATES, fgaz_valid_until: null, sep_valid_until: null });
+
+      await updateAuditorAction('aud-1', buildFullFormData({ fgaz_valid_until: '', sep_valid_until: '' }));
+
+      expect(auditorUpdateMock).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ fgaz_valid_until: null, sep_valid_until: null }) }),
+      );
+    });
+
+    // Decyzja człowieka z erraty: data w przeszłości dozwolona także w edycji.
+    // @REQ: CRM-AUDYT-KARTOTEKA
+    it('data w przeszłości w edycji jest dozwolona — zapis kończy się sukcesem', async () => {
+      auditorFindUniqueMock.mockResolvedValue(EXISTING_WITH_DATES);
+      auditorUpdateMock.mockResolvedValue(EXISTING_WITH_DATES);
+
+      const result = await updateAuditorAction('aud-1', buildFullFormData({ fgaz_valid_until: '2020-01-01' }));
+
+      expect(result.success).toBe(true);
+      const call = auditorUpdateMock.mock.calls.at(-1)?.[0];
+      expect((call?.data?.fgaz_valid_until as Date)?.toISOString?.()).toBe('2020-01-01T00:00:00.000Z');
+    });
+
+    // Ochrona przed cichym zerowaniem — identyczny wzorzec dowodowy jak już
+    // zastosowany dla preferowane_marki (formData.has()) w tym samym pliku.
+    // Fizyczny brak klucza w FormData (nie pusty string) NIE może zerować istniejących dat.
+    // @REQ: CRM-AUDYT-KARTOTEKA
+    it('edycja bez pól fgaz_valid_until/sep_valid_until w FormData zostawia istniejące daty bez zmian (nie zeruje)', async () => {
+      auditorFindUniqueMock.mockResolvedValue(EXISTING_WITH_DATES);
+      auditorUpdateMock.mockResolvedValue(EXISTING_WITH_DATES);
+      const fd = buildFullFormData();
+      fd.delete('fgaz_valid_until');
+      fd.delete('sep_valid_until');
+
+      await updateAuditorAction('aud-1', fd);
+
+      const call = auditorUpdateMock.mock.calls.at(-1)?.[0];
+      if (Object.prototype.hasOwnProperty.call(call?.data ?? {}, 'fgaz_valid_until')) {
+        expect(call.data.fgaz_valid_until).not.toBeNull();
+        expect(call.data.fgaz_valid_until).toEqual(EXISTING_WITH_DATES.fgaz_valid_until);
+      }
+      if (Object.prototype.hasOwnProperty.call(call?.data ?? {}, 'sep_valid_until')) {
+        expect(call.data.sep_valid_until).not.toBeNull();
+        expect(call.data.sep_valid_until).toEqual(EXISTING_WITH_DATES.sep_valid_until);
+      }
     });
   });
 });

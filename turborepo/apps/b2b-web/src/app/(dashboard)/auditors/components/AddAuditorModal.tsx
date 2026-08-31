@@ -25,6 +25,8 @@ const auditorFormSchema = z.object({
   nazwa_firmy: z.string().optional(),
   nip: z.string().optional(),
   certyfikat_fgaz: z.string().optional(),
+  fgaz_valid_until: z.string().optional(),
+  sep_valid_until: z.string().optional(),
   doswiadczenie_hvac_lata: z.string().optional(),
   uprawnienia_sep: z.boolean(),
   preferowane_marki: z.string(),
@@ -43,6 +45,8 @@ const EMPTY_VALUES: AuditorFormValues = {
   nazwa_firmy: '',
   nip: '',
   certyfikat_fgaz: '',
+  fgaz_valid_until: '',
+  sep_valid_until: '',
   doswiadczenie_hvac_lata: '',
   uprawnienia_sep: false,
   preferowane_marki: '[]',
@@ -61,6 +65,11 @@ function toDefaultValues(initialData?: AuditorEditRecord | null): AuditorFormVal
     nazwa_firmy: initialData.nazwa_firmy || '',
     nip: initialData.nip || '',
     certyfikat_fgaz: initialData.certyfikat_fgaz || '',
+    // ERRATA A-2: `Date | null` -> string `YYYY-MM-DD` dla <input type="date">.
+    // toISOString().slice(0,10) czyta komponenty UTC bez przesunięcia strefy,
+    // spójnie z tym, jak akcja zapisuje `new Date('YYYY-MM-DD')` jako północ UTC.
+    fgaz_valid_until: initialData.fgaz_valid_until ? initialData.fgaz_valid_until.toISOString().slice(0, 10) : '',
+    sep_valid_until: initialData.sep_valid_until ? initialData.sep_valid_until.toISOString().slice(0, 10) : '',
     doswiadczenie_hvac_lata: initialData.doswiadczenie_hvac_lata?.toString() || '',
     uprawnienia_sep: initialData.uprawnienia_sep || false,
     preferowane_marki: JSON.stringify(initialData.preferowane_marki || []),
@@ -337,6 +346,16 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
                 {...register('certyfikat_fgaz')}
               />
             </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="fgaz_valid_until" className="text-sm font-medium text-gray-700">Data ważności certyfikatu F-GAZ</label>
+              <input
+                id="fgaz_valid_until"
+                type="date"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow"
+                {...register('fgaz_valid_until')}
+              />
+            </div>
           </div>
 
           <h3 className="text-lg font-medium text-gray-900 mb-4 mt-8">Kwalifikacje i Logistyka</h3>
@@ -360,6 +379,16 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
                 {...register('uprawnienia_sep')}
               />
               <label htmlFor="uprawnienia_sep" className="ml-2 block text-sm text-gray-900">Uprawnienia SEP do 1kV</label>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="sep_valid_until" className="text-sm font-medium text-gray-700">Data ważności uprawnień SEP</label>
+              <input
+                id="sep_valid_until"
+                type="date"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow"
+                {...register('sep_valid_until')}
+              />
             </div>
 
             <div className="space-y-1.5">

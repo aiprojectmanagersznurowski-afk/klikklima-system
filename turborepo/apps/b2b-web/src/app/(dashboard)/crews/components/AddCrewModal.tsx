@@ -22,7 +22,9 @@ const crewFormSchema = z.object({
   nip: z.string().optional(),
   coordinator: z.string().optional(),
   fgazCert: z.string().optional(),
+  fgazValidUntil: z.string().optional(),
   sep: z.boolean(),
+  sepValidUntil: z.string().optional(),
   zipCode: z.string().optional(),
   radius: z.string().optional(),
   teamsCount: z.string().optional(),
@@ -39,7 +41,9 @@ const EMPTY_VALUES: CrewFormValues = {
   nip: '',
   coordinator: '',
   fgazCert: '',
+  fgazValidUntil: '',
   sep: false,
+  sepValidUntil: '',
   zipCode: '',
   radius: '',
   teamsCount: '1',
@@ -56,7 +60,12 @@ function toDefaultValues(initialData?: CrewEditRecord | null): CrewFormValues {
     nip: initialData.nip || '',
     coordinator: initialData.koordynator_imie_nazwisko || '',
     fgazCert: initialData.certyfikat_fgaz || '',
+    // ERRATA A-2: `Date | null` -> string `YYYY-MM-DD` dla <input type="date">.
+    // toISOString().slice(0,10) czyta komponenty UTC bez przesunięcia strefy,
+    // spójnie z tym, jak akcja zapisuje `new Date('YYYY-MM-DD')` jako północ UTC.
+    fgazValidUntil: initialData.fgaz_valid_until ? initialData.fgaz_valid_until.toISOString().slice(0, 10) : '',
     sep: initialData.uprawnienia_sep || false,
+    sepValidUntil: initialData.sep_valid_until ? initialData.sep_valid_until.toISOString().slice(0, 10) : '',
     zipCode: initialData.kod_pocztowy_bazowy || '',
     radius: initialData.promien_dzialania_km?.toString() || '',
     teamsCount: initialData.liczba_brygad?.toString() || '1',
@@ -246,6 +255,10 @@ export function AddCrewModal({ open, onOpenChange, onSave, initialData, isLoadin
               <label htmlFor="fgazCert" className="text-sm font-medium text-gray-700">Nr certyfikatu F-GAZ</label>
               <input id="fgazCert" type="text" className="w-full px-3 py-2 border rounded-lg" {...register('fgazCert')} />
             </div>
+            <div className="space-y-1.5">
+              <label htmlFor="fgazValidUntil" className="text-sm font-medium text-gray-700">Data ważności certyfikatu F-GAZ</label>
+              <input id="fgazValidUntil" type="date" className="w-full px-3 py-2 border rounded-lg" {...register('fgazValidUntil')} />
+            </div>
             <div className="space-y-1.5 flex items-center mt-6">
               <input
                 id="sep"
@@ -254,6 +267,10 @@ export function AddCrewModal({ open, onOpenChange, onSave, initialData, isLoadin
                 {...register('sep')}
               />
               <label htmlFor="sep" className="ml-2 block text-sm text-gray-900">Uprawnienia SEP do 1kV</label>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="sepValidUntil" className="text-sm font-medium text-gray-700">Data ważności uprawnień SEP</label>
+              <input id="sepValidUntil" type="date" className="w-full px-3 py-2 border rounded-lg" {...register('sepValidUntil')} />
             </div>
           </div>
 

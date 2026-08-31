@@ -218,6 +218,13 @@ export async function createAuditorAction(formData: FormData): Promise<CreateAud
   const emailRaw = String(formData.get('email') ?? '').trim();
   const doswiadczenieRaw = String(formData.get('doswiadczenie_hvac_lata') ?? '').trim();
   const promienRaw = String(formData.get('max_promien_dojazdu_km') ?? '').trim();
+  // ERRATA A-2 (2026-08-31): daty ważności certyfikatów. Data w przeszłości
+  // dozwolona — walidacja tylko formatu, nie zakresu. new Date('YYYY-MM-DD')
+  // daje północ UTC dla tej daty kalendarzowej, to jest poprawne.
+  const fgazValidUntilRaw = String(formData.get('fgaz_valid_until') ?? '').trim();
+  const fgaz_valid_until = fgazValidUntilRaw ? new Date(fgazValidUntilRaw) : null;
+  const sepValidUntilRaw = String(formData.get('sep_valid_until') ?? '').trim();
+  const sep_valid_until = sepValidUntilRaw ? new Date(sepValidUntilRaw) : null;
 
   try {
     const created = await prisma.audytorzy.create({
@@ -229,6 +236,8 @@ export async function createAuditorAction(formData: FormData): Promise<CreateAud
         nazwa_firmy: String(formData.get('nazwa_firmy') ?? '') || null,
         nip: String(formData.get('nip') ?? '') || null,
         certyfikat_fgaz: String(formData.get('certyfikat_fgaz') ?? '') || null,
+        fgaz_valid_until,
+        sep_valid_until,
         doswiadczenie_hvac_lata: doswiadczenieRaw ? Number(doswiadczenieRaw) : null,
         uprawnienia_sep: formData.get('uprawnienia_sep') === 'true',
         preferowane_marki,
@@ -257,6 +266,8 @@ export type AuditorEditRecord = {
   nazwa_firmy: string | null;
   nip: string | null;
   certyfikat_fgaz: string | null;
+  fgaz_valid_until: Date | null;
+  sep_valid_until: Date | null;
   doswiadczenie_hvac_lata: number | null;
   uprawnienia_sep: boolean;
   preferowane_marki: string[];
@@ -298,6 +309,8 @@ export async function getAuditorForEdit(id: string): Promise<AuditorEditRecord |
     nazwa_firmy: auditor.nazwa_firmy,
     nip: auditor.nip,
     certyfikat_fgaz: auditor.certyfikat_fgaz,
+    fgaz_valid_until: auditor.fgaz_valid_until,
+    sep_valid_until: auditor.sep_valid_until,
     doswiadczenie_hvac_lata: auditor.doswiadczenie_hvac_lata,
     uprawnienia_sep: auditor.uprawnienia_sep,
     preferowane_marki: auditor.preferowane_marki,
@@ -372,6 +385,16 @@ export async function updateAuditorAction(id: string, formData: FormData): Promi
 
   if (formData.has('zdjecie_url')) {
     data.zdjecie_url = String(formData.get('zdjecie_url') ?? '') || null;
+  }
+
+  if (formData.has('fgaz_valid_until')) {
+    const fgazValidUntilRaw = String(formData.get('fgaz_valid_until') ?? '').trim();
+    data.fgaz_valid_until = fgazValidUntilRaw ? new Date(fgazValidUntilRaw) : null;
+  }
+
+  if (formData.has('sep_valid_until')) {
+    const sepValidUntilRaw = String(formData.get('sep_valid_until') ?? '').trim();
+    data.sep_valid_until = sepValidUntilRaw ? new Date(sepValidUntilRaw) : null;
   }
 
   try {

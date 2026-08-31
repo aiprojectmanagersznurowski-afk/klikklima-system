@@ -201,6 +201,12 @@ export async function createCrewAction(formData: FormData): Promise<CreateCrewRe
   const emailRaw = String(formData.get('email') ?? '').trim();
   const radiusRaw = String(formData.get('radius') ?? '').trim();
   const teamsCountRaw = String(formData.get('teamsCount') ?? '').trim();
+  // ERRATA A-2 (2026-08-31): daty ważności certyfikatów. Data w przeszłości
+  // dozwolona — walidacja tylko formatu, nie zakresu.
+  const fgazValidUntilRaw = String(formData.get('fgazValidUntil') ?? '').trim();
+  const fgaz_valid_until = fgazValidUntilRaw ? new Date(fgazValidUntilRaw) : null;
+  const sepValidUntilRaw = String(formData.get('sepValidUntil') ?? '').trim();
+  const sep_valid_until = sepValidUntilRaw ? new Date(sepValidUntilRaw) : null;
 
   const callPromise = (async (): Promise<CreateCrewResult> => {
     try {
@@ -212,6 +218,8 @@ export async function createCrewAction(formData: FormData): Promise<CreateCrewRe
           nip: String(formData.get('nip') ?? '') || null,
           koordynator_imie_nazwisko: String(formData.get('coordinator') ?? '') || null,
           certyfikat_fgaz: String(formData.get('fgazCert') ?? '') || null,
+          fgaz_valid_until,
+          sep_valid_until,
           uprawnienia_sep: formData.get('sep') === 'true',
           kod_pocztowy_bazowy: String(formData.get('zipCode') ?? '') || null,
           promien_dzialania_km: radiusRaw ? Number(radiusRaw) : null,
@@ -244,6 +252,8 @@ export type CrewEditRecord = {
   nip: string | null;
   koordynator_imie_nazwisko: string | null;
   certyfikat_fgaz: string | null;
+  fgaz_valid_until: Date | null;
+  sep_valid_until: Date | null;
   uprawnienia_sep: boolean;
   kod_pocztowy_bazowy: string | null;
   promien_dzialania_km: number | null;
@@ -283,6 +293,8 @@ export async function getCrewForEdit(id: string): Promise<CrewEditRecord | null>
     nip: crew.nip,
     koordynator_imie_nazwisko: crew.koordynator_imie_nazwisko,
     certyfikat_fgaz: crew.certyfikat_fgaz,
+    fgaz_valid_until: crew.fgaz_valid_until,
+    sep_valid_until: crew.sep_valid_until,
     uprawnienia_sep: crew.uprawnienia_sep,
     kod_pocztowy_bazowy: crew.kod_pocztowy_bazowy,
     promien_dzialania_km: crew.promien_dzialania_km,
@@ -342,6 +354,16 @@ export async function updateCrewAction(
 
   if (newPhotoPath) {
     data.zdjecie_url = newPhotoPath;
+  }
+
+  if (formData.has('fgazValidUntil')) {
+    const fgazValidUntilRaw = String(formData.get('fgazValidUntil') ?? '').trim();
+    data.fgaz_valid_until = fgazValidUntilRaw ? new Date(fgazValidUntilRaw) : null;
+  }
+
+  if (formData.has('sepValidUntil')) {
+    const sepValidUntilRaw = String(formData.get('sepValidUntil') ?? '').trim();
+    data.sep_valid_until = sepValidUntilRaw ? new Date(sepValidUntilRaw) : null;
   }
 
   try {

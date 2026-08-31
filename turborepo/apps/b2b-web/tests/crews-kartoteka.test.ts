@@ -114,6 +114,13 @@ function buildFullFormData(overrides: Record<string, string> = {}): FormData {
     teamsCount: '3',
     drillingRig: 'true',
     iban: 'PL61109010140000071219812874',
+    // ERRATA A-2 (2026-08-31): fgaz_valid_until / sep_valid_until — daty ważności
+    // certyfikatów, dodane przez korektę kontraktu CRM-ZESP-KARTOTEKA (12 -> 14 pól).
+    // Wartości domyślne w przyszłości, żeby testy "sukces" istniejące przed errata
+    // pozostały niezmienione (nadmiarowe klucze w FormData nie wpływają na
+    // asercje objectContaining w tych testach).
+    fgazValidUntil: '2027-06-15',
+    sepValidUntil: '2028-01-01',
   };
   const merged = { ...base, ...overrides };
   const data = new FormData();
@@ -329,6 +336,62 @@ describe('createCrewAction — mapowanie pól i walidacja (CRM-ZESP-KARTOTEKA)',
   });
 });
 
+describe('createCrewAction — daty ważności certyfikatów (ERRATA A-2, CRM-ZESP-KARTOTEKA)', () => {
+  beforeEach(() => {
+    crewCreateMock.mockReset();
+    crewUpdateMock.mockReset();
+    crewFindUniqueMock.mockReset();
+    revalidatePathMock.mockReset();
+    getCurrentActorRoleMock.mockReset();
+    getCurrentActorRoleMock.mockResolvedValue('admin');
+    crewCreateMock.mockResolvedValue({ id: 'crew-new' });
+  });
+
+  // AC-E1/AC-E5: poprawna data kalendarzowa w obu polach musi trafić do Prismy jako
+  // Date odpowiadający północy UTC TEGO SAMEGO dnia kalendarzowego (new Date("YYYY-MM-DD")),
+  // nie czasowi lokalnemu maszyny uruchamiającej test — stąd porównanie przez toISOString(),
+  // nie przez konstruktor Date z literałem porównawczym.
+  // @REQ: CRM-ZESP-KARTOTEKA
+  it('poprawne fgazValidUntil i sepValidUntil zapisują się jako Date w północ UTC danego dnia kalendarzowego', async () => {
+    const data = buildFullFormData({ fgazValidUntil: '2027-06-15', sepValidUntil: '2028-01-01' });
+
+    await createCrewAction(data);
+
+    const callArgs = crewCreateMock.mock.calls[0]?.[0];
+    const fgaz = callArgs?.data?.fgaz_valid_until as Date;
+    const sep = callArgs?.data?.sep_valid_until as Date;
+    expect(fgaz?.toISOString?.()).toBe('2027-06-15T00:00:00.000Z');
+    expect(sep?.toISOString?.()).toBe('2028-01-01T00:00:00.000Z');
+  });
+
+  // Przypadek brzegowy z errata: pusty string z <input type="date"> -> NULL, nigdy
+  // Invalid Date (co Prisma odrzuciłaby runtime'owo) i nigdy epoka 1970 (new Date(0),
+  // która po cichu ustawiłaby certyfikat wygasły 56 lat temu).
+  // @REQ: CRM-ZESP-KARTOTEKA
+  it('puste fgazValidUntil i sepValidUntil zapisują się jako NULL, nie Invalid Date ani epoka 1970', async () => {
+    const data = buildFullFormData({ fgazValidUntil: '', sepValidUntil: '' });
+
+    await createCrewAction(data);
+
+    expect(crewCreateMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({ fgaz_valid_until: null, sep_valid_until: null }),
+    });
+  });
+
+  // Decyzja człowieka z erraty (2026-08-31): data w przeszłości DOZWOLONA — rekord
+  // dokumentuje stan faktyczny, walidator formularza nie ma prawa tego blokować.
+  // @REQ: CRM-ZESP-KARTOTEKA
+  it('data w przeszłości w fgazValidUntil jest dozwolona — zapis kończy się sukcesem', async () => {
+    const data = buildFullFormData({ fgazValidUntil: '2020-01-01' });
+
+    const result = await createCrewAction(data);
+
+    expect(result?.success).toBe(true);
+    const callArgs = crewCreateMock.mock.calls[0]?.[0];
+    expect((callArgs?.data?.fgaz_valid_until as Date)?.toISOString?.()).toBe('2020-01-01T00:00:00.000Z');
+  });
+});
+
 describe('getCrewForEdit — bramka i kompletność (CRM-ZESP-KARTOTEKA)', () => {
   const FULL_RECORD = {
     id: 'crew-1',
@@ -345,6 +408,13 @@ describe('getCrewForEdit — bramka i kompletność (CRM-ZESP-KARTOTEKA)', () =>
     posiada_wiertnice: true,
     iban: 'PL61109010140000071219812874',
     zdjecie_url: 'zespoly/crew-1-123.jpg',
+    // ERRATA A-2 (2026-08-31): kolumny dat ważności certyfikatów — dodane do mocka
+    // rekordu Prismy. Test "12 pól" poniżej sprawdza obecność tych 12 kluczy przez
+    // toMatchObject (nie zamyka pełnego zbioru) — obecność tych dwóch dodatkowych
+    // pól w wyniku sprawdza osobny test AC-E3 tuż pod nim, żeby nie mieszać
+    // niezmienionego kryterium "12 pól" z nowym kryterium "14 pól".
+    fgaz_valid_until: new Date('2027-06-15T00:00:00.000Z'),
+    sep_valid_until: new Date('2028-01-01T00:00:00.000Z'),
     // Kolumny administracyjne, które NIE mogą trafić do wyniku akcji (patrz
     // test poniżej "nie zawiera pól administracyjnych").
     aktywny: true,
@@ -380,33 +450,35 @@ describe('getCrewForEdit — bramka i kompletność (CRM-ZESP-KARTOTEKA)', () =>
     },
   );
 
-  // Zwraca WSZYSTKIE 12 pól formularza — równość zbioru kluczy, nie tylko
-  // podzbiór (to jest dokładnie defekt, który AC-A13/CrewSummary miałyby
-  // ujawnić, gdyby getCrewForEdit sięgał po okrojony typ).
+  // Zwraca WSZYSTKIE 12 pól formularza (to jest dokładnie defekt, który
+  // AC-A13/CrewSummary miałyby ujawnić, gdyby getCrewForEdit sięgał po
+  // okrojony typ). ERRATA A-2 (2026-08-31): TEST-DEFECT zgłoszony przez
+  // implementer-server — poprzednia wersja zamykała PEŁNY zbiór kluczy
+  // (Object.keys równość), co wykluczało się wzajemnie z AC-E3 poniżej (14
+  // pól po erracie). Wzorem auditors-kartoteka.test.ts (patrz komentarz na
+  // początku tego pliku): sprawdzamy obecność i wartość każdego z 12 pól
+  // imiennie, przez toMatchObject — odporne na dodanie kolejnego pola w
+  // przyszłości, bez utraty intencji "wszystkie 12 pól formularza są tu, nie
+  // tylko podzbiór z CrewSummary".
   // @REQ: CRM-ZESP-KARTOTEKA
-  it('admin — zwraca dokładnie 12 pól formularza (pełna równość zbioru kluczy)', async () => {
+  it('admin — zwraca wszystkie 12 pól formularza (obecność i wartości, nie zamknięty zbiór)', async () => {
     const result = await getCrewForEdit('crew-1');
 
-    const EXPECTED_FORM_FIELDS = [
-      'nazwa',
-      'telefon_kontaktowy',
-      'email',
-      'nip',
-      'koordynator_imie_nazwisko',
-      'certyfikat_fgaz',
-      'uprawnienia_sep',
-      'kod_pocztowy_bazowy',
-      'promien_dzialania_km',
-      'liczba_brygad',
-      'posiada_wiertnice',
-      'iban',
-    ].sort();
-
     expect(result).not.toBeNull();
-    const returnedKeys = Object.keys(result as object).filter(
-      (key) => key !== 'id' && key !== 'zdjecie_url',
-    );
-    expect(returnedKeys.sort()).toEqual(EXPECTED_FORM_FIELDS);
+    expect(result).toMatchObject({
+      nazwa: FULL_RECORD.nazwa,
+      telefon_kontaktowy: FULL_RECORD.telefon_kontaktowy,
+      email: FULL_RECORD.email,
+      nip: FULL_RECORD.nip,
+      koordynator_imie_nazwisko: FULL_RECORD.koordynator_imie_nazwisko,
+      certyfikat_fgaz: FULL_RECORD.certyfikat_fgaz,
+      uprawnienia_sep: FULL_RECORD.uprawnienia_sep,
+      kod_pocztowy_bazowy: FULL_RECORD.kod_pocztowy_bazowy,
+      promien_dzialania_km: FULL_RECORD.promien_dzialania_km,
+      liczba_brygad: FULL_RECORD.liczba_brygad,
+      posiada_wiertnice: FULL_RECORD.posiada_wiertnice,
+      iban: FULL_RECORD.iban,
+    });
   });
 
   // aktywny i leave_status NIE należą do 12 pól formularza i NIE mogą znaleźć
@@ -428,6 +500,18 @@ describe('getCrewForEdit — bramka i kompletność (CRM-ZESP-KARTOTEKA)', () =>
     const result = await getCrewForEdit('crew-nonexistent');
 
     expect(result).toBeNull();
+  });
+
+  // AC-E3 (ERRATA A-2, 2026-08-31): otwarcie formularza edycji musi pokazać obie daty
+  // ważności certyfikatów — rozszerzenie 12 -> 14 pól formularza.
+  // @REQ: CRM-ZESP-KARTOTEKA
+  it('admin — wynik zawiera fgaz_valid_until i sep_valid_until z rekordu', async () => {
+    const result = await getCrewForEdit('crew-1');
+
+    expect(result).toMatchObject({
+      fgaz_valid_until: FULL_RECORD.fgaz_valid_until,
+      sep_valid_until: FULL_RECORD.sep_valid_until,
+    });
   });
 
   // MINOR 7 (rls-security-auditor, review post-GREEN CRM-ZESP-KARTOTEKA): surowa
@@ -732,5 +816,107 @@ describe('updateCrewAction — mapowanie, kolizje i zdjęcie (CRM-ZESP-KARTOTEKA
     await Promise.all([updateCrewAction('crew-1', data), updateCrewAction('crew-1', data)]);
 
     expect(crewCreateMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('updateCrewAction — daty ważności certyfikatów (ERRATA A-2, CRM-ZESP-KARTOTEKA)', () => {
+  const EXISTING_RECORD_WITH_DATES = {
+    id: 'crew-1',
+    nazwa: 'Ekipa Warszawa Południe',
+    email: 'ekipa.waw@example.com',
+    zdjecie_url: 'zespoly/crew-1-100.jpg',
+    fgaz_valid_until: new Date('2026-01-01T00:00:00.000Z'),
+    sep_valid_until: new Date('2026-01-01T00:00:00.000Z'),
+  };
+
+  beforeEach(() => {
+    crewCreateMock.mockReset();
+    crewUpdateMock.mockReset();
+    crewFindUniqueMock.mockReset();
+    revalidatePathMock.mockReset();
+    getCurrentActorRoleMock.mockReset();
+    getCurrentActorRoleMock.mockResolvedValue('admin');
+    crewFindUniqueMock.mockResolvedValue(EXISTING_RECORD_WITH_DATES);
+    crewUpdateMock.mockResolvedValue({ ...EXISTING_RECORD_WITH_DATES });
+  });
+
+  // AC-E1/AC-E5 w trybie edycji: poprawna data -> Date w północ UTC.
+  // @REQ: CRM-ZESP-KARTOTEKA
+  it('poprawne fgazValidUntil i sepValidUntil w edycji zapisują się jako Date w północ UTC danego dnia', async () => {
+    const data = buildFullFormData({ fgazValidUntil: '2027-06-15', sepValidUntil: '2028-01-01' });
+
+    await updateCrewAction('crew-1', data);
+
+    const call = crewUpdateMock.mock.calls[0]?.[0];
+    expect((call?.data?.fgaz_valid_until as Date)?.toISOString?.()).toBe('2027-06-15T00:00:00.000Z');
+    expect((call?.data?.sep_valid_until as Date)?.toISOString?.()).toBe('2028-01-01T00:00:00.000Z');
+  });
+
+  // AC-E4: wyczyszczenie daty w trybie edycji zapisuje NULL, a nie zostawia poprzedniej
+  // wartości ani nie zapisuje Invalid Date.
+  // @REQ: CRM-ZESP-KARTOTEKA
+  it('wyczyszczenie fgazValidUntil i sepValidUntil w edycji zapisuje NULL, nie Invalid Date', async () => {
+    const data = buildFullFormData({ fgazValidUntil: '', sepValidUntil: '' });
+
+    await updateCrewAction('crew-1', data);
+
+    expect(crewUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ fgaz_valid_until: null, sep_valid_until: null }),
+      }),
+    );
+  });
+
+  // Decyzja człowieka z erraty: data w przeszłości dozwolona także w trybie edycji.
+  // @REQ: CRM-ZESP-KARTOTEKA
+  it('data w przeszłości w edycji jest dozwolona — zapis kończy się sukcesem', async () => {
+    const data = buildFullFormData({ fgazValidUntil: '2020-01-01' });
+
+    const result = await updateCrewAction('crew-1', data);
+
+    expect(result?.success).toBe(true);
+    const call = crewUpdateMock.mock.calls[0]?.[0];
+    expect((call?.data?.fgaz_valid_until as Date)?.toISOString?.()).toBe('2020-01-01T00:00:00.000Z');
+  });
+
+  // AC-E3: zapis edycji bez żadnej zmiany zostawia obie kolumny z tą samą wartością
+  // co przed — rozszerzenie istniejącego AC-A13 (iban/nip/kod_pocztowy_bazowy) na
+  // nowe pola z erraty A-2.
+  // @REQ: CRM-ZESP-KARTOTEKA
+  it('zapis formularza edycji bez zmian zachowuje fgaz_valid_until i sep_valid_until', async () => {
+    const unchanged = buildFullFormData({ fgazValidUntil: '2026-01-01', sepValidUntil: '2026-01-01' });
+
+    await updateCrewAction('crew-1', unchanged);
+
+    expect(crewUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          fgaz_valid_until: EXISTING_RECORD_WITH_DATES.fgaz_valid_until,
+          sep_valid_until: EXISTING_RECORD_WITH_DATES.sep_valid_until,
+        }),
+      }),
+    );
+  });
+
+  // Ochrona przed cichym zerowaniem — dokładnie ten sam wzorzec dowodowy co już
+  // zastosowany dla preferowane_marki (auditors-kartoteka.test.ts): fizyczny brak
+  // klucza w FormData (nie pusty string) NIE może zerować istniejącej wartości.
+  // @REQ: CRM-ZESP-KARTOTEKA
+  it('edycja bez pól fgazValidUntil/sepValidUntil w FormData zostawia istniejące daty bez zmian (nie zeruje)', async () => {
+    const data = buildFullFormData();
+    data.delete('fgazValidUntil');
+    data.delete('sepValidUntil');
+
+    await updateCrewAction('crew-1', data);
+
+    const call = crewUpdateMock.mock.calls.at(-1)?.[0];
+    if (Object.prototype.hasOwnProperty.call(call?.data ?? {}, 'fgaz_valid_until')) {
+      expect(call.data.fgaz_valid_until).not.toBeNull();
+      expect(call.data.fgaz_valid_until).toEqual(EXISTING_RECORD_WITH_DATES.fgaz_valid_until);
+    }
+    if (Object.prototype.hasOwnProperty.call(call?.data ?? {}, 'sep_valid_until')) {
+      expect(call.data.sep_valid_until).not.toBeNull();
+      expect(call.data.sep_valid_until).toEqual(EXISTING_RECORD_WITH_DATES.sep_valid_until);
+    }
   });
 });
