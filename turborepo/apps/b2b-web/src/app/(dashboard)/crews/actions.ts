@@ -1,9 +1,20 @@
 "use server"
 
-import { prisma } from "@repo/database"
+import { prisma, type Prisma } from "@repo/database"
 import { revalidatePath } from "next/cache"
 import { can } from "@klikklima/contracts"
 import { getCurrentActorRole, createClient } from "../../../utils/supabase/server"
+import { crewSchema } from "./schema"
+import type { ZodError } from "zod"
+
+function formatZodError(error: ZodError): string {
+  const issue = error.issues[0];
+  if (!issue) {
+    return "Niepoprawne dane formularza.";
+  }
+  const field = issue.path.join('.');
+  return field ? `${field}: ${issue.message}` : issue.message;
+}
 
 export type CrewSummary = {
   id: string;
@@ -188,46 +199,39 @@ export async function createCrewAction(formData: FormData): Promise<CreateCrewRe
     return { success: false, error: "Brak uprawnień do utworzenia ekipy." };
   }
 
-  const nazwa = String(formData.get('name') ?? '').trim();
-  if (!nazwa) {
-    return { success: false, error: "Nazwa ekipy jest wymagana." };
-  }
-
   const inFlight = createCrewInFlight.get(formData);
   if (inFlight) {
     return inFlight;
   }
 
-  const emailRaw = String(formData.get('email') ?? '').trim();
-  const radiusRaw = String(formData.get('radius') ?? '').trim();
-  const teamsCountRaw = String(formData.get('teamsCount') ?? '').trim();
-  // ERRATA A-2 (2026-08-31): daty ważności certyfikatów. Data w przeszłości
-  // dozwolona — walidacja tylko formatu, nie zakresu.
-  const fgazValidUntilRaw = String(formData.get('fgazValidUntil') ?? '').trim();
-  const fgaz_valid_until = fgazValidUntilRaw ? new Date(fgazValidUntilRaw) : null;
-  const sepValidUntilRaw = String(formData.get('sepValidUntil') ?? '').trim();
-  const sep_valid_until = sepValidUntilRaw ? new Date(sepValidUntilRaw) : null;
+  const parsed = crewSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const field = issue?.path.join('.');
+    return { success: false, error: field ? `${field}: ${issue.message}` : "Niepoprawne dane formularza." };
+  }
+  const values = parsed.data;
 
   const callPromise = (async (): Promise<CreateCrewResult> => {
     try {
-      const created = await prisma.zespoly_monterskie.create({
-        data: {
-          nazwa,
-          telefon_kontaktowy: String(formData.get('phone') ?? '') || null,
-          email: emailRaw || null,
-          nip: String(formData.get('nip') ?? '') || null,
-          koordynator_imie_nazwisko: String(formData.get('coordinator') ?? '') || null,
-          certyfikat_fgaz: String(formData.get('fgazCert') ?? '') || null,
-          fgaz_valid_until,
-          sep_valid_until,
-          uprawnienia_sep: formData.get('sep') === 'true',
-          kod_pocztowy_bazowy: String(formData.get('zipCode') ?? '') || null,
-          promien_dzialania_km: radiusRaw ? Number(radiusRaw) : null,
-          liczba_brygad: teamsCountRaw ? Number(teamsCountRaw) : 1,
-          posiada_wiertnice: formData.get('drillingRig') === 'true',
-          iban: String(formData.get('iban') ?? '') || null,
-        },
-      });
+      const data: Prisma.zespoly_monterskieCreateInput = {
+        nazwa: values.nazwa,
+        telefon_kontaktowy: values.telefon_kontaktowy,
+        email: values.email,
+        nip: values.nip,
+        koordynator_imie_nazwisko: values.koordynator_imie_nazwisko,
+        certyfikat_fgaz: values.certyfikat_fgaz,
+        fgaz_valid_until: values.fgaz_valid_until,
+        sep_valid_until: values.sep_valid_until,
+        uprawnienia_sep: values.uprawnienia_sep,
+        kod_pocztowy_bazowy: values.kod_pocztowy_bazowy,
+        promien_dzialania_km: values.promien_dzialania_km,
+        liczba_brygad: values.liczba_brygad,
+        posiada_wiertnice: values.posiada_wiertnice,
+        iban: values.iban,
+      };
+
+      const created = await prisma.zespoly_monterskie.create({ data });
 
       revalidatePath('/crews');
       return { success: true, id: created.id };
@@ -328,42 +332,39 @@ export async function updateCrewAction(
     return { success: false, error: "Ekipa nie została znaleziona." };
   }
 
-  const nazwa = String(formData.get('name') ?? '').trim();
-  if (!nazwa) {
-    return { success: false, error: "Nazwa ekipy jest wymagana." };
+  const parsed = crewSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { success: false, error: formatZodError(parsed.error) };
   }
+  const values = parsed.data;
 
-  const emailRaw = String(formData.get('email') ?? '').trim();
-  const radiusRaw = String(formData.get('radius') ?? '').trim();
-  const teamsCountRaw = String(formData.get('teamsCount') ?? '').trim();
-
-  const data: Record<string, unknown> = {
-    nazwa,
-    telefon_kontaktowy: String(formData.get('phone') ?? '') || null,
-    email: emailRaw || null,
-    nip: String(formData.get('nip') ?? '') || null,
-    koordynator_imie_nazwisko: String(formData.get('coordinator') ?? '') || null,
-    certyfikat_fgaz: String(formData.get('fgazCert') ?? '') || null,
-    uprawnienia_sep: formData.get('sep') === 'true',
-    kod_pocztowy_bazowy: String(formData.get('zipCode') ?? '') || null,
-    promien_dzialania_km: radiusRaw ? Number(radiusRaw) : null,
-    liczba_brygad: teamsCountRaw ? Number(teamsCountRaw) : 1,
-    posiada_wiertnice: formData.get('drillingRig') === 'true',
-    iban: String(formData.get('iban') ?? '') || null,
+  const data: Prisma.zespoly_monterskieUpdateInput = {
+    nazwa: values.nazwa,
+    telefon_kontaktowy: values.telefon_kontaktowy,
+    email: values.email,
+    nip: values.nip,
+    koordynator_imie_nazwisko: values.koordynator_imie_nazwisko,
+    certyfikat_fgaz: values.certyfikat_fgaz,
+    uprawnienia_sep: values.uprawnienia_sep,
+    kod_pocztowy_bazowy: values.kod_pocztowy_bazowy,
+    promien_dzialania_km: values.promien_dzialania_km,
+    liczba_brygad: values.liczba_brygad,
+    posiada_wiertnice: values.posiada_wiertnice,
+    iban: values.iban,
   };
 
   if (newPhotoPath) {
     data.zdjecie_url = newPhotoPath;
   }
 
-  if (formData.has('fgazValidUntil')) {
-    const fgazValidUntilRaw = String(formData.get('fgazValidUntil') ?? '').trim();
-    data.fgaz_valid_until = fgazValidUntilRaw ? new Date(fgazValidUntilRaw) : null;
+  // formData.has() chroni pola opcjonalne, których fizyczny brak w formularzu
+  // NIE może zerować istniejącej wartości.
+  if (formData.has('fgaz_valid_until')) {
+    data.fgaz_valid_until = values.fgaz_valid_until;
   }
 
-  if (formData.has('sepValidUntil')) {
-    const sepValidUntilRaw = String(formData.get('sepValidUntil') ?? '').trim();
-    data.sep_valid_until = sepValidUntilRaw ? new Date(sepValidUntilRaw) : null;
+  if (formData.has('sep_valid_until')) {
+    data.sep_valid_until = values.sep_valid_until;
   }
 
   try {

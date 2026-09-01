@@ -8,34 +8,25 @@ import { X, Camera, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import usePlacesAutocomplete from 'use-places-autocomplete';
 import type { AuditorEditRecord } from '../actions';
+import { auditorSchema } from '../schema';
+import { buildAuditorFormData } from './buildAuditorFormData';
 
 /**
- * CRM-AUDYT-KARTOTEKA (D-A1): klucze schematu i pola FormData budowane z niego
- * MUSZĄ być nazwami kolumn Prisma (imie_i_nazwisko, telefon, ...) — tego
- * oczekują createAuditorAction/updateAuditorAction. Nie ujednolicaj z
- * konwencją krótkich nazw używaną przez formularz zespołu (AddCrewModal) —
- * to świadomy rozjazd między dwoma plikami akcji, opisany w WO
- * CRM-KARTOTEKI-CREATE-AND-CREW-ASSIGN.
+ * CRM-AUDYT-KARTOTEKA (D1): schemat Zod dzielony z Server Action
+ * (`../schema.ts`) — klucze to nazwy kolumn Prisma (imie_i_nazwisko,
+ * telefon, ...), tego oczekują createAuditorAction/updateAuditorAction. Nie
+ * ujednolicaj z konwencją krótkich nazw używaną przez formularz zespołu
+ * (AddCrewModal) — to świadomy rozjazd między dwoma plikami akcji, opisany w
+ * WO CRM-KARTOTEKI-CREATE-AND-CREW-ASSIGN.
+ *
+ * Formularz operuje na SUROWYCH wejściach tekstowych (`z.input`), bo pola
+ * `<input>` zawsze produkują stringi — walidację i koercję (liczby, daty,
+ * boolean, JSON marek) wykonuje wspólny schemat dopiero na serwerze / przy
+ * `handleSubmit`.
  */
-const auditorFormSchema = z.object({
-  imie_i_nazwisko: z.string().trim().min(1, "Imię i nazwisko jest wymagane."),
-  telefon: z.string().optional(),
-  email: z.union([z.literal(''), z.string().trim().email("Niepoprawny format e-mail.")]),
-  adres: z.string().optional(),
-  nazwa_firmy: z.string().optional(),
-  nip: z.string().optional(),
-  certyfikat_fgaz: z.string().optional(),
-  fgaz_valid_until: z.string().optional(),
-  sep_valid_until: z.string().optional(),
-  doswiadczenie_hvac_lata: z.string().optional(),
-  uprawnienia_sep: z.boolean(),
-  preferowane_marki: z.string(),
-  kod_pocztowy_bazowy: z.string().optional(),
-  max_promien_dojazdu_km: z.string().optional(),
-  iban: z.string().optional(),
-});
+const auditorFormSchema = auditorSchema;
 
-type AuditorFormValues = z.infer<typeof auditorFormSchema>;
+type AuditorFormValues = z.input<typeof auditorFormSchema>;
 
 const EMPTY_VALUES: AuditorFormValues = {
   imie_i_nazwisko: '',
@@ -164,14 +155,14 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
     setIsSubmitting(true);
     setSubmitError(null);
 
-    const data = new FormData();
-    Object.entries(values).forEach(([key, val]) => {
-      if (typeof val === 'boolean') {
-        data.append(key, val ? 'true' : 'false');
-      } else if (val !== undefined && val !== null) {
-        data.append(key, String(val));
-      }
-    });
+    // @hookform/resolvers@3.10 typuje Resolver na jeden generyk (TFieldValues
+    // wejsciowy), wiec `values` jest tu formalnie typu z.input — ale w
+    // runtime react-hook-form przekazuje do onSubmit WYNIK zodResolver
+    // (z.output, po transformacjach), nie surowe wejscie. Zweryfikowane
+    // bezposrednio (patrz recenzja BLOCKER, WO BATCH-MEDIUM-LOW-CLEANUP.md).
+    // Rzutowanie mostkuje luke w deklaracji typu biblioteki, nie ukrywa bledu.
+    const resolvedValues = values as unknown as z.output<typeof auditorFormSchema>;
+    const data = buildAuditorFormData(resolvedValues);
 
     const result = await onSave(data, photoFile);
     setIsSubmitting(false);

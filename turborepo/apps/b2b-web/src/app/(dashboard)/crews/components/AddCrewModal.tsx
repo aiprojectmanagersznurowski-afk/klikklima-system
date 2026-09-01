@@ -7,69 +7,56 @@ import { z } from 'zod';
 import { X, Camera, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { CrewEditRecord } from '../actions';
+import { crewSchema } from '../schema';
+import { buildCrewFormData } from './buildCrewFormData';
 
 /**
- * CRM-ZESP-KARTOTEKA (D-A1): klucze schematu to KRÓTKIE angielskie nazwy
- * (`name`, `phone`, `coordinator`, ...) — tego oczekują
- * createCrewAction/updateCrewAction. To INNA konwencja niż audytor
- * (AddAuditorModal używa nazw kolumn Prisma) — świadomy rozjazd między
- * dwoma plikami akcji, nie ujednolicaj na własną rękę.
+ * CRM-ZESP-KARTOTEKA (D1/D2): schemat Zod dzielony z Server Action
+ * (`../schema.ts`) — klucze to nazwy kolumn Prisma `zespoly_monterskie`
+ * (`nazwa`, `telefon_kontaktowy`, `koordynator_imie_nazwisko`, ...), zgodnie
+ * z konwencją audytora. Formularz operuje na SUROWYCH wejściach tekstowych
+ * (`z.input`) — walidację i koercję wykonuje wspólny schemat.
  */
-const crewFormSchema = z.object({
-  name: z.string().trim().min(1, "Nazwa ekipy jest wymagana."),
-  phone: z.string().optional(),
-  email: z.union([z.literal(''), z.string().trim().email("Niepoprawny format e-mail.")]),
-  nip: z.string().optional(),
-  coordinator: z.string().optional(),
-  fgazCert: z.string().optional(),
-  fgazValidUntil: z.string().optional(),
-  sep: z.boolean(),
-  sepValidUntil: z.string().optional(),
-  zipCode: z.string().optional(),
-  radius: z.string().optional(),
-  teamsCount: z.string().optional(),
-  drillingRig: z.boolean(),
-  iban: z.string().optional(),
-});
+const crewFormSchema = crewSchema;
 
-type CrewFormValues = z.infer<typeof crewFormSchema>;
+type CrewFormValues = z.input<typeof crewFormSchema>;
 
 const EMPTY_VALUES: CrewFormValues = {
-  name: '',
-  phone: '',
+  nazwa: '',
+  telefon_kontaktowy: '',
   email: '',
   nip: '',
-  coordinator: '',
-  fgazCert: '',
-  fgazValidUntil: '',
-  sep: false,
-  sepValidUntil: '',
-  zipCode: '',
-  radius: '',
-  teamsCount: '1',
-  drillingRig: false,
+  koordynator_imie_nazwisko: '',
+  certyfikat_fgaz: '',
+  fgaz_valid_until: '',
+  uprawnienia_sep: false,
+  sep_valid_until: '',
+  kod_pocztowy_bazowy: '',
+  promien_dzialania_km: '',
+  liczba_brygad: '1',
+  posiada_wiertnice: false,
   iban: '',
 };
 
 function toDefaultValues(initialData?: CrewEditRecord | null): CrewFormValues {
   if (!initialData) return EMPTY_VALUES;
   return {
-    name: initialData.nazwa || '',
-    phone: initialData.telefon_kontaktowy || '',
+    nazwa: initialData.nazwa || '',
+    telefon_kontaktowy: initialData.telefon_kontaktowy || '',
     email: initialData.email || '',
     nip: initialData.nip || '',
-    coordinator: initialData.koordynator_imie_nazwisko || '',
-    fgazCert: initialData.certyfikat_fgaz || '',
+    koordynator_imie_nazwisko: initialData.koordynator_imie_nazwisko || '',
+    certyfikat_fgaz: initialData.certyfikat_fgaz || '',
     // ERRATA A-2: `Date | null` -> string `YYYY-MM-DD` dla <input type="date">.
     // toISOString().slice(0,10) czyta komponenty UTC bez przesunięcia strefy,
     // spójnie z tym, jak akcja zapisuje `new Date('YYYY-MM-DD')` jako północ UTC.
-    fgazValidUntil: initialData.fgaz_valid_until ? initialData.fgaz_valid_until.toISOString().slice(0, 10) : '',
-    sep: initialData.uprawnienia_sep || false,
-    sepValidUntil: initialData.sep_valid_until ? initialData.sep_valid_until.toISOString().slice(0, 10) : '',
-    zipCode: initialData.kod_pocztowy_bazowy || '',
-    radius: initialData.promien_dzialania_km?.toString() || '',
-    teamsCount: initialData.liczba_brygad?.toString() || '1',
-    drillingRig: initialData.posiada_wiertnice || false,
+    fgaz_valid_until: initialData.fgaz_valid_until ? initialData.fgaz_valid_until.toISOString().slice(0, 10) : '',
+    uprawnienia_sep: initialData.uprawnienia_sep || false,
+    sep_valid_until: initialData.sep_valid_until ? initialData.sep_valid_until.toISOString().slice(0, 10) : '',
+    kod_pocztowy_bazowy: initialData.kod_pocztowy_bazowy || '',
+    promien_dzialania_km: initialData.promien_dzialania_km?.toString() || '',
+    liczba_brygad: initialData.liczba_brygad?.toString() || '1',
+    posiada_wiertnice: initialData.posiada_wiertnice || false,
     iban: initialData.iban || '',
   };
 }
@@ -135,14 +122,11 @@ export function AddCrewModal({ open, onOpenChange, onSave, initialData, isLoadin
     setIsSubmitting(true);
     setSubmitError(null);
 
-    const data = new FormData();
-    Object.entries(values).forEach(([key, val]) => {
-      if (typeof val === 'boolean') {
-        data.append(key, val ? 'true' : 'false');
-      } else if (val !== undefined && val !== null) {
-        data.append(key, String(val));
-      }
-    });
+    // Patrz analogiczny komentarz w AddAuditorModal.tsx: @hookform/resolvers
+    // typuje resolver na jeden generyk wejsciowy, ale runtime przekazuje tu
+    // wynik zodResolver (z.output), nie surowe wejscie.
+    const resolvedValues = values as unknown as z.output<typeof crewFormSchema>;
+    const data = buildCrewFormData(resolvedValues);
 
     const result = await onSave(data, photoFile);
     setIsSubmitting(false);
@@ -210,29 +194,29 @@ export function AddCrewModal({ open, onOpenChange, onSave, initialData, isLoadin
           <h3 className="text-lg font-medium text-gray-900 mb-4">Biznes</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-1.5">
-              <label htmlFor="name" className="text-sm font-medium text-gray-700">Nazwa Ekipy <span className="text-red-500">*</span></label>
+              <label htmlFor="nazwa" className="text-sm font-medium text-gray-700">Nazwa Ekipy <span className="text-red-500">*</span></label>
               <input
-                id="name"
+                id="nazwa"
                 type="text"
-                aria-invalid={!!errors.name}
+                aria-invalid={!!errors.nazwa}
                 className="w-full px-3 py-2 border rounded-lg aria-invalid:border-destructive aria-invalid:ring-destructive/20"
-                {...register('name')}
+                {...register('nazwa')}
               />
-              {errors.name && (
-                <p className="text-sm text-destructive font-medium mt-1">{errors.name.message}</p>
+              {errors.nazwa && (
+                <p className="text-sm text-destructive font-medium mt-1">{errors.nazwa.message}</p>
               )}
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="coordinator" className="text-sm font-medium text-gray-700">Koordynator (Imię i nazwisko)</label>
-              <input id="coordinator" type="text" className="w-full px-3 py-2 border rounded-lg" {...register('coordinator')} />
+              <label htmlFor="koordynator_imie_nazwisko" className="text-sm font-medium text-gray-700">Koordynator (Imię i nazwisko)</label>
+              <input id="koordynator_imie_nazwisko" type="text" className="w-full px-3 py-2 border rounded-lg" {...register('koordynator_imie_nazwisko')} />
             </div>
             <div className="space-y-1.5">
               <label htmlFor="nip" className="text-sm font-medium text-gray-700">NIP</label>
               <input id="nip" type="text" placeholder="000-000-00-00" className="w-full px-3 py-2 border rounded-lg" {...register('nip')} />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="phone" className="text-sm font-medium text-gray-700">Telefon</label>
-              <input id="phone" type="tel" className="w-full px-3 py-2 border rounded-lg" {...register('phone')} />
+              <label htmlFor="telefon_kontaktowy" className="text-sm font-medium text-gray-700">Telefon</label>
+              <input id="telefon_kontaktowy" type="tel" className="w-full px-3 py-2 border rounded-lg" {...register('telefon_kontaktowy')} />
             </div>
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
@@ -252,50 +236,50 @@ export function AddCrewModal({ open, onOpenChange, onSave, initialData, isLoadin
           <h3 className="text-lg font-medium text-gray-900 mb-4">Kwalifikacje</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-1.5">
-              <label htmlFor="fgazCert" className="text-sm font-medium text-gray-700">Nr certyfikatu F-GAZ</label>
-              <input id="fgazCert" type="text" className="w-full px-3 py-2 border rounded-lg" {...register('fgazCert')} />
+              <label htmlFor="certyfikat_fgaz" className="text-sm font-medium text-gray-700">Nr certyfikatu F-GAZ</label>
+              <input id="certyfikat_fgaz" type="text" className="w-full px-3 py-2 border rounded-lg" {...register('certyfikat_fgaz')} />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="fgazValidUntil" className="text-sm font-medium text-gray-700">Data ważności certyfikatu F-GAZ</label>
-              <input id="fgazValidUntil" type="date" className="w-full px-3 py-2 border rounded-lg" {...register('fgazValidUntil')} />
+              <label htmlFor="fgaz_valid_until" className="text-sm font-medium text-gray-700">Data ważności certyfikatu F-GAZ</label>
+              <input id="fgaz_valid_until" type="date" className="w-full px-3 py-2 border rounded-lg" {...register('fgaz_valid_until')} />
             </div>
             <div className="space-y-1.5 flex items-center mt-6">
               <input
-                id="sep"
+                id="uprawnienia_sep"
                 type="checkbox"
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus-visible:ring-2 focus-visible:ring-primary"
-                {...register('sep')}
+                {...register('uprawnienia_sep')}
               />
-              <label htmlFor="sep" className="ml-2 block text-sm text-gray-900">Uprawnienia SEP do 1kV</label>
+              <label htmlFor="uprawnienia_sep" className="ml-2 block text-sm text-gray-900">Uprawnienia SEP do 1kV</label>
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="sepValidUntil" className="text-sm font-medium text-gray-700">Data ważności uprawnień SEP</label>
-              <input id="sepValidUntil" type="date" className="w-full px-3 py-2 border rounded-lg" {...register('sepValidUntil')} />
+              <label htmlFor="sep_valid_until" className="text-sm font-medium text-gray-700">Data ważności uprawnień SEP</label>
+              <input id="sep_valid_until" type="date" className="w-full px-3 py-2 border rounded-lg" {...register('sep_valid_until')} />
             </div>
           </div>
 
           <h3 className="text-lg font-medium text-gray-900 mb-4">Logistyka</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-1.5">
-              <label htmlFor="zipCode" className="text-sm font-medium text-gray-700">Bazowy kod pocztowy</label>
-              <input id="zipCode" type="text" placeholder="XX-XXX" className="w-full px-3 py-2 border rounded-lg" {...register('zipCode')} />
+              <label htmlFor="kod_pocztowy_bazowy" className="text-sm font-medium text-gray-700">Bazowy kod pocztowy</label>
+              <input id="kod_pocztowy_bazowy" type="text" placeholder="XX-XXX" className="w-full px-3 py-2 border rounded-lg" {...register('kod_pocztowy_bazowy')} />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="radius" className="text-sm font-medium text-gray-700">Promień działania (km)</label>
-              <input id="radius" type="number" min="10" className="w-full px-3 py-2 border rounded-lg" {...register('radius')} />
+              <label htmlFor="promien_dzialania_km" className="text-sm font-medium text-gray-700">Promień działania (km)</label>
+              <input id="promien_dzialania_km" type="number" min="10" className="w-full px-3 py-2 border rounded-lg" {...register('promien_dzialania_km')} />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="teamsCount" className="text-sm font-medium text-gray-700">Liczba dostępnych brygad</label>
-              <input id="teamsCount" type="number" min="1" className="w-full px-3 py-2 border rounded-lg" {...register('teamsCount')} />
+              <label htmlFor="liczba_brygad" className="text-sm font-medium text-gray-700">Liczba dostępnych brygad</label>
+              <input id="liczba_brygad" type="number" min="1" className="w-full px-3 py-2 border rounded-lg" {...register('liczba_brygad')} />
             </div>
             <div className="space-y-1.5 flex items-center mt-6">
               <input
-                id="drillingRig"
+                id="posiada_wiertnice"
                 type="checkbox"
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus-visible:ring-2 focus-visible:ring-primary"
-                {...register('drillingRig')}
+                {...register('posiada_wiertnice')}
               />
-              <label htmlFor="drillingRig" className="ml-2 block text-sm text-gray-900">Wiertnica do żelbetu</label>
+              <label htmlFor="posiada_wiertnice" className="ml-2 block text-sm text-gray-900">Wiertnica do żelbetu</label>
             </div>
           </div>
 

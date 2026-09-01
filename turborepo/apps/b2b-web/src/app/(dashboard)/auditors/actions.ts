@@ -1,9 +1,20 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { prisma } from "@repo/database"
+import { prisma, type Prisma } from "@repo/database"
 import { can } from "@klikklima/contracts"
 import { getCurrentActorRole, createClient } from "../../../utils/supabase/server"
+import { auditorSchema } from "./schema"
+import type { ZodError } from "zod"
+
+function formatZodError(error: ZodError): string {
+  const issue = error.issues[0];
+  if (!issue) {
+    return "Niepoprawne dane formularza.";
+  }
+  const field = issue.path.join('.');
+  return field ? `${field}: ${issue.message}` : issue.message;
+}
 
 /**
  * D1 (WO CRM-SAFE-RECORD-ACTIONS): leady "wiszące" przy audytorze to WYŁĄCZNIE te
@@ -196,57 +207,33 @@ export async function createAuditorAction(formData: FormData): Promise<CreateAud
     return { success: false, error: "Brak uprawnień do utworzenia audytora." };
   }
 
-  const imie_i_nazwisko = String(formData.get('imie_i_nazwisko') ?? '').trim();
-  if (!imie_i_nazwisko) {
-    return { success: false, error: "Imię i nazwisko jest wymagane." };
+  const parsed = auditorSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { success: false, error: formatZodError(parsed.error) };
   }
-
-  const preferowaneMarkiRaw = formData.get('preferowane_marki');
-  let preferowane_marki: string[] = [];
-  if (typeof preferowaneMarkiRaw === 'string' && preferowaneMarkiRaw !== '') {
-    try {
-      const parsed = JSON.parse(preferowaneMarkiRaw);
-      if (!Array.isArray(parsed)) {
-        return { success: false, error: "Niepoprawny format preferowanych marek." };
-      }
-      preferowane_marki = parsed;
-    } catch {
-      return { success: false, error: "Niepoprawny format preferowanych marek." };
-    }
-  }
-
-  const emailRaw = String(formData.get('email') ?? '').trim();
-  const doswiadczenieRaw = String(formData.get('doswiadczenie_hvac_lata') ?? '').trim();
-  const promienRaw = String(formData.get('max_promien_dojazdu_km') ?? '').trim();
-  // ERRATA A-2 (2026-08-31): daty ważności certyfikatów. Data w przeszłości
-  // dozwolona — walidacja tylko formatu, nie zakresu. new Date('YYYY-MM-DD')
-  // daje północ UTC dla tej daty kalendarzowej, to jest poprawne.
-  const fgazValidUntilRaw = String(formData.get('fgaz_valid_until') ?? '').trim();
-  const fgaz_valid_until = fgazValidUntilRaw ? new Date(fgazValidUntilRaw) : null;
-  const sepValidUntilRaw = String(formData.get('sep_valid_until') ?? '').trim();
-  const sep_valid_until = sepValidUntilRaw ? new Date(sepValidUntilRaw) : null;
+  const values = parsed.data;
 
   try {
-    const created = await prisma.audytorzy.create({
-      data: {
-        imie_i_nazwisko,
-        telefon: String(formData.get('telefon') ?? '') || null,
-        email: emailRaw || null,
-        adres: String(formData.get('adres') ?? '') || null,
-        nazwa_firmy: String(formData.get('nazwa_firmy') ?? '') || null,
-        nip: String(formData.get('nip') ?? '') || null,
-        certyfikat_fgaz: String(formData.get('certyfikat_fgaz') ?? '') || null,
-        fgaz_valid_until,
-        sep_valid_until,
-        doswiadczenie_hvac_lata: doswiadczenieRaw ? Number(doswiadczenieRaw) : null,
-        uprawnienia_sep: formData.get('uprawnienia_sep') === 'true',
-        preferowane_marki,
-        kod_pocztowy_bazowy: String(formData.get('kod_pocztowy_bazowy') ?? '') || null,
-        max_promien_dojazdu_km: promienRaw ? Number(promienRaw) : null,
-        iban: String(formData.get('iban') ?? '') || null,
-        zdjecie_url: String(formData.get('zdjecie_url') ?? '') || null,
-      },
-    });
+    const data: Prisma.audytorzyCreateInput = {
+      imie_i_nazwisko: values.imie_i_nazwisko,
+      telefon: values.telefon,
+      email: values.email,
+      adres: values.adres,
+      nazwa_firmy: values.nazwa_firmy,
+      nip: values.nip,
+      certyfikat_fgaz: values.certyfikat_fgaz,
+      fgaz_valid_until: values.fgaz_valid_until,
+      sep_valid_until: values.sep_valid_until,
+      doswiadczenie_hvac_lata: values.doswiadczenie_hvac_lata,
+      uprawnienia_sep: values.uprawnienia_sep,
+      preferowane_marki: values.preferowane_marki,
+      kod_pocztowy_bazowy: values.kod_pocztowy_bazowy,
+      max_promien_dojazdu_km: values.max_promien_dojazdu_km,
+      iban: values.iban,
+      zdjecie_url: values.zdjecie_url,
+    };
+
+    const created = await prisma.audytorzy.create({ data });
 
     revalidatePath('/auditors');
     return { success: true, id: created.id };
@@ -341,60 +328,43 @@ export async function updateAuditorAction(id: string, formData: FormData): Promi
     return { success: false, error: "Audytor nie został znaleziony." };
   }
 
-  const imie_i_nazwisko = String(formData.get('imie_i_nazwisko') ?? '').trim();
-  if (!imie_i_nazwisko) {
-    return { success: false, error: "Imię i nazwisko jest wymagane." };
+  const parsed = auditorSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { success: false, error: formatZodError(parsed.error) };
   }
+  const values = parsed.data;
 
-  const preferowaneMarkiRaw = formData.get('preferowane_marki');
-  let preferowane_marki: string[] = [];
-  if (typeof preferowaneMarkiRaw === 'string' && preferowaneMarkiRaw !== '') {
-    try {
-      const parsed = JSON.parse(preferowaneMarkiRaw);
-      if (!Array.isArray(parsed)) {
-        return { success: false, error: "Niepoprawny format preferowanych marek." };
-      }
-      preferowane_marki = parsed;
-    } catch {
-      return { success: false, error: "Niepoprawny format preferowanych marek." };
-    }
-  }
-
-  const emailRaw = String(formData.get('email') ?? '').trim();
-  const doswiadczenieRaw = String(formData.get('doswiadczenie_hvac_lata') ?? '').trim();
-  const promienRaw = String(formData.get('max_promien_dojazdu_km') ?? '').trim();
-
-  const data: Record<string, unknown> = {
-    imie_i_nazwisko,
-    telefon: String(formData.get('telefon') ?? '') || null,
-    email: emailRaw || null,
-    adres: String(formData.get('adres') ?? '') || null,
-    nazwa_firmy: String(formData.get('nazwa_firmy') ?? '') || null,
-    nip: String(formData.get('nip') ?? '') || null,
-    certyfikat_fgaz: String(formData.get('certyfikat_fgaz') ?? '') || null,
-    doswiadczenie_hvac_lata: doswiadczenieRaw ? Number(doswiadczenieRaw) : null,
-    uprawnienia_sep: formData.get('uprawnienia_sep') === 'true',
-    kod_pocztowy_bazowy: String(formData.get('kod_pocztowy_bazowy') ?? '') || null,
-    max_promien_dojazdu_km: promienRaw ? Number(promienRaw) : null,
-    iban: String(formData.get('iban') ?? '') || null,
+  const data: Prisma.audytorzyUpdateInput = {
+    imie_i_nazwisko: values.imie_i_nazwisko,
+    telefon: values.telefon,
+    email: values.email,
+    adres: values.adres,
+    nazwa_firmy: values.nazwa_firmy,
+    nip: values.nip,
+    certyfikat_fgaz: values.certyfikat_fgaz,
+    doswiadczenie_hvac_lata: values.doswiadczenie_hvac_lata,
+    uprawnienia_sep: values.uprawnienia_sep,
+    kod_pocztowy_bazowy: values.kod_pocztowy_bazowy,
+    max_promien_dojazdu_km: values.max_promien_dojazdu_km,
+    iban: values.iban,
   };
 
+  // formData.has() chroni pola opcjonalne, których fizyczny brak w formularzu
+  // NIE może zerować istniejącej wartości (odróżnia "nie zmieniono" od "wyczyszczono").
   if (formData.has('preferowane_marki')) {
-    data.preferowane_marki = preferowane_marki;
+    data.preferowane_marki = values.preferowane_marki;
   }
 
   if (formData.has('zdjecie_url')) {
-    data.zdjecie_url = String(formData.get('zdjecie_url') ?? '') || null;
+    data.zdjecie_url = values.zdjecie_url;
   }
 
   if (formData.has('fgaz_valid_until')) {
-    const fgazValidUntilRaw = String(formData.get('fgaz_valid_until') ?? '').trim();
-    data.fgaz_valid_until = fgazValidUntilRaw ? new Date(fgazValidUntilRaw) : null;
+    data.fgaz_valid_until = values.fgaz_valid_until;
   }
 
   if (formData.has('sep_valid_until')) {
-    const sepValidUntilRaw = String(formData.get('sep_valid_until') ?? '').trim();
-    data.sep_valid_until = sepValidUntilRaw ? new Date(sepValidUntilRaw) : null;
+    data.sep_valid_until = values.sep_valid_until;
   }
 
   try {

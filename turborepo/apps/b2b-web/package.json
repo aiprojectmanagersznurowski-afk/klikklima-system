@@ -41,6 +41,9 @@
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.6",
     "@types/google.maps": "^3.65.2",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -48,6 +51,7 @@
     "@types/uuid": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "jsdom": "^30.0.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

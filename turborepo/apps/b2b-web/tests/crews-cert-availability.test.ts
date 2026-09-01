@@ -27,11 +27,14 @@ import { fileURLToPath } from 'node:url';
  * ADR-002 zamrozony. Mockujemy realny ksztalt @repo/database.
  */
 
-const { crewFindManyMock, leadFindUniqueMock, revalidatePathMock } = vi.hoisted(() => ({
-  crewFindManyMock: vi.fn(),
-  leadFindUniqueMock: vi.fn(),
-  revalidatePathMock: vi.fn(),
-}));
+const { crewFindManyMock, leadFindUniqueMock, revalidatePathMock, getCurrentActorRoleMock, createClientMock } =
+  vi.hoisted(() => ({
+    crewFindManyMock: vi.fn(),
+    leadFindUniqueMock: vi.fn(),
+    revalidatePathMock: vi.fn(),
+    getCurrentActorRoleMock: vi.fn(),
+    createClientMock: vi.fn(),
+  }));
 
 vi.mock('@repo/database', () => ({
   prisma: {
@@ -40,6 +43,14 @@ vi.mock('@repo/database', () => ({
   },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
+// Autoryzacja (BATCH-MEDIUM-LOW-CLEANUP P3) jest dzis pierwszym krokiem w
+// assignCrewToLead - testy w tym pliku sprawdzaja walidacje certyfikatow,
+// wiec rola musi miec `leads.update` (np. 'admin'), zeby doszlo do logiki,
+// ktora te testy faktycznie weryfikuja.
+vi.mock('../src/utils/supabase/server', () => ({
+  getCurrentActorRole: getCurrentActorRoleMock,
+  createClient: createClientMock,
+}));
 
 const { getCrews, assignCrewToLead } = await import(
   '../src/app/(dashboard)/leads/actions'
@@ -61,6 +72,8 @@ describe('getCrews(installationDate) - pula E4 wyklucza zespoly z niewaznym cert
     crewFindManyMock.mockReset();
     leadFindUniqueMock.mockReset();
     revalidatePathMock.mockReset();
+    getCurrentActorRoleMock.mockReset();
+    createClientMock.mockReset();
   });
 
   // @REQ: CRM-ZESP-AC2
@@ -160,6 +173,9 @@ describe('assignCrewToLead - walidacja serwerowa przy pominieciu UI (CRM-ZESP-AC
     crewFindManyMock.mockReset();
     leadFindUniqueMock.mockReset();
     revalidatePathMock.mockReset();
+    getCurrentActorRoleMock.mockReset();
+    createClientMock.mockReset();
+    getCurrentActorRoleMock.mockResolvedValue('admin');
   });
 
   // @REQ: CRM-ZESP-AC2

@@ -102,25 +102,25 @@ const UNAUTHORIZED_ROLES = ROLES.filter((role) => role !== 'admin');
 // wartością domyślną kolumny (np. sep: true, żeby test odznaczenia miał sens).
 function buildFullFormData(overrides: Record<string, string> = {}): FormData {
   const base: Record<string, string> = {
-    name: 'Ekipa Warszawa Południe',
-    phone: '600100200',
+    nazwa: 'Ekipa Warszawa Południe',
+    telefon_kontaktowy: '600100200',
     email: 'ekipa.waw@example.com',
     nip: '1234567890',
-    coordinator: 'Jan Kowalski',
-    fgazCert: 'FGAZ-2026-001',
-    sep: 'true',
-    zipCode: '02-100',
-    radius: '50',
-    teamsCount: '3',
-    drillingRig: 'true',
+    koordynator_imie_nazwisko: 'Jan Kowalski',
+    certyfikat_fgaz: 'FGAZ-2026-001',
+    uprawnienia_sep: 'true',
+    kod_pocztowy_bazowy: '02-100',
+    promien_dzialania_km: '50',
+    liczba_brygad: '3',
+    posiada_wiertnice: 'true',
     iban: 'PL61109010140000071219812874',
     // ERRATA A-2 (2026-08-31): fgaz_valid_until / sep_valid_until — daty ważności
     // certyfikatów, dodane przez korektę kontraktu CRM-ZESP-KARTOTEKA (12 -> 14 pól).
     // Wartości domyślne w przyszłości, żeby testy "sukces" istniejące przed errata
     // pozostały niezmienione (nadmiarowe klucze w FormData nie wpływają na
     // asercje objectContaining w tych testach).
-    fgazValidUntil: '2027-06-15',
-    sepValidUntil: '2028-01-01',
+    fgaz_valid_until: '2027-06-15',
+    sep_valid_until: '2028-01-01',
   };
   const merged = { ...base, ...overrides };
   const data = new FormData();
@@ -233,7 +233,7 @@ describe('createCrewAction — mapowanie pól i walidacja (CRM-ZESP-KARTOTEKA)',
   // @REQ: CRM-ZESP-KARTOTEKA
   it('formularz bez nazwy ekipy nie tworzy wiersza — walidacja serwerowa', async () => {
     const data = buildFullFormData();
-    data.delete('name');
+    data.delete('nazwa');
 
     const result = await createCrewAction(data);
 
@@ -277,7 +277,7 @@ describe('createCrewAction — mapowanie pól i walidacja (CRM-ZESP-KARTOTEKA)',
   // przyszłych filtrów).
   // @REQ: CRM-ZESP-KARTOTEKA
   it('puste pole promien_dzialania_km zapisuje się jako NULL, nie NaN i nie 0', async () => {
-    const data = buildFullFormData({ radius: '' });
+    const data = buildFullFormData({ promien_dzialania_km: '' });
 
     await createCrewAction(data);
 
@@ -290,7 +290,7 @@ describe('createCrewAction — mapowanie pól i walidacja (CRM-ZESP-KARTOTEKA)',
   // zespół od audytora: puste pole musi dać 1, nie NULL.
   // @REQ: CRM-ZESP-KARTOTEKA
   it('puste pole liczba_brygad zapisuje się jako wartość domyślna 1, nie NULL', async () => {
-    const data = buildFullFormData({ teamsCount: '' });
+    const data = buildFullFormData({ liczba_brygad: '' });
 
     await createCrewAction(data);
 
@@ -303,7 +303,7 @@ describe('createCrewAction — mapowanie pól i walidacja (CRM-ZESP-KARTOTEKA)',
   // checkbox musi dać wartość logiczną false, nie prawdziwy string 'false'.
   // @REQ: CRM-ZESP-KARTOTEKA
   it("checkbox uprawnienia_sep z wartością stringową 'false' zapisuje boolean false", async () => {
-    const data = buildFullFormData({ sep: 'false' });
+    const data = buildFullFormData({ uprawnienia_sep: 'false' });
 
     await createCrewAction(data);
 
@@ -316,7 +316,7 @@ describe('createCrewAction — mapowanie pól i walidacja (CRM-ZESP-KARTOTEKA)',
   // maskował błędu w drugim przy przypadkowej zamianie nazw pól).
   // @REQ: CRM-ZESP-KARTOTEKA
   it("checkbox posiada_wiertnice z wartością stringową 'false' zapisuje boolean false", async () => {
-    const data = buildFullFormData({ drillingRig: 'false' });
+    const data = buildFullFormData({ posiada_wiertnice: 'false' });
 
     await createCrewAction(data);
 
@@ -353,7 +353,7 @@ describe('createCrewAction — daty ważności certyfikatów (ERRATA A-2, CRM-ZE
   // nie przez konstruktor Date z literałem porównawczym.
   // @REQ: CRM-ZESP-KARTOTEKA
   it('poprawne fgazValidUntil i sepValidUntil zapisują się jako Date w północ UTC danego dnia kalendarzowego', async () => {
-    const data = buildFullFormData({ fgazValidUntil: '2027-06-15', sepValidUntil: '2028-01-01' });
+    const data = buildFullFormData({ fgaz_valid_until: '2027-06-15', sep_valid_until: '2028-01-01' });
 
     await createCrewAction(data);
 
@@ -369,7 +369,7 @@ describe('createCrewAction — daty ważności certyfikatów (ERRATA A-2, CRM-ZE
   // która po cichu ustawiłaby certyfikat wygasły 56 lat temu).
   // @REQ: CRM-ZESP-KARTOTEKA
   it('puste fgazValidUntil i sepValidUntil zapisują się jako NULL, nie Invalid Date ani epoka 1970', async () => {
-    const data = buildFullFormData({ fgazValidUntil: '', sepValidUntil: '' });
+    const data = buildFullFormData({ fgaz_valid_until: '', sep_valid_until: '' });
 
     await createCrewAction(data);
 
@@ -382,7 +382,7 @@ describe('createCrewAction — daty ważności certyfikatów (ERRATA A-2, CRM-ZE
   // dokumentuje stan faktyczny, walidator formularza nie ma prawa tego blokować.
   // @REQ: CRM-ZESP-KARTOTEKA
   it('data w przeszłości w fgazValidUntil jest dozwolona — zapis kończy się sukcesem', async () => {
-    const data = buildFullFormData({ fgazValidUntil: '2020-01-01' });
+    const data = buildFullFormData({ fgaz_valid_until: '2020-01-01' });
 
     const result = await createCrewAction(data);
 
@@ -629,7 +629,7 @@ describe('updateCrewAction — mapowanie, kolizje i zdjęcie (CRM-ZESP-KARTOTEKA
   // @REQ: CRM-ZESP-KARTOTEKA
   it('edycja bez nazwy ekipy nie zmienia rekordu — walidacja serwerowa', async () => {
     const data = buildFullFormData();
-    data.delete('name');
+    data.delete('nazwa');
 
     const result = await updateCrewAction('crew-1', data);
 
@@ -678,7 +678,7 @@ describe('updateCrewAction — mapowanie, kolizje i zdjęcie (CRM-ZESP-KARTOTEKA
   // Puste pole liczbowe nullable w edycji -> NULL, ten sam wymóg co przy tworzeniu.
   // @REQ: CRM-ZESP-KARTOTEKA
   it('puste pole promien_dzialania_km w edycji zapisuje się jako NULL', async () => {
-    const data = buildFullFormData({ radius: '' });
+    const data = buildFullFormData({ promien_dzialania_km: '' });
 
     await updateCrewAction('crew-1', data);
 
@@ -690,7 +690,7 @@ describe('updateCrewAction — mapowanie, kolizje i zdjęcie (CRM-ZESP-KARTOTEKA
   // liczba_brygad NOT NULL @default(1) — w edycji puste pole musi dać 1, nie NULL.
   // @REQ: CRM-ZESP-KARTOTEKA
   it('puste pole liczba_brygad w edycji zapisuje wartość domyślną 1, nie NULL', async () => {
-    const data = buildFullFormData({ teamsCount: '' });
+    const data = buildFullFormData({ liczba_brygad: '' });
 
     await updateCrewAction('crew-1', data);
 
@@ -704,7 +704,7 @@ describe('updateCrewAction — mapowanie, kolizje i zdjęcie (CRM-ZESP-KARTOTEKA
   // false i maskuje ten błąd przy create).
   // @REQ: CRM-ZESP-KARTOTEKA
   it("odznaczenie uprawnienia_sep w edycji ('true' -> 'false') zapisuje boolean false", async () => {
-    const data = buildFullFormData({ sep: 'false' });
+    const data = buildFullFormData({ uprawnienia_sep: 'false' });
 
     await updateCrewAction('crew-1', data);
 
@@ -716,7 +716,7 @@ describe('updateCrewAction — mapowanie, kolizje i zdjęcie (CRM-ZESP-KARTOTEKA
   // Odpowiednik dla posiada_wiertnice.
   // @REQ: CRM-ZESP-KARTOTEKA
   it("odznaczenie posiada_wiertnice w edycji ('true' -> 'false') zapisuje boolean false", async () => {
-    const data = buildFullFormData({ drillingRig: 'false' });
+    const data = buildFullFormData({ posiada_wiertnice: 'false' });
 
     await updateCrewAction('crew-1', data);
 
@@ -760,7 +760,7 @@ describe('updateCrewAction — mapowanie, kolizje i zdjęcie (CRM-ZESP-KARTOTEKA
     const unchanged = buildFullFormData({
       iban: 'PL11000000000000000000000001',
       nip: '9998887766',
-      zipCode: '00-001',
+      kod_pocztowy_bazowy: '00-001',
     });
     crewFindUniqueMock.mockResolvedValue({
       ...EXISTING_RECORD,
@@ -843,7 +843,7 @@ describe('updateCrewAction — daty ważności certyfikatów (ERRATA A-2, CRM-ZE
   // AC-E1/AC-E5 w trybie edycji: poprawna data -> Date w północ UTC.
   // @REQ: CRM-ZESP-KARTOTEKA
   it('poprawne fgazValidUntil i sepValidUntil w edycji zapisują się jako Date w północ UTC danego dnia', async () => {
-    const data = buildFullFormData({ fgazValidUntil: '2027-06-15', sepValidUntil: '2028-01-01' });
+    const data = buildFullFormData({ fgaz_valid_until: '2027-06-15', sep_valid_until: '2028-01-01' });
 
     await updateCrewAction('crew-1', data);
 
@@ -856,7 +856,7 @@ describe('updateCrewAction — daty ważności certyfikatów (ERRATA A-2, CRM-ZE
   // wartości ani nie zapisuje Invalid Date.
   // @REQ: CRM-ZESP-KARTOTEKA
   it('wyczyszczenie fgazValidUntil i sepValidUntil w edycji zapisuje NULL, nie Invalid Date', async () => {
-    const data = buildFullFormData({ fgazValidUntil: '', sepValidUntil: '' });
+    const data = buildFullFormData({ fgaz_valid_until: '', sep_valid_until: '' });
 
     await updateCrewAction('crew-1', data);
 
@@ -870,7 +870,7 @@ describe('updateCrewAction — daty ważności certyfikatów (ERRATA A-2, CRM-ZE
   // Decyzja człowieka z erraty: data w przeszłości dozwolona także w trybie edycji.
   // @REQ: CRM-ZESP-KARTOTEKA
   it('data w przeszłości w edycji jest dozwolona — zapis kończy się sukcesem', async () => {
-    const data = buildFullFormData({ fgazValidUntil: '2020-01-01' });
+    const data = buildFullFormData({ fgaz_valid_until: '2020-01-01' });
 
     const result = await updateCrewAction('crew-1', data);
 
@@ -884,7 +884,7 @@ describe('updateCrewAction — daty ważności certyfikatów (ERRATA A-2, CRM-ZE
   // nowe pola z erraty A-2.
   // @REQ: CRM-ZESP-KARTOTEKA
   it('zapis formularza edycji bez zmian zachowuje fgaz_valid_until i sep_valid_until', async () => {
-    const unchanged = buildFullFormData({ fgazValidUntil: '2026-01-01', sepValidUntil: '2026-01-01' });
+    const unchanged = buildFullFormData({ fgaz_valid_until: '2026-01-01', sep_valid_until: '2026-01-01' });
 
     await updateCrewAction('crew-1', unchanged);
 
@@ -904,8 +904,8 @@ describe('updateCrewAction — daty ważności certyfikatów (ERRATA A-2, CRM-ZE
   // @REQ: CRM-ZESP-KARTOTEKA
   it('edycja bez pól fgazValidUntil/sepValidUntil w FormData zostawia istniejące daty bez zmian (nie zeruje)', async () => {
     const data = buildFullFormData();
-    data.delete('fgazValidUntil');
-    data.delete('sepValidUntil');
+    data.delete('fgaz_valid_until');
+    data.delete('sep_valid_until');
 
     await updateCrewAction('crew-1', data);
 
