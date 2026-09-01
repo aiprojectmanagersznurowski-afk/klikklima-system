@@ -47,13 +47,28 @@ export const config = {
     { id: 'skipped-test', re: '\\b(it|test|describe)\\.(skip|only)\\b', appliesTo: '\\.(ts|tsx)$', msg: 'Wyłączony lub wyizolowany test. Bramka RED/GREEN traci sens.' },
     { id: 'hardcoded-hex', re: '#[0-9a-fA-F]{6}\\b', appliesTo: 'apps/.*\\.(tsx|css)$', msg: 'ui_ux_guidelines.md §2: zakaz hardkodowania kolorów — użyj tokenów Tailwind.', allowIn: ['globals.css', 'tailwind.config', 'theme'] },
     { id: 'non-lucide-icons', re: "from\\s+['\\\"](react-icons|@heroicons|@fortawesome)", appliesTo: '\\.(tsx)$', msg: 'ui_ux_guidelines.md §1: wyłącznie lucide-react.' },
-    { id: 'green-sla', re: '(bg|border|text)-(green|emerald)-\\d{3}', appliesTo: 'apps/.*\\.(tsx)$', msg: 'ui_ux_guidelines.md §8.7: zakaz zielonych alertów SLA.' },
+    // Zawężone 2026-09-01 (WO BATCH-MEDIUM-LOW-CLEANUP punkt 19b). Reguła łapała KAŻDĄ zieleń
+    // w apps/**/*.tsx, więc blokowała neutralny badge statusu „Zakończone" (COMPLETED) i ikonę
+    // CheckCircle2 w menu — a zakaz z ui_ux_guidelines §8.7 dotyczy WYŁĄCZNIE alertów SLA.
+    // Zieleń jako kolor statusu jest dozwolona; zieleń jako sygnał „SLA w normie" nie jest,
+    // bo zrównuje brak przekroczenia terminu z sukcesem i wygasza czujność dyspozytora.
+    // Dlatego wymagamy współwystąpienia w tej samej linii sygnału kontekstu SLA.
+    { id: 'green-sla', re: '^(?=.*(SLA|sla|Sla|overdue|Overdue|deadline|Deadline|przetermin|Przetermin|opoznien|Opoznien|opóźnien|Opóźnien|daysLeft|daysTo|differenceInDays|slaAlert|slaStatus)).*(bg|border|text)-(green|emerald)-\\d{3}', appliesTo: 'apps/.*\\.(tsx)$', msg: 'ui_ux_guidelines.md §8.7: zakaz zielonych alertów SLA. (Zieleń jako neutralny kolor statusu jest dozwolona — ta reguła wymaga sygnału kontekstu SLA w tej samej linii.)' },
     { id: 'service-key', re: 'SUPABASE_SERVICE_ROLE_KEY|service_role', appliesTo: "(app|components|hooks)/.*\\.(tsx)$", msg: 'Klucz serwisowy nie może trafić do komponentu klienckiego.' },
     // ── ADR-008: audit_log jest append-only, rozstrzygnięte 2026-08-18 ──
     { id: 'adr008-audit-mutate', re: '(auditLog|audit_log)\\s*\\.\\s*(update|updateMany|delete|deleteMany|upsert)\\b|(UPDATE|DELETE)\\s+(FROM\\s+)?audit_log\\b', appliesTo: '\\.(ts|tsx|sql)$', msg: 'ADR-008: audit_log jest append-only. Rejestr, który da się zmienić, nie jest dowodem — a to administrator wykonuje operacje, które ten rejestr dokumentuje.' },
 
     // ── ADR-010: next_service_date jest polem pochodnym, rozstrzygnięte 2026-08-18 ──
-    { id: 'adr010-derived-write', re: 'next_service_date\\s*:\\s*(?!undefined)|set\\s*\\(\\s*[\'\"]next_service_date', appliesTo: 'apps/.*\\.(ts|tsx)$', msg: 'ADR-010: next_service_date jest polem pochodnym, wyliczanym przy zamknięciu montażu. Termin wizyty zapisuje się w services i bookings.' },
+    // Zawężone 2026-09-01 (WO BATCH-MEDIUM-LOW-CLEANUP punkt 19b). Reguła dopasowywała samą nazwę
+    // kolumny w dowolnym kontekście, więc traktowała ODCZYT jak zapis: deklarację typu
+    // (`next_service_date: Date;`), filtr `where` (`next_service_date: { gte: … }`), sortowanie
+    // (`next_service_date: 'asc'`) i przepisanie odczytanej wartości (`next_service_date: inst.next_service_date`).
+    // Wykluczone są wyłącznie te cztery kształty ODCZYTU — każdy zapis wartości (null, new Date(),
+    // zmienna, literał) nadal jest blokowany, bo o to w ADR-010 chodzi.
+    // UWAGA na backtracking: `\\s*` PRZED lookaheadem nie działa jako wykluczenie — silnik
+    // cofa je do zera znaków i sprawdza lookahead tuż za dwukropkiem, gdzie stoi spacja,
+    // więc każdy wykluczony kształt i tak przechodził. Odstęp MUSI być wewnątrz lookaheadu.
+    { id: 'adr010-derived-write', re: 'next_service_date\\s*:(?!\\s*(?:undefined|true|false|[\'\"]asc[\'\"]|[\'\"]desc[\'\"]|\\{|Date\\b))(?!.*\\.next_service_date)|set\\s*\\(\\s*[\'\"]next_service_date', appliesTo: 'apps/.*\\.(ts|tsx)$', msg: 'ADR-010: next_service_date jest polem pochodnym, wyliczanym przy zamknięciu montażu. Termin wizyty zapisuje się w services i bookings.' },
 
     // ── ADR-002: nazewnictwo rozstrzygnięte 2026-08-18. Porzucone nazwy polskie. ──
     { id: 'adr002-pl-tables', allowInWriteHook: true, re: '\\b(leady|klienci|adresy|audytorzy|zespoly_monterskie|serwisy|usterki_incidents|logistyka_zamowienia|instalacje|cennik_uslug|modele_3d)\\b', appliesTo: '\\.(ts|tsx|sql|prisma)$', msg: 'ADR-002: nazwa porzucona. Słownik przekładu: docs/architecture/NAMING.md.' },

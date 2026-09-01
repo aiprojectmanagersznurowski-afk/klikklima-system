@@ -28,6 +28,16 @@ w rejestrze długu, czyli decyzja człowieka, a przy okazji jedyny moment, w kt�
 to faktycznie referencje do starych nazw, a nie nowa polska nazwa przemycona do schematu.
 Powiązane: [[precommit-absolute-debt]], [[contract-write-blocker]].
 
+**Wyjątek od „nie aktualizuj sam" (2026-09-01, BATCH-MEDIUM-LOW-CLEANUP):** człowiek MOŻE zlecić
+`--update-baseline` wprost i wtedy to robię — ale nadal rozbijam deltę per plik i osobno wskazuję trafienia
+w kodzie PRODUKCYJNYM, bo tylko one mogą ukryć nową polską nazwę. Tam delta wyniosła +69 w 14 parach,
+z czego 3 pary w plikach produkcyjnych (`auditors/schema.ts`, `crews/schema.ts`, `AddCrewModal.tsx`).
+Okazały się nieszkodliwe: klucze schematu Zod muszą dosłownie odpowiadać ISTNIEJĄCYM kolumnom Prisma
+(`certyfikat_fgaz`, `liczba_brygad`, `koordynator_imie_nazwisko`), bo payload leci prosto do `prisma.data`,
+a nazwy pól formularza muszą odpowiadać kluczom schematu. To ta sama kategoria co mocki testowe —
+referencja do starego długu, nie nowa nazwa. Kryterium rozstrzygające: czy identyfikator ISTNIEJE JUŻ
+w `schema.prisma`. Jeśli tak — baseline. Jeśli nie — zatrzymanie i pytanie do człowieka.
+
 **Cennik trafień (zmierzone 2026-08-24, `SEC-RLS-BASELINE`, delta +21 z jednego pliku):** skaner
 liczy WYŁĄCZNIE linie kodu — komentarze `--` w `.sql` są pomijane, więc nagłówek migracji może
 swobodnie wymieniać `klienci`/`leady`/`audytorzy` w uzasadnieniu i nie kosztuje ani jednego trafienia.

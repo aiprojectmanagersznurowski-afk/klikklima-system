@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * kk-authz-gate — wykrywa Server Actions panelu B2B, które mutują bazę bez bramki `can()`.
+ * kk-authz-gate — wykrywa Server Actions panelu B2B, które mutują bazę bez bramki `can()`
+ * albo pytają o uprawnienie dopiero PO dotknięciu bazy.
  *
  * Pułapka #1 z CLAUDE.md: Prisma omija RLS. Panel B2B nie jest chroniony przez bazę,
  * więc autoryzacja MUSI być jawna w każdej Server Action. Do dziś żaden mechanizm nie
@@ -18,6 +19,24 @@
  *        a <metoda> ∈ {create, createMany, update, updateMany, delete, deleteMany, upsert}.
  *        Odczyty (findMany/findUnique/count/groupBy/aggregate) nie liczą się.
  *     b) w ciele NIE ma jednocześnie `getCurrentActorRole(` ORAZ `can(`.
+ *
+ *   Osobna kategoria — NARUSZENIE KOLEJNOŚCI (2026-09-01, WO BATCH-MEDIUM-LOW-CLEANUP p.12):
+ *   funkcja MA `can(`, ale pierwsze odwołanie do `prisma.`/`tx.` w jej ciele wypada
+ *   PRZED pierwszym `can(`. Bramka po fakcie nie jest bramką — zapytanie już poszło.
+ *   Liczy się KAŻDE dotknięcie bazy, także odczyt: `findUnique` przed `can()` wypuszcza
+ *   dane osobie, której uprawnienia nikt jeszcze nie sprawdził. Porównanie idzie po
+ *   pozycji w źródle, nie po kolejności wykonania — kod z bramką w `if` po zapytaniu
+ *   i tak jest podejrzany i wymaga świadomej decyzji, nie milczenia narzędzia.
+ *
+ * ZAKRES I JEGO OGRANICZENIA (czytaj, zanim uznasz zielony wynik za dowód):
+ *   · Skanowane są WYŁĄCZNIE pliki o nazwie `actions.ts` pod `apps/b2b-web/src/app`.
+ *     Mutacja w `lib/`, w Route Handlerze (`route.ts`), w komponencie serwerowym
+ *     (`page.tsx`) albo w pliku akcji o innej nazwie jest dla tego narzędzia NIEWIDOCZNA.
+ *   · Analizowane są tylko EKSPORTOWANE deklaracje `function` na najwyższym poziomie
+ *     modułu. Akcja przypisana do `export const foo = async () => …` nie zostanie
+ *     sprawdzona — to znany, świadomy brak pokrycia.
+ *   · Klienci transakcyjni są rozpoznawani po pierwszym parametrze callbacku
+ *     `$transaction`; inne aliasy `prisma` (np. przez destrukturyzację) umkną.
  *
  * Czego to narzędzie NIE dowodzi: że bramka jest POPRAWNA. `can(role, 'leads', 'update')`
  * w akcji usuwającej klienta przejdzie ten skan. To detektor braku, nie audytor treści —
@@ -94,6 +113,9 @@ function analyzeFunction(fnNode, sourceFile, relPath) {
   const mutations = [];
   let hasRoleLookup = false;
   let hasCan = false;
+  let firstCanPos = null;
+  let firstDbPos = null;
+  let firstDb = null;
 
   visit(fnNode, (n) => {
     if (!ts.isCallExpression(n)) return;
@@ -102,13 +124,16 @@ function analyzeFunction(fnNode, sourceFile, relPath) {
     // Bramka: wywołania `getCurrentActorRole()` i `can(...)` jako gołe identyfikatory.
     if (ts.isIdentifier(callee)) {
       if (callee.text === GATE_ROLE) hasRoleLookup = true;
-      if (callee.text === GATE_CAN) hasCan = true;
+      if (callee.text === GATE_CAN) {
+        hasCan = true;
+        const p = n.getStart(sourceFile);
+        if (firstCanPos === null || p < firstCanPos) firstCanPos = p;
+      }
       return;
     }
     if (!ts.isPropertyAccessExpression(callee)) return;
 
     const method = callee.name.text;
-    if (!MUTATING.has(method)) return;
 
     // Kształt `<klient>.<model>.<metoda>(` — bez tego `formData.update()` czy
     // `supabase.auth.updateUser()` trafiałyby na listę jako fałszywy alarm.
@@ -117,8 +142,19 @@ function analyzeFunction(fnNode, sourceFile, relPath) {
     const base = modelAccess.expression;
     if (!ts.isIdentifier(base) || !clients.has(base.text)) return;
 
-    const { line } = sourceFile.getLineAndCharacterOfPosition(n.getStart(sourceFile));
-    mutations.push({ line: line + 1, call: `${base.text}.${modelAccess.name.text}.${method}` });
+    const pos = n.getStart(sourceFile);
+    const { line } = sourceFile.getLineAndCharacterOfPosition(pos);
+    const call = `${base.text}.${modelAccess.name.text}.${method}`;
+
+    // Kolejność liczy się dla KAŻDEGO dotknięcia bazy, także odczytu: `findUnique`
+    // przed `can()` też wypuszcza dane, zanim ktokolwiek zapytał o uprawnienie.
+    if (firstDbPos === null || pos < firstDbPos) {
+      firstDbPos = pos;
+      firstDb = { line: line + 1, call };
+    }
+
+    if (!MUTATING.has(method)) return;
+    mutations.push({ line: line + 1, call });
   });
 
   if (mutations.length === 0) return null;
@@ -135,6 +171,9 @@ function analyzeFunction(fnNode, sourceFile, relPath) {
     hasRoleLookup,
     hasCan,
     gated: hasRoleLookup && hasCan,
+    // Bramka po fakcie to nie bramka: jeśli pierwsze dotknięcie bazy wypada PRZED
+    // pierwszym `can(`, zapytanie już poszło, zanim ktokolwiek zapytał o uprawnienie.
+    orderingViolation: hasCan && firstDbPos !== null && firstDbPos < firstCanPos ? firstDb : null,
     exemption,
   };
 }
@@ -158,6 +197,7 @@ if (files.length === 0) {
 
 const suspects = [];
 const exempted = [];
+const ordering = [];
 let mutatingFns = 0;
 let gatedFns = 0;
 
@@ -173,8 +213,9 @@ for (const file of files) {
     const res = analyzeFunction(stmt, src, rel);
     if (!res) continue;
     mutatingFns++;
-    if (res.gated) { gatedFns++; continue; }
     if (res.exemption) { exempted.push(res); continue; }
+    if (res.orderingViolation) { ordering.push(res); continue; }
+    if (res.gated) { gatedFns++; continue; }
     suspects.push(res);
   }
 }
@@ -192,8 +233,12 @@ if (JSON_OUT) {
     gated: gatedFns,
     exempted: exempted.map((e) => ({ file: e.file, line: e.line, name: e.name, reason: e.exemption })),
     suspects: suspects.map((s) => ({ ...s, missing: missingLabel(s) })),
+    ordering: ordering.map((o) => ({
+      file: o.file, line: o.line, name: o.name,
+      firstDbCall: o.orderingViolation.call, firstDbLine: o.orderingViolation.line,
+    })),
   }, null, 2));
-  process.exit(suspects.length ? 1 : 0);
+  process.exit(suspects.length + ordering.length ? 1 : 0);
 }
 
 console.log('\n  kk-authz-gate — Server Actions B2B mutujące bazę bez bramki can()\n');
@@ -206,10 +251,23 @@ if (exempted.length) {
   console.log('');
 }
 
-if (suspects.length === 0) {
-  console.log('  ✓ każda mutująca Server Action pyta o rolę i o uprawnienie\n');
+if (ordering.length) {
+  console.log(`  ✗ ${ordering.length} funkcji pyta o uprawnienie DOPIERO PO dotknięciu bazy:\n`);
+  for (const o of ordering) {
+    console.log(`  ${o.file}`);
+    console.log(`    :${o.line}  ${o.name}()`);
+    console.log(`        :${o.orderingViolation.line}  ${o.orderingViolation.call}()  ← przed pierwszym can()`);
+  }
+  console.log('\n  Bramka po fakcie nie chroni: zapytanie poszło, zanim ktokolwiek zapytał o rolę.');
+  console.log('  can(...) musi wypaść PRZED pierwszym odwołaniem do prisma/tx w ciele funkcji.\n');
+}
+
+if (suspects.length === 0 && ordering.length === 0) {
+  console.log('  ✓ każda mutująca Server Action pyta o rolę i o uprawnienie przed dotknięciem bazy\n');
   process.exit(0);
 }
+
+if (suspects.length === 0) process.exit(1);
 
 const byFile = new Map();
 for (const s of suspects) {
