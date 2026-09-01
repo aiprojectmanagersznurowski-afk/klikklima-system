@@ -3,7 +3,7 @@
 // Regeneracja: node tools/kk-codegen.mjs
 // Każda ręczna zmiana zostanie wykryta przez `kk-codegen --check` i odrzucona w CI.
 
-export const REQUIREMENT_IDS = ["FNL-E1-E2", "FNL-E2-E3", "FNL-E3-E4", "FNL-E3-BUCKET", "FNL-E4-E5", "FNL-E5-E6", "FNL-E5-BYPASS", "FNL-E6-E7", "FNL-E7-E8", "FNL-ROLLBACK", "FNL-ROLLBACK-EXIT", "FNL-NO-ILLEGAL-TRANSITIONS", "CRM-KLI-AC1", "CRM-KLI-AC2", "CRM-KLI-AC3", "CRM-INST-AC1", "CRM-INST-AC2", "CRM-SRV-TRIGGER", "CRM-UST-AC1", "CRM-UST-AC2", "CRM-UST-AC3", "CRM-AUDYT-AC1", "CRM-AUDYT-AC2", "CRM-AUDYT-AC3", "CRM-AUDYT-KARTOTEKA", "CRM-ZESP-KARTOTEKA", "CRM-ZESP-AC1", "CRM-ZESP-AC2", "CRM-ZESP-AC3", "CRM-ZIMNE-AC1", "CRM-ZIMNE-AC2", "CRM-ZIMNE-AC3", "CRM-BOOK-HISTORY", "CRM-REGION-AUTO", "FNL-2PHASE", "FNL-2PHASE-BOOKING", "FNL-2PHASE-INVOICE", "NTF-PUSH-TOKEN", "NTF-I7-SLA", "SRV-SOURCE-OF-TRUTH", "SRV-REMINDER-ONCE", "CRM-ZESP-REP", "CRM-DELETE-ADMIN-ONLY", "CRM-CREW-UPDATE-ADMIN-ONLY", "CRM-CONTEXT-MENU", "SLA-QUOTE-14D", "SLA-LOG-COLORS", "UI-SLA-NO-GREEN", "UI-NO-HARDCODED-COLORS", "UI-ICONS-LUCIDE-ONLY", "UI-FORMS-RHF-ZOD", "SRV-NEXT-DATE", "SEC-SSO-GUARD", "SEC-AUTHZ-USER-MGMT", "SEC-RLS-AUDITOR-SCOPE", "SEC-ASSIGNMENT-POOL-MINIMIZE", "SEC-LEADS-LIST-MINIMIZE", "SEC-LEADS-LIST-SCALARS", "CRM-LEAD-UPDATE-ADMIN-DISPATCHER", "SEC-AUTHZ-B2B-MUTATIONS", "SEC-SERVICE-KEY-SERVER-ONLY", "SEC-RODO-DELETE", "SEC-AUDIT-LOG", "NTF-QUEUE-WINDOW", "NTF-POLY", "NTF-HISTORY", "NTF-RETRY", "NTF-CATALOG-PARITY", "B2C-LEAD-ENTRY", "B2C-LEAD-ATOMIC", "B2C-BOOKING-SLOT", "B2C-CONSENT-RODO", "B2C-RLS-PUBLIC", "B2C-TRIAGE-STEPS", "B2C-TRIAGE-DISQUALIFY", "B2C-TRIAGE-CONDITIONAL", "B2C-SOFT-LEAD", "B2C-BOOKING-VALIDATION", "B2C-PRICE-FROM", "B2C-CATALOG-LIST", "B2C-DEVICE-MODAL", "B2C-CONTENT-PAGES", "B2C-NAV-STATE", "FLD-GEO-COORDS", "FLD-GEO-UNLOCK", "FLD-GEO-EN-ROUTE", "FLD-GPS-RODO", "FLD-AUTH-BLOCKED", "FLD-CONSENT-ACCEPT", "FLD-LEGAL-DOC-VERSION", "FLD-AVAIL-SELF", "FLD-AVAIL-RESTORE", "FLD-PHOTO-SET"] as const;
+export const REQUIREMENT_IDS = ["FNL-E1-E2", "FNL-E2-E3", "FNL-E3-E4", "FNL-E3-BUCKET", "FNL-E4-E5", "FNL-E5-E6", "FNL-E5-BYPASS", "FNL-E6-E7", "FNL-E7-E8", "FNL-ROLLBACK", "FNL-ROLLBACK-EXIT", "FNL-NO-ILLEGAL-TRANSITIONS", "CRM-KLI-AC1", "CRM-KLI-AC2", "CRM-KLI-AC3", "CRM-INST-AC1", "CRM-INST-AC2", "CRM-SRV-TRIGGER", "CRM-UST-AC1", "CRM-UST-AC2", "CRM-UST-AC3", "CRM-AUDYT-AC1", "CRM-AUDYT-AC2", "CRM-AUDYT-AC3", "CRM-AUDYT-KARTOTEKA", "CRM-ZESP-KARTOTEKA", "CRM-ZESP-AC1", "CRM-ZESP-AC2", "CRM-ZESP-AC3", "CRM-ZIMNE-AC1", "CRM-ZIMNE-AC2", "CRM-ZIMNE-AC3", "CRM-BOOK-HISTORY", "CRM-REGION-AUTO", "FNL-2PHASE", "FNL-2PHASE-BOOKING", "FNL-2PHASE-INVOICE", "NTF-PUSH-TOKEN", "NTF-I7-SLA", "SRV-SOURCE-OF-TRUTH", "SRV-REMINDER-ONCE", "CRM-ZESP-REP", "CRM-DELETE-ADMIN-ONLY", "CRM-DELETE-ADMIN-ONLY-CLIENTS", "CRM-DELETE-ADMIN-ONLY-LEADS", "CRM-DELETE-ADMIN-ONLY-INSTALLATIONS", "CRM-DELETE-ADMIN-ONLY-SERVICES", "CRM-DELETE-ADMIN-ONLY-INCIDENTS", "CRM-DELETE-ADMIN-ONLY-AUDITORS", "CRM-DELETE-ADMIN-ONLY-CREWS", "CRM-CREW-UPDATE-ADMIN-ONLY", "CRM-CONTEXT-MENU", "SLA-QUOTE-14D", "SLA-LOG-COLORS", "UI-SLA-NO-GREEN", "UI-NO-HARDCODED-COLORS", "UI-ICONS-LUCIDE-ONLY", "UI-FORMS-RHF-ZOD", "SRV-NEXT-DATE", "SEC-SSO-GUARD", "SEC-AUTHZ-USER-MGMT", "SEC-RLS-AUDITOR-SCOPE", "SEC-ASSIGNMENT-POOL-MINIMIZE", "SEC-LEADS-LIST-MINIMIZE", "SEC-LEADS-LIST-SCALARS", "CRM-LEAD-UPDATE-ADMIN-DISPATCHER", "SEC-AUTHZ-B2B-MUTATIONS", "SEC-SERVICE-KEY-SERVER-ONLY", "SEC-RODO-DELETE", "SEC-AUDIT-LOG", "NTF-QUEUE-WINDOW", "NTF-POLY", "NTF-HISTORY", "NTF-RETRY", "NTF-CATALOG-PARITY", "B2C-LEAD-ENTRY", "B2C-LEAD-ATOMIC", "B2C-BOOKING-SLOT", "B2C-CONSENT-RODO", "B2C-RLS-PUBLIC", "B2C-TRIAGE-STEPS", "B2C-TRIAGE-DISQUALIFY", "B2C-TRIAGE-CONDITIONAL", "B2C-SOFT-LEAD", "B2C-BOOKING-VALIDATION", "B2C-PRICE-FROM", "B2C-CATALOG-LIST", "B2C-DEVICE-MODAL", "B2C-CONTENT-PAGES", "B2C-NAV-STATE", "FLD-GEO-COORDS", "FLD-GEO-UNLOCK", "FLD-GEO-EN-ROUTE", "FLD-GPS-RODO", "FLD-AUTH-BLOCKED", "FLD-CONSENT-TRIGGERS-INTEGRATION", "FLD-CONSENT-ACCEPT", "FLD-LEGAL-DOC-VERSION", "FLD-AVAIL-SELF", "FLD-AVAIL-RESTORE", "FLD-PHOTO-SET"] as const;
 export type RequirementId = (typeof REQUIREMENT_IDS)[number];
 
 export const REQUIREMENTS = [
@@ -346,10 +346,66 @@ export const REQUIREMENTS = [
   {
     "id": "CRM-DELETE-ADMIN-ONLY",
     "domain": "security",
+    "status": "SUPERSEDED",
+    "risk": "HIGH",
+    "source": "b2b_crm_specifications.md#globalne; rozbite 2026-09-01 (WO BATCH-MEDIUM-LOW-CLEANUP, punkt 22) na siedem wymagań per zasób: CRM-DELETE-ADMIN-ONLY-CLIENTS, -LEADS, -INSTALLATIONS, -SERVICES, -INCIDENTS, -AUDITORS, -CREWS. Ten wpis nie jest już samodzielnie egzekwowalny — pokrycie liczy się na wpisach potomnych.",
+    "statement": "ZASTĄPIONE. Akcja „Usuń\" we WSZYSTKICH 7 widokach CRM dostępna wyłącznie dla roli admin. Reguła obowiązuje dalej, ale jej pokrycie jest śledzone per zasób we wpisach potomnych CRM-DELETE-ADMIN-ONLY-<RESOURCE>."
+  },
+  {
+    "id": "CRM-DELETE-ADMIN-ONLY-CLIENTS",
+    "domain": "security",
     "status": "TODO",
     "risk": "HIGH",
-    "source": "b2b_crm_specifications.md#globalne",
-    "statement": "Akcja „Usuń\" we WSZYSTKICH 7 widokach CRM dostępna wyłącznie dla roli admin."
+    "source": "b2b_crm_specifications.md#globalne (rozbicie CRM-DELETE-ADMIN-ONLY, WO BATCH-MEDIUM-LOW-CLEANUP punkt 22, 2026-09-01); ścieżka kodu: apps/b2b-web/src/app/(dashboard)/customers/actions.ts → prisma.klienci.delete",
+    "statement": "Usunięcie klienta (zasób clients) jest dostępne wyłącznie dla roli admin, egzekwowane niezależnie w interfejsie, w Server Action i w RLS."
+  },
+  {
+    "id": "CRM-DELETE-ADMIN-ONLY-LEADS",
+    "domain": "security",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "b2b_crm_specifications.md#globalne (rozbicie CRM-DELETE-ADMIN-ONLY, WO BATCH-MEDIUM-LOW-CLEANUP punkt 22, 2026-09-01); ścieżka kodu: apps/b2b-web/src/app/(dashboard)/leads/actions.ts → prisma.leady.delete; warstwa Server Action pokryta przez apps/b2b-web/tests/leads-delete-admin-only.test.ts",
+    "statement": "Usunięcie leada (zasób leads) jest dostępne wyłącznie dla roli admin, egzekwowane niezależnie w interfejsie, w Server Action i w RLS."
+  },
+  {
+    "id": "CRM-DELETE-ADMIN-ONLY-INSTALLATIONS",
+    "domain": "security",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "b2b_crm_specifications.md#globalne (rozbicie CRM-DELETE-ADMIN-ONLY, WO BATCH-MEDIUM-LOW-CLEANUP punkt 22, 2026-09-01); ścieżka kodu: apps/b2b-web/src/app/(dashboard)/installations/actions.ts → prisma.instalacje.delete",
+    "statement": "Usunięcie instalacji (zasób installations) jest dostępne wyłącznie dla roli admin, egzekwowane niezależnie w interfejsie, w Server Action i w RLS."
+  },
+  {
+    "id": "CRM-DELETE-ADMIN-ONLY-SERVICES",
+    "domain": "security",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "b2b_crm_specifications.md#globalne (rozbicie CRM-DELETE-ADMIN-ONLY, WO BATCH-MEDIUM-LOW-CLEANUP punkt 22, 2026-09-01); ścieżka kodu: apps/b2b-web/src/app/(dashboard)/services/actions.ts → prisma.serwisy.delete. UWAGA: ta ścieżka jest dziś martwa (kasuje encję z innej tabeli niż ta, którą pokazuje widok) — patrz punkt 4 WO, przeniesiony do Grupy C.",
+    "statement": "Usunięcie serwisu (zasób services) jest dostępne wyłącznie dla roli admin, egzekwowane niezależnie w interfejsie, w Server Action i w RLS."
+  },
+  {
+    "id": "CRM-DELETE-ADMIN-ONLY-INCIDENTS",
+    "domain": "security",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "b2b_crm_specifications.md#globalne (rozbicie CRM-DELETE-ADMIN-ONLY, WO BATCH-MEDIUM-LOW-CLEANUP punkt 22, 2026-09-01); ścieżka kodu: apps/b2b-web/src/app/(dashboard)/incidents/actions.ts → prisma.usterki_incidents.delete",
+    "statement": "Usunięcie usterki (zasób incidents) jest dostępne wyłącznie dla roli admin, egzekwowane niezależnie w interfejsie, w Server Action i w RLS."
+  },
+  {
+    "id": "CRM-DELETE-ADMIN-ONLY-AUDITORS",
+    "domain": "security",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "b2b_crm_specifications.md#globalne (rozbicie CRM-DELETE-ADMIN-ONLY, WO BATCH-MEDIUM-LOW-CLEANUP punkt 22, 2026-09-01); ścieżka kodu: apps/b2b-web/src/app/(dashboard)/auditors/actions.ts → tx.audytorzy.delete (wewnątrz transakcji)",
+    "statement": "Usunięcie audytora (zasób auditors) jest dostępne wyłącznie dla roli admin, egzekwowane niezależnie w interfejsie, w Server Action i w RLS."
+  },
+  {
+    "id": "CRM-DELETE-ADMIN-ONLY-CREWS",
+    "domain": "security",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "b2b_crm_specifications.md#globalne (rozbicie CRM-DELETE-ADMIN-ONLY, WO BATCH-MEDIUM-LOW-CLEANUP punkt 22, 2026-09-01); ścieżka kodu: apps/b2b-web/src/app/(dashboard)/crews/actions.ts → tx.zespoly_monterskie.delete (wewnątrz transakcji); warstwa Server Action pokryta przez apps/b2b-web/tests/crews-admin-gates.test.ts",
+    "statement": "Usunięcie ekipy montażowej (zasób crews) jest dostępne wyłącznie dla roli admin, egzekwowane niezależnie w interfejsie, w Server Action i w RLS."
   },
   {
     "id": "CRM-CREW-UPDATE-ADMIN-ONLY",
@@ -466,7 +522,7 @@ export const REQUIREMENTS = [
   {
     "id": "SEC-LEADS-LIST-SCALARS",
     "domain": "security",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "MEDIUM",
     "source": "review 2026-08-26 (rls-security-auditor, znalezisko przy zamknięciu SEC-LEADS-LIST-MINIMIZE — przegląd apps/b2b-web/src/app/(dashboard)/leads/actions.ts, funkcja getLeads()) + decyzja człowieka z rozmowy 2026-08-26, który zatwierdził zarówno rejestrację, jak i naprawę; brak źródła w dokumentach architektury. Ta sama zasada minimalizacji danych po stronie odczytu co w SEC-ASSIGNMENT-POOL-MINIMIZE i SEC-LEADS-LIST-MINIMIZE, tyle że zastosowana do SKALARÓW samego leada, a nie do jego relacji. Poprzednie wymaganie świadomie ograniczyło się do relacji i zapisało to w komentarzu przy select — to jest ID domykające drugą połowę tego samego zapytania. Dostęp do listy jest już poprawnie ograniczony rolą i zakresem audytora (SEC-RLS-AUDITOR-SCOPE), więc nie jest to luka RBAC i nie naprawia się jej macierzą uprawnień",
     "statement": "Widok listy leadów (getLeads() w leads/actions.ts) przekazuje przez granicę serwer/klient wyłącznie te SKALARNE pola samego leada, które leads-client.tsx faktycznie zużywa — dokładnie tak, jak SEC-LEADS-LIST-MINIMIZE nakazało to już dla relacji. Dziś select wylicza wszystkie kolumny tabeli leadów, więc do przeglądarki każdego dyspozytora jedzie dla maksymalnie pięćdziesięciu leadów naraz notatka wewnętrzna o kliencie i audycie (pole swobodnego tekstu — może zawierać dowolne dane osobowe wpisane ręcznie przez pracownika) oraz surowe odpowiedzi klienta z formularza triage B2C (adres, dane kontaktowe, preferencje w postaci, w jakiej klient je podał). Żadne z tych dwóch pól nie jest przez listę renderowane w jakiejkolwiek formie. Obok nich jadą bez potrzeby pola operacyjne i handlowe: wybrana konfiguracja, wycena finalna, przewidywany czas montażu, powód utraty wraz z notatką, powód auto-odrzucenia, data ostatniego kontaktu, klucze obce klienta i adresu oraz znaczniki czasu wejścia do kubełka i aktualizacji rekordu."
@@ -710,6 +766,14 @@ export const REQUIREMENTS = [
     "risk": "HIGH",
     "source": "field_app_requirements.md#4.1",
     "statement": "Konto pracownika z odebranym dostępem (is_active = false) nie przechodzi bramki logowania do aplikacji terenowej."
+  },
+  {
+    "id": "FLD-CONSENT-TRIGGERS-INTEGRATION",
+    "domain": "field",
+    "status": "BLOCKED",
+    "risk": "HIGH",
+    "source": "WO BATCH-MEDIUM-LOW-CLEANUP punkt 23 (2026-09-01) — dług zarejestrowany jawnie, żeby pokrycie statyczne nie było mylone z pokryciem integracyjnym. Migracja 20260821130000 jest uruchomiona na produkcji od 2026-08-27, więc mechanizmy DZIAŁAJĄ na żywej bazie — nikt tego jednak nie weryfikuje automatycznie.",
+    "statement": "Cztery mechanizmy bazodanowe chroniące zgody pracownicze (freeze opublikowanej wersji dokumentu, append-only na employee_consents, version-must-be-current przy akceptacji, częściowy indeks unikalny na aktualnej wersji) są zweryfikowane testem uruchamianym na żywym Postgresie, nie asercją nad tekstem pliku migracji."
   },
   {
     "id": "FLD-CONSENT-ACCEPT",

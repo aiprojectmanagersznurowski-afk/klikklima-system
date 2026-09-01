@@ -145,7 +145,10 @@ for (const r of REQUIREMENTS) {
   if (!r.source) err('R11-req-complete', `${r.id}: brak wskazania dokumentu źródłowego.`);
   if (!r.statement) err('R11-req-complete', `${r.id}: brak treści wymagania.`);
   if (!r.acceptance?.length) err('R11-req-complete', `${r.id}: brak kryteriów akceptacji — nie da się z tego wygenerować testu.`);
-  if (!['TODO', 'IMPLEMENTING', 'DONE', 'BLOCKED'].includes(r.status)) err('R11-req-complete', `${r.id}: nieznany status "${r.status}".`);
+  // SUPERSEDED dodane 2026-09-01 (WO BATCH-MEDIUM-LOW-CLEANUP punkt 22): wymaganie rozbite na wpisy
+  // potomne. Zostaje w rejestrze, żeby nie zerwać historii i dopasowań kk-trace do już otagowanych
+  // testów, ale nie jest już samodzielnie egzekwowalne — pokrycie liczy się na potomkach.
+  if (!['TODO', 'IMPLEMENTING', 'DONE', 'BLOCKED', 'SUPERSEDED'].includes(r.status)) err('R11-req-complete', `${r.id}: nieznany status "${r.status}".`);
 }
 
 // R12 — odwołania do wymagań z innych kontraktów muszą istnieć

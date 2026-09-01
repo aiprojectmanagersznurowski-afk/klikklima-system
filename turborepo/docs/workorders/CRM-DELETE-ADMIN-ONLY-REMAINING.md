@@ -108,3 +108,38 @@ Kolejność wymuszona: Etap 1 zamyka podatność, Etap 2 jest kosmetyką bezpiec
 - **Nieznane — `logistics`:** widok logistyki nie jest jednym z „7 widoków CRM" wymienionych w `b2b_crm_specifications.md`, ale jego akcja usuwa dokładnie tę encję (`leady`), którą wymaganie chroni. Traktuję ją jako objętą zakresem, bo inaczej wymaganie jest obchodzone jednym kliknięciem. Jeżeli człowiek zdecyduje inaczej, ścieżkę nr 5 należy usunąć z kodu, a nie zostawić bez bramki.
 - **Nieznane — widok `faults`:** `apps/b2b-web/src/app/(dashboard)/faults/` ma samo `page.tsx`, bez `actions.ts`. Nie ma tam żadnej ścieżki usuwania, więc nie dotyczy. Jeżeli `faults` i `incidents` to ten sam widok domenowy w dwóch katalogach, to osobny dług, nie ten WO.
 - **Trace kłamie w tę stronę:** `kk-trace.mjs` dopasowuje ID wymagania w komentarzach testów, więc wymaganie o zakresie „7 widoków" pokazuje się jako pokryte po naprawieniu dwóch. Po tym WO warto rozważyć rozbicie wymagania na per-zasobowe ID — inaczej ta sama pułapka wróci.
+
+---
+
+## Aktualizacja 2026-09-01 — rozbicie na ID per zasób (WO BATCH-MEDIUM-LOW-CLEANUP, punkt 22)
+
+`CRM-DELETE-ADMIN-ONLY` ma odtąd status `SUPERSEDED`. Zostaje w rejestrze (historia + dopasowania
+`kk-trace` do już otagowanych testów), ale pokrycie liczy się wyłącznie na wpisach potomnych.
+
+Liczba widoków **policzona ręcznie** po ścieżkach `prisma.<tabela>.delete` / `tx.<tabela>.delete`
+w `apps/b2b-web/src/app/(dashboard)/**/actions.ts` — wychodzi 7, czyli liczba z treści starego
+wymagania okazała się poprawna (ale sprawdzona, nie przyjęta na wiarę).
+
+| Nowe ID | Zasób (RESOURCES) | Tabela | Plik akcji | Status |
+|---|---|---|---|---|
+| `CRM-DELETE-ADMIN-ONLY-CLIENTS` | `clients` | `klienci` | `customers/actions.ts` | TODO |
+| `CRM-DELETE-ADMIN-ONLY-LEADS` | `leads` | `leady` | `leads/actions.ts` | TODO |
+| `CRM-DELETE-ADMIN-ONLY-INSTALLATIONS` | `installations` | `instalacje` | `installations/actions.ts` | TODO |
+| `CRM-DELETE-ADMIN-ONLY-SERVICES` | `services` | `serwisy` | `services/actions.ts` | TODO |
+| `CRM-DELETE-ADMIN-ONLY-INCIDENTS` | `incidents` | `usterki_incidents` | `incidents/actions.ts` | TODO |
+| `CRM-DELETE-ADMIN-ONLY-AUDITORS` | `auditors` | `audytorzy` | `auditors/actions.ts` | TODO |
+| `CRM-DELETE-ADMIN-ONLY-CREWS` | `crews` | `zespoly_monterskie` | `crews/actions.ts` | TODO |
+
+**Ósma ścieżka kasująca** (`settings/actions.ts` → `prisma.authorizedUser.delete` → zasób
+`authorized_users`) **nie jest widokiem CRM** i ma własne wymaganie `SEC-AUTHZ-USER-MGMT`.
+Świadomie poza tym rozbiciem.
+
+### Dlaczego wszystkie siedem jest `TODO`, a nie `DONE`
+
+Warstwa **RLS** nie jest dziś pokryta dla ŻADNEGO z siedmiu zasobów — brak środowiska Postgres
+(ta sama blokada co `FLD-CONSENT-TRIGGERS-INTEGRATION`). Warstwa **UI** (ukrycie akcji dla ról
+nie-admin) też nie ma testu. Pokryta jest wyłącznie warstwa Server Action, i to tylko dla dwóch
+zasobów: `leads` (`leads-delete-admin-only.test.ts`) i `crews` (`crews-admin-gates.test.ts`).
+
+To jest dokładnie ta różnica, którą wpis zbiorczy ukrywał: dwa widoki z siedmiu, jedna warstwa
+z trzech, a `kk-trace` pokazywał wymaganie jako pokryte.
