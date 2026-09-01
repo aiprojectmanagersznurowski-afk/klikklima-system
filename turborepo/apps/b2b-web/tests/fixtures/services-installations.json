@@ -1,0 +1,50 @@
+{
+  "instalacjaA": {
+    "id": "inst-A",
+    "lead_id": "lead-A",
+    "lead": {
+      "id": "lead-A",
+      "klient": { "id": "klient-jan", "imie_i_nazwisko": "Jan Kowalski", "telefon": "600100200" },
+      "adres": { "id": "adres-testowa", "ulica_miasto": "ul. Testowa 1, Warszawa" }
+    },
+    "next_service_date": "2026-10-01T00:00:00.000Z",
+    "data_zakonczenia": "2025-10-01T00:00:00.000Z",
+    "status": "INSTALLATION_COMPLETED"
+  },
+  "instalacjaB": {
+    "id": "inst-B",
+    "lead_id": "lead-B",
+    "lead": {
+      "id": "lead-B",
+      "klient": { "id": "klient-jan", "imie_i_nazwisko": "Jan Kowalski", "telefon": "600100200" },
+      "adres": { "id": "adres-testowa", "ulica_miasto": "ul. Testowa 1, Warszawa" }
+    },
+    "next_service_date": "2026-11-01T00:00:00.000Z",
+    "data_zakonczenia": null,
+    "status": "INSTALLATION_COMPLETED"
+  },
+  "instalacjaNajwczesniejsza": {
+    "id": "inst-najwczesniejsza",
+    "lead_id": "lead-najwczesniejsza",
+    "lead": {
+      "id": "lead-najwczesniejsza",
+      "klient": { "id": "klient-jan", "imie_i_nazwisko": "Jan Kowalski", "telefon": "600100200" },
+      "adres": { "id": "adres-testowa", "ulica_miasto": "ul. Testowa 1, Warszawa" }
+    },
+    "next_service_date": "2026-10-01T00:00:00.000Z",
+    "data_zakonczenia": null,
+    "status": "INSTALLATION_COMPLETED"
+  },
+  "instalacjaCNoDate": {
+    "id": "inst-C",
+    "lead_id": "lead-C",
+    "lead": {
+      "id": "lead-C",
+      "klient": { "id": "klient-jan", "imie_i_nazwisko": "Jan Kowalski", "telefon": "600100200" },
+      "adres": { "id": "adres-testowa", "ulica_miasto": "ul. Testowa 1, Warszawa" }
+    },
+    "next_service_date": null,
+    "data_zakonczenia": null,
+    "status": "INSTALLATION_COMPLETED"
+  }
+}

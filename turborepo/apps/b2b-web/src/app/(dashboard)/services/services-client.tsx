@@ -4,6 +4,8 @@ import React, { useTransition,  useState } from "react"
 import { Search, Wrench, MoreHorizontal, CalendarClock, Phone , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ServiceSummary , deleteServiceAction } from "./actions"
+import { daysUntilService } from "../../../lib/service-schedule"
+import { isDeleteMenuItemVisible } from "./menu-visibility"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { differenceInDays } from "date-fns"
 import { formatDate } from "@/lib/format-date"
 
 export function ServicesClient({ initialServices }: { initialServices: ServiceSummary[] }) {
@@ -38,7 +39,7 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
           if (!result.success) throw new Error(result.error);
           window.location.reload();
         } catch (e) {
-          alert("Wystąpił błąd podczas usuwania rekordu.");
+          alert(e instanceof Error && e.message ? e.message : "Wystąpił błąd podczas usuwania rekordu.");
         }
       });
     }
@@ -91,8 +92,9 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
                   </tr>
                 ) : (
                   filtered.map((service) => {
-                    const daysLeft = differenceInDays(new Date(service.next_service_date), new Date());
-                    
+                    const rowKey = service.service_id ?? `forecast:${service.installation_id}`;
+                    const daysLeft = daysUntilService(new Date(service.next_service_date));
+
                     let statusColor = "text-muted-foreground";
                     let statusBg = "bg-secondary";
                     let statusText = `${daysLeft} dni`;
@@ -112,13 +114,16 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
                     }
 
                     return (
-                      <tr key={service.id} className="hover:bg-secondary/20 transition-colors">
+                      <tr key={rowKey} className="hover:bg-secondary/20 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <CalendarClock className="size-4 text-muted-foreground" />
                             <span className="font-semibold text-foreground">
                               {formatDate(service.next_service_date, "dd MMM yyyy")}
                             </span>
+                            {service.date_undetermined && (
+                              <span className="text-xs text-muted-foreground italic">(termin nieustalony)</span>
+                            )}
                           </div>
                           {service.installation_date && (
                             <div className="text-xs text-muted-foreground mt-1">
@@ -154,15 +159,19 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
                               <DropdownMenuItem onClick={() => alert("Wysyłka przypomnienia (Epic 4)")}>Wyślij Przypomnienie (SMS/Email)</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => alert("Przydział w Fazie 2")}>Przydziel Brygadę</DropdownMenuItem>
                               <DropdownMenuItem>Oznacz jako Wykonany</DropdownMenuItem>
-                            
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                onClick={() => handleDelete(service.id)}
-                              >
-                                <ShieldAlert className="mr-2 size-4" />
-                                <span>Usuń (Tylko Admin)</span>
-                              </DropdownMenuItem>
+
+                              {isDeleteMenuItemVisible(service) && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                    onClick={() => handleDelete(service.service_id as string)}
+                                  >
+                                    <ShieldAlert className="mr-2 size-4" />
+                                    <span>Usuń (Tylko Admin)</span>
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>

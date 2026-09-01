@@ -443,7 +443,7 @@ describe('shipLogisticsOrder/bypassLogisticsOrder/rollbackLogisticsOrder — kon
       const actual = await vi.importActual<typeof import('@klikklima/contracts')>('@klikklima/contracts');
       return {
         ...actual,
-        can: (role: string, resource: string, action: string) =>
+        can: (role: import('@klikklima/contracts').Role, resource: string, action: import('@klikklima/contracts').Capability) =>
           resource === 'shipments' && action === 'update' ? 'no' : actual.can(role, resource, action),
       };
     });
@@ -464,7 +464,7 @@ describe('shipLogisticsOrder/bypassLogisticsOrder/rollbackLogisticsOrder — kon
       const actual = await vi.importActual<typeof import('@klikklima/contracts')>('@klikklima/contracts');
       return {
         ...actual,
-        can: (role: string, resource: string, action: string) =>
+        can: (role: import('@klikklima/contracts').Role, resource: string, action: import('@klikklima/contracts').Capability) =>
           resource === 'shipments' && action === 'update' ? 'no' : actual.can(role, resource, action),
       };
     });
@@ -485,7 +485,7 @@ describe('shipLogisticsOrder/bypassLogisticsOrder/rollbackLogisticsOrder — kon
       const actual = await vi.importActual<typeof import('@klikklima/contracts')>('@klikklima/contracts');
       return {
         ...actual,
-        can: (role: string, resource: string, action: string) =>
+        can: (role: import('@klikklima/contracts').Role, resource: string, action: import('@klikklima/contracts').Capability) =>
           resource === 'shipments' && action === 'update' ? 'no' : actual.can(role, resource, action),
       };
     });

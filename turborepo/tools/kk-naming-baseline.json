@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T10:57:29.682Z",
+  "generatedAt": "2026-09-01T21:04:54.523Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 17,
@@ -40,8 +40,8 @@
     "apps/b2b-web/src/app/(dashboard)/leads/leads-client.tsx::adr002-pl-tables": 2,
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-tables": 10,
-    "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-columns": 2,
-    "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-columns": 7,
+    "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-tables": 4,
     "apps/b2b-web/src/utils/supabase/middleware.ts::adr002-pl-tables": 1,
     "apps/b2b-web/tests/add-auditor-modal-formdata-boundary.test.ts::adr002-pl-columns": 3,
     "apps/b2b-web/tests/add-crew-modal-formdata-boundary.test.ts::adr002-pl-columns": 4,
@@ -96,7 +96,10 @@
     "apps/b2b-web/tests/logistics-authz-gates.test.ts::adr002-pl-tables": 11,
     "apps/b2b-web/tests/middleware-auditor-blocked.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/rls-deny-by-default-freeze.test.ts::adr002-pl-tables": 17,
-    "apps/b2b-web/tests/services-authz-gates.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/services-authz-gates.test.ts::adr002-pl-columns": 2,
+    "apps/b2b-web/tests/services-authz-gates.test.ts::adr002-pl-tables": 4,
+    "apps/b2b-web/tests/services-source-of-truth.test.ts::adr002-pl-columns": 18,
+    "apps/b2b-web/tests/services-source-of-truth.test.ts::adr002-pl-tables": 5,
     "apps/b2b-web/tests/storage-signed-urls.test.ts::adr002-pl-tables": 6,
     "apps/b2c-web/app/actions/getBestsellers.ts::adr002-pl-columns": 4,
     "apps/b2c-web/app/actions/getBestsellers.ts::adr002-pl-tables": 1,
@@ -144,5 +147,5 @@
     "supabase/migrations/20260828120000_kartoteki_storage_policies.sql::adr002-pl-tables": 3,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1755
+  "total": 1789
 }
