@@ -107,7 +107,7 @@ export async function shipLogisticsOrder(leadId: string, trackingNumber?: string
     console.error("Failed to resolve actor role:", error);
     return { success: false, error: "Nie udało się zweryfikować uprawnień." };
   }
-  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes" || can(actorRole, "shipments", "update") !== "yes") {
     return { success: false, error: "Brak uprawnień do wysyłki zamówienia." };
   }
 
@@ -146,7 +146,7 @@ export async function bypassLogisticsOrder(leadId: string): Promise<{ success: b
     console.error("Failed to resolve actor role:", error);
     return { success: false, error: "Nie udało się zweryfikować uprawnień." };
   }
-  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes" || can(actorRole, "shipments", "update") !== "yes") {
     return { success: false, error: "Brak uprawnień do zmiany statusu zamówienia." };
   }
 
@@ -210,7 +210,7 @@ export async function rollbackLogisticsOrder(leadId: string, reason?: string): P
     console.error("Failed to resolve actor role:", error);
     return { success: false, error: "Nie udało się zweryfikować uprawnień." };
   }
-  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes" || can(actorRole, "shipments", "update") !== "yes") {
     return { success: false, error: "Brak uprawnień do rollbacku zamówienia." };
   }
 

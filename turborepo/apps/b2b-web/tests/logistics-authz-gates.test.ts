@@ -413,6 +413,94 @@ describe('rollbackLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () 
   });
 });
 
+describe('shipLogisticsOrder/bypassLogisticsOrder/rollbackLogisticsOrder — koniunkcja z shipments.update (punkt 17, BATCH-MEDIUM-LOW-CLEANUP)', () => {
+  /**
+   * Dziś te trzy funkcje sprawdzają wyłącznie `can(role, 'leads', 'update')`.
+   * Docelowo: `can(role, 'leads', 'update') === 'yes' && can(role, 'shipments',
+   * 'update') === 'yes'`. Macierz kontraktu ma dziś te same role na obu
+   * zasobach (`shipments` lustrzane do `leads`), więc bez podmiany `can` ten
+   * test nie miałby szansy odróżnić bramki jednoresursowej od koniunkcji —
+   * stąd mock modułu `@klikklima/contracts`, w którym `leads.update` przechodzi,
+   * a `shipments.update` jest jawnie odrzucone dla tej samej roli. Jeżeli
+   * funkcja sprawdza tylko `leads`, akcja się powiedzie mimo odmowy na
+   * `shipments` — to jest oczekiwany, dzisiejszy RED.
+   */
+  beforeEach(() => {
+    leadUpdateMock.mockReset();
+    logisticsCreateMock.mockReset();
+    transactionMock.mockReset();
+    revalidatePathMock.mockReset();
+    getCurrentActorRoleMock.mockReset();
+    getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
+    transactionMock.mockImplementation(makeTxImplementation());
+    leadUpdateMock.mockResolvedValue({});
+    logisticsCreateMock.mockResolvedValue({});
+  });
+
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  it('shipLogisticsOrder odmawia, gdy leads.update przechodzi, ale shipments.update jest odrzucone dla tej roli', async () => {
+    vi.doMock('@klikklima/contracts', async () => {
+      const actual = await vi.importActual<typeof import('@klikklima/contracts')>('@klikklima/contracts');
+      return {
+        ...actual,
+        can: (role: string, resource: string, action: string) =>
+          resource === 'shipments' && action === 'update' ? 'no' : actual.can(role, resource, action),
+      };
+    });
+    vi.resetModules();
+    const { shipLogisticsOrder: patchedShip } = await import('../src/app/(dashboard)/logistics/actions');
+
+    const result = await patchedShip('lead-1', 'TRACK-123');
+
+    expect(result?.success).toBe(false);
+    expect(leadUpdateMock).not.toHaveBeenCalled();
+    vi.doUnmock('@klikklima/contracts');
+    vi.resetModules();
+  });
+
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  it('bypassLogisticsOrder odmawia, gdy leads.update przechodzi, ale shipments.update jest odrzucone dla tej roli', async () => {
+    vi.doMock('@klikklima/contracts', async () => {
+      const actual = await vi.importActual<typeof import('@klikklima/contracts')>('@klikklima/contracts');
+      return {
+        ...actual,
+        can: (role: string, resource: string, action: string) =>
+          resource === 'shipments' && action === 'update' ? 'no' : actual.can(role, resource, action),
+      };
+    });
+    vi.resetModules();
+    const { bypassLogisticsOrder: patchedBypass } = await import('../src/app/(dashboard)/logistics/actions');
+
+    const result = await patchedBypass('lead-1');
+
+    expect(result?.success).toBe(false);
+    expect(leadUpdateMock).not.toHaveBeenCalled();
+    vi.doUnmock('@klikklima/contracts');
+    vi.resetModules();
+  });
+
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  it('rollbackLogisticsOrder odmawia, gdy leads.update przechodzi, ale shipments.update jest odrzucone dla tej roli', async () => {
+    vi.doMock('@klikklima/contracts', async () => {
+      const actual = await vi.importActual<typeof import('@klikklima/contracts')>('@klikklima/contracts');
+      return {
+        ...actual,
+        can: (role: string, resource: string, action: string) =>
+          resource === 'shipments' && action === 'update' ? 'no' : actual.can(role, resource, action),
+      };
+    });
+    vi.resetModules();
+    const { rollbackLogisticsOrder: patchedRollback } = await import('../src/app/(dashboard)/logistics/actions');
+
+    const result = await patchedRollback('lead-1', 'powod');
+
+    expect(result?.success).toBe(false);
+    expect(leadUpdateMock).not.toHaveBeenCalled();
+    vi.doUnmock('@klikklima/contracts');
+    vi.resetModules();
+  });
+});
+
 describe('deleteLogisticsOrderAction — konsolidacja do deleteLeadAction (SEC-AUTHZ-B2B-MUTATIONS, AC13)', () => {
   beforeEach(() => {
     leadDeleteMock.mockReset();
