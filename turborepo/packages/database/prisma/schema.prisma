@@ -106,6 +106,11 @@ model leady {
   // powodów utraty — nie zasila analityki LOST_REASONS (AC4.8).
   auto_rejected_reason      String?
   last_followup_date        DateTime?   @db.Timestamptz(6)
+  // LOGISTICS-SHIPPING-EFFECTS Faza A (D2): jedyna reprezentacja „zegar SLA logistyczne
+  // wstrzymany" po rollbacku (FNL-ROLLBACK, kryterium „SLA logistyczne zostaje wstrzymane").
+  // Stempel ustawia się TYLKO gdy było null — powtórny rollback go nie przesuwa (AC-A5).
+  // Wznowienie (powrót do null) należy do FNL-ROLLBACK-EXIT — poza zakresem tej fazy.
+  logistics_sla_paused_at   DateTime?   @db.Timestamptz(6)
   created_at                DateTime    @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
   updated_at                DateTime    @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
