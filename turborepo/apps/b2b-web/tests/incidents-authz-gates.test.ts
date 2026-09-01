@@ -54,7 +54,7 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
   it.each(DENIED_ROLES)(
-    'rola %s jest odrzucona, prisma.usterki_incidents.delete nie jest wywolane ani razu',
+    'rola %s jest odrzucona, mutacja usunięcia usterki nie jest wywołana',
     async (role) => {
       getCurrentActorRoleMock.mockResolvedValue(role);
       expect(can(role, 'incidents', 'delete')).not.toBe('yes');
@@ -134,5 +134,32 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
 
     expect(incidentDeleteMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
+  });
+});
+
+/**
+ * BATCH-MEDIUM-LOW-CLEANUP — Punkt 18: `getCurrentActorRole()` jest dzis WEWNATRZ
+ * `try` obejmujacego mutacje, wiec gdy rzuci wyjatek, uzytkownik dostaje generyczny
+ * komunikat "Nie udało się..." zamiast odmowy uprawnien. Wzorzec docelowy:
+ * `leads/actions.ts` (returnToFunnel/archiveLost), gdzie bramka jest przed `try`.
+ */
+describe('incidents/actions.ts — Punkt 18: fail-closed przed try (BATCH-MEDIUM-LOW-CLEANUP)', () => {
+  beforeEach(() => {
+    incidentDeleteMock.mockReset();
+    revalidatePathMock.mockReset();
+    getCurrentActorRoleMock.mockReset();
+  });
+
+  // AC18.1 / AC18.2
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  it('deleteIncidentAction: getCurrentActorRole rzuca -> odmowa uprawnien (nie generyczny blad zapisu), zero wywolan mutacji usunięcia usterki', async () => {
+    getCurrentActorRoleMock.mockRejectedValue(new Error('sesja wygasla'));
+
+    const result = await deleteIncidentAction('incident-1');
+
+    expect(incidentDeleteMock).not.toHaveBeenCalled();
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/uprawn/i);
+    expect(result.error).not.toMatch(/nie udało się/i);
   });
 });

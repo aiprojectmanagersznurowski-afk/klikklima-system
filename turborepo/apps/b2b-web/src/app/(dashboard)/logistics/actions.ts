@@ -7,6 +7,7 @@ import { LeadStatus } from "@repo/database"
 import { can } from "@klikklima/contracts"
 import { getCurrentActorRole } from "../../../utils/supabase/server"
 import { deleteLeadAction } from "../leads/actions"
+import type { TriageAnswers } from "@/lib/triage-answers"
 
 export type LogisticsLead = {
   id: string
@@ -73,7 +74,7 @@ export async function getLogisticsLeads(): Promise<LogisticsLead[] | { success: 
       installationDateStr = lead.data_rezerwacji.toISOString().split("T")[0]; // YYYY-MM-DD
     }
 
-    const triage = (lead.odpowiedzi_triage as any) || {}
+    const triage: TriageAnswers = (lead.odpowiedzi_triage as TriageAnswers | null) || {}
     let deviceModel = "Brak modelu"
     
     if (triage.selectedExternalUnit) {

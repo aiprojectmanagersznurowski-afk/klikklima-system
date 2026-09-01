@@ -48,12 +48,18 @@ export async function getCustomers(): Promise<CustomerSummary[]> {
 }
 
 export async function deleteCustomerAction(id: string): Promise<{ success: boolean; error?: string }> {
+  let actorRole;
   try {
-    const actorRole = await getCurrentActorRole();
-    if (!actorRole || can(actorRole, "clients", "delete") !== "yes") {
-      return { success: false, error: "Brak uprawnień do usunięcia klienta." };
-    }
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do usunięcia klienta." };
+  }
+  if (!actorRole || can(actorRole, "clients", "delete") !== "yes") {
+    return { success: false, error: "Brak uprawnień do usunięcia klienta." };
+  }
 
+  try {
     // UWAGA: Twarde usunięcie klienta (tylko admin)
     // W Prisma dzięki onDelete: Cascade (jeśli jest) powiązane encje by zniknęły.
     // Jeśli nie ma cascade, musimy zrobić to ręcznie.
@@ -71,12 +77,18 @@ export async function deleteCustomerAction(id: string): Promise<{ success: boole
 }
 
 export async function addCustomerAddress(klientId: string, ulicaMiasto: string): Promise<{ success: boolean; error?: string }> {
+  let actorRole;
   try {
-    const actorRole = await getCurrentActorRole();
-    if (!actorRole || can(actorRole, "clients", "update") !== "yes") {
-      return { success: false, error: "Brak uprawnień do dodania adresu." };
-    }
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do dodania adresu." };
+  }
+  if (!actorRole || can(actorRole, "clients", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do dodania adresu." };
+  }
 
+  try {
     await prisma.adresy.create({
       data: {
         klient_id: klientId,

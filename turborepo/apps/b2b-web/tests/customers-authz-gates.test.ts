@@ -76,7 +76,7 @@ describe('deleteCustomerAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
   it.each(DELETE_DENIED_ROLES)(
-    'rola %s jest odrzucona, prisma.klienci.delete nie jest wywolane ani razu',
+    'rola %s jest odrzucona, mutacja usunięcia klienta nie jest wywołana',
     async (role) => {
       getCurrentActorRoleMock.mockResolvedValue(role);
       expect(can(role, 'clients', 'delete')).not.toBe('yes');
@@ -157,7 +157,7 @@ describe('addCustomerAddress — bramka roli (SEC-AUTHZ-B2B-MUTATIONS, decyzja D
 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
   it.each(UPDATE_DENIED_ROLES)(
-    'rola %s jest odrzucona, prisma.adresy.create nie jest wywolane ani razu',
+    'rola %s jest odrzucona, mutacja dodania adresu nie jest wywołana',
     async (role) => {
       getCurrentActorRoleMock.mockResolvedValue(role);
       expect(can(role, 'clients', 'update')).not.toBe('yes');
@@ -228,5 +228,46 @@ describe('addCustomerAddress — bramka roli (SEC-AUTHZ-B2B-MUTATIONS, decyzja D
 
     expect(result).toEqual(expect.objectContaining({ success: false }));
     expect(typeof result?.error).toBe('string');
+  });
+});
+
+/**
+ * BATCH-MEDIUM-LOW-CLEANUP — Punkt 18: `getCurrentActorRole()` jest dzis WEWNATRZ
+ * `try` obejmujacego mutacje, wiec gdy rzuci wyjatek, uzytkownik dostaje generyczny
+ * komunikat "Nie udało się..." zamiast odmowy uprawnien. Wzorzec docelowy:
+ * `leads/actions.ts` (returnToFunnel/archiveLost), gdzie bramka jest przed `try`.
+ */
+describe('customers/actions.ts — Punkt 18: fail-closed przed try (BATCH-MEDIUM-LOW-CLEANUP)', () => {
+  beforeEach(() => {
+    klientDeleteMock.mockReset();
+    adresCreateMock.mockReset();
+    revalidatePathMock.mockReset();
+    getCurrentActorRoleMock.mockReset();
+  });
+
+  // AC18.1 / AC18.2
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  it('deleteCustomerAction: getCurrentActorRole rzuca -> odmowa uprawnien (nie generyczny blad zapisu), zero wywolan mutacji usunięcia klienta', async () => {
+    getCurrentActorRoleMock.mockRejectedValue(new Error('sesja wygasla'));
+
+    const result = await deleteCustomerAction('klient-1');
+
+    expect(klientDeleteMock).not.toHaveBeenCalled();
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/uprawn/i);
+    expect(result.error).not.toMatch(/nie udało się/i);
+  });
+
+  // AC18.1 / AC18.2
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  it('addCustomerAddress: getCurrentActorRole rzuca -> odmowa uprawnien (nie generyczny blad zapisu), zero wywolan mutacji dodania adresu', async () => {
+    getCurrentActorRoleMock.mockRejectedValue(new Error('sesja wygasla'));
+
+    const result = await addCustomerAddress('klient-1', 'Warszawa, ul. Testowa 1');
+
+    expect(adresCreateMock).not.toHaveBeenCalled();
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/uprawn/i);
+    expect(result.error).not.toMatch(/nie udało się/i);
   });
 });

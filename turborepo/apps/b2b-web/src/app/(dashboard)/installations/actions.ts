@@ -4,6 +4,7 @@ import { prisma, InstallationStatus } from "@repo/database"
 import { revalidatePath } from "next/cache"
 import { can } from "@klikklima/contracts"
 import { getCurrentActorRole } from "../../../utils/supabase/server"
+import type { TriageAnswers } from "@/lib/triage-answers"
 
 export type InstallationSummary = {
   id: string;
@@ -33,7 +34,7 @@ export async function getInstallations(): Promise<InstallationSummary[]> {
   });
 
   return installations.map(inst => {
-    const triage = (inst.lead.odpowiedzi_triage as any) || {}
+    const triage: TriageAnswers = (inst.lead.odpowiedzi_triage as TriageAnswers | null) || {}
     let deviceModel = "Brak modelu"
     
     if (triage.selectedExternalUnit) {
@@ -56,12 +57,18 @@ export async function getInstallations(): Promise<InstallationSummary[]> {
 }
 
 export async function updateInstallationStatus(id: string, newStatus: InstallationStatus): Promise<{ success: boolean; error?: string }> {
+  let actorRole;
   try {
-    const actorRole = await getCurrentActorRole();
-    if (!actorRole || can(actorRole, "installations", "update") !== "yes") {
-      return { success: false, error: "Brak uprawnień do zmiany statusu instalacji." };
-    }
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do zmiany statusu instalacji." };
+  }
+  if (!actorRole || can(actorRole, "installations", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do zmiany statusu instalacji." };
+  }
 
+  try {
     const inst = await prisma.instalacje.update({
       where: { id },
       data: {
@@ -88,12 +95,18 @@ export async function updateInstallationStatus(id: string, newStatus: Installati
 }
 
 export async function deleteInstallationAction(id: string): Promise<{ success: boolean; error?: string }> {
+  let actorRole;
   try {
-    const actorRole = await getCurrentActorRole();
-    if (!actorRole || can(actorRole, "installations", "delete") !== "yes") {
-      return { success: false, error: "Brak uprawnień do usunięcia instalacji." };
-    }
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do usunięcia instalacji." };
+  }
+  if (!actorRole || can(actorRole, "installations", "delete") !== "yes") {
+    return { success: false, error: "Brak uprawnień do usunięcia instalacji." };
+  }
 
+  try {
     await prisma.instalacje.delete({
       where: { id }
     });

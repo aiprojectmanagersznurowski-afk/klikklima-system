@@ -160,6 +160,20 @@ export async function assignCrewToLead(
   leadId: string,
   crewId: string
 ): Promise<{ success: boolean; error?: string }> {
+  // MAJOR (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #1): Prisma omija RLS — sprawdzenie
+  // roli musi żyć jawnie w tej akcji, PRZED jakimkolwiek zapytaniem Prisma.
+  // PERMISSIONS.leads.update = ['admin', 'dyspozytor'].
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do przypisania ekipy." };
+  }
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do przypisania ekipy." };
+  }
+
   try {
     const lead = await prisma.leady.findUnique({
       where: { id: leadId },
@@ -196,13 +210,6 @@ export async function assignCrewToLead(
         success: false,
         error: `Nie można przypisać zespołu — nieważny certyfikat: ${invalidCerts.join(", ")}.`,
       };
-    }
-
-    // MAJOR (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #1): Prisma omija RLS — sprawdzenie
-    // roli musi żyć jawnie w tej akcji. PERMISSIONS.leads.update = ['admin', 'dyspozytor'].
-    const actorRole = await getCurrentActorRole();
-    if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
-      return { success: false, error: "Brak uprawnień do przypisania ekipy." };
     }
 
     // MAJOR (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #2): status docelowy pochodzi z

@@ -86,7 +86,7 @@ describe('updateInstallationStatus — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
   // (instalacje.update + leady.update) sa zablokowane razem dla roli bez update.
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
   it.each(UPDATE_DENIED_ROLES)(
-    'rola %s jest odrzucona przy statusie COMPLETED, ani instalacje.update ani leady.update nie sa wywolane',
+    'rola %s jest odrzucona przy statusie COMPLETED, ani mutacja instalacji ani mutacja leada nie sa wywolane',
     async (role) => {
       getCurrentActorRoleMock.mockResolvedValue(role);
       expect(can(role, 'installations', 'update')).not.toBe('yes');
@@ -144,7 +144,7 @@ describe('updateInstallationStatus — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
   // wiec tylko instalacje.update powinno byc wywolane.
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
   it.each(UPDATE_ALLOWED_ROLES)(
-    'rola %s jest dozwolona, status IN_PROGRESS aktualizuje wylacznie instalacje',
+    'rola %s jest dozwolona, status IN_PROGRESS aktualizuje wylacznie rekord montażu',
     async (role) => {
       getCurrentActorRoleMock.mockResolvedValue(role);
       installationUpdateMock.mockResolvedValue({ id: 'inst-1', lead_id: 'lead-1' });
@@ -160,7 +160,7 @@ describe('updateInstallationStatus — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
   // Kontrola pozytywna: status COMPLETED, rola dozwolona -> obie mutacje wywolane.
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
   it.each(UPDATE_ALLOWED_ROLES)(
-    'rola %s jest dozwolona, status COMPLETED aktualizuje instalacje ORAZ leada',
+    'rola %s jest dozwolona, status COMPLETED aktualizuje rekord montażu ORAZ leada',
     async (role) => {
       getCurrentActorRoleMock.mockResolvedValue(role);
       installationUpdateMock.mockResolvedValue({ id: 'inst-1', lead_id: 'lead-1' });
@@ -213,7 +213,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
   it.each(DELETE_DENIED_ROLES)(
-    'rola %s jest odrzucona, prisma.instalacje.delete nie jest wywolane ani razu',
+    'rola %s jest odrzucona, mutacja usunięcia montażu nie jest wywołana',
     async (role) => {
       getCurrentActorRoleMock.mockResolvedValue(role);
       expect(can(role, 'installations', 'delete')).not.toBe('yes');
@@ -290,5 +290,48 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
 
     expect(result).toEqual(expect.objectContaining({ success: false }));
     expect(typeof result?.error).toBe('string');
+  });
+});
+
+/**
+ * BATCH-MEDIUM-LOW-CLEANUP — Punkt 18: `getCurrentActorRole()` jest dzis WEWNATRZ
+ * `try` obejmujacego mutacje, wiec gdy rzuci wyjatek, uzytkownik dostaje generyczny
+ * komunikat "Nie udało się..." zamiast odmowy uprawnien. Wzorzec docelowy:
+ * `leads/actions.ts` (returnToFunnel/archiveLost), gdzie bramka jest przed `try`.
+ */
+describe('installations/actions.ts — Punkt 18: fail-closed przed try (BATCH-MEDIUM-LOW-CLEANUP)', () => {
+  beforeEach(() => {
+    installationUpdateMock.mockReset();
+    installationDeleteMock.mockReset();
+    leadUpdateMock.mockReset();
+    revalidatePathMock.mockReset();
+    getCurrentActorRoleMock.mockReset();
+  });
+
+  // AC18.1 / AC18.2
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  it('updateInstallationStatus: getCurrentActorRole rzuca -> odmowa uprawnien (nie generyczny blad zapisu), zero mutacji', async () => {
+    getCurrentActorRoleMock.mockRejectedValue(new Error('sesja wygasla'));
+
+    const result = await updateInstallationStatus('inst-1', 'COMPLETED' as never);
+
+    expect(installationUpdateMock).not.toHaveBeenCalled();
+    expect(leadUpdateMock).not.toHaveBeenCalled();
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/uprawn/i);
+    expect(result.error).not.toMatch(/nie udało się/i);
+  });
+
+  // AC18.1 / AC18.2
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  it('deleteInstallationAction: getCurrentActorRole rzuca -> odmowa uprawnien (nie generyczny blad zapisu), zero wywolan mutacji usunięcia montażu', async () => {
+    getCurrentActorRoleMock.mockRejectedValue(new Error('sesja wygasla'));
+
+    const result = await deleteInstallationAction('inst-1');
+
+    expect(installationDeleteMock).not.toHaveBeenCalled();
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/uprawn/i);
+    expect(result.error).not.toMatch(/nie udało się/i);
   });
 });

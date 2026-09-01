@@ -40,12 +40,18 @@ export async function getIncidents(): Promise<IncidentSummary[]> {
 }
 
 export async function deleteIncidentAction(id: string): Promise<{ success: boolean; error?: string }> {
+  let actorRole;
   try {
-    const actorRole = await getCurrentActorRole();
-    if (!actorRole || can(actorRole, "incidents", "delete") !== "yes") {
-      return { success: false, error: "Brak uprawnień do usunięcia usterki." };
-    }
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do usunięcia usterki." };
+  }
+  if (!actorRole || can(actorRole, "incidents", "delete") !== "yes") {
+    return { success: false, error: "Brak uprawnień do usunięcia usterki." };
+  }
 
+  try {
     await prisma.usterki_incidents.delete({
       where: { id }
     });
