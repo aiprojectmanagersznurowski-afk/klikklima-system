@@ -13,8 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { format, isToday } from "date-fns"
-import { pl } from "date-fns/locale"
+import { isToday } from "date-fns"
+import { formatDate } from "@/lib/format-date"
 
 export function InstallationsClient({ initialInstallations }: { initialInstallations: InstallationSummary[] }) {
   const [installations, setInstallations] = useState<InstallationSummary[]>(initialInstallations)
@@ -148,7 +148,7 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
                           {item.plannedDate ? (
                             <div className="flex flex-col">
                               <span className="text-sm font-semibold text-foreground">
-                                {format(new Date(item.plannedDate), "dd MMMM yyyy", { locale: pl })}
+                                {formatDate(item.plannedDate, "dd MMMM yyyy")}
                               </span>
                               {isLate && (
                                 <span className="text-xs font-bold text-amber-600 dark:text-amber-500 mt-1">⚠️ Opóźnienie / Brak info</span>

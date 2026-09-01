@@ -13,8 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { format } from "date-fns"
-import { pl } from "date-fns/locale"
+import { formatDate } from "@/lib/format-date"
 
 export function CustomersClient({ initialCustomers }: { initialCustomers: CustomerSummary[] }) {
   const [customers, setCustomers] = useState<CustomerSummary[]>(initialCustomers)
@@ -129,7 +128,7 @@ export function CustomersClient({ initialCustomers }: { initialCustomers: Custom
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {format(new Date(item.createdAt), "dd MMM yyyy", { locale: pl })}
+                        {formatDate(item.createdAt, "dd MMM yyyy")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <span className="inline-flex items-center justify-center bg-secondary text-secondary-foreground rounded-full size-7 text-xs font-medium border border-border">

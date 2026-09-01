@@ -4,18 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LeadStatus } from "@repo/database";
-import { formatInTimeZone } from "date-fns-tz";
-import { pl } from "date-fns/locale";
-
-// date-fns' format() reads the JS runtime's local timezone to render day/hour components.
-// Next.js server-renders this client component on Vercel (UTC) and hydrates it in the
-// visitor's browser (Europe/Warsaw) - two different local timezones for the same instant
-// produce different text, which is exactly React error #418 (hydration text mismatch).
-// Pinning the timezone explicitly makes the output identical everywhere this file runs.
-const APP_TIMEZONE = "Europe/Warsaw";
-function formatDate(date: Date | string, pattern: string) {
-  return formatInTimeZone(date, APP_TIMEZONE, pattern, { locale: pl });
-}
+import { formatDate } from "@/lib/format-date";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";

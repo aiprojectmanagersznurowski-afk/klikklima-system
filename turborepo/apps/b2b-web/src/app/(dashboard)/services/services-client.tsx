@@ -12,8 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { differenceInDays, format } from "date-fns"
-import { pl } from "date-fns/locale"
+import { differenceInDays } from "date-fns"
+import { formatDate } from "@/lib/format-date"
 
 export function ServicesClient({ initialServices }: { initialServices: ServiceSummary[] }) {
   const [services] = useState<ServiceSummary[]>(initialServices)
@@ -117,12 +117,12 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
                           <div className="flex items-center gap-2">
                             <CalendarClock className="size-4 text-muted-foreground" />
                             <span className="font-semibold text-foreground">
-                              {format(new Date(service.next_service_date), "dd MMM yyyy", { locale: pl })}
+                              {formatDate(service.next_service_date, "dd MMM yyyy")}
                             </span>
                           </div>
                           {service.installation_date && (
                             <div className="text-xs text-muted-foreground mt-1">
-                              Montaż: {format(new Date(service.installation_date), "dd.MM.yyyy")}
+                              Montaż: {formatDate(service.installation_date, "dd.MM.yyyy")}
                             </div>
                           )}
                         </td>

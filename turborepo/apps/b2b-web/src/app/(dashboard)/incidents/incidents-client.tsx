@@ -12,8 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { format } from "date-fns"
-import { pl } from "date-fns/locale"
+import { formatDate } from "@/lib/format-date"
 
 export function IncidentsClient({ initialIncidents }: { initialIncidents: IncidentSummary[] }) {
   const [incidents] = useState<IncidentSummary[]>(initialIncidents)
@@ -137,7 +136,7 @@ export function IncidentsClient({ initialIncidents }: { initialIncidents: Incide
                     <div className="mt-4 space-y-2">
                       <div className="flex items-center gap-2 text-xs">
                         <Clock className="size-3.5 text-muted-foreground" />
-                        <span className="text-muted-foreground">Zgłoszono: <span className="font-medium text-foreground">{format(new Date(incident.created_at), "dd.MM.yyyy HH:mm")}</span></span>
+                        <span className="text-muted-foreground">Zgłoszono: <span className="font-medium text-foreground">{formatDate(incident.created_at, "dd.MM.yyyy HH:mm")}</span></span>
                       </div>
                       <div className="flex items-center gap-2 text-xs">
                         <Wrench className="size-3.5 text-muted-foreground" />
