@@ -10,4 +10,5 @@
 - [Dryf pola status w rejestrze wymagań](project_requirement_status_drift.md) — żadna bramka nie pilnuje `status`; obecność testu przy ID nie dowodzi każdego kryterium acceptance.
 - [Brak kont innych niż admin](project_no_nonadmin_accounts.md) — potwierdzone 2026-08-26; luki RBAC audytor/monter są prewencyjne, ale risk zostaje HIGH.
 - [Obiekty bazy poza migracjami](project_live_db_objects_outside_migrations.md) — available_combinations i buckety Storage żyją tylko na produkcji; SQL na nich wymaga osłony to_regclass.
+- [Nieuruchomione migracje bezpieczeństwa](project_unapplied_security_migrations.md) — trzy pliki w repo, zero z nich na żywej bazie; plik dowodzi intencji, nie stanu serwera.
 - [Ziarnistość ID wymagań](feedback_requirement_id_granularity.md) — jedno ID na encję obejmujące create i update, podział po encji, nie po operacji.
