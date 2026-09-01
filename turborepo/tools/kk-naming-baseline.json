@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T08:20:00.302Z",
+  "generatedAt": "2026-09-01T10:57:29.682Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 17,
@@ -78,10 +78,10 @@
     "apps/b2b-web/tests/leads-auditor-pool.test.ts::adr002-pl-columns": 1,
     "apps/b2b-web/tests/leads-auditor-pool.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/leads-auditor-scope.test.ts::adr002-pl-columns": 21,
-    "apps/b2b-web/tests/leads-auditor-scope.test.ts::adr002-pl-tables": 11,
+    "apps/b2b-web/tests/leads-auditor-scope.test.ts::adr002-pl-tables": 12,
     "apps/b2b-web/tests/leads-delete-admin-only.test.ts::adr002-pl-tables": 1,
-    "apps/b2b-web/tests/leads-detail-scope.test.ts::adr002-pl-columns": 12,
-    "apps/b2b-web/tests/leads-detail-scope.test.ts::adr002-pl-tables": 7,
+    "apps/b2b-web/tests/leads-detail-scope.test.ts::adr002-pl-columns": 13,
+    "apps/b2b-web/tests/leads-detail-scope.test.ts::adr002-pl-tables": 8,
     "apps/b2b-web/tests/leads-list-minimize.test.ts::adr002-pl-columns": 31,
     "apps/b2b-web/tests/leads-list-minimize.test.ts::adr002-pl-tables": 17,
     "apps/b2b-web/tests/leads-pool-minimize.test.ts::adr002-pl-columns": 23,
@@ -95,6 +95,7 @@
     "apps/b2b-web/tests/legal-document-consent.test.ts::adr002-pl-tables": 3,
     "apps/b2b-web/tests/logistics-authz-gates.test.ts::adr002-pl-tables": 11,
     "apps/b2b-web/tests/middleware-auditor-blocked.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/rls-deny-by-default-freeze.test.ts::adr002-pl-tables": 17,
     "apps/b2b-web/tests/services-authz-gates.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/storage-signed-urls.test.ts::adr002-pl-tables": 6,
     "apps/b2c-web/app/actions/getBestsellers.ts::adr002-pl-columns": 4,
@@ -143,5 +144,5 @@
     "supabase/migrations/20260828120000_kartoteki_storage_policies.sql::adr002-pl-tables": 3,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1735
+  "total": 1755
 }

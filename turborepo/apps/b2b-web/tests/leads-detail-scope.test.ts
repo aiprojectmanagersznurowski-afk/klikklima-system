@@ -155,6 +155,23 @@ describe('getLeadDetail() — bramka roli i filtr własności na /leads/[id] (SE
     expect((result as { success: true; lead: any }).lead?.id).toBe(LEAD_ID);
   });
 
+  // Punkt 14 (BATCH-MEDIUM-LOW-CLEANUP): tożsamość audytora dociągana wyłącznie
+  // po id i is_active — dowód nad dokładnym kształtem `select`, nie nad samym
+  // faktem wywołania (ten jest już pokryty testem powyżej dla audytora WŁASNEGO
+  // leada).
+  // @REQ: SEC-RLS-AUDITOR-SCOPE
+  it('audytor: audytorzy.findUnique() jest wołane z select: { id: true, is_active: true } dokładnie, nic więcej', async () => {
+    getCurrentActorRoleMock.mockResolvedValue('audytor');
+    mockSessionEmail(AUDITOR_EMAIL);
+    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID, is_active: true });
+    leadFindUniqueMock.mockResolvedValue(fullLeadRecord({ audytor_id: AUDITOR_ID }));
+
+    await getLeadDetail(LEAD_ID);
+
+    const callArgs = auditorFindUniqueMock.mock.calls[0]?.[0] ?? {};
+    expect(callArgs.select).toEqual({ id: true, is_active: true });
+  });
+
   // AC4: audytor próbujący otworzyć CUDZY lead — odmowa, zero danych w odpowiedzi.
   // @REQ: SEC-RLS-AUDITOR-SCOPE
   it('audytor: otwierający CUDZY lead (audytor_id inny niż własny id z sesji) dostaje odmowę bez żadnych danych leada', async () => {

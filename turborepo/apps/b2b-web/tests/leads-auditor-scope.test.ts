@@ -144,6 +144,24 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
     expect(identityArgs.where?.email).toBe(AUDITOR_EMAIL);
   });
 
+  // Punkt 14 (BATCH-MEDIUM-LOW-CLEANUP): dociąganie tożsamości audytora musi
+  // pobierać WYŁĄCZNIE id i is_active — żadnego innego pola (imię, telefon,
+  // certyfikaty...) z rekordu audytora, którego getLeads() nie potrzebuje do
+  // zbudowania where. Dowodem jest dokładny kształt `select` przekazany do
+  // mocka `findUnique`, nie sam fakt jego wywołania (ten jest już pokryty
+  // testem powyżej).
+  // @REQ: SEC-RLS-AUDITOR-SCOPE
+  it('audytor: audytorzy.findUnique() jest wołane z select: { id: true, is_active: true } dokładnie, nic więcej', async () => {
+    getCurrentActorRoleMock.mockResolvedValue('audytor');
+    mockSessionEmail(AUDITOR_EMAIL);
+    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID, is_active: true });
+
+    await getLeads();
+
+    const callArgs = auditorFindUniqueMock.mock.calls[0]?.[0] ?? {};
+    expect(callArgs.select).toEqual({ id: true, is_active: true });
+  });
+
   // @REQ: SEC-RLS-AUDITOR-SCOPE
   it('audytor: filtr własności MERGE-uje się z filtrem status/bucket istniejącym już w where, nie zastępuje go', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
