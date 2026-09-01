@@ -18,6 +18,11 @@ Plik migracji dowodzi INTENCJI, nie STANU SERWERA — a test statyczny zamrażaj
 jeszcze mniej, bo czyta plik z repozytorium, nie bazę. Dlatego każda nowa migracja bezpieczeństwa
 dostaje w nagłówku ramkę `NIE ZOSTAŁA URUCHOMIONA` plus sekcję ręcznej weryfikacji po uruchomieniu.
 
+Do listy dołączyła 2026-09-01 migracja NIEBEZPIECZEŃSTWOWA, ale objęta tą samą regułą:
+`20260901210000_logistics_sla_paused_at.sql` (kolumna `leady.logistics_sla_paused_at`, Faza A
+WO LOGISTICS-SHIPPING-EFFECTS). Wzorzec „nagłówek mówi NIE URUCHOMIONA" objął już każdą migrację,
+nie tylko te z domeny bezpieczeństwa.
+
 **How to apply:** nigdy nie raportuj takiej migracji jako „naprawione" ani nie przestawiaj wymagania
 na `DONE` na jej podstawie. W podsumowaniu zawsze osobna lista „wymaga zgody na żywe uruchomienie"
 z pełnymi ścieżkami. Przy `20260901120100` istnieje twardy warunek wstępny: po uruchomieniu sprawdzić
