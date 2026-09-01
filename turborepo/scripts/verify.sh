@@ -60,6 +60,12 @@ step "Kontrakt: wygenerowany TS jest ładowalny" node tools/kk-smoke.mjs
 # omijania. Pełny obraz długu na żądanie: node tools/kk-naming.mjs
 step "Kontrakt: nazewnictwo ADR-002 (przyrost ponad baseline)" node tools/kk-naming.mjs --check-baseline
 
+# Autoryzacja: każda mutująca Server Action w apps/b2b-web pyta o rolę i o can()
+# PRZED pierwszym zapytaniem Prisma — kolejność ma znaczenie (WO BATCH-MEDIUM-LOW-CLEANUP,
+# incydent assignCrewToLead). Ograniczenie: skanuje wyłącznie actions.ts pod
+# apps/b2b-web/src/app — mutacje w lib/ lub Route Handlerach nie są wykrywane.
+step "Autoryzacja: bramka can() przed mutacją Prismy" node tools/kk-authz-gate.mjs
+
 # ── Warstwa 1b: zgodność schematu z ŻYWĄ bazą ────────────────────────
 # Jedyna kontrola w całej bramce, która porównuje repozytorium z rzeczywistością, a nie
 # repozytorium samo ze sobą. Powstała 2026-08-21 po tym, jak przez jedną sesję cztery razy
