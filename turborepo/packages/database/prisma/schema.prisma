@@ -43,6 +43,17 @@ model klienci {
   telefon         String?
   created_at      DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
+  /// CRM-CLIENT-ANONYMIZE-RODO (WO CLIENT-ANONYMIZATION-RODO, Faza A).
+  /// NULL = rekord nietknięty; znacznik = moment anonimizacji (UTC).
+  /// Kolumna istnieje po to, żeby idempotencję dało się sprawdzić ograniczeniem, a nie porównaniem
+  /// treści: „imie_i_nazwisko = 'Klient usunięty'" jest tekstem, który może wpisać człowiek, więc
+  /// nie jest dowodem, że anonimizacja zaszła. Faza B używa jej jako bramki współbieżności
+  /// (updateMany z where: { id, anonymized_at: null } — zwrócone count rozstrzyga wyścig w bazie,
+  /// nie w JS; sprawdzenie findUnique + update byłoby tą samą klasą błędu co rezerwacja slotu w JS).
+  /// Nullable bez wartości domyślnej i BEZ planu późniejszego NOT NULL: większość klientów nigdy
+  /// nie będzie zanonimizowana, więc NULL to poprawny stan docelowy, a nie brak backfillu.
+  anonymized_at DateTime? @db.Timestamptz(6)
+
   adresy            adresy[]
   leady             leady[]
   serwisy           serwisy[]
@@ -180,52 +191,52 @@ model system_config {
 }
 
 model zespoly_monterskie {
-  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nazwa              String
   telefon_kontaktowy String?
   // @unique wymagane przez identyfikacje "czyj to rekord z sesji" (FLD-AVAILABILITY-SPLIT):
   // findUnique po e-mailu z sesji jest jedynym sposobem rozstrzygniecia, czy przekazane id
   // nalezy do wywolujacego. Pole zostaje NULLABLE - pracownik bez e-maila nie ma sciezki
   // samoobslugi i jest to swiadome ograniczenie, nie luka do naprawienia w tym WO.
-  email              String?  @unique
-  aktywny            Boolean  @default(true)
-  
+  email              String? @unique
+  aktywny            Boolean @default(true)
+
   // Nowe pola - Biznes
   nip                       String?
   koordynator_imie_nazwisko String?
-  
+
   // Nowe pola - Kwalifikacje
-  certyfikat_fgaz           String?
-  uprawnienia_sep           Boolean @default(false)
-  
+  certyfikat_fgaz String?
+  uprawnienia_sep Boolean @default(false)
+
   // Nowe pola - Logistyka
-  kod_pocztowy_bazowy       String?
-  promien_dzialania_km      Int?
-  liczba_brygad             Int @default(1)
-  posiada_wiertnice         Boolean @default(false)
-  
-  zdjecie_url               String?
-  fgaz_valid_until          DateTime? @db.Date
-  sep_valid_until           DateTime? @db.Date
+  kod_pocztowy_bazowy  String?
+  promien_dzialania_km Int?
+  liczba_brygad        Int     @default(1)
+  posiada_wiertnice    Boolean @default(false)
+
+  zdjecie_url      String?
+  fgaz_valid_until DateTime? @db.Date
+  sep_valid_until  DateTime? @db.Date
 
   // Nowe pola - Finanse
-  iban                      String?
+  iban String?
 
   // FLD-AVAILABILITY-SPLIT (D-A, 2026-08-21): status kadrowy ekipy — właściciel ADMINISTRATOR.
   // Symetrycznie do audytorzy.leave_status. Rozdzielenie musi objąć obie encje, mimo że dziś
   // żadna bramka autoryzacyjna nie czyta zespoly_monterskie.aktywny (R3 w WO) — brak konsumenta
   // po stronie ekip to luka do domknięcia, a nie powód, żeby zostawić ekipy bez tego pojęcia.
   // Pole `aktywny` powyżej zostaje pod tą nazwą: dług KK-NAMING-BASELINE jest zamrożony.
-  leave_status              LeaveStatus @default(ACTIVE)
+  leave_status LeaveStatus @default(ACTIVE)
 
   // FLD-AVAILABILITY-SPLIT: deklaracja dostępności ekipy — patrz komentarz przy audytorzy.
-  availability_declaration  AvailabilityDeclaration?
+  availability_declaration AvailabilityDeclaration?
 
   // FLD-CONSENT-DOCS (2026-08-21): akceptacje dokumentów prawnych, symetrycznie do audytorów.
   // onDelete: Restrict — patrz komentarz przy audytorzy.consents.
-  consents                  EmployeeConsent[]
+  consents EmployeeConsent[]
 
-  created_at         DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  created_at DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
   instalacje        instalacje[]
   serwisy           serwisy[]
@@ -233,14 +244,14 @@ model zespoly_monterskie {
 }
 
 model instalacje {
-  id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  lead_id          String              @db.Uuid
-  lead             leady               @relation(fields: [lead_id], references: [id], onDelete: Cascade)
-  zespol_id        String?             @db.Uuid
-  zespol           zespoly_monterskie? @relation(fields: [zespol_id], references: [id], onDelete: SetNull)
-  data_planowana   DateTime?           @db.Timestamptz(6)
-  data_zakonczenia DateTime?           @db.Timestamptz(6)
-  protokol_url     String?
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  lead_id           String              @db.Uuid
+  lead              leady               @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  zespol_id         String?             @db.Uuid
+  zespol            zespoly_monterskie? @relation(fields: [zespol_id], references: [id], onDelete: SetNull)
+  data_planowana    DateTime?           @db.Timestamptz(6)
+  data_zakonczenia  DateTime?           @db.Timestamptz(6)
+  protokol_url      String?
   next_service_date DateTime?           @db.Date
   status            InstallationStatus  @default(PLANNED)
   created_at        DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
@@ -372,64 +383,64 @@ enum LeaveStatus {
 model AvailabilityDeclaration {
   // Nazwy pól wg ADR-002 (camelCase + @map), bo to model NOWY — nie dziedziczy zamrożonego
   // długu nazewniczego modeli polskich. Kolumny w bazie są snake_case tak samo jak wszędzie.
-  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  auditorId   String?             @unique @map("auditor_id") @db.Uuid
-  auditor     audytorzy?          @relation(fields: [auditorId], references: [id], onDelete: Cascade)
+  auditorId String?    @unique @map("auditor_id") @db.Uuid
+  auditor   audytorzy? @relation(fields: [auditorId], references: [id], onDelete: Cascade)
 
-  crewId      String?             @unique @map("crew_id") @db.Uuid
-  crew        zespoly_monterskie? @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  crewId String?             @unique @map("crew_id") @db.Uuid
+  crew   zespoly_monterskie? @relation(fields: [crewId], references: [id], onDelete: Cascade)
 
   /// Deklaracja pracownika: „jestem dostępny" / „jestem teraz niedostępny".
   /// Boolean, a nie enum, świadomie: dwie wartości to pełny słownik tego pojęcia, a każda trzecia
   /// wartość, jaka przyszłaby komuś do głowy (URLOP, ZWOLNIENIE), należy do leave_status albo do
   /// absences. Typ domyka słownik tak samo jak enum (AC6).
-  isAvailable Boolean             @default(true) @map("is_available")
+  isAvailable Boolean @default(true) @map("is_available")
 
-  createdAt   DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
 
   /// Moment ostatniej zmiany deklaracji. timestamptz, bo „niedostępny od teraz" bez strefy
   /// czasowej to ten sam błąd co porównywanie certyfikatów po dacie kalendarzowej.
   /// To znacznik techniczny — nie wyznacza granicy doby roboczej i nie wolno go do tego użyć.
-  updatedAt   DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("availability_declarations")
 }
 
 model audytorzy {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   imie_i_nazwisko String
   telefon         String?
   // @unique wymagane przez identyfikacje "czyj to rekord z sesji" (FLD-AVAILABILITY-SPLIT):
   // findUnique po e-mailu z sesji jest jedynym sposobem rozstrzygniecia, czy przekazane id
   // nalezy do wywolujacego. Pole zostaje NULLABLE - pracownik bez e-maila nie ma sciezki
   // samoobslugi i jest to swiadome ograniczenie, nie luka do naprawienia w tym WO.
-  email           String?  @unique
+  email           String? @unique
   nazwa_firmy     String?
   nip             String?
   adres           String?
   zdjecie_url     String?
   certyfikat_fgaz String?
-  
+
   // Nowe pola - Kwalifikacje
   doswiadczenie_hvac_lata Int?
-  uprawnienia_sep         Boolean @default(false)
+  uprawnienia_sep         Boolean  @default(false)
   preferowane_marki       String[]
-  
+
   // Nowe pola - Logistyka
-  kod_pocztowy_bazowy     String?
-  max_promien_dojazdu_km  Int?
-  
-  fgaz_valid_until        DateTime? @db.Date
-  sep_valid_until         DateTime? @db.Date
+  kod_pocztowy_bazowy    String?
+  max_promien_dojazdu_km Int?
+
+  fgaz_valid_until DateTime? @db.Date
+  sep_valid_until  DateTime? @db.Date
 
   // Nowe pola - Finanse
-  iban                    String?
+  iban String?
 
   // Z2 (D1): blokada konta audytora. false = brak dostępu do Field App i brak w puli
   // wyboru przy przypisywaniu. Odwracalna (AC1.7). Nazwa angielska wg ADR-002,
   // mimo polskiej nazwy tabeli — dług KK-NAMING-BASELINE jest zamrożony.
-  is_active               Boolean  @default(true)
+  is_active Boolean @default(true)
 
   // FLD-AVAILABILITY-SPLIT (D-A, 2026-08-21): status kadrowy — właściciel ADMINISTRATOR.
   // To NIE jest deklaracja pracownika: urlop i zwolnienie wpisuje administrator, a pracownik
@@ -437,7 +448,7 @@ model audytorzy {
   // Świadomie NIE nazywa się availability_status: „dostępność" należy do pracownika i mieszka
   // w osobnej tabeli. Docelowo (ADR-012, faza 4) urlop przenosi się do datowanej tabeli absences;
   // ta kolumna jest nośnikiem zgrubnym do tego czasu.
-  leave_status            LeaveStatus @default(ACTIVE)
+  leave_status LeaveStatus @default(ACTIVE)
 
   // FLD-AVAILABILITY-SPLIT: deklaracja dostępności pracownika mieszka w OSOBNEJ tabeli
   // (availability_declarations), a nie w kolumnie tutaj. To jedyny układ, w którym prawo zapisu
@@ -452,16 +463,16 @@ model audytorzy {
   // tylko przy wiszących leadach i tylko w Server Action. Ścieżki „usuń mimo wszystko" nie ma
   // celowo — analogiczna do SEC-RODO-DELETE anonimizacja pracownika jest luką zarejestrowaną
   // w FLD-CONSENT-ACCEPT, nie czymś, co ta migracja dopisuje po cichu.
-  consents        EmployeeConsent[]
+  consents EmployeeConsent[]
 
   // Z6: relacja poniżej zostaje na onDelete: SetNull — świadomie, NIE zmieniać na Restrict.
   // Blokada usunięcia audytora dotyczy WYŁĄCZNIE rekordów w statusach AWAITING_AUDIT /
   // AUDIT_COMPLETED i żyje w Server Action; baza nie rozróżnia statusu, więc Restrict
   // zablokowałby także rekordy zimne i zarchiwizowane, wbrew D1.
 
-  created_at      DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  created_at DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
-  leady           leady[]
+  leady leady[]
 }
 
 model usterki_incidents {
@@ -519,31 +530,31 @@ enum LegalDocumentKind {
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model LegalDocumentVersion {
-  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   documentKind LegalDocumentKind @map("document_kind")
 
   /// Jawny numer wersji, rosnący w obrębie rodzaju dokumentu — to jest „wersja" zapisywana przy
   /// akceptacji w sensie dokumentowym, a NIE data modyfikacji pliku (kryterium FLD-LEGAL-DOC-VERSION).
   /// Technicznym wskazaniem w rejestrze akceptacji pozostaje klucz obcy do id (AC3).
-  versionNo    Int               @map("version_no")
+  versionNo Int @map("version_no")
 
-  content      String
+  content String
 
   /// NULL = szkic. Szkic wolno edytować i usunąć; publikacja zamraża treść.
-  publishedAt  DateTime?         @map("published_at") @db.Timestamptz(6)
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(6)
 
   /// „Obowiązująca w tej chwili". Częściowy indeks unikalny w bazie
   /// (legal_document_versions_current_per_kind_key, WHERE is_current) dopuszcza DOKŁADNIE JEDNĄ
   /// taką wersję na rodzaj dokumentu — AC2 wymuszone przez bazę, nie przez sprawdzenie w kodzie,
   /// bo „sprawdź, czy jest inna obowiązująca, potem ustaw" przegrywa wyścig dwóch publikacji.
   /// Prisma nie potrafi wyrazić indeksu częściowego: ograniczenie żyje wyłącznie w SQL.
-  isCurrent    Boolean           @default(false) @map("is_current")
+  isCurrent Boolean @default(false) @map("is_current")
 
-  createdAt    DateTime          @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime          @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  consents     EmployeeConsent[]
+  consents EmployeeConsent[]
 
   @@unique([documentKind, versionNo], map: "legal_document_versions_document_kind_version_no_key")
   @@map("legal_document_versions")
@@ -570,7 +581,7 @@ model LegalDocumentVersion {
 ///
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model EmployeeConsent {
-  id         String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   /// AC9 / R2: onDelete Restrict, NIE Cascade i NIE SetNull. Usunięcie konta pracownika nie może
   /// skasować dowodu, że zgoda była udzielona w chwili wykonywania pracy, a wpis osierocony
@@ -578,11 +589,11 @@ model EmployeeConsent {
   /// BLOCK_UNTIL_REASSIGNED, którą rbac.contract.mjs deklaruje dla `auditors` i `crews` — dotąd
   /// żyła wyłącznie w Server Action. Różnica wobec AvailabilityDeclaration (tam Cascade) jest
   /// zamierzona: deklaracja bez pracownika nie znaczy nic, akceptacja bez pracownika to skasowany dowód.
-  auditorId  String?             @map("auditor_id") @db.Uuid
-  auditor    audytorzy?          @relation(fields: [auditorId], references: [id], onDelete: Restrict)
+  auditorId String?    @map("auditor_id") @db.Uuid
+  auditor   audytorzy? @relation(fields: [auditorId], references: [id], onDelete: Restrict)
 
-  crewId     String?             @map("crew_id") @db.Uuid
-  crew       zespoly_monterskie? @relation(fields: [crewId], references: [id], onDelete: Restrict)
+  crewId String?             @map("crew_id") @db.Uuid
+  crew   zespoly_monterskie? @relation(fields: [crewId], references: [id], onDelete: Restrict)
 
   /// AC3: wskazanie wersji kluczem obcym, nie tekstem ani numerem — wskazanie nieistniejącej wersji
   /// odrzuca baza. AC6: Restrict — wersji, do której odwołuje się jakakolwiek akceptacja, nie da się
@@ -593,12 +604,12 @@ model EmployeeConsent {
   /// w trakcie akceptowania starej": spóźniona akceptacja odbija się od bazy zamiast po cichu zapisać
   /// treść, której pracownik nie widział. Server Action MUSI więc przyjmować versionId jawnie
   /// z frontendu, a nie doklejać „najnowszą wersję" po stronie serwera.
-  versionId  String              @map("version_id") @db.Uuid
-  version    LegalDocumentVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  versionId String               @map("version_id") @db.Uuid
+  version   LegalDocumentVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
 
   /// timestamptz, nie date: „zaakceptował przed przypisaniem" liczy się na znacznikach, nie na
   /// datach kalendarzowych. Nigdy nie zmieniany (append-only).
-  acceptedAt DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @map("accepted_at") @db.Timestamptz(6)
+  acceptedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("accepted_at") @db.Timestamptz(6)
 
   /// Brak updatedAt — nie ma czego aktualizować w tabeli, której nikt nie aktualizuje.
   ///
@@ -610,4 +621,68 @@ model EmployeeConsent {
   @@unique([crewId, versionId], map: "employee_consents_crew_id_version_id_key")
   @@index([versionId], map: "employee_consents_version_id_idx")
   @@map("employee_consents")
+}
+
+/// SEC-AUDIT-LOG-APPEND-ONLY / CRM-CLIENT-ANONYMIZE-RODO (WO CLIENT-ANONYMIZATION-RODO, Faza A).
+///
+/// Rejestr operacji wrażliwych wymaganych przez AUDIT_REQUIREMENTS.mustLog. Tabela powstaje
+/// UNIWERSALNA (6 operacji × 13 zasobów), ale w tej fazie ma dokładnie jednego producenta:
+/// anonimizację klienta (Faza B). Podpięcie pozostałych pięciu operacji jest świadomie poza zakresem.
+///
+/// APPEND-ONLY egzekwowane w TRZECH warstwach, bo żadna pojedyncza nie wystarcza:
+///   1. MATRIX w rbac.contract.mjs (update: [], delete: [] — nikt, łącznie z adminem);
+///   2. RLS: brak jakiejkolwiek polityki UPDATE/DELETE (odmowa domyślna, nie polityka zakazująca);
+///   3. wyzwalacz audit_log_append_only_trg — JEDYNA warstwa działająca przeciw zapisowi Prismą,
+///      która omija RLS (pułapka 1 w CLAUDE.md). Wzorzec skopiowany z employee_consents_append_only_trg.
+///
+/// Bez updated_at — nie ma czego aktualizować w tabeli, której nikt nie aktualizuje.
+/// Retencja (AUDIT_REQUIREMENTS.retentionDays = 1825) NIE jest tu realizowana: purge stoi
+/// w sprzeczności z wyzwalaczem i wymaga osobnej decyzji człowieka (osobne WO).
+///
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model AuditLog {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// „Kto". TEXT, nie klucz obcy do AuthorizedUser — ta sama logika co onDelete: Restrict
+  /// w EmployeeConsent, tylko mocniejsza: usunięcie konta nie może skasować ANI osierocić dowodu.
+  /// Wartość pochodzi z auth.getUser().email, nie z getCurrentActorRole() (ta zwraca samą rolę).
+  /// NOT NULL jest tu bramką fail-closed: zalogowany bez e-maila nie może wykonać operacji.
+  actorEmail String @map("actor_email")
+
+  /// Rola W CHWILI OPERACJI, utrwalona jako tekst. Rola konta może się później zmienić albo konto
+  /// może zniknąć — wpis ma dokumentować stan z momentu zdarzenia, nie stan bieżący.
+  actorRole String @map("actor_role")
+
+  /// CHECK w bazie ogranicza do 6 wartości AUDIT_REQUIREMENTS.mustLog.
+  /// To oś OPERACJI AUDYTOWYCH, nie zdolności RBAC: anonimizacja klienta zapisuje się jako
+  /// operation = 'anonymize', podczas gdy bramka pyta can(role, 'clients', 'delete').
+  /// Te dwie osie się nie pokrywają i nie muszą.
+  operation String
+
+  /// CHECK w bazie ogranicza do 13 wartości RESOURCES z rbac.contract.mjs.
+  resource String
+
+  /// „Na jakim rekordzie". TEXT, nie UUID i bez klucza obcego — tabela jest wspólna dla wszystkich
+  /// zasobów, a AuthorizedUser.id to cuid(), nie uuid. Brak FK jest świadomy: FK do klienci byłby
+  /// złamany przy każdej innej wartości resource, a RESTRICT zablokowałby kiedyś tę samą operację
+  /// delete, którą ten rejestr ma dokumentować. Cena: wpis może wskazywać nieistniejący rekord.
+  recordId String @map("record_id")
+
+  /// AUDIT_REQUIREMENTS.requiresJustification: true. CHECK length(btrim(...)) >= 10 w bazie —
+  /// pusty string i same białe znaki nie są uzasadnieniem, a walidacja Zod w Server Action
+  /// jest wygodą dla użytkownika, nie gwarancją.
+  justification String
+
+  /// CHECK w bazie ogranicza do 5 wartości AUDIT_REQUIREMENTS.legalBases.
+  legalBasis String @map("legal_basis")
+
+  /// „Kiedy". UTC, spójnie z resztą schematu. Nigdy nie zmieniane (wyzwalacz).
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+
+  /// „Co się działo z tym rekordem" — główne zapytanie rejestru (np. AC3: liczba wpisów
+  /// dla record_id po N wywołaniach wynosi 1). Drugi indeks obsługuje przegląd chronologiczny
+  /// i przyszłą retencję.
+  @@index([resource, recordId], map: "audit_log_resource_record_id_idx")
+  @@index([createdAt], map: "audit_log_created_at_idx")
+  @@map("audit_log")
 }
