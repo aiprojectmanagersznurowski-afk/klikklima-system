@@ -3,11 +3,12 @@
 import React, { useState, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Search, MoreHorizontal, User, Mail, Phone, Calendar, ArrowRight, ShieldAlert, FileText, Wrench, X } from "lucide-react"
+import { Search, MoreHorizontal, User, Mail, Phone, Calendar, ArrowRight, ShieldAlert, FileText, Wrench, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CustomerSummary, anonymizeClientAction } from "./actions"
 import { AUDIT_REQUIREMENTS, type Role } from "@klikklima/contracts"
 import { isAnonymizeMenuItemVisible } from "./menu-visibility"
+import { getPaginationState } from "./pagination-state"
 import { anonymizeClientSchema, ANONYMIZED_NAME_PLACEHOLDER, type AnonymizeClientFormValues } from "./anonymize-client-schema"
 import {
   DropdownMenu,
@@ -18,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { formatDate } from "@/lib/format-date"
 
 function AnonymizeClientModal({
@@ -151,11 +153,27 @@ function AnonymizeClientModal({
   )
 }
 
-export function CustomersClient({ initialCustomers, actorRole }: { initialCustomers: CustomerSummary[]; actorRole: Role | null }) {
+export function CustomersClient({
+  initialCustomers,
+  actorRole,
+  totalPages,
+  currentPage,
+}: {
+  initialCustomers: CustomerSummary[]
+  actorRole: Role | null
+  totalPages: number
+  currentPage: number
+}) {
+  const router = useRouter()
   const [customers, setCustomers] = useState<CustomerSummary[]>(initialCustomers)
   const [searchQuery, setSearchQuery] = useState("")
   const [isPending, startTransition] = useTransition()
   const [anonymizeTarget, setAnonymizeTarget] = useState<CustomerSummary | null>(null)
+
+  const { showPagination, canGoPrev, canGoNext, prevHref, nextHref } = getPaginationState(
+    currentPage,
+    totalPages
+  )
 
   const filtered = customers.filter(c => {
     if (searchQuery) {
@@ -311,6 +329,30 @@ export function CustomersClient({ initialCustomers, actorRole }: { initialCustom
               </tbody>
             </table>
           </div>
+
+          {showPagination && (
+            <div className="flex items-center justify-center px-6 py-4 border-t border-border gap-2 bg-card">
+              <button
+                disabled={!canGoPrev || isPending}
+                onClick={() => startTransition(() => router.push(prevHref))}
+                className="p-1.5 rounded-md text-muted-foreground hover:bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <span className="text-xs text-muted-foreground font-medium">
+                Strona {currentPage} z {totalPages}
+              </span>
+
+              <button
+                disabled={!canGoNext || isPending}
+                onClick={() => startTransition(() => router.push(nextHref))}
+                className="p-1.5 rounded-md text-muted-foreground hover:bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
