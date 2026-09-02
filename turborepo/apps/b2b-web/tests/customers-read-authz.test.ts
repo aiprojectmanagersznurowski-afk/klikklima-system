@@ -54,6 +54,7 @@ beforeEach(() => {
   getCurrentActorRoleMock.mockReset();
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getCustomers() - bramka roli PRZED zapytaniem (clients.read = admin/dyspozytor, SEC-READ-GATES AC1)', () => {
   // Kontrola pozytywna kontraktu: dowód, że macierz faktycznie wyklucza audytor/monter
   // z clients.read — bez tego cała bateria mogłaby przechodzić dla bramki sprawdzającej

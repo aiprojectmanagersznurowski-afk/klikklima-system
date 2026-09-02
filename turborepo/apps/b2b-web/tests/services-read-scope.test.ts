@@ -82,6 +82,7 @@ beforeEach(() => {
   installationFindManyMock.mockResolvedValue([]);
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getUpcomingServices() - kontrola kontraktu RBAC (services.read)', () => {
   it('macierz przyznaje: admin/dyspozytor = yes, monter = own, audytor = no', () => {
     expect(FULL_ACCESS_ROLES.sort()).toEqual(['admin', 'dyspozytor'].sort());
@@ -90,6 +91,7 @@ describe('getUpcomingServices() - kontrola kontraktu RBAC (services.read)', () =
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getUpcomingServices() - AC6: audytor odrzucony, admin/dyspozytor bez zawężenia', () => {
   it.each(NO_ACCESS_ROLES)(
     'rola %s (no) jest odrzucona, zero wywołań OBU zapytań (serwisy + instalacje), wynik []',
@@ -142,6 +144,7 @@ describe('getUpcomingServices() - AC6: audytor odrzucony, admin/dyspozytor bez z
   );
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getUpcomingServices() - AC6/D1: monter:own - OBA zapytania dostają filtr ekipy', () => {
   beforeEach(() => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
@@ -170,6 +173,7 @@ describe('getUpcomingServices() - AC6/D1: monter:own - OBA zapytania dostają fi
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getUpcomingServices() - AC8: fail-closed montera (5 wariantów), zero wywołań OBU zapytań', () => {
   beforeEach(() => {
     getCurrentActorRoleMock.mockResolvedValue('monter');

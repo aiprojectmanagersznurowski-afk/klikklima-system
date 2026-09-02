@@ -62,6 +62,7 @@ beforeEach(() => {
   incidentFindManyMock.mockResolvedValue([]);
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getIncidents() - kontrola kontraktu RBAC (incidents.read)', () => {
   it('macierz przyznaje: admin/dyspozytor = yes, monter = own, audytor = no', () => {
     expect(FULL_ACCESS_ROLES.sort()).toEqual(['admin', 'dyspozytor'].sort());
@@ -70,6 +71,7 @@ describe('getIncidents() - kontrola kontraktu RBAC (incidents.read)', () => {
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getIncidents() - AC7: audytor odrzucony, admin/dyspozytor bez zawężenia', () => {
   it.each(NO_ACCESS_ROLES)(
     'rola %s (no) jest odrzucona, zero wywołań prisma.usterki_incidents.findMany, wynik []',
@@ -116,6 +118,7 @@ describe('getIncidents() - AC7: audytor odrzucony, admin/dyspozytor bez zawęże
   );
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getIncidents() - AC7/D1: monter:own - where wg dokładnego kształtu D1 (OR jawne/dziedziczone)', () => {
   it('prisma.usterki_incidents.findMany dostaje where OR (zespol_id własny LUB zespol_id null + instalacja własna)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
@@ -133,6 +136,7 @@ describe('getIncidents() - AC7/D1: monter:own - where wg dokładnego kształtu D
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getIncidents() - AC8: fail-closed montera (5 wariantów), zero wywołań findMany', () => {
   beforeEach(() => {
     getCurrentActorRoleMock.mockResolvedValue('monter');

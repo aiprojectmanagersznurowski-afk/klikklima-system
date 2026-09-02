@@ -205,6 +205,7 @@ const DENIED_YES_ONLY = (resource: string) => ROLES.filter((r) => can(r, resourc
 const NO_ACCESS = (resource: string) => ROLES.filter((r) => can(r, resource, 'read') === 'no');
 const RENDERABLE = (resource: string) => ROLES.filter((r) => can(r, resource, 'read') !== 'no');
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('CustomersPage - AC9 (clients.read = admin/dyspozytor)', () => {
   it.each(DENIED_YES_ONLY('clients'))('rola %s odrzucona przez notFound(), getCustomers() NIE wołane', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
@@ -248,6 +249,7 @@ describe('CustomersPage - AC9 (clients.read = admin/dyspozytor)', () => {
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('CustomerDetailPage (/customers/[id]) - BLOCKER SEC-READ-GATES: bramka roli PRZED odczytem PII', () => {
   it.each(DENIED_YES_ONLY('clients'))(
     'rola %s odrzucona przez notFound(), prisma.klienci.findUnique NIE wołane (PII nie wycieka)',
@@ -316,6 +318,7 @@ describe('CustomerDetailPage (/customers/[id]) - BLOCKER SEC-READ-GATES: bramka 
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('CrewsPage - AC9 (crews.read = admin/dyspozytor)', () => {
   it.each(DENIED_YES_ONLY('crews'))('rola %s odrzucona przez notFound(), getCrews() NIE wołane', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
@@ -349,6 +352,7 @@ describe('CrewsPage - AC9 (crews.read = admin/dyspozytor)', () => {
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('AuditorsPage - AC9 (auditors.read = admin/dyspozytor)', () => {
   it.each(DENIED_YES_ONLY('auditors'))('rola %s odrzucona przez notFound(), getAuditors() NIE wołane', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
@@ -382,6 +386,7 @@ describe('AuditorsPage - AC9 (auditors.read = admin/dyspozytor)', () => {
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('InstallationsPage - AC10 (installations.read: yes=admin/dyspozytor, own=monter, no=audytor)', () => {
   it.each(NO_ACCESS('installations'))('rola %s (no) odrzucona przez notFound(), getInstallations() NIE wołane', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
@@ -425,6 +430,7 @@ describe('InstallationsPage - AC10 (installations.read: yes=admin/dyspozytor, ow
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('ServicesPage - AC10 (services.read: yes=admin/dyspozytor, own=monter, no=audytor)', () => {
   it.each(NO_ACCESS('services'))('rola %s (no) odrzucona przez notFound(), getUpcomingServices() NIE wołane', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
@@ -458,6 +464,7 @@ describe('ServicesPage - AC10 (services.read: yes=admin/dyspozytor, own=monter, 
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('IncidentsPage - AC10 (incidents.read: yes=admin/dyspozytor, own=monter, no=audytor)', () => {
   it.each(NO_ACCESS('incidents'))('rola %s (no) odrzucona przez notFound(), getIncidents() NIE wołane', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);

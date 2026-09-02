@@ -58,6 +58,7 @@ beforeEach(() => {
   getCurrentActorRoleMock.mockReset();
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getCrews() (crews/actions.ts) - bramka roli PRZED zapytaniem (crews.read = admin/dyspozytor, AC2)', () => {
   it('kontrola pozytywna kontraktu - macierz RBAC przyznaje crews.read wyłącznie admin/dyspozytor', () => {
     expect(ALLOWED_ROLES.sort()).toEqual(['admin', 'dyspozytor'].sort());
@@ -105,6 +106,7 @@ describe('getCrews() (crews/actions.ts) - bramka roli PRZED zapytaniem (crews.re
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getCrews(installationDate) (leads/actions.ts) - bramka roli PRZED zapytaniem (crews.read = admin/dyspozytor, AC3)', () => {
   it.each(DENIED_ROLES)(
     'rola %s jest odrzucona PRZED prisma.zespoly_monterskie.findMany, wynik to [] (AC3)',

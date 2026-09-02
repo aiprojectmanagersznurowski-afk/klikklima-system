@@ -67,6 +67,7 @@ beforeEach(() => {
   getCurrentUserMock.mockReset();
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getInstallations() - kontrola kontraktu RBAC (installations.read)', () => {
   it('macierz przyznaje: admin/dyspozytor = yes, monter = own, audytor = no', () => {
     expect(FULL_ACCESS_ROLES.sort()).toEqual(['admin', 'dyspozytor'].sort());
@@ -75,6 +76,7 @@ describe('getInstallations() - kontrola kontraktu RBAC (installations.read)', ()
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getInstallations() - AC5: admin/dyspozytor widzą wszystko, audytor odrzucony', () => {
   it.each(NO_ACCESS_ROLES)('rola %s (no) jest odrzucona, zero wywołań prisma.instalacje.findMany, wynik []', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
@@ -118,6 +120,7 @@ describe('getInstallations() - AC5: admin/dyspozytor widzą wszystko, audytor od
   );
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getInstallations() - AC5/D1: monter:own - zawężenie do własnej ekipy', () => {
   it('monter z rekordem w zespoly_monterskie - findMany wołane z where.zespol_id === id własnej ekipy', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
@@ -136,6 +139,7 @@ describe('getInstallations() - AC5/D1: monter:own - zawężenie do własnej ekip
   });
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getInstallations() - AC8: fail-closed montera (5 wariantów), zero wywołań instalacje.findMany', () => {
   it('brak sesji (getCurrentUser zwraca user: null) - odmowa, findMany nie wołane', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');

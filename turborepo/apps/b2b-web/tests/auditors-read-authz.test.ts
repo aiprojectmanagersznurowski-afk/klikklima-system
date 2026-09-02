@@ -44,6 +44,7 @@ beforeEach(() => {
   getCurrentActorRoleMock.mockReset();
 });
 
+// @REQ: SEC-AUTHZ-B2B-READS
 describe('getAuditors() (auditors/actions.ts) - bramka roli PRZED zapytaniem (auditors.read = admin/dyspozytor, AC4)', () => {
   it('kontrola pozytywna kontraktu - macierz RBAC przyznaje auditors.read wyłącznie admin/dyspozytor', () => {
     expect(ALLOWED_ROLES.sort()).toEqual(['admin', 'dyspozytor'].sort());
