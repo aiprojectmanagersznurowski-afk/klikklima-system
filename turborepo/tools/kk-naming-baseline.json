@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T21:06:33.658Z",
+  "generatedAt": "2026-09-02T06:21:56.585Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 17,
@@ -146,7 +146,8 @@
     "supabase/migrations/20260824185845_security_enable_rls_baseline.sql::adr002-pl-tables": 21,
     "supabase/migrations/20260828120000_kartoteki_storage_policies.sql::adr002-pl-tables": 3,
     "supabase/migrations/20260901210000_logistics_sla_paused_at.sql::adr002-pl-tables": 2,
+    "supabase/migrations/20260901220000_rodo_audit_log_and_client_anonymization.sql::adr002-pl-tables": 2,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1791
+  "total": 1793
 }

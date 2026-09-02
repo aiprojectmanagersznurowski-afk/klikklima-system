@@ -1,31 +1,36 @@
 ---
 name: unapplied-security-migrations
-description: Trzy migracje bezpieczeństwa leżą w repo NIEURUCHOMIONE na żywej bazie — obecność pliku bywała mylona z faktem zastosowania
+description: Wzorzec pracy dla migracji, których obecność w repo nie dowodzi zastosowania — historia pięciu migracji tej sesji, wszystkie już zweryfikowane jako URUCHOMIONE na żywo (stan na 2026-09-02)
 metadata:
   type: project
 ---
 
-Stan na 2026-09-01. W `supabase/migrations/` leżą migracje bezpieczeństwa, których NIKT nie uruchomił
-na bazie produkcyjnej — każda czeka na osobną, jawną zgodę człowieka:
+**AKTUALIZACJA 2026-09-02: wszystkie pięć migracji z tej notatki zostało uruchomionych na żywej
+bazie i zweryfikowanych bezpośrednim zapytaniem (nie tylko lekturą pliku).** Ta notatka opisuje
+teraz WZORZEC do stosowania przy KOLEJNYCH migracjach bezpieczeństwa/schematu, nie aktualny stan
+zaległości — nie zakładaj, że którakolwiek z wymienionych niżej wciąż czeka.
 
-- `20260824185845_security_enable_rls_baseline.sql` — włączenie RLS (patrz [[rls-disabled-incident]])
-- `20260901120000_security_revoke_authorized_user_writes.sql` — REVOKE zapisów na `public."AuthorizedUser"`
-  od `anon`/`authenticated`; SELECT ZOSTAJE, bo czytają go polityki RLS Storage z `20260828120000`
-- `20260901120100_security_knowledge_base_buckets_private.sql` — `bazawiedzy`/`urzadzenia` → `public = false`
+Historia (wszystkie potwierdzone jako zastosowane):
 
-**Why:** obecność pierwszej z nich została raz odczytana jako dowód, że „RLS jest włączone". Nie było.
-Plik migracji dowodzi INTENCJI, nie STANU SERWERA — a test statyczny zamrażający treść SQL dowodzi
-jeszcze mniej, bo czyta plik z repozytorium, nie bazę. Dlatego każda nowa migracja bezpieczeństwa
-dostaje w nagłówku ramkę `NIE ZOSTAŁA URUCHOMIONA` plus sekcję ręcznej weryfikacji po uruchomieniu.
+- `20260824185845_security_enable_rls_baseline.sql` — RLS włączone (potwierdzone `pg_class.relrowsecurity`)
+- `20260901120000_security_revoke_authorized_user_writes.sql` — REVOKE zastosowany (potwierdzone `information_schema.role_table_grants`)
+- `20260901120100_security_knowledge_base_buckets_private.sql` — buckety `public=false` (potwierdzone `storage.buckets`, curl na trzech podpisanych URL-ach z `apps/b2c-web/lib/articles.ts` → 200)
+- `20260901210000_logistics_sla_paused_at.sql` — kolumna `leady.logistics_sla_paused_at` istnieje (potwierdzone `information_schema.columns`)
+- `20260901220000_rodo_audit_log_and_client_anonymization.sql` — tabela `audit_log` istnieje z poprawnymi CHECK-ami, wyzwalaczem `audit_log_append_only_trg` (zweryfikowany transakcją z wymuszonym rollbackiem — UPDATE poprawnie odrzucony, zero wiersza testowego pozostałego), RLS włączone, `klienci.anonymized_at` istnieje
 
-Do listy dołączyła 2026-09-01 migracja NIEBEZPIECZEŃSTWOWA, ale objęta tą samą regułą:
-`20260901210000_logistics_sla_paused_at.sql` (kolumna `leady.logistics_sla_paused_at`, Faza A
-WO LOGISTICS-SHIPPING-EFFECTS). Wzorzec „nagłówek mówi NIE URUCHOMIONA" objął już każdą migrację,
-nie tylko te z domeny bezpieczeństwa.
+**Why:** obecność pliku migracji w repo dowodzi INTENCJI, nie STANU SERWERA. Raz pomylono te dwie
+rzeczy (RLS baseline), stąd wymóg jawnej ramki `NIE ZOSTAŁA URUCHOMIONA` w nagłówku każdej nowej
+migracji dopóki człowiek nie da zgody, i zawsze osobnej listy w podsumowaniu tury: „wymaga zgody na
+żywe uruchomienie" z pełnymi ścieżkami — nigdy nie raportuj migracji jako „naprawione" na podstawie
+samego commita.
 
-**How to apply:** nigdy nie raportuj takiej migracji jako „naprawione" ani nie przestawiaj wymagania
-na `DONE` na jej podstawie. W podsumowaniu zawsze osobna lista „wymaga zgody na żywe uruchomienie"
-z pełnymi ścieżkami. Przy `20260901120100` istnieje twardy warunek wstępny: po uruchomieniu sprawdzić
-curl-em trzy długoterminowe podpisane URL-e do `bazawiedzy` wpisane na sztywno w
-`apps/b2c-web/lib/articles.ts` (linie 16, 40, 72) — B2C czyta ten bucket przez nie, a nie publicznie.
+**How to apply przy kolejnej migracji:** (1) nagłówek z ramką ostrzegawczą + sekcja weryfikacji
+manualnej na dole pliku; (2) po uzyskaniu zgody człowieka — uruchomienie przez skrypt z rozbiorem
+instrukcji SQL (dollar-quoting, komentarze, cudzysłowy), zawsze `--dry-run` najpierw; (3) weryfikacja
+bezpośrednim zapytaniem do bazy, NIE tylko `exit 0` skryptu; (4) dla append-only tabel — test triggera
+przez `$transaction` z wymuszonym rzuceniem błędu na końcu (rollback), nigdy przez INSERT+DELETE
+(DELETE zostanie odrzucony przez sam trigger, zostawiając trwały wiersz-śmieć w tabeli, której z
+definicji nie da się już wyczyścić); (5) skrypty pomocnicze (`run-migration.mjs`, `verify-*.mjs`)
+zawsze usuwane po użyciu, nigdy nie commitowane.
+
 Powiązane: [[live-db-objects-outside-migrations]], [[naming-baseline-on-migrations]].

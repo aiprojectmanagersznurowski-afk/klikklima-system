@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-Kod panelu B2B ma **własną, równoległą maszynę stanów** (`ALLOWED_TRANSITIONS` w `apps/b2b-web/src/app/(dashboard)/leads/actions.ts`), niezależną od `contracts/funnel.contract.mjs`. Żaden plik w `apps/b2b-web` nie importuje `@klikklima/contracts`.
+Kod panelu B2B ma **własną, równoległą maszynę stanów** (`ALLOWED_TRANSITIONS` w `apps/b2b-web/src/app/(dashboard)/leads/actions.ts`), niezależną od `contracts/funnel.contract.mjs`. (Errata 2026-09-01: `@klikklima/contracts` jest już importowany w 17 plikach B2B, ale WYŁĄCZNIE warstwa RBAC/`can()`. `TRANSITIONS.effects`, `NOTIFICATIONS` i `QUEUE_POLICY` nadal mają zero konsumentów w `apps/` — `grep -rn "effects" apps/` = 0.)
 
 **Why:** kontrakt jest źródłem prawdy (zasada zerowa), ale nie ma dziś żadnego konsumenta po stronie B2B — więc „przejście istnieje w kontrakcie" nie znaczy „działa w aplikacji". Odkryte przy WO `CRM-SAFE-RECORD-ACTIONS` (2026-08-20): kontrakt ma T15 `QUOTE_REJECTED → AUDIT_COMPLETED`, a UI oferuje `QUOTE_REJECTED → NEW_LEAD`.
 
@@ -69,4 +69,21 @@ Dopisane 2026-08-31 (batch MEDIUM/LOW z `openFindings`):
 - **Zod jest w monorepo tylko po stronie klienta.** Importują go wyłącznie `AddCrewModal.tsx` i `AddAuditorModal.tsx`; 0 z 10 plików `actions.ts` w `apps/b2b-web`. „ADR-001 wymaga walidacji Zod" nie znaczy, że gdziekolwiek na serwerze ona jest.
 - **`shipments` ISTNIEJE w `RESOURCES`/`MATRIX`** (`rbac.contract.mjs:13,37`), ale `logistics/actions.ts` sprawdza wyłącznie `leads.update`. Zestawy ról są dziś identyczne, więc to dług utajony, nie dziura — nie zgłaszaj jako podatności.
 
+Dopisane 2026-09-01 (WO `SRV-SOURCE-OF-TRUTH-SERVICES-VIEW`):
+- **`CHANGES-ADR-010.md` opisuje schemat, którego NIE MA.** Nie istnieje tabela `services` ani `bookings`, nie ma `booking_id`, `scheduled_date`, `reminder_sent_at`, a `enum ServiceStatus` to nadal `PLANNED SCHEDULED COMPLETED CANCELLED` — bez `AWAITING_CONTACT`/`IGNORED`. Fizyczną realizacją „serwisu" jest legacy `serwisy` (relacja `instalacje.serwisy[]`). Dokument pisze „sprawdzone w obie strony" (linia 52), co dotyczy tylko hooka `adr010-derived-write`, nie migracji. Każde wymaganie z `source: ADR-010` planuj na `serwisy`, nie na `services`.
+- **`serwisy` miesza przegląd roczny ze zgłoszeniem usterki** (`opis_usterki`, `data_zgloszenia`), mimo osobnej tabeli `usterki_incidents`. Nierozstrzygnięte — nie filtruj tej tabeli po zgadywanym przeznaczeniu.
+- Potwierdzone dwie diagnozy z 2026-08-31: `deleteServiceAction` nadal kasuje `serwisy` po ID z `instalacje`, a pozycja „Usuń" w `services-client.tsx` renderuje się bezwarunkowo.
+
+Dopisane 2026-09-01 (WO `CLIENT-ANONYMIZATION-RODO`):
+- **Wzorzec „druga ścieżka kasowania” NIE występuje dla `klienci`.** Sprawdzone greperem: jedyne `prisma.klienci.delete` jest w `customers/actions.ts:67`. Analogia do `deleteLogisticsOrderAction`→`prisma.leady.delete` jest prawdziwa tylko dla leadów. Nie powtarzaj podejrzenia jako faktu — grepuj za każdym razem.
+- **`EmployeeConsent` (`schema.prisma:567`) to gotowy, udokumentowany wzorzec tabeli append-only** (RBAC `update: []` + brak polityk RLS + wyzwalacz `*_append_only_trg`, bo Prisma omija RLS). Projektując `audit_log` albo dowolny rejestr-dowód, kopiuj ten profil zamiast wymyślać.
+- **`AUDIT_REQUIREMENTS.mustLog` to słownik OPERACJI audytowych, nie zdolności RBAC.** `'anonymize'` tam obecne nie znaczy, że `PERMISSIONS` w `rbac.contract.mjs` potrzebuje zdolności `anonymize`. Te osie się nie pokrywają; `DELETE_POLICIES` już definiuje, czym „delete” jest dla danej encji.
+
 - **Akcje zwracające `void` maskują odmowę.** Klienty CRM (`customers-client`, `incidents-client`, `services-client`, `installations-client`, `logistics-client`) pokazują komunikat sukcesu i przeładowują stronę niezależnie od wyniku. Zmiana sygnatury na `{ success, error }` jest częścią naprawy uprawnień, nie kosmetyką — bez niej AC „odmowa odróżnialna od sukcesu" nie da się spełnić.
+
+Dopisane 2026-09-01 (WO `LOGISTICS-SHIPPING-EFFECTS`):
+- **Cała warstwa powiadomień to dziś czysty kontrakt bez implementacji.** `notification_queue` występuje w repo dokładnie 4 razy i wyłącznie w `contracts/` + `packages/contracts/src/generated/`. Zero w `schema.prisma`, zero w `supabase/migrations/`, zero producentów, zero nadawców (`twilio|resend|nodemailer|sendSms|sendEmail` = 0 trafień w monorepo). Wymagania `NTF-*` zakładają istnienie kolejki, ale ŻADNE nie odpowiada za jej powstanie — planując cokolwiek z powiadomień, najpierw zarejestruj brakujące wymaganie na samą tabelę.
+- **„Wstrzymanie SLA" nie ma czego zatrzymać.** `SLA_POLICIES.LOGISTICS_INSTALL` to metryka WYLICZANA (`daysUntilInstallation` z `leady.data_rezerwacji`), nie zapisany zegar. Każdy efekt `do:suspend*Sla` wymaga najpierw ZDEFINIOWANIA reprezentacji w schemacie, a nie odnalezienia jej.
+- **W B2C nie ma wzorca atomowej rezerwacji slotu do skopiowania.** `getFomoSlots.ts` robi `count(*)` przez `supabase-js` i porównuje z limitem z `system_config`, a `saveLead.ts` zapisuje `data_rezerwacji` bez ŻADNEGO sprawdzenia pojemności. To jest dokładnie antywzorzec z CLAUDE.md #4. Jedyny precedens kontroli izolacji w całym repo: `auditors/actions.ts:432` (`isolationLevel: 'Serializable'`); `FOR UPDATE`/`$queryRaw`/advisory locks — zero wystąpień.
+- **Slot ekipy nie jest jedną rzeczą.** Żyje na `instalacje.zespol_id` + `instalacje.data_planowana` ORAZ `leady.data_rezerwacji`. Sygnatura `releaseCrewSlot(crewId)` jest nierozstrzygalna (ekipa ma wiele slotów) — zwolnienie musi iść po `leadId`.
+- **`bind.transition` w `notifications.contract.mjs` bywa stringiem z pipe'ami** (`'T10|T11|T12|T13'` dla `N_ROLLBACK` i `I4`), nie tablicą. Nie ma w repo helpera, który by to parsował — to ukryta praca w każdej wycenie „podepnij powiadomienia do przejścia".
