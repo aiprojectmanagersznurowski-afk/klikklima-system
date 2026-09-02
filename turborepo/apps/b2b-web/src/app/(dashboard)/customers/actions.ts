@@ -3,7 +3,8 @@
 import { prisma } from "@repo/database"
 import { revalidatePath } from "next/cache"
 import { can } from "@klikklima/contracts"
-import { getCurrentActorRole } from "../../../utils/supabase/server"
+import { getCurrentActorRole, createClient } from "../../../utils/supabase/server"
+import { anonymizeClientSchema, ANONYMIZED_NAME_PLACEHOLDER } from "./anonymize-client-schema"
 
 export type CustomerSummary = {
   id: string;
@@ -47,7 +48,10 @@ export async function getCustomers(): Promise<CustomerSummary[]> {
   });
 }
 
-export async function deleteCustomerAction(id: string): Promise<{ success: boolean; error?: string }> {
+export async function anonymizeClientAction(
+  id: string,
+  input: { justification: string; legalBasis: string }
+): Promise<{ success: boolean; error?: string }> {
   let actorRole;
   try {
     actorRole = await getCurrentActorRole();
@@ -59,19 +63,62 @@ export async function deleteCustomerAction(id: string): Promise<{ success: boole
     return { success: false, error: "Brak uprawnień do usunięcia klienta." };
   }
 
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  const actorEmail = data.user?.email;
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do usunięcia klienta." };
+  }
+
+  const parsed = anonymizeClientSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Nieprawidłowe dane uzasadnienia lub podstawy prawnej." };
+  }
+  const { justification, legalBasis } = parsed.data;
+
   try {
-    // UWAGA: Twarde usunięcie klienta (tylko admin)
-    // W Prisma dzięki onDelete: Cascade (jeśli jest) powiązane encje by zniknęły.
-    // Jeśli nie ma cascade, musimy zrobić to ręcznie.
-    // Na razie polegamy na constraintach Prisma (np. setNull).
-    await prisma.klienci.delete({
-      where: { id }
+    await prisma.$transaction(async (tx) => {
+      const { count } = await tx.klienci.updateMany({
+        where: { id, anonymized_at: null },
+        data: {
+          imie_i_nazwisko: ANONYMIZED_NAME_PLACEHOLDER,
+          email: null,
+          telefon: null,
+          anonymized_at: new Date(),
+        },
+      });
+
+      if (count === 0) {
+        return;
+      }
+
+      await tx.adresy.updateMany({
+        where: { klient_id: id },
+        data: {
+          ulica_miasto: 'Adres usunięty',
+          latitude: null,
+          longitude: null,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          operation: 'anonymize',
+          resource: 'clients',
+          recordId: id,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis,
+        },
+      });
     });
 
     revalidatePath('/customers');
+    revalidatePath(`/customers/${id}`);
     return { success: true };
   } catch (error) {
-    console.error("Failed to delete customer:", error);
+    console.error("Failed to anonymize customer:", error);
     return { success: false, error: "Nie udało się usunąć klienta." };
   }
 }

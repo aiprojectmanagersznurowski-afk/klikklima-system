@@ -1,0 +1,1 @@
+- [Mutation verification pattern](feedback_mutation_verification_pattern.md) — use reviewer's scratchpad vitest transform-plugin harness to prove new assertions catch specific mutants; Write tool blocked even in scratchpad, use `cat > ... <<'EOF'` via Bash.

@@ -20,4 +20,9 @@ Złapane w recenzji WO SRV-SOURCE-OF-TRUTH-SERVICES-VIEW: `export function daysU
 przekierowania do pliku i `echo $?`). Szczególnie gdy diff dodaje eksport do pliku z `"use server"`
 albo nowy import w komponencie `"use client"`.
 
+**Druga dziura w tej samej rodzinie:** `apps/b2b-web/package.json` nie ma skryptu `typecheck`/`check-types`,
+a `scripts/verify.sh:92` woła typy jako `optional "Typy" "has typecheck"`. Skutek: `npx tsc --noEmit -p
+apps/b2b-web/tsconfig.json` może być CZERWONY, a `verify.sh` i tak przejdzie. Uruchamiaj tsc na tym projekcie
+ręcznie przy każdej recenzji zmian w b2b-web (samo `npx tsc --noEmit` z roota wypisuje tylko help — trzeba `-p`).
+
 Powiązane: [[review-mutation-testing-checklist]]
