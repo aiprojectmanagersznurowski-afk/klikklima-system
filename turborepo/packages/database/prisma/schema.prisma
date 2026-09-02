@@ -77,6 +77,10 @@ model adresy {
 
   leady   leady[]
   serwisy serwisy[]
+
+  /// PERF-B2B-AUDIT: klient_id — anonymizeClient() (RODO) wykonuje
+  /// adresy.updateMany({ where: { klient_id } }) wewnątrz transakcji.
+  @@index([klient_id])
 }
 
 model AuthorizedUser {
@@ -130,6 +134,19 @@ model leady {
 
   @@index([status])
   @@index([created_at])
+  /// PERF-B2B-AUDIT: indeksy na kolumnach FK. Postgres NIE tworzy ich automatycznie.
+  /// Przy dzisiejszych danych (0 leadów) zysk jest ZEROWY — to ubezpieczenie na wzrost.
+  /// audytor_id: getLeads() zawęża listę do własnych leadów audytora (scopeWhere =
+  /// { audytor_id }) w findMany + count + groupBy; dodatkowo audytorzy.delete → SetNull.
+  @@index([audytor_id])
+  /// klient_id: getCustomers() liczy _count.leady per klient (agregacja po klient_id).
+  @@index([klient_id])
+  /// Wzorzec getLeads(): WHERE status = ? ORDER BY data_rezerwacji ASC, created_at DESC.
+  /// Kolejność i kierunki odpowiadają dokładnie temu zapytaniu; prefiks (status,
+  /// data_rezerwacji) obsługuje też getLogisticsLeads() (status IN (...) ORDER BY
+  /// data_rezerwacji ASC). Istniejący @@index([status]) staje się redundantnym prefiksem —
+  /// jego usunięcie byłoby zmianą odejmującą i wymaga osobnej decyzji, więc zostaje.
+  @@index([status, data_rezerwacji(sort: Asc), created_at(sort: Desc)])
 }
 
 model multi_split_sets {
@@ -258,6 +275,12 @@ model instalacje {
 
   serwisy           serwisy[]
   usterki_incidents usterki_incidents[]
+
+  /// PERF-B2B-AUDIT: lead_id — zagnieżdżony select instalacje w getLeads() (WHERE lead_id
+  /// IN (...)), findFirst({ where: { lead_id } }) w assignCrewToLead(), oraz kaskada
+  /// onDelete: Cascade od leady. zespol_id — zespoly_monterskie.delete() → SetNull.
+  @@index([lead_id])
+  @@index([zespol_id])
 }
 
 model serwisy {
@@ -274,6 +297,14 @@ model serwisy {
   data_zgloszenia DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
   data_realizacji DateTime?           @db.Timestamptz(6)
   status          ServiceStatus       @default(PLANNED)
+
+  /// PERF-B2B-AUDIT: instalacja_id — instalacje.delete() → SetNull na serwisach.
+  /// zespol_id — zespoly_monterskie.delete() → SetNull.
+  /// Świadomie BEZ indeksu na klient_id i adres_id: dziś nie istnieje ścieżka usuwania
+  /// klienta ani adresu (RODO anonimizuje, nie kasuje), a żadne zapytanie nie filtruje
+  /// serwisów po tych kolumnach — getUpcomingServices() czyta całą tabelę.
+  @@index([instalacja_id])
+  @@index([zespol_id])
 }
 
 model logistyka_zamowienia {
@@ -286,6 +317,11 @@ model logistyka_zamowienia {
   tracking_id           String?
   data_wysylki          DateTime?      @db.Timestamptz(6)
   created_at            DateTime       @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+
+  /// PERF-B2B-AUDIT: wzorzec „ostatnie zamówienie leada" — findFirst({ where: { lead_id },
+  /// orderBy: { created_at: 'desc' } }) w markAsDelivered() oraz include z take: 1
+  /// w getLogisticsLeads(). Kolejność kolumn i kierunek odpowiadają temu zapytaniu.
+  @@index([lead_id, created_at(sort: Desc)])
 }
 
 model modele_3d {
@@ -489,6 +525,13 @@ model usterki_incidents {
   opis_usterki     String?
   zdjecia_url      Json?
   created_at       DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+
+  /// PERF-B2B-AUDIT: instalacja_id — instalacje.delete() → SetNull.
+  /// zespol_id — zespoly_monterskie.delete() → SetNull.
+  /// Bez indeksu na klient_id: getIncidents() czyta całą tabelę i dołącza klienta po
+  /// kluczu głównym, a klient nie jest usuwany (RODO anonimizuje).
+  @@index([instalacja_id])
+  @@index([zespol_id])
 }
 
 model cennik_uslug {

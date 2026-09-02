@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-02T17:01:54.968Z",
+  "generatedAt": "2026-09-02T17:06:03.204Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 17,
@@ -143,7 +143,7 @@
     "insert_6000_leads_part2.sql::adr002-pl-tables": 12,
     "insert_6000_leads_part3.sql::adr002-pl-columns": 12,
     "insert_6000_leads_part3.sql::adr002-pl-tables": 12,
-    "packages/database/prisma/schema.prisma::adr002-pl-columns": 47,
+    "packages/database/prisma/schema.prisma::adr002-pl-columns": 56,
     "packages/database/prisma/schema.prisma::adr002-pl-tables": 44,
     "setup_combinations.sql::adr002-pl-columns": 6,
     "supabase/migrations/00000000000000_baseline.sql::adr002-pl-columns": 47,
@@ -157,7 +157,9 @@
     "supabase/migrations/20260828120000_kartoteki_storage_policies.sql::adr002-pl-tables": 3,
     "supabase/migrations/20260901210000_logistics_sla_paused_at.sql::adr002-pl-tables": 2,
     "supabase/migrations/20260901220000_rodo_audit_log_and_client_anonymization.sql::adr002-pl-tables": 2,
+    "supabase/migrations/20260902170500_perf_foreign_key_indexes.sql::adr002-pl-columns": 9,
+    "supabase/migrations/20260902170500_perf_foreign_key_indexes.sql::adr002-pl-tables": 11,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1932
+  "total": 1961
 }
