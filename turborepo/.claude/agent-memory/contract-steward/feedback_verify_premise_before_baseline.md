@@ -21,3 +21,10 @@ sprawdzenie każdego identyfikatora z pliku produkcyjnego w `schema.prisma` (kry
 [[naming-baseline-on-migrations]]: ISTNIEJE → baseline, NIE ISTNIEJE → stop i pytanie), dopiero potem
 `--update-baseline`. Rozbieżność z uzasadnieniem zlecenia zgłaszam wprost, bez dramatyzowania — to korekta
 faktu, nie zarzut.
+
+**Pułapka pola `total`:** po ręcznej korekcie `counts` (wyłączenie niezwiązanego pliku z zakresu commitu)
+pole `total` w `tools/kk-naming-baseline.json` zostaje nietknięte i rozjeżdża się z sumą `counts`.
+2026-09-02 baseline z HEAD miał `total: 1905` przy sumie `counts` 1892. `--update-baseline` przelicza oba
+spójnie, więc `total` skacze o inną liczbę niż delta z `--check-baseline` (tu: +3 zamiast +16) — to NIE jest
+znak, że coś zniknęło. Weryfikuję to licząc sumę `counts` i porównując liczbę par przed/po: jeżeli przybyły
+tylko pary z bieżącego WO, żaden wcześniej wyłączony plik nie wrócił po cichu.
