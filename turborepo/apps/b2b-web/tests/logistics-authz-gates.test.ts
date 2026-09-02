@@ -38,20 +38,28 @@ import { ROLES, PERMISSIONS, can } from '@klikklima/contracts';
 
 const {
   leadUpdateMock,
+  leadFindUniqueMock,
   leadDeleteMock,
   logisticsCreateMock,
   logisticsFindFirstMock,
   logisticsUpdateMock,
+  instalacjeUpdateMock,
+  instalacjeFindManyMock,
+  queryRawMock,
   transactionMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
   deleteLeadActionMock,
 } = vi.hoisted(() => ({
   leadUpdateMock: vi.fn(),
+  leadFindUniqueMock: vi.fn(),
   leadDeleteMock: vi.fn(),
   logisticsCreateMock: vi.fn(),
   logisticsFindFirstMock: vi.fn(),
   logisticsUpdateMock: vi.fn(),
+  instalacjeUpdateMock: vi.fn(),
+  instalacjeFindManyMock: vi.fn(),
+  queryRawMock: vi.fn(),
   transactionMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
@@ -62,13 +70,23 @@ vi.mock('@repo/database', () => ({
   prisma: {
     leady: {
       update: leadUpdateMock,
+      findUnique: leadFindUniqueMock,
       delete: leadDeleteMock,
+    },
+    // Wymagane od rollbackLogisticsOrder (FNL-ROLLBACK, D1/D2) — releaseCrewSlot
+    // czyta/mutuje `instalacje` przez blokade FOR UPDATE wewnatrz $transaction.
+    // Ten plik NIE testuje efektow rollbacku (to `logistics-rollback-effects.test.ts`),
+    // tylko bramke roli — mocki tutaj sa minimalne, zeby callback nie wyrzucal wyjatku.
+    instalacje: {
+      update: instalacjeUpdateMock,
+      findMany: instalacjeFindManyMock,
     },
     logistyka_zamowienia: {
       create: logisticsCreateMock,
       findFirst: logisticsFindFirstMock,
       update: logisticsUpdateMock,
     },
+    $queryRaw: queryRawMock,
     $transaction: transactionMock,
   },
   LeadStatus: {
@@ -76,6 +94,11 @@ vi.mock('@repo/database', () => ({
     AWAITING_INSTALLATION: 'AWAITING_INSTALLATION',
     ROLLBACK_RESCHEDULING: 'ROLLBACK_RESCHEDULING',
     HARDWARE_IN_WAREHOUSE: 'HARDWARE_IN_WAREHOUSE',
+    AWAITING_CREW_ASSIGNMENT: 'AWAITING_CREW_ASSIGNMENT',
+  },
+  InstallationStatus: {
+    CANCELLED: 'CANCELLED',
+    PLANNED: 'PLANNED',
   },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
@@ -104,12 +127,17 @@ const LEADS_UPDATE_DENIED = ROLES.filter((r) => can(r, 'leads', 'update') !== 'y
 function makeTxImplementation() {
   return async (cb: (tx: unknown) => unknown) =>
     cb({
-      leady: { update: leadUpdateMock },
+      leady: { update: leadUpdateMock, findUnique: leadFindUniqueMock },
       logistyka_zamowienia: {
         create: logisticsCreateMock,
         findFirst: logisticsFindFirstMock,
         update: logisticsUpdateMock,
       },
+      instalacje: {
+        update: instalacjeUpdateMock,
+        findMany: instalacjeFindManyMock,
+      },
+      $queryRaw: queryRawMock,
     });
 }
 
@@ -349,9 +377,22 @@ describe('markAsDelivered — bramka roli, dwa zasoby w jednej transakcji (SEC-A
 describe('rollbackLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () => {
   beforeEach(() => {
     leadUpdateMock.mockReset();
+    leadFindUniqueMock.mockReset();
+    instalacjeUpdateMock.mockReset();
+    instalacjeFindManyMock.mockReset();
+    queryRawMock.mockReset();
+    transactionMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
     getCurrentActorRoleMock.mockResolvedValue('admin');
+    transactionMock.mockImplementation(makeTxImplementation());
+    // Lead w stanie z zakresu T10-T13 (`funnel.contract.mjs`), zeby
+    // findTransition(status, 'rollback') faktycznie znalazlo przejscie — ten plik
+    // testuje WYLACZNIE bramke roli (patrz `logistics-rollback-effects.test.ts` dla
+    // efektow releaseCrewSlot/suspendLogisticsSla), wiec brak wierszy `instalacje`
+    // jest tu celowo neutralny (petla w releaseCrewSlot po prostu nic nie zrobi).
+    leadFindUniqueMock.mockResolvedValue({ id: 'lead-1', status: 'HARDWARE_IN_TRANSIT' });
+    queryRawMock.mockResolvedValue([]);
   });
 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS

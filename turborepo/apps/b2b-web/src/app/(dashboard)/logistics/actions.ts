@@ -4,9 +4,10 @@ import { prisma } from "@repo/database"
 import { revalidatePath } from "next/cache"
 import { differenceInDays, startOfDay } from "date-fns"
 import { LeadStatus } from "@repo/database"
-import { can } from "@klikklima/contracts"
+import { can, findTransition } from "@klikklima/contracts"
 import { getCurrentActorRole } from "../../../utils/supabase/server"
 import { deleteLeadAction } from "../leads/actions"
+import { releaseCrewSlot, suspendLogisticsSla } from "./rollback-effects"
 import type { TriageAnswers } from "@/lib/triage-answers"
 
 export type LogisticsLead = {
@@ -202,6 +203,15 @@ export async function markAsDelivered(leadId: string): Promise<{ success: boolea
   return { success: true };
 }
 
+/**
+ * Błąd domenowy rzucany WEWNĄTRZ `$transaction` w `rollbackLogisticsOrder`, żeby
+ * odróżnić kontrolowaną odmowę (status leada zmienił się pod nami między
+ * sprawdzeniem wstępnym a otwarciem transakcji) od awarii infrastrukturalnej —
+ * obie muszą cofnąć transakcję, ale tylko ta pierwsza niesie komunikat dla
+ * użytkownika zamiast generycznego "Nie udało się cofnąć zamówienia.".
+ */
+class RollbackDomainError extends Error {}
+
 export async function rollbackLogisticsOrder(leadId: string, reason?: string): Promise<{ success: boolean; error?: string }> {
   let actorRole;
   try {
@@ -214,16 +224,80 @@ export async function rollbackLogisticsOrder(leadId: string, reason?: string): P
     return { success: false, error: "Brak uprawnień do rollbacku zamówienia." };
   }
 
-  await prisma.leady.update({
-    where: { id: leadId },
-    data: {
-      status: LeadStatus.ROLLBACK_RESCHEDULING,
-      bucket_entered_at: new Date(),
-      notatki_wewnetrzne: reason ? `Rollback z logistyki: ${reason}` : undefined,
-    },
-  });
+  // Sprawdzenie wstępne — szybka odmowa dla oczywistych przypadków (lead
+  // nieistniejący, status poza zakresem T10-T13), zanim w ogóle otworzymy
+  // transakcję. NIE jest to blokada współbieżności (patrz ponowny odczyt
+  // wewnątrz transakcji poniżej) — to tylko fail-fast, żeby nie płacić za
+  // $transaction w przypadkach, które i tak zakończą się odmową.
+  const lead = await prisma.leady.findUnique({ where: { id: leadId } });
+  if (!lead) {
+    return { success: false, error: "Lead nie istnieje." };
+  }
+  if (lead.status !== LeadStatus.ROLLBACK_RESCHEDULING) {
+    const preTransition = findTransition(lead.status as LeadStatus, "rollback");
+    if (!preTransition) {
+      return { success: false, error: "Rollback niedostępny dla bieżącego statusu leada." };
+    }
+  }
 
-  // Zwalnianie zasobów - w przyszłości odpinanie ekipy / terminu
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Blokada wiersza leada (pułapka 4 z CLAUDE.md): pod domyślnym poziomem
+      // izolacji Postgresa (READ COMMITTED) sam ponowny `findUnique` wewnątrz
+      // transakcji NIE daje żadnej gwarancji — dwie równoległe transakcje mogą
+      // obie odczytać ten sam stary status, zanim którakolwiek zatwierdzi zapis.
+      // `SELECT ... FOR UPDATE` serializuje dostęp do TEGO wiersza między
+      // równoległymi wywołaniami rollbacku.
+      await tx.$queryRaw<{ id: string; status: string }[]>`
+        SELECT id, status FROM leady WHERE id = ${leadId}::uuid FOR UPDATE
+      `;
+
+      // Ponowny odczyt statusu WEWNĄTRZ transakcji, na wierszu już zablokowanym
+      // powyżej: decyzja "czy i dokąd przejść" musi być liczona na stanie
+      // widocznym w TEJ transakcji, tuż przed zapisem, nie na stanie sprzed jej
+      // otwarcia — inaczej dwa równoległe rollbacki oba przechodzą sprawdzenie
+      // wstępne i oba nadpisują dane.
+      const freshLead = await tx.leady.findUnique({ where: { id: leadId } });
+      if (!freshLead) {
+        throw new RollbackDomainError("Lead nie istnieje.");
+      }
+
+      // Idempotencja (AC-A5): lead już w ROLLBACK_RESCHEDULING (poprzedni
+      // rollback się powiódł, ALBO lead trafił tu inną ścieżką, np.
+      // `updateLeadStatusAction`, bez zwolnienia slotu/wstrzymania SLA) —
+      // status się nie powtarza, ale releaseCrewSlot/suspendLogisticsSla SĄ
+      // wykonywane, bo są idempotentne i to jedyny sposób naprawić leada
+      // osieroconego przez inną ścieżkę zmiany statusu.
+      if (freshLead.status === LeadStatus.ROLLBACK_RESCHEDULING) {
+        await releaseCrewSlot(tx, leadId);
+        await suspendLogisticsSla(tx, leadId);
+        return;
+      }
+
+      const transition = findTransition(freshLead.status as LeadStatus, "rollback");
+      if (!transition) {
+        throw new RollbackDomainError("Rollback niedostępny dla bieżącego statusu leada.");
+      }
+
+      await tx.leady.update({
+        where: { id: leadId },
+        data: {
+          status: transition.to,
+          bucket_entered_at: new Date(),
+          notatki_wewnetrzne: reason ? `Rollback z logistyki: ${reason}` : undefined,
+        },
+      });
+
+      await releaseCrewSlot(tx, leadId);
+      await suspendLogisticsSla(tx, leadId);
+    });
+  } catch (error) {
+    if (error instanceof RollbackDomainError) {
+      return { success: false, error: error.message };
+    }
+    console.error("Failed to rollback logistics order:", error);
+    return { success: false, error: "Nie udało się cofnąć zamówienia." };
+  }
 
   revalidatePath('/logistics');
   revalidatePath('/leads');

@@ -7,3 +7,6 @@
 - [Baseline nazewnictwa rośnie z każdym nowym kodem](project_naming_baseline_grows.md) — czerwone kk-naming na legacy `audytorzy`/`zespoly_monterskie` to nie defekt.
 - [Bramka nie widzi next build](gate-blindspot-next-build.md) — zielony vitest+tsc nie dowodzi, że aplikacja się buduje; przy zmianach w app/ uruchom `npx next build`.
 - [Mutacyjna weryfikacja testów](review-mutation-testing-checklist.md) — co mutować, żeby wykryć false-green; testy statyczne na treści .tsx są typową dziurą.
+- [kk-authz-gate nie widzi helperów z `tx`](gate-blindspot-authz-tx-helpers.md) — AUTHZ-EXEMPT to martwy tekst; dowód „to endpoint" daje server-reference-manifest.json, nie grep w chunku.
+- [FOR UPDATE na leady bez testu](project-rollback-read-committed-race.md) — blokada w rollbackLogisticsOrder jest w kodzie, ale mutanty M1/M4 przeżywają wszystkie 633 testy.
+- [Harness mutacyjny w scratchpadzie](reviewer-mutation-harness-scratchpad.md) — jak mutować kod bez prawa zapisu do repo: vitest .mjs config + alias na kopię modułu.
