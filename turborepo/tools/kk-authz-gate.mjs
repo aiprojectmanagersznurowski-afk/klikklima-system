@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * kk-authz-gate — wykrywa Server Actions panelu B2B, które mutują bazę bez bramki `can()`
- * albo pytają o uprawnienie dopiero PO dotknięciu bazy.
+ * kk-authz-gate — wykrywa kod panelu B2B, który dotyka bazy (mutacją LUB odczytem)
+ * bez bramki `can()` albo pyta o uprawnienie dopiero PO dotknięciu bazy.
  *
  * Pułapka #1 z CLAUDE.md: Prisma omija RLS. Panel B2B nie jest chroniony przez bazę,
  * więc autoryzacja MUSI być jawna w każdej Server Action. Do dziś żaden mechanizm nie
@@ -12,13 +12,35 @@
  * Zakres: WYŁĄCZNIE apps/b2b-web. W apps/b2c-web obowiązuje inny model ochrony
  * (supabase-js + RLS aktywne po stronie bazy) i ta heurystyka byłaby tam błędna.
  *
+ * DLACZEGO ODCZYTY (2026-09-03, WO docs/workorders/SEC-READ-GATES.md, decyzja D4):
+ *   Pierwsza wersja narzędzia liczyła wyłącznie mutacje i wprost deklarowała, że
+ *   „odczyty się nie liczą". Audyt znalazł SIEDEM eksportowanych funkcji odczytowych
+ *   (getCustomers, getCrews ×2, getAuditors, getInstallations, getUpcomingServices,
+ *   getIncidents) bez jakiejkolwiek bramki roli — zalogowany `monter`/`audytor` czytał
+ *   dane osobowe wszystkich klientów. Skaner nie mógł tego zobaczyć z definicji.
+ *   Ósmy przypadek — `customers/[id]/page.tsx` wołający `prisma.klienci.findUnique`
+ *   BEZPOŚREDNIO ze strony, z pominięciem `actions.ts` — wymykał się też kryterium
+ *   pliku. Był to zamknięty łańcuch ataku: audytor brał UUID klienta z leada, do
+ *   którego miał prawo, i przez URL czytał kartotekę z leadami innych audytorów.
+ *   Stąd oba rozszerzenia: drugi zbiór metod ORAZ szerszy zbiór plików.
+ *
  * Heurystyka (świadomie prosta i jawna — ma być czytelna, nie sprytna):
- *   Funkcja jest PODEJRZANA, jeśli spełnia OBA warunki:
- *     a) w ciele wywołuje mutację Prismy w kształcie `<klient>.<model>.<metoda>(`,
- *        gdzie <klient> to `prisma` albo parametr callbacku `$transaction`,
- *        a <metoda> ∈ {create, createMany, update, updateMany, delete, deleteMany, upsert}.
- *        Odczyty (findMany/findUnique/count/groupBy/aggregate) nie liczą się.
- *     b) w ciele NIE ma jednocześnie `getCurrentActorRole(` ORAZ `can(`.
+ *   Odwołaniem do bazy jest wywołanie w kształcie `<klient>.<model>.<metoda>(`,
+ *   gdzie <klient> to `prisma` albo parametr callbacku `$transaction`, oraz
+ *   `<klient>.$queryRaw|$queryRawUnsafe|$executeRaw|$executeRawUnsafe` (także jako
+ *   tagged template). Metody dzielą się na:
+ *     · MUTUJĄCE: create, createMany, update, updateMany, delete, deleteMany, upsert,
+ *       $executeRaw, $executeRawUnsafe
+ *     · ODCZYTOWE: findMany, findUnique, findFirst, findUniqueOrThrow, findFirstOrThrow,
+ *       count, groupBy, aggregate, $queryRaw, $queryRawUnsafe
+ *
+ *   Funkcja MUTUJĄCA jest PODEJRZANA, gdy w ciele NIE ma jednocześnie
+ *   `getCurrentActorRole(` ORAZ `can(`.
+ *
+ *   Funkcja wyłącznie ODCZYTOWA jest PODEJRZANA, gdy w ciele NIE ma `can(`.
+ *   `getCurrentActorRole` nie jest tu warunkiem: bez roli nie ma czego podać do `can()`,
+ *   a rola bywa czytana pomocnikiem o innej nazwie. Wymóg jest jeden i sprawdzalny —
+ *   uprawnienie ma być sprawdzone, zanim dane wyjdą z bazy.
  *
  *   Osobna kategoria — NARUSZENIE KOLEJNOŚCI (2026-09-01, WO BATCH-MEDIUM-LOW-CLEANUP p.12):
  *   funkcja MA `can(`, ale pierwsze odwołanie do `prisma.`/`tx.` w jej ciele wypada
@@ -29,14 +51,25 @@
  *   i tak jest podejrzany i wymaga świadomej decyzji, nie milczenia narzędzia.
  *
  * ZAKRES I JEGO OGRANICZENIA (czytaj, zanim uznasz zielony wynik za dowód):
- *   · Skanowane są WYŁĄCZNIE pliki o nazwie `actions.ts` pod `apps/b2b-web/src/app`.
- *     Mutacja w `lib/`, w Route Handlerze (`route.ts`), w komponencie serwerowym
- *     (`page.tsx`) albo w pliku akcji o innej nazwie jest dla tego narzędzia NIEWIDOCZNA.
+ *   · Skanowane są WSZYSTKIE pliki `.ts`/`.tsx` pod `apps/b2b-web/src/app` — czyli już nie
+ *     tylko `actions.ts`, ale też `page.tsx`, `layout.tsx` i `route.ts`. Kryterium „plik
+ *     nazywa się actions.ts" przepuszczało zapytanie wołane wprost z komponentu serwerowego.
+ *   · NADAL NIEWIDOCZNE: cokolwiek POZA `apps/b2b-web/src/app` — `src/lib/`, `src/utils/`,
+ *     `src/components/`, pakiety w `packages/`. Zapytanie schowane w pomocniku z `lib/`
+ *     i wołane z zabramkowanej akcji jest dla tego narzędzia niewidzialne w obie strony:
+ *     nie zgłosi go, ale też nie zaliczy bramki wołającego pomocnikowi.
  *   · Analizowane są tylko EKSPORTOWANE deklaracje `function` na najwyższym poziomie
- *     modułu. Akcja przypisana do `export const foo = async () => …` nie zostanie
- *     sprawdzona — to znany, świadomy brak pokrycia.
+ *     modułu (`export function`, `export default function`). Akcja przypisana do
+ *     `export const foo = async () => …` nie zostanie sprawdzona — to znany, świadomy
+ *     brak pokrycia. Sprawdzone 2026-09-03: w skanowanym zakresie nie ma dziś ani jednego
+ *     takiego eksportu dotykającego Prismy, więc dziura jest realna, ale pusta.
+ *   · Zapytanie w funkcji NIEEKSPORTOWANEJ (pomocnik w tym samym pliku) nie jest liczone
+ *     osobno; liczy się dopiero, gdy stoi w ciele funkcji eksportowanej.
  *   · Klienci transakcyjni są rozpoznawani po pierwszym parametrze callbacku
  *     `$transaction`; inne aliasy `prisma` (np. przez destrukturyzację) umkną.
+ *   · Route Handlery są skanowane tą samą heurystyką co akcje, ale ich `GET`/`POST` to
+ *     osobny model ryzyka (brak sesji Next w niektórych ścieżkach) — zielony wynik nie
+ *     zastępuje tu recenzji.
  *
  * Czego to narzędzie NIE dowodzi: że bramka jest POPRAWNA. `can(role, 'leads', 'update')`
  * w akcji usuwającej klienta przejdzie ten skan. To detektor braku, nie audytor treści —
@@ -50,9 +83,10 @@
  *   node tools/kk-authz-gate.mjs --json
  *   KK_AUTHZ_SCAN_DIR=/inna/sciezka node tools/kk-authz-gate.mjs
  *
- * Świadomie NIE podpięte do scripts/verify.sh (2026-08-26): repozytorium ma dziś
- * prawdziwe, nienaprawione znaleziska. Bramka CI czerwona od pierwszego dnia nie niesie
- * sygnału. Podpięcie po zamknięciu długu albo po dodaniu baseline'u — wzorem kk-naming.
+ * Podpięte do scripts/verify.sh (2026-08-26 dla mutacji, 2026-09-03 dla odczytów).
+ * Rozszerzenie o odczyty ląduje PO naprawie siedmiu funkcji i strony 360 — bramka
+ * czerwona od pierwszego dnia nie niesie sygnału, a tryb ostrzegawczy uczy ignorować
+ * własny wynik, więc etapowania świadomie nie ma.
  */
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { join, relative, dirname } from 'node:path';
@@ -64,6 +98,15 @@ const SCAN_DIR = process.env.KK_AUTHZ_SCAN_DIR || join(ROOT, 'apps/b2b-web/src/a
 const JSON_OUT = process.argv.includes('--json');
 
 const MUTATING = new Set(['create', 'createMany', 'update', 'updateMany', 'delete', 'deleteMany', 'upsert']);
+const READING = new Set([
+  'findMany', 'findUnique', 'findFirst', 'findUniqueOrThrow', 'findFirstOrThrow',
+  'count', 'groupBy', 'aggregate',
+]);
+// Surowy SQL wisi bezpośrednio na kliencie (`prisma.$queryRaw`), bez segmentu modelu,
+// i bywa wołany jako tagged template — obsługiwany osobną gałęzią niżej.
+const RAW_READING = new Set(['$queryRaw', '$queryRawUnsafe']);
+const RAW_MUTATING = new Set(['$executeRaw', '$executeRawUnsafe']);
+const SCANNED_EXT = /\.(ts|tsx)$/;
 const GATE_ROLE = 'getCurrentActorRole';
 const GATE_CAN = 'can';
 const IGNORE = new Set(['node_modules', '.next', 'dist', 'build', '.turbo', '.git', 'generated', 'coverage']);
@@ -77,7 +120,9 @@ function walk(dir, out = []) {
     let st;
     try { st = statSync(full); } catch { continue; }
     if (st.isDirectory()) walk(full, out);
-    else if (e === 'actions.ts') out.push(full);
+    // Od 2026-09-03 skanujemy każdy moduł TS pod app/, nie tylko `actions.ts`:
+    // `customers/[id]/page.tsx` wołał prisma.klienci.findUnique wprost ze strony.
+    else if (SCANNED_EXT.test(e) && !/\.(test|spec)\.tsx?$/.test(e)) out.push(full);
   }
   return out;
 }
@@ -111,13 +156,44 @@ function collectTransactionClients(fnNode) {
 function analyzeFunction(fnNode, sourceFile, relPath) {
   const clients = collectTransactionClients(fnNode);
   const mutations = [];
+  const reads = [];
   let hasRoleLookup = false;
   let hasCan = false;
   let firstCanPos = null;
   let firstDbPos = null;
   let firstDb = null;
 
+  /** Wspólne księgowanie dotknięcia bazy — z wywołania i z tagged template. */
+  function record(node, call, kind) {
+    const pos = node.getStart(sourceFile);
+    const { line } = sourceFile.getLineAndCharacterOfPosition(pos);
+    // Kolejność liczy się dla KAŻDEGO dotknięcia bazy, także odczytu: `findUnique`
+    // przed `can()` też wypuszcza dane, zanim ktokolwiek zapytał o uprawnienie.
+    if (firstDbPos === null || pos < firstDbPos) {
+      firstDbPos = pos;
+      firstDb = { line: line + 1, call };
+    }
+    (kind === 'mutation' ? mutations : reads).push({ line: line + 1, call });
+  }
+
+  /** `prisma.$queryRaw`/`tx.$executeRaw` — klient bez segmentu modelu. */
+  function rawKind(expr) {
+    if (!ts.isPropertyAccessExpression(expr)) return null;
+    const base = expr.expression;
+    if (!ts.isIdentifier(base) || !clients.has(base.text)) return null;
+    const m = expr.name.text;
+    if (RAW_MUTATING.has(m)) return { kind: 'mutation', call: `${base.text}.${m}` };
+    if (RAW_READING.has(m)) return { kind: 'read', call: `${base.text}.${m}` };
+    return null;
+  }
+
   visit(fnNode, (n) => {
+    // `prisma.$queryRaw\`SELECT …\`` to tagged template, nie CallExpression.
+    if (ts.isTaggedTemplateExpression(n)) {
+      const raw = rawKind(n.tag);
+      if (raw) record(n, raw.call, raw.kind);
+      return;
+    }
     if (!ts.isCallExpression(n)) return;
     const callee = n.expression;
 
@@ -133,6 +209,9 @@ function analyzeFunction(fnNode, sourceFile, relPath) {
     }
     if (!ts.isPropertyAccessExpression(callee)) return;
 
+    const raw = rawKind(callee);
+    if (raw) { record(n, raw.call, raw.kind); return; }
+
     const method = callee.name.text;
 
     // Kształt `<klient>.<model>.<metoda>(` — bez tego `formData.update()` czy
@@ -142,35 +221,31 @@ function analyzeFunction(fnNode, sourceFile, relPath) {
     const base = modelAccess.expression;
     if (!ts.isIdentifier(base) || !clients.has(base.text)) return;
 
-    const pos = n.getStart(sourceFile);
-    const { line } = sourceFile.getLineAndCharacterOfPosition(pos);
     const call = `${base.text}.${modelAccess.name.text}.${method}`;
-
-    // Kolejność liczy się dla KAŻDEGO dotknięcia bazy, także odczytu: `findUnique`
-    // przed `can()` też wypuszcza dane, zanim ktokolwiek zapytał o uprawnienie.
-    if (firstDbPos === null || pos < firstDbPos) {
-      firstDbPos = pos;
-      firstDb = { line: line + 1, call };
-    }
-
-    if (!MUTATING.has(method)) return;
-    mutations.push({ line: line + 1, call });
+    if (MUTATING.has(method)) record(n, call, 'mutation');
+    else if (READING.has(method)) record(n, call, 'read');
   });
 
-  if (mutations.length === 0) return null;
+  if (mutations.length === 0 && reads.length === 0) return null;
 
   const { line } = sourceFile.getLineAndCharacterOfPosition(fnNode.getStart(sourceFile));
   const name = fnNode.name ? fnNode.name.text : '<anonimowa>';
   const exemption = readExemption(fnNode, sourceFile);
+  // Funkcja, która i czyta, i mutuje, jest oceniana jako mutująca — surowsze kryterium.
+  const kind = mutations.length ? 'mutation' : 'read';
 
   return {
     file: relPath,
     line: line + 1,
     name,
+    kind,
     mutations,
+    reads,
     hasRoleLookup,
     hasCan,
-    gated: hasRoleLookup && hasCan,
+    // Mutacja: rola z sesji serwera ORAZ uprawnienie. Sam odczyt: wystarczy `can(` —
+    // bez roli nie ma czego do niego podać, a rola bywa czytana pomocnikiem o innej nazwie.
+    gated: kind === 'mutation' ? hasRoleLookup && hasCan : hasCan,
     // Bramka po fakcie to nie bramka: jeśli pierwsze dotknięcie bazy wypada PRZED
     // pierwszym `can(`, zapytanie już poszło, zanim ktokolwiek zapytał o uprawnienie.
     orderingViolation: hasCan && firstDbPos !== null && firstDbPos < firstCanPos ? firstDb : null,
@@ -191,7 +266,7 @@ function readExemption(fnNode, sourceFile) {
 
 const files = existsSync(SCAN_DIR) ? walk(SCAN_DIR).sort() : [];
 if (files.length === 0) {
-  console.error(`kk-authz-gate: nie znaleziono żadnego actions.ts w ${relative(ROOT, SCAN_DIR) || SCAN_DIR}`);
+  console.error(`kk-authz-gate: nie znaleziono żadnego pliku .ts/.tsx w ${relative(ROOT, SCAN_DIR) || SCAN_DIR}`);
   process.exit(1);
 }
 
@@ -199,11 +274,18 @@ const suspects = [];
 const exempted = [];
 const ordering = [];
 let mutatingFns = 0;
+let readingFns = 0;
 let gatedFns = 0;
+let dbFiles = 0;
 
 for (const file of files) {
   const rel = relative(ROOT, file);
-  const src = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
+  const text = readFileSync(file, 'utf8');
+  // Tani filtr wstępny: plik bez słowa `prisma` nie ma czego zgłosić. Skanujemy teraz
+  // cały katalog app/, więc AST budujemy tylko tam, gdzie może być znalezisko.
+  if (!text.includes('prisma')) continue;
+  const src = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+  let fileTouchedDb = false;
 
   for (const stmt of src.statements) {
     if (!ts.isFunctionDeclaration(stmt) || !stmt.body) continue;
@@ -212,15 +294,18 @@ for (const file of files) {
 
     const res = analyzeFunction(stmt, src, rel);
     if (!res) continue;
-    mutatingFns++;
+    fileTouchedDb = true;
+    if (res.kind === 'mutation') mutatingFns++; else readingFns++;
     if (res.exemption) { exempted.push(res); continue; }
     if (res.orderingViolation) { ordering.push(res); continue; }
     if (res.gated) { gatedFns++; continue; }
     suspects.push(res);
   }
+  if (fileTouchedDb) dbFiles++;
 }
 
 function missingLabel(r) {
+  if (r.kind === 'read') return `odczyt bez ${GATE_CAN}() — dane wychodzą z bazy bez sprawdzenia uprawnienia`;
   if (!r.hasRoleLookup && !r.hasCan) return `brak ${GATE_ROLE}() i ${GATE_CAN}()`;
   if (!r.hasCan) return `jest ${GATE_ROLE}(), BRAK ${GATE_CAN}() — rola odczytana, nieużyta`;
   return `jest ${GATE_CAN}(), BRAK ${GATE_ROLE}() — rola spoza sesji serwera`;
@@ -229,20 +314,23 @@ function missingLabel(r) {
 if (JSON_OUT) {
   console.log(JSON.stringify({
     scannedFiles: files.length,
+    filesTouchingDb: dbFiles,
     mutatingFunctions: mutatingFns,
+    readingFunctions: readingFns,
     gated: gatedFns,
-    exempted: exempted.map((e) => ({ file: e.file, line: e.line, name: e.name, reason: e.exemption })),
+    exempted: exempted.map((e) => ({ file: e.file, line: e.line, name: e.name, kind: e.kind, reason: e.exemption })),
     suspects: suspects.map((s) => ({ ...s, missing: missingLabel(s) })),
     ordering: ordering.map((o) => ({
-      file: o.file, line: o.line, name: o.name,
+      file: o.file, line: o.line, name: o.name, kind: o.kind,
       firstDbCall: o.orderingViolation.call, firstDbLine: o.orderingViolation.line,
     })),
   }, null, 2));
   process.exit(suspects.length + ordering.length ? 1 : 0);
 }
 
-console.log('\n  kk-authz-gate — Server Actions B2B mutujące bazę bez bramki can()\n');
-console.log(`  Przeskanowano: ${files.length} plików actions.ts, ${mutatingFns} eksportowanych funkcji mutujących`);
+console.log('\n  kk-authz-gate — kod B2B dotykający bazy bez bramki can()\n');
+console.log(`  Przeskanowano: ${files.length} plików .ts/.tsx pod app/, z czego ${dbFiles} dotyka Prismy`);
+console.log(`  Eksportowanych funkcji: ${mutatingFns} mutujących, ${readingFns} wyłącznie odczytowych`);
 console.log(`  Z bramką: ${gatedFns}   Z wyjątkiem AUTHZ-EXEMPT: ${exempted.length}   Podejrzanych: ${suspects.length}\n`);
 
 if (exempted.length) {
@@ -263,7 +351,7 @@ if (ordering.length) {
 }
 
 if (suspects.length === 0 && ordering.length === 0) {
-  console.log('  ✓ każda mutująca Server Action pyta o rolę i o uprawnienie przed dotknięciem bazy\n');
+  console.log('  ✓ każde dotknięcie bazy — mutacja i odczyt — poprzedzone sprawdzeniem uprawnienia\n');
   process.exit(0);
 }
 
@@ -275,14 +363,22 @@ for (const s of suspects) {
   byFile.get(s.file).push(s);
 }
 
-console.log(`  ✗ ${suspects.length} funkcji mutuje bazę bez sprawdzenia uprawnień:\n`);
+const nMut = suspects.filter((s) => s.kind === 'mutation').length;
+const nRead = suspects.length - nMut;
+console.log(`  ✗ ${suspects.length} funkcji dotyka bazy bez sprawdzenia uprawnień (${nMut} mutujących, ${nRead} odczytowych):\n`);
 for (const [file, items] of byFile) {
   console.log(`  ${file}`);
   for (const it of items) {
     console.log(`    :${it.line}  ${it.name}()  [${missingLabel(it)}]`);
-    for (const m of it.mutations) console.log(`        :${m.line}  ${m.call}()`);
+    for (const m of it.kind === 'mutation' ? it.mutations : it.reads) {
+      console.log(`        :${m.line}  ${m.call}()`);
+    }
   }
   console.log('');
+}
+if (nRead) {
+  console.log('  Odczyt bez bramki to wyciek, nie niedopatrzenie: Prisma omija RLS, więc lista');
+  console.log('  bez can(...) oddaje KAŻDEMU zalogowanemu wszystko, co zwróci zapytanie.\n');
 }
 console.log('  Wzorzec bramki: const actorRole = await getCurrentActorRole();');
 console.log("                  if (!actorRole || can(actorRole, '<zasob>', '<uprawnienie>') !== 'yes') return …;");
