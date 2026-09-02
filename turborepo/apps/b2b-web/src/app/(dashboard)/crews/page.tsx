@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation"
+import { can } from "@klikklima/contracts"
 import { getCrews } from "./actions"
 import { CrewsClient } from "./crews-client"
 import { signStoragePaths } from "@/lib/storage/signed-urls"
@@ -6,10 +8,19 @@ import { getCurrentActorRole } from "@/utils/supabase/server"
 export const dynamic = "force-dynamic"
 
 export default async function CrewsPage() {
-  const [crews, actorRole] = await Promise.all([
-    getCrews(),
-    getCurrentActorRole(),
-  ]);
+  let actorRole: Awaited<ReturnType<typeof getCurrentActorRole>> = null;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+  }
+
+  if (!actorRole || can(actorRole, "crews", "read") !== "yes") {
+    notFound();
+    return;
+  }
+
+  const crews = await getCrews();
 
   const crewPaths = crews
     .map(c => c.zdjecie_url)

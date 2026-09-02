@@ -78,6 +78,14 @@ describe('getCrews(installationDate) - pula E4 wyklucza zespoly z niewaznym cert
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
     createClientMock.mockReset();
+    // PREWENCJA (WO SEC-READ-GATES): `getCrews(installationDate)` w leads/actions.ts
+    // dziś (2026-09-02) NIE woła `getCurrentActorRole()` — po dopisaniu bramki
+    // `can(role,'crews','read')` (przedmiot `crews-read-authz.test.ts` / AC3) realny
+    // brak mocka tutaj resolvowałby `undefined`, bramka fail-closed zwracałaby `[]`,
+    // i cała bateria certyfikatów/dostępności poniżej padałaby z przyczyny
+    // niezwiązanej z tym, co ten plik ma sprawdzać. Rola `admin` domyślnie — ten
+    // plik testuje WYŁĄCZNIE filtr certyfikatów, nie bramkę roli.
+    getCurrentActorRoleMock.mockResolvedValue('admin');
   });
 
   // @REQ: CRM-ZESP-AC2

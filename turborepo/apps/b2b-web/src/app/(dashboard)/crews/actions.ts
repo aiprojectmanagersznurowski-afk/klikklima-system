@@ -31,6 +31,17 @@ export type CrewSummary = {
 }
 
 export async function getCrews(): Promise<CrewSummary[]> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return [];
+  }
+  if (!actorRole || can(actorRole, "crews", "read") !== "yes") {
+    return [];
+  }
+
   const crews = await prisma.zespoly_monterskie.findMany({
     include: {
       instalacje: {

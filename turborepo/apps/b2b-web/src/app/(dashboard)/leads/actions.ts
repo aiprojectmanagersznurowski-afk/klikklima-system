@@ -120,6 +120,17 @@ export async function getAuditors() {
  * reguły (np. przy przypisaniu bezpośrednio w assignCrewToLead).
  */
 export async function getCrews(installationDate: Date) {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return [];
+  }
+  if (!actorRole || can(actorRole, "crews", "read") !== "yes") {
+    return [];
+  }
+
   try {
     const crews = await prisma.zespoly_monterskie.findMany({
       where: { aktywny: true },

@@ -26,6 +26,17 @@ export type CustomerSummary = {
 export async function getCustomers(
   options?: { page?: number; limit?: number }
 ): Promise<{ customers: CustomerSummary[]; totalPages: number }> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { customers: [], totalPages: 0 };
+  }
+  if (!actorRole || can(actorRole, "clients", "read") !== "yes") {
+    return { customers: [], totalPages: 0 };
+  }
+
   const page = options?.page || 1;
   const limit = options?.limit || 50;
   const skip = (page - 1) * limit;

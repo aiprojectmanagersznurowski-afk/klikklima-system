@@ -61,11 +61,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * jako kontrakt, żeby GREEN nie zaskoczył wywołujących.
  *
  * Mockujemy `@repo/database` (brak żywej instancji testowej).
+ *
+ * PREWENCJA (WO SEC-READ-GATES): `getCustomers()` dziś (2026-09-02) NIE woła
+ * `getCurrentActorRole()` wcale — po dopisaniu bramki `can(role,'clients','read')`
+ * (przedmiot osobnego pliku testowego `customers-read-authz.test.ts`) realny
+ * `getCurrentActorRole()` rzucałby poza kontekstem żądania, bramka fail-closed
+ * zwracałaby `{ customers: [], totalPages: 0 }`, i CAŁA bateria powyżej (P1-3,
+ * kształt zapytania `_count`) padałaby z przyczyny niezwiązanej z tym, co ten
+ * plik ma sprawdzać. Rola `admin` (uprawniona) domyślnie dla każdego testu w tym
+ * pliku — ten plik testuje WYŁĄCZNIE kształt zapytania/paginację, nie bramkę roli.
  */
 
-const { findManyMock, countMock } = vi.hoisted(() => ({
+const { findManyMock, countMock, getCurrentActorRoleMock } = vi.hoisted(() => ({
   findManyMock: vi.fn(),
   countMock: vi.fn(),
+  getCurrentActorRoleMock: vi.fn(),
 }));
 
 vi.mock('@repo/database', () => ({
@@ -76,6 +86,11 @@ vi.mock('@repo/database', () => ({
     },
   },
 }));
+vi.mock('../src/utils/supabase/server', () => ({
+  getCurrentActorRole: getCurrentActorRoleMock,
+}));
+
+getCurrentActorRoleMock.mockResolvedValue('admin');
 
 const { getCustomers } = await import('../src/app/(dashboard)/customers/actions');
 

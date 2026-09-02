@@ -44,6 +44,17 @@ export type AuditorSummary = {
  * jest tym, co filtruje po `is_active`, nie ten widok.
  */
 export async function getAuditors(): Promise<AuditorSummary[]> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return [];
+  }
+  if (!actorRole || can(actorRole, "auditors", "read") !== "yes") {
+    return [];
+  }
+
   const auditors = await prisma.audytorzy.findMany({
     include: {
       leady: true

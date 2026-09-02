@@ -40,9 +40,22 @@ import path from 'node:path';
  * jej zakres zastosowania. Szczegoly w podsumowaniu tury.
  */
 
-const { serviceFindManyMock, installationFindManyMock } = vi.hoisted(() => ({
+/**
+ * PREWENCJA (WO SEC-READ-GATES): `getUpcomingServices()` dziś (2026-09-02) NIE woła
+ * `getCurrentActorRole()` wcale — po dopisaniu bramki `can(role,'services','read')`
+ * (przedmiot osobnego pliku testowego `services-read-scope.test.ts`) realny
+ * `getCurrentActorRole()` rzucałby poza kontekstem żądania, bramka fail-closed
+ * zwracałaby `[]`, i cała bateria ADR-010 powyżej padałaby z przyczyny niezwiązanej
+ * z tym, co ten plik ma sprawdzać. Rola `admin` (uprawniona, bez zawężenia `:own`)
+ * domyślnie dla każdego testu w tym pliku — ten plik testuje WYŁĄCZNIE scalanie
+ * service/forecast, nie bramkę roli ani zawężenie montera.
+ */
+
+const { serviceFindManyMock, installationFindManyMock, getCurrentActorRoleMock, getCurrentUserMock } = vi.hoisted(() => ({
   serviceFindManyMock: vi.fn(),
   installationFindManyMock: vi.fn(),
+  getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
 }));
 
 vi.mock('@repo/database', () => ({
@@ -55,6 +68,20 @@ vi.mock('@repo/database', () => ({
     },
   },
 }));
+vi.mock('../src/utils/supabase/server', () => ({
+  getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
+}));
+
+getCurrentActorRoleMock.mockResolvedValue('admin');
+// MINOR 2 (audyt SEC-READ-GATES): mock brakował `getCurrentUser` — dziś nieszkodliwe
+// bo rola domyślna tego pliku ('admin') ma dostęp 'yes', więc `getUpcomingServices()`
+// nigdy nie wchodzi w gałąź `access === 'own'`, która jedyna woła `getCurrentUser()`.
+// Pierwszy test roli `monter` w tym pliku wywaliłby się na
+// "getCurrentUser is not a function" — mechaniczne dopisanie eksportu wzorem 30
+// innych plików (np. `installations-read-scope.test.ts`), bez zmiany sensu testów
+// ADR-010 poniżej.
+getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 
 const { getUpcomingServices } = await import('../src/app/(dashboard)/services/actions');
 

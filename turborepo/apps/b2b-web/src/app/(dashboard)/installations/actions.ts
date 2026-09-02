@@ -3,7 +3,7 @@
 import { prisma, InstallationStatus } from "@repo/database"
 import { revalidatePath } from "next/cache"
 import { can } from "@klikklima/contracts"
-import { getCurrentActorRole } from "../../../utils/supabase/server"
+import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server"
 import type { TriageAnswers } from "@/lib/triage-answers"
 
 export type InstallationSummary = {
@@ -18,7 +18,46 @@ export type InstallationSummary = {
 }
 
 export async function getInstallations(): Promise<InstallationSummary[]> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return [];
+  }
+
+  const access = actorRole ? can(actorRole, "installations", "read") : "no";
+  if (access !== "yes" && access !== "own") {
+    return [];
+  }
+
+  let scopeWhere: { zespol_id: string } | undefined;
+  if (access === "own") {
+    // Fail-closed spójnie z getCurrentActorRole() powyżej: wyjątek przy odczycie
+    // tożsamości (np. Supabase niedostępny) ma dać odmowę, nie wywrócić Server Action.
+    let user;
+    try {
+      ({ data: { user } } = await getCurrentUser());
+    } catch (error) {
+      console.error("Failed to resolve current user:", error);
+      return [];
+    }
+    if (!user?.email) {
+      return [];
+    }
+
+    const matches = await prisma.zespoly_monterskie.findMany({
+      where: { email: user.email },
+      take: 2,
+    });
+    if (matches.length !== 1 || matches[0].aktywny === false) {
+      return [];
+    }
+    scopeWhere = { zespol_id: matches[0].id };
+  }
+
   const installations = await prisma.instalacje.findMany({
+    where: scopeWhere,
     include: {
       lead: {
         include: {

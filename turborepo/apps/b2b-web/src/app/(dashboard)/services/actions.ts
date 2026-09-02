@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@repo/database"
 import { can } from "@klikklima/contracts"
 import { z } from "zod"
-import { getCurrentActorRole } from "../../../utils/supabase/server"
+import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server"
 
 // D1 (WO SRV-SOURCE-OF-TRUTH-SERVICES-VIEW): wiersz widoku ma dwa mozliwe
 // pochodzenia. `service_id` jest kluczem `serwisy.id` (nigdy `instalacje.id`).
@@ -26,7 +26,54 @@ export type ServiceSummary = {
 const uuidSchema = z.string().uuid();
 
 export async function getUpcomingServices(): Promise<ServiceSummary[]> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return [];
+  }
+
+  const access = actorRole ? can(actorRole, "services", "read") : "no";
+  if (access !== "yes" && access !== "own") {
+    return [];
+  }
+
+  let serviceScopeWhere: object | undefined;
+  let installationScopeZespolId: string | undefined;
+  if (access === "own") {
+    // Fail-closed spójnie z getCurrentActorRole() powyżej: wyjątek przy odczycie
+    // tożsamości (np. Supabase niedostępny) ma dać odmowę, nie wywrócić Server Action.
+    let user;
+    try {
+      ({ data: { user } } = await getCurrentUser());
+    } catch (error) {
+      console.error("Failed to resolve current user:", error);
+      return [];
+    }
+    if (!user?.email) {
+      return [];
+    }
+
+    const matches = await prisma.zespoly_monterskie.findMany({
+      where: { email: user.email },
+      take: 2,
+    });
+    if (matches.length !== 1 || matches[0].aktywny === false) {
+      return [];
+    }
+    const ownId = matches[0].id;
+    serviceScopeWhere = {
+      OR: [
+        { zespol_id: ownId },
+        { AND: [{ zespol_id: null }, { instalacja: { zespol_id: ownId } }] },
+      ],
+    };
+    installationScopeZespolId = ownId;
+  }
+
   const services = await prisma.serwisy.findMany({
+    where: serviceScopeWhere,
     include: {
       instalacja: {
         include: {
@@ -80,6 +127,7 @@ export async function getUpcomingServices(): Promise<ServiceSummary[]> {
       next_service_date: {
         not: null,
       },
+      zespol_id: installationScopeZespolId,
     },
     include: {
       lead: {

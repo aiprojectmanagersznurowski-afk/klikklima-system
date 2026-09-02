@@ -6,7 +6,7 @@
 - [Żywotność reguł bramki](feedback_gate_rule_liveness.md) — nowa reguła walidatora zawsze ze stałą mutacją w kk-selftest, zakres szeroki, dowodem jest komunikat.
 - [Baseline nazewnictwa przy migracjach](project_naming_baseline_on_migrations.md) — każda migracja na polskich tabelach blokuje pre-commit; baseline aktualizuje człowiek.
 - [Incydent: RLS wyłączone na żywej bazie](project_rls_disabled_incident.md) — 16/18 tabel bez RLS, anon z pełnymi prawami; migracja SEC-RLS-BASELINE napisana, nieuruchomiona.
-- [Luka w pokryciu bramki uprawnień](project_authz_gate_coverage_gap.md) — poprawna macierz RBAC przy kodzie, który jej nie czyta; od 2026-08-26 wykrywa to kk-authz-gate.mjs.
+- [Luka w pokryciu bramki uprawnień](project_authz_gate_coverage_gap.md) — poprawna macierz RBAC przy kodzie, który jej nie czyta; luka wchodzi tam, gdzie kończy się definicja skanera.
 - [Dryf pola status w rejestrze wymagań](project_requirement_status_drift.md) — żadna bramka nie pilnuje `status`; obecność testu przy ID nie dowodzi każdego kryterium acceptance.
 - [Brak kont innych niż admin](project_no_nonadmin_accounts.md) — potwierdzone 2026-08-26; luki RBAC audytor/monter są prewencyjne, ale risk zostaje HIGH.
 - [Obiekty bazy poza migracjami](project_live_db_objects_outside_migrations.md) — available_combinations i buckety Storage żyją tylko na produkcji; SQL na nich wymaga osłony to_regclass.

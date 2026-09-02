@@ -1,6 +1,6 @@
 ---
 name: authz-gate-coverage-gap
-description: Retrofit sprawdzania ról w panelu B2B jest częściowy, a żadna bramka tego nie wykrywa — macierz RBAC bywa poprawna przy kodzie, który jej nie czyta, a kk-trace zielone przy kryterium bez testu
+description: Retrofit sprawdzania ról w panelu B2B raz po raz miał dziurę tam, gdzie kończyła się definicja bramki — macierz RBAC poprawna przy kodzie, który jej nie czyta; pięć wystąpień, ostatnie w kryterium samego skanera
 metadata:
   type: project
 ---
@@ -56,6 +56,24 @@ brak wpisu w rejestrze. Wpis wiąże regułę z tabelą docelową zapisu, nie z 
 poprzednie trzy wymagania zawężone do konkretnych akcji zostawiały dziurę przy czwartej.
 Podpięcie skanera do `scripts/verify.sh` jest teraz możliwe (baseline byłby pusty), ale
 pozostaje niezrobione. Warstwa UI i RLS z tego WO nadal otwarte.
+
+**Piąte wystąpienie, tym razem w kształcie samego detektora (2026-09-03, WO `SEC-READ-GATES`):**
+skaner z definicji liczył wyłącznie MUTACJE, więc siedem eksportowanych funkcji ODCZYTOWYCH bez
+`can()` (`getCustomers`, `getCrews` ×2, `getAuditors`, `getInstallations`, `getUpcomingServices`,
+`getIncidents`) świeciło na zielono, wystawiając PII wszystkich klientów każdemu zalogowanemu.
+Ósmy przypadek, `customers/[id]/page.tsx`, wołał Prismę WPROST ze strony i wymykał się drugiemu
+kryterium („plik nazywa się `actions.ts`"). Nauka ogólniejsza niż ten commit: **kryterium bramki
+samo jest powierzchnią ataku** — luka wchodzi dokładnie tam, gdzie skaner ma granicę definicji,
+a zielony wynik mówi tylko tyle, ile obejmuje definicja. Przy każdej bramce czytaj najpierw jej
+sekcję ograniczeń, potem wynik. Od tego commita skaner obejmuje odczyty (`findMany`/`findUnique`/
+`findFirst`/`count`/`groupBy`/`aggregate`/`$queryRaw`, dla samego odczytu warunkiem jest samo
+`can(`) i wszystkie `.ts`/`.tsx` pod `apps/b2b-web/src/app`. NADAL poza zakresem: `src/lib/`,
+`src/utils/`, `packages/`, `export const x = async () => …`.
+
+**Skaner nie ma własnego selftestu.** `kk-selftest.mjs` mutuje kontrakt, nie kod aplikacji, więc
+żywotność `kk-authz-gate` dowodzi się doraźnie (usuń `can()`, uruchom, przywróć) — czyli dokładnie
+tym trybem, który [[gate-rule-liveness]] odrzuca dla `kk-validate`. To znana, otwarta dziura:
+gdyby ktoś zepsuł heurystykę AST, bramka świeciłaby na zielono i nikt by się nie dowiedział.
 
 Czego detektor NIE dowodzi: że bramka jest POPRAWNA. `can(role, 'leads', 'update')` w akcji
 kasującej klienta przechodzi skan. Para zasób/zdolność zostaje sprawą review i testów.

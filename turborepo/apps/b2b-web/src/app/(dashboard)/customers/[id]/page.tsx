@@ -1,15 +1,29 @@
 import { prisma } from "@repo/database"
 import { notFound } from "next/navigation"
+import { can } from "@klikklima/contracts"
 import { User, Phone, Mail, MapPin, Building, Calendar, FileText, ClipboardList, PenTool, CheckCircle, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { format } from "date-fns"
 import { pl } from "date-fns/locale"
 import { Customer360Tabs } from "./tabs-client"
+import { getCurrentActorRole } from "../../../../utils/supabase/server"
 
 export const dynamic = "force-dynamic"
 
 export default async function Customer360Page({ params }: { params: Promise<{ id: string }> }) {
+  let actorRole: Awaited<ReturnType<typeof getCurrentActorRole>> = null;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+  }
+
+  if (!actorRole || can(actorRole, "clients", "read") !== "yes") {
+    notFound();
+    return;
+  }
+
   const { id } = await params;
   const customer = await prisma.klienci.findUnique({
     where: { id },
@@ -28,6 +42,7 @@ export default async function Customer360Page({ params }: { params: Promise<{ id
 
   if (!customer) {
     notFound();
+    return;
   }
 
   return (
