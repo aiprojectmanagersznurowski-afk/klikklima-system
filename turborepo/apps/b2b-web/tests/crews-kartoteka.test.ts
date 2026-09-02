@@ -60,6 +60,7 @@ const {
   crewFindUniqueMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
+  getCurrentUserMock,
   signStoragePathsMock,
 } = vi.hoisted(() => ({
   crewCreateMock: vi.fn(),
@@ -67,6 +68,7 @@ const {
   crewFindUniqueMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
   signStoragePathsMock: vi.fn(),
 }));
 
@@ -82,7 +84,10 @@ vi.mock('@repo/database', () => ({
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
 }));
+// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
+getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 // MINOR 7 (rls-security-auditor, review post-GREEN CRM-ZESP-KARTOTEKA): bucket
 // `zespoly` jest prywatny — getCrewForEdit musi podpisac sciezke Storage przed
 // zwroceniem, dokladnie jak getAuditorForEdit w auditors-kartoteka.test.ts i jak

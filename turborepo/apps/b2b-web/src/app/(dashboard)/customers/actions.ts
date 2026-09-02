@@ -16,36 +16,63 @@ export type CustomerSummary = {
   installationsCount: number;
 }
 
-export async function getCustomers(): Promise<CustomerSummary[]> {
-  const customers = await prisma.klienci.findMany({
-    include: {
-      leady: {
-        include: {
-          instalacje: true
-        }
+/**
+ * P1-3 (audyt wydajności 2026-09-02): zagnieżdżony `include: { leady: { include: {
+ * instalacje: true } } }` rozbijał się na ~8 roundtripów (1275 ms na pustej tabeli),
+ * żeby policzyć wyłącznie dwie liczby. `_count` liczony po stronie bazy zamiast
+ * pełnego `include` + `.length` w JS, paginacja wzorem `getLeads()` (`leads/actions.ts`)
+ * dla spójności wzorca.
+ */
+export async function getCustomers(
+  options?: { page?: number; limit?: number }
+): Promise<{ customers: CustomerSummary[]; totalPages: number }> {
+  const page = options?.page || 1;
+  const limit = options?.limit || 50;
+  const skip = (page - 1) * limit;
+
+  const [customers, totalCount] = await Promise.all([
+    prisma.klienci.findMany({
+      orderBy: {
+        created_at: 'desc',
       },
-    },
-    orderBy: {
-      created_at: 'desc',
-    }
-  });
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        imie_i_nazwisko: true,
+        email: true,
+        telefon: true,
+        created_at: true,
+        _count: { select: { leady: true } },
+        leady: {
+          select: {
+            _count: { select: { instalacje: true } },
+          },
+        },
+      },
+    }),
+    prisma.klienci.count(),
+  ]);
 
-  return customers.map(c => {
-    let installationsCount = 0;
-    c.leady.forEach(lead => {
-      installationsCount += lead.instalacje.length;
-    });
+  return {
+    customers: customers.map(c => {
+      const installationsCount = c.leady.reduce(
+        (sum, lead) => sum + lead._count.instalacje,
+        0
+      );
 
-    return {
-      id: c.id,
-      name: c.imie_i_nazwisko || "Nieznany",
-      email: c.email,
-      phone: c.telefon,
-      createdAt: c.created_at,
-      leadsCount: c.leady.length,
-      installationsCount,
-    }
-  });
+      return {
+        id: c.id,
+        name: c.imie_i_nazwisko || "Nieznany",
+        email: c.email,
+        phone: c.telefon,
+        createdAt: c.created_at,
+        leadsCount: c._count.leady,
+        installationsCount,
+      }
+    }),
+    totalPages: Math.ceil(totalCount / limit),
+  };
 }
 
 export async function anonymizeClientAction(

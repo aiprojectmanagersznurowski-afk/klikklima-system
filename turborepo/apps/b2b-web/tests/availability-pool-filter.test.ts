@@ -35,13 +35,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * całość realnie PADA dziś (dzisiejszy kod nie filtruje NICZEGO po availability, więc
  * pierwsza asercja "nie zawiera niedostępnego" jest tą, która czerwieni test), a nie
  * tylko deklaruje poprawne zachowanie, które i tak by przeszło.
+ *
+ * TEST-DEFECT (naprawiony), część o `getAuditors()`: bramka autoryzacyjna
+ * `getCurrentActorRole()` + `can(actorRole,'auditors','read')` (patrz
+ * leads-get-auditors-authz-gate.test.ts) wymaga mocka `../src/utils/supabase/server` — bez
+ * niego realny `getCurrentActorRole()` rzuca poza kontekstem żądania, bramka fail-closed
+ * zwraca `[]`, i asercje o filtrze dostępności padają z przyczyny niezwiązanej z tym, co ten
+ * plik ma sprawdzać. Rola `admin` (uprawniona) w każdym przypadku — ten plik testuje WYŁĄCZNIE
+ * filtr dostępności, nie samą bramkę. `getCrews()` nie ma dziś takiej bramki, więc ta część
+ * pliku była i zostaje zielona bez zmian.
  */
 
-const { auditorFindManyMock, crewFindManyMock, leadFindUniqueMock, revalidatePathMock } = vi.hoisted(() => ({
+const { auditorFindManyMock, crewFindManyMock, leadFindUniqueMock, revalidatePathMock, getCurrentActorRoleMock, getCurrentUserMock } = vi.hoisted(() => ({
   auditorFindManyMock: vi.fn(),
   crewFindManyMock: vi.fn(),
   leadFindUniqueMock: vi.fn(),
   revalidatePathMock: vi.fn(),
+  getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
 }));
 
 vi.mock('@repo/database', () => ({
@@ -52,6 +63,14 @@ vi.mock('@repo/database', () => ({
   },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
+vi.mock('../src/utils/supabase/server', () => ({
+  getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
+}));
+
+// P0-1: domyślny brak sesji dla `getCurrentUser`, wzorem auditors-delete.test.ts.
+getCurrentUserMock.mockResolvedValue({ data: { user: null } });
+getCurrentActorRoleMock.mockResolvedValue('admin');
 
 const { getAuditors, getCrews } = await import('../src/app/(dashboard)/leads/actions');
 

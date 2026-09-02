@@ -20,21 +20,22 @@ export default async function LeadsPage(props: {
   
   const page = searchParams.page ? parseInt(searchParams.page, 10) : 1;
 
-  const result = await getLeads({ 
-    status: bucket ? undefined : status, 
-    bucket,
-    page, 
-    limit: 50 
-  });
+  const [result, auditors, actorRole] = await Promise.all([
+    getLeads({
+      status: bucket ? undefined : status,
+      bucket,
+      page,
+      limit: 50
+    }),
+    getAuditors(),
+    getCurrentActorRole(),
+  ]);
   // SEC-RLS-AUDITOR-SCOPE: getLeads() zwraca { success: false, error } dla ról
   // bez uprawnień do odczytu (monter) i przypadków fail-closed.
   if (!("leads" in result)) {
     notFound();
     return;
   }
-
-  const auditors = await getAuditors();
-  const actorRole = await getCurrentActorRole();
 
   // Determine which status to highlight in the dropdown
   const activeStatus: LeadStatus | "ALL" = (bucket === "cold" || bucket === "rejected_auto")

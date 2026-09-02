@@ -86,12 +86,14 @@ import { PERMISSIONS, can } from '@klikklima/contracts';
 const {
   authorizedUserFindManyMock,
   getCurrentActorRoleMock,
+  getCurrentUserMock,
   notFoundMock,
   redirectMock,
   SettingsClientMock,
 } = vi.hoisted(() => ({
   authorizedUserFindManyMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
   notFoundMock: vi.fn(),
   redirectMock: vi.fn(),
   SettingsClientMock: vi.fn(),
@@ -106,7 +108,10 @@ vi.mock('@repo/database', () => ({
 }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
 }));
+// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
+getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 vi.mock('next/navigation', () => ({
   notFound: notFoundMock,
   redirect: redirectMock,

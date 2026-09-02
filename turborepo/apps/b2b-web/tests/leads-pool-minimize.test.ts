@@ -47,12 +47,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * plik testuje te same dwie funkcje pod innym kątem — filtr dostępności, nie zawężenie pól;
  * `next/cache` mockowane defensywnie, bo cały moduł actions.ts importuje `revalidatePath` na
  * górze pliku, choć żadna z dwóch testowanych funkcji go nie woła).
+ *
+ * TEST-DEFECT (naprawiony): `getAuditors()` dostał bramkę autoryzacyjną `getCurrentActorRole()`
+ * + `can(actorRole,'auditors','read')` przed zapytaniem Prisma (patrz
+ * leads-get-auditors-authz-gate.test.ts). Bez mocka `../src/utils/supabase/server` realny
+ * `getCurrentActorRole()` rzuca poza kontekstem żądania, bramka fail-closed zwraca `[]`, i
+ * cały ten plik pada na niezwiązanej przyczynie zamiast na kształcie kolumn, który ma pilnować.
+ * Mock zwraca rolę uprawnioną (`admin`) w każdym opisywanym tu przypadku — ten plik testuje
+ * WYŁĄCZNIE minimalizację pól, nie samą bramkę.
  */
 
-const { auditorFindManyMock, crewFindManyMock, revalidatePathMock } = vi.hoisted(() => ({
+const { auditorFindManyMock, crewFindManyMock, revalidatePathMock, getCurrentActorRoleMock, getCurrentUserMock } = vi.hoisted(() => ({
   auditorFindManyMock: vi.fn(),
   crewFindManyMock: vi.fn(),
   revalidatePathMock: vi.fn(),
+  getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
 }));
 
 vi.mock('@repo/database', () => ({
@@ -62,6 +72,15 @@ vi.mock('@repo/database', () => ({
   },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
+vi.mock('../src/utils/supabase/server', () => ({
+  getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
+}));
+
+// P0-1: domyślny brak sesji dla `getCurrentUser` — ten plik nie testuje ścieżek zależnych od
+// tożsamości poprzez createClient(), wzorem auditors-delete.test.ts/auditors-kartoteka.test.ts.
+getCurrentUserMock.mockResolvedValue({ data: { user: null } });
+getCurrentActorRoleMock.mockResolvedValue('admin');
 
 const { getAuditors, getCrews } = await import('../src/app/(dashboard)/leads/actions');
 

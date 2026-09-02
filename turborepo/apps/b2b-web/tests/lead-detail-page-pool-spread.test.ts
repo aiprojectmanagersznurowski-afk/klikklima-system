@@ -77,6 +77,7 @@ const {
   signStoragePathsMock,
   AssignAuditorMock,
   getCurrentActorRoleMock,
+  getCurrentUserMock,
   createClientMock,
 } = vi.hoisted(() => ({
   leadFindUniqueMock: vi.fn(),
@@ -84,6 +85,7 @@ const {
   signStoragePathsMock: vi.fn(),
   AssignAuditorMock: vi.fn(() => null),
   getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
   createClientMock: vi.fn(),
 }));
 
@@ -95,8 +97,11 @@ vi.mock('../src/app/(dashboard)/leads/actions', () => ({
 }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
   createClient: createClientMock,
 }));
+// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
+getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 vi.mock('@/lib/storage/signed-urls', () => ({
   signStoragePaths: signStoragePathsMock,
 }));

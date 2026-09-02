@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 import { prisma } from '@repo/database'
 import { ROLES, type Role } from '@klikklima/contracts'
 
@@ -31,6 +32,19 @@ export async function createClient() {
 }
 
 /**
+ * P0-1 (audyt wydajności 2026-09-02): `supabase.auth.getUser()` to roundtrip HTTP
+ * (~100 ms). `getCurrentActorRole()` go potrzebuje, a niektóre Server Actions
+ * (np. `getLeads()` dla roli `audytor`) osobno chcą samego e-maila sesji — bez tego
+ * wydzielenia to były dwa niezależne wywołania `auth.getUser()` w obrębie jednego
+ * żądania. `cache()` memoizuje na czas jednego renderu serwerowego, więc obie strony
+ * dzielą teraz jeden roundtrip.
+ */
+export const getCurrentUser = cache(async () => {
+  const supabase = await createClient()
+  return supabase.auth.getUser()
+})
+
+/**
  * R2 (WO CRM-SAFE-RECORD-ACTIONS): jedyne dziś źródło roli dostępne dla Server Actions,
  * które muszą sprawdzić uprawnienia (PERMISSIONS.*.delete = ['admin']). `middleware.ts`
  * dziś sprawdza wyłącznie obecność e-maila w `AuthorizedUser` — nie czyta roli. Ten
@@ -39,11 +53,10 @@ export async function createClient() {
  * obecności roli. Zwraca `null`, gdy nie ma sesji albo e-mail nie jest w `AuthorizedUser`
  * (a wtedy `can()` i tak odrzuci — brak roli traktujemy fail-closed).
  */
-export async function getCurrentActorRole(): Promise<Role | null> {
-  const supabase = await createClient()
+export const getCurrentActorRole = cache(async (): Promise<Role | null> => {
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await getCurrentUser()
 
   if (!user?.email) return null
 
@@ -57,4 +70,4 @@ export async function getCurrentActorRole(): Promise<Role | null> {
   return (ROLES as readonly string[]).includes(authorizedUser.role)
     ? (authorizedUser.role as Role)
     : null
-}
+})

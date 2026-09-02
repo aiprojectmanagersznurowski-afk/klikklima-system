@@ -21,10 +21,11 @@ import { ROLES, PERMISSIONS, can } from '@klikklima/contracts';
  * ../src/utils/supabase/server (getCurrentActorRole).
  */
 
-const { incidentDeleteMock, revalidatePathMock, getCurrentActorRoleMock } = vi.hoisted(() => ({
+const { incidentDeleteMock, revalidatePathMock, getCurrentActorRoleMock, getCurrentUserMock } = vi.hoisted(() => ({
   incidentDeleteMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
 }));
 
 vi.mock('@repo/database', () => ({
@@ -37,7 +38,10 @@ vi.mock('@repo/database', () => ({
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
 }));
+// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
+getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 
 const { deleteIncidentAction } = await import('../src/app/(dashboard)/incidents/actions');
 

@@ -27,12 +27,13 @@ import { fileURLToPath } from 'node:url';
  * ADR-002 zamrozony. Mockujemy realny ksztalt @repo/database.
  */
 
-const { crewFindManyMock, leadFindUniqueMock, revalidatePathMock, getCurrentActorRoleMock, createClientMock } =
+const { crewFindManyMock, leadFindUniqueMock, revalidatePathMock, getCurrentActorRoleMock, getCurrentUserMock, createClientMock } =
   vi.hoisted(() => ({
     crewFindManyMock: vi.fn(),
     leadFindUniqueMock: vi.fn(),
     revalidatePathMock: vi.fn(),
     getCurrentActorRoleMock: vi.fn(),
+    getCurrentUserMock: vi.fn(),
     createClientMock: vi.fn(),
   }));
 
@@ -49,8 +50,11 @@ vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 // ktora te testy faktycznie weryfikuja.
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
   createClient: createClientMock,
 }));
+// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
+getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 
 const { getCrews, assignCrewToLead } = await import(
   '../src/app/(dashboard)/leads/actions'

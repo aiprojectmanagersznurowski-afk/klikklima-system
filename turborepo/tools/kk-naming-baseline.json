@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-02T13:31:17.318Z",
+  "generatedAt": "2026-09-02T17:01:54.968Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 17,
@@ -19,8 +19,8 @@
     "apps/b2b-web/src/app/(dashboard)/customers/[id]/page.tsx::adr002-pl-tables": 7,
     "apps/b2b-web/src/app/(dashboard)/customers/[id]/tabs-client.tsx::adr002-pl-columns": 1,
     "apps/b2b-web/src/app/(dashboard)/customers/[id]/tabs-client.tsx::adr002-pl-tables": 14,
-    "apps/b2b-web/src/app/(dashboard)/customers/actions.ts::adr002-pl-columns": 4,
-    "apps/b2b-web/src/app/(dashboard)/customers/actions.ts::adr002-pl-tables": 9,
+    "apps/b2b-web/src/app/(dashboard)/customers/actions.ts::adr002-pl-columns": 5,
+    "apps/b2b-web/src/app/(dashboard)/customers/actions.ts::adr002-pl-tables": 11,
     "apps/b2b-web/src/app/(dashboard)/incidents/actions.ts::adr002-pl-columns": 3,
     "apps/b2b-web/src/app/(dashboard)/incidents/actions.ts::adr002-pl-tables": 2,
     "apps/b2b-web/src/app/(dashboard)/incidents/incidents-client.tsx::adr002-pl-columns": 3,
@@ -72,6 +72,8 @@
     "apps/b2b-web/tests/customers-anonymize-rodo.test.ts::adr002-pl-tables": 10,
     "apps/b2b-web/tests/customers-authz-gates.test.ts::adr002-pl-columns": 1,
     "apps/b2b-web/tests/customers-authz-gates.test.ts::adr002-pl-tables": 1,
+    "apps/b2b-web/tests/customers-get-customers-count-pagination.test.ts::adr002-pl-columns": 4,
+    "apps/b2b-web/tests/customers-get-customers-count-pagination.test.ts::adr002-pl-tables": 11,
     "apps/b2b-web/tests/incidents-authz-gates.test.ts::adr002-pl-tables": 1,
     "apps/b2b-web/tests/installations-authz-gates.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/lead-detail-page-pool-spread.test.ts::adr002-pl-columns": 19,
@@ -86,6 +88,8 @@
     "apps/b2b-web/tests/leads-delete-admin-only.test.ts::adr002-pl-tables": 1,
     "apps/b2b-web/tests/leads-detail-scope.test.ts::adr002-pl-columns": 13,
     "apps/b2b-web/tests/leads-detail-scope.test.ts::adr002-pl-tables": 8,
+    "apps/b2b-web/tests/leads-get-auditors-authz-gate.test.ts::adr002-pl-columns": 4,
+    "apps/b2b-web/tests/leads-get-auditors-authz-gate.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/leads-list-minimize.test.ts::adr002-pl-columns": 31,
     "apps/b2b-web/tests/leads-list-minimize.test.ts::adr002-pl-tables": 17,
     "apps/b2b-web/tests/leads-pool-minimize.test.ts::adr002-pl-columns": 23,
@@ -155,5 +159,5 @@
     "supabase/migrations/20260901220000_rodo_audit_log_and_client_anonymization.sql::adr002-pl-tables": 2,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 1908
+  "total": 1932
 }

@@ -62,6 +62,7 @@ const {
   auditorFindUniqueMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
+  getCurrentUserMock,
   signStoragePathsMock,
 } = vi.hoisted(() => ({
   auditorCreateMock: vi.fn(),
@@ -69,6 +70,7 @@ const {
   auditorFindUniqueMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
   signStoragePathsMock: vi.fn(),
 }));
 
@@ -84,7 +86,10 @@ vi.mock('@repo/database', () => ({
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
 }));
+// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
+getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 // Bucket `audytorzy` jest prywatny — getAuditorForEdit musi podpisac sciezke Storage
 // przed zwroceniem, identycznie jak signStoragePaths("zespoly", ...) w crews/page.tsx.
 // Wzorzec mocka identyczny jak lead-detail-page-pool-spread.test.ts.

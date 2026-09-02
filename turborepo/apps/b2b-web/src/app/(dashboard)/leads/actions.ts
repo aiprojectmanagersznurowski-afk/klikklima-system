@@ -10,7 +10,7 @@ import {
   findTransition,
   can,
 } from "@klikklima/contracts";
-import { getCurrentActorRole, createClient } from "../../../utils/supabase/server";
+import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server";
 
 /**
  * D6 (WO CRM-SAFE-RECORD-ACTIONS): "ważny w dniu montażu" porównujemy po dacie
@@ -76,6 +76,17 @@ function isQuoteStale(quotedAt: Date | null, now: Date): boolean {
  * pokazuje WSZYSTKICH — admin musi widzieć zablokowanego, żeby móc go odblokować.
  */
 export async function getAuditors() {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return [];
+  }
+  if (!actorRole || can(actorRole, "auditors", "read") !== "yes") {
+    return [];
+  }
+
   try {
     const auditors = await prisma.audytorzy.findMany({
       where: { is_active: true },
@@ -323,8 +334,7 @@ export async function getLeads(options?: {
 
   let scopeWhere: { audytor_id: string } | undefined;
   if (access === "own") {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getCurrentUser();
     if (!user?.email) {
       return { success: false, error: "Brak sesji użytkownika." };
     }

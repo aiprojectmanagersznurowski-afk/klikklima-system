@@ -5,7 +5,7 @@ import { getCurrentActorRole } from "../../../utils/supabase/server"
 export const dynamic = "force-dynamic"
 
 export default async function CustomersPage() {
-  const [customers, actorRole] = await Promise.all([
+  const [{ customers }, actorRole] = await Promise.all([
     getCustomers(),
     getCurrentActorRole(),
   ]);

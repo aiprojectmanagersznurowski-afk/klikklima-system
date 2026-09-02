@@ -47,6 +47,7 @@ const {
   leadUpdateMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
+  getCurrentUserMock,
 } = vi.hoisted(() => ({
   auditorFindManyMock: vi.fn(),
   auditorFindUniqueMock: vi.fn(),
@@ -54,6 +55,7 @@ const {
   leadUpdateMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
 }));
 
 vi.mock('@repo/database', () => ({
@@ -71,7 +73,10 @@ vi.mock('@repo/database', () => ({
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
 }));
+// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
+getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 
 const { getAuditors } = await import('../src/app/(dashboard)/leads/actions');
 const { updateLeadAuditor } = await import('../src/app/(dashboard)/leads/[id]/actions');
@@ -81,6 +86,14 @@ const UNAUTHORIZED_LEAD_UPDATE_ROLES = ['audytor', 'monter'] as const;
 describe('getAuditors (leads/actions.ts) - pula wyboru wyklucza zablokowanych (CRM-AUDYT-AC1.6)', () => {
   beforeEach(() => {
     auditorFindManyMock.mockReset();
+    getCurrentActorRoleMock.mockReset();
+    // Przygotowanie pod bramkę roli (patrz leads-get-auditors-authz-gate.test.ts,
+    // dopisane w tej samej turze): dziś getAuditors() nie sprawdza roli w ogóle, więc
+    // ten mock jest jeszcze nieużywany przez kod produkcyjny. Rola dozwolona w
+    // auditors.read (['admin','dyspozytor']) ustawiona z góry, żeby te testy logiki
+    // is_active dalej przechodziły POD przyszłą bramką, nie zamiast niej — dokładnie
+    // ten sam wzorzec co beforeEach niżej w tym pliku (updateLeadAuditor).
+    getCurrentActorRoleMock.mockResolvedValue('admin');
   });
 
   // @REQ: CRM-AUDYT-AC1

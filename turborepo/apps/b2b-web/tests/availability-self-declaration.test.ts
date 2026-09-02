@@ -73,6 +73,7 @@ const {
   availabilityUpsertMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
+  getCurrentUserMock,
   getUserMock,
   createClientMock,
 } = vi.hoisted(() => ({
@@ -83,6 +84,7 @@ const {
   availabilityUpsertMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
   getUserMock: vi.fn(),
   createClientMock: vi.fn(),
 }));
@@ -105,8 +107,14 @@ vi.mock('@repo/database', () => ({
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
   createClient: createClientMock,
 }));
+// P0-1 (przygotowanie pod przyszłą turę): `getCurrentUser` deleguje do tego samego
+// `getUserMock`, którym testy już sterują dla `createClient().auth.getUser()` —
+// jeden punkt prawdy o sesji, spójny niezależnie od tego, którą ścieżką kod
+// produkcyjny po nią sięgnie.
+getCurrentUserMock.mockImplementation(() => getUserMock());
 
 const { setSelfAvailabilityAction: setAuditorAvailability } = await import(
   '../src/app/(dashboard)/auditors/actions'
