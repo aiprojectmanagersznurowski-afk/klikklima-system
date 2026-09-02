@@ -12,4 +12,5 @@
 - [Obiekty bazy poza migracjami](project_live_db_objects_outside_migrations.md) — available_combinations i buckety Storage żyją tylko na produkcji; SQL na nich wymaga osłony to_regclass.
 - [Nieuruchomione migracje bezpieczeństwa](project_unapplied_security_migrations.md) — trzy pliki w repo, zero z nich na żywej bazie; plik dowodzi intencji, nie stanu serwera.
 - [Weryfikacja premisy przed baseline](feedback_verify_premise_before_baseline.md) — „wszystko w testach" bywa nieścisłe; rozbijam deltę per plik przed --update-baseline.
+- [Retroaktywne ID zapala kk-trace](project_retroactive_req_trace_red.md) — rejestracja po testach = czerwona bramka, bo tagi @REQ może dopisać tylko test-author.
 - [Ziarnistość ID wymagań](feedback_requirement_id_granularity.md) — jedno ID na encję obejmujące create i update, podział po encji, nie po operacji.
