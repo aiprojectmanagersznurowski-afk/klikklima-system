@@ -21,7 +21,7 @@ const CHECK = process.argv.includes('--check');
 const { STATES, TRANSITIONS, GUARDS, START_STATE, LOST_REASONS } = await import(join(ROOT, config.contractsDir, 'funnel.contract.mjs'));
 const { NOTIFICATIONS, QUEUE_POLICY } = await import(join(ROOT, config.contractsDir, 'notifications.contract.mjs'));
 const { SLA_POLICIES } = await import(join(ROOT, config.contractsDir, 'sla.contract.mjs'));
-const { ROLES, MATRIX, DELETE_POLICIES } = await import(join(ROOT, config.contractsDir, 'rbac.contract.mjs'));
+const { ROLES, MATRIX, DELETE_POLICIES, AUDIT_REQUIREMENTS } = await import(join(ROOT, config.contractsDir, 'rbac.contract.mjs'));
 const { REQUIREMENTS } = await import(join(ROOT, config.contractsDir, 'requirements.contract.mjs'));
 const { ROOM_SIZE_BANDS, BUILDING_TYPES, PROPERTY_CONDITIONS, TRIAGE_FIELDS,
         DISQUALIFICATION_RULES, ROOM_COUNT_EXPERT_THRESHOLD } = await import(join(ROOT, config.contractsDir, 'triage.contract.mjs'));
@@ -184,6 +184,15 @@ ${MATRIX.map((m) => `  ${m.resource}: { read: ${q(m.read || [])}, create: ${q(m.
 };
 
 export const DELETE_POLICIES = ${JSON.stringify(DELETE_POLICIES, null, 2)} as const;
+
+/**
+ * Wymogi audytowe (ADR-008). Jedyne źródło dozwolonych wartości \`operation\`
+ * i \`legalBasis\` — waliduj z tej stałej, nie z listy zakodowanej w Server Action.
+ */
+export const AUDIT_REQUIREMENTS = ${JSON.stringify(AUDIT_REQUIREMENTS, null, 2)} as const;
+
+export type AuditOperation = (typeof AUDIT_REQUIREMENTS.mustLog)[number];
+export type AuditLegalBasis = (typeof AUDIT_REQUIREMENTS.legalBases)[number];
 
 /** \`audytor:own\` oznacza dostęp wyłącznie do własnych rekordów — sprawdź to w RLS, nie tylko tutaj. */
 export function can(role: Role, resource: string, capability: Capability): 'no' | 'yes' | 'own' {

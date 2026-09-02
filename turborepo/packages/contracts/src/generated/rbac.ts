@@ -66,6 +66,35 @@ export const DELETE_POLICIES = [
   }
 ] as const;
 
+/**
+ * Wymogi audytowe (ADR-008). Jedyne źródło dozwolonych wartości `operation`
+ * i `legalBasis` — waliduj z tej stałej, nie z listy zakodowanej w Server Action.
+ */
+export const AUDIT_REQUIREMENTS = {
+  "appendOnly": true,
+  "mustLog": [
+    "delete",
+    "anonymize",
+    "role_change",
+    "contract_override",
+    "manual_status_change",
+    "notification_resend"
+  ],
+  "legalBases": [
+    "RODO_ERASURE_REQUEST",
+    "OPERATIONAL_ERROR",
+    "DUPLICATE",
+    "COURT_ORDER",
+    "OTHER"
+  ],
+  "requiresJustification": true,
+  "retentionDays": 1825,
+  "status": "STABLE"
+} as const;
+
+export type AuditOperation = (typeof AUDIT_REQUIREMENTS.mustLog)[number];
+export type AuditLegalBasis = (typeof AUDIT_REQUIREMENTS.legalBases)[number];
+
 /** `audytor:own` oznacza dostęp wyłącznie do własnych rekordów — sprawdź to w RLS, nie tylko tutaj. */
 export function can(role: Role, resource: string, capability: Capability): 'no' | 'yes' | 'own' {
   const entry = PERMISSIONS[resource]?.[capability] ?? [];
