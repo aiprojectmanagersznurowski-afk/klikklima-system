@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { differenceInDays } from "date-fns"
+import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 
 type EditState =
   | { status: "loading" }
@@ -42,6 +43,7 @@ export function AuditorsClient({
   const [searchQuery, setSearchQuery] = useState("")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editState, setEditState] = useState<EditState | null>(null)
+  const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
 
   const filtered = auditors.filter(a => {
     if (searchQuery) {
@@ -62,21 +64,7 @@ export function AuditorsClient({
       alert("Brak uprawnień do usunięcia audytora.");
       return;
     }
-    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
-      startTransition(async () => {
-        try {
-          const result = await deleteAuditorAction(id);
-          if (!result.success) {
-            const blocking = result.blockingLeads?.map(l => `${l.id} (${l.clientName ?? "brak nazwy"})`).join(", ");
-            alert(result.error + (blocking ? `\nBlokujące leady: ${blocking}` : ""));
-            return;
-          }
-          window.location.reload();
-        } catch (e) {
-          alert("Wystąpił błąd podczas usuwania rekordu.");
-        }
-      });
-    }
+    setDeleteDialogId(id);
   }
 
   const handleToggleActive = (id: string, currentlyActive: boolean) => {
@@ -329,6 +317,25 @@ export function AuditorsClient({
           onSave={(formData, photoFile) =>
             handleSaveAuditor(formData, photoFile, editState.status === "ready" ? editState.id : null)
           }
+        />
+      )}
+
+      {deleteDialogId && (
+        <DeleteJustificationDialog
+          title="Usuń audytora"
+          description="Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO)."
+          onConfirm={async (values) => {
+            const result = await deleteAuditorAction(deleteDialogId, values);
+            if (!result.success) {
+              const blocking = result.blockingLeads?.map(l => `${l.id} (${l.clientName ?? "brak nazwy"})`).join(", ");
+              return { success: false, error: result.error + (blocking ? `\nBlokujące leady: ${blocking}` : "") };
+            }
+            return result;
+          }}
+          onClose={() => setDeleteDialogId(null)}
+          onSuccess={() => {
+            window.location.reload();
+          }}
         />
       )}
     </div>

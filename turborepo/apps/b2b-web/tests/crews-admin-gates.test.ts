@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PERMISSIONS, can } from '@klikklima/contracts';
+import { PERMISSIONS, can, AUDIT_REQUIREMENTS } from '@klikklima/contracts';
 
 /**
  * Dwa wymagania, jeden plik produkcyjny: apps/b2b-web/src/app/(dashboard)/crews/actions.ts
@@ -42,6 +42,16 @@ import { PERMISSIONS, can } from '@klikklima/contracts';
  * ani updateCrewAvatar go nie używają (to setSelfAvailabilityAction w tym samym pliku),
  * dokładnie tak jak deleteAuditorAction/toggleAuditorActiveAction go pomijają.
  *
+ * MECHANICZNA AKTUALIZACJA (WO SEC-AUDIT-LOG-DELETE, Fala B): `deleteCrewAction`
+ * przyjmuje odtąd DRUGI argument, `input: { justification, legalBasis }`, i przed
+ * transakcją pobiera `actorEmail` przez `createClient().auth.getUser()` — mockujemy
+ * odtąd WYŁĄCZNIE `prisma.$transaction` (wzorem `services-authz-gates.test.ts` i
+ * `sec-audit-log-delete-wave-b.test.ts`, które testują tę samą funkcję pod kątem
+ * samego wpisu audytowego — ten opis `describe` zostaje wąski i dowodzi WYŁĄCZNIE
+ * bramki roli i blokady BLOCK_UNTIL_REASSIGNED, tak jak przed tą turą).
+ * `updateCrewAvatar` NIE zmienił sygnatury w tej fali, więc jego `describe` niżej
+ * zostaje bez zmian.
+ *
  * Świadome ograniczenia (odnotowane, nie pominięte milcząco):
  * - Warstwa UI (ukrycie przycisku "Usuń"/kontrolki wgrywania zdjęcia dla ról nie-admin)
  *   i warstwa RLS są OSOBNE od bramki Server Action i testowane gdzie indziej — sam
@@ -62,20 +72,31 @@ const {
   crewFindUniqueMock,
   crewDeleteMock,
   crewUpdateMock,
+  auditLogCreateMock,
   transactionMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
   getCurrentUserMock,
+  getUserMock,
+  createClientMock,
 } = vi.hoisted(() => ({
   crewFindUniqueMock: vi.fn(),
   crewDeleteMock: vi.fn(),
   crewUpdateMock: vi.fn(),
+  auditLogCreateMock: vi.fn(),
   transactionMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
+  getUserMock: vi.fn(),
+  createClientMock: vi.fn(),
 }));
 
+// `updateCrewAvatar` woła `prisma.zespoly_monterskie.update` bezpośrednio (sygnatura
+// niezmieniona tą falą), a `deleteCrewAction` odtąd woła WYŁĄCZNIE
+// `prisma.$transaction` (patrz komentarz nagłówkowy) — oba kształty mockowania
+// współistnieją w tym samym module, bo oba punkty zapisu żyją w tym samym pliku
+// produkcyjnym.
 vi.mock('@repo/database', () => ({
   prisma: {
     zespoly_monterskie: {
@@ -90,8 +111,11 @@ vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
   getCurrentUser: getCurrentUserMock,
+  createClient: createClientMock,
 }));
-// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
+// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — `updateCrewAvatar` nie
+// testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser`
+// dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
 getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 
 const { deleteCrewAction, updateCrewAvatar } = await import(
@@ -99,6 +123,12 @@ const { deleteCrewAction, updateCrewAvatar } = await import(
 );
 
 const UNAUTHORIZED_ROLES = ['dyspozytor', 'audytor', 'monter'] as const;
+
+const ADMIN_EMAIL = 'admin@klikklima.pl';
+const VALID_INPUT = {
+  justification: 'Duplikat rekordu ekipy utworzony przez pomylke operatora.',
+  legalBasis: AUDIT_REQUIREMENTS.legalBases[0],
+};
 
 // Statusy "aktywne" wg contracts/rbac.contract.mjs DELETE_POLICIES.crews
 // (strategy: BLOCK_UNTIL_REASSIGNED) — literały wg InstallationStatus (Prisma enum,
@@ -113,12 +143,22 @@ describe('deleteCrewAction — bramka roli i blokada aktywnych instalacji (CRM-D
     crewFindUniqueMock.mockReset();
     crewDeleteMock.mockReset();
     crewUpdateMock.mockReset();
+    auditLogCreateMock.mockReset();
     transactionMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
+    getUserMock.mockReset();
+    createClientMock.mockReset();
+
     getCurrentActorRoleMock.mockResolvedValue('admin');
+    getUserMock.mockResolvedValue({ data: { user: { email: ADMIN_EMAIL } } });
+    createClientMock.mockResolvedValue({ auth: { getUser: getUserMock } });
+    auditLogCreateMock.mockResolvedValue({ id: 'audit-1' });
     transactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
-      cb({ zespoly_monterskie: { findUnique: crewFindUniqueMock, delete: crewDeleteMock } }),
+      cb({
+        zespoly_monterskie: { findUnique: crewFindUniqueMock, delete: crewDeleteMock },
+        auditLog: { create: auditLogCreateMock },
+      }),
     );
   });
 
@@ -131,7 +171,7 @@ describe('deleteCrewAction — bramka roli i blokada aktywnych instalacji (CRM-D
       getCurrentActorRoleMock.mockResolvedValue(role);
       expect(can(role, 'crews', 'delete')).toBe('no');
 
-      const result = await deleteCrewAction('crew-1');
+      const result = await deleteCrewAction('crew-1', VALID_INPUT);
 
       // Kolejność asercji jest celowa: dowód braku zapytania do Prismy jest tym,
       // co ta reguła faktycznie zabezpiecza, więc raportuje się jako pierwszy —
@@ -147,7 +187,7 @@ describe('deleteCrewAction — bramka roli i blokada aktywnych instalacji (CRM-D
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed, nie przepuszczony', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
-    const result = await deleteCrewAction('crew-1');
+    const result = await deleteCrewAction('crew-1', VALID_INPUT);
 
     expect(crewDeleteMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
@@ -160,7 +200,7 @@ describe('deleteCrewAction — bramka roli i blokada aktywnych instalacji (CRM-D
   it('błąd zapytania o rolę daje odmowę, nie nieobsłużony wyjątek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('błąd zapytania o rolę'));
 
-    const result = await deleteCrewAction('crew-1');
+    const result = await deleteCrewAction('crew-1', VALID_INPUT);
 
     expect(crewDeleteMock).not.toHaveBeenCalled();
     expect(result).toMatchObject({ success: false });
@@ -171,7 +211,7 @@ describe('deleteCrewAction — bramka roli i blokada aktywnych instalacji (CRM-D
   it('admin — sukces, gdy ekipa nie ma żadnych blokujących instalacji', async () => {
     crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', instalacje: [] });
 
-    const result = await deleteCrewAction('crew-1');
+    const result = await deleteCrewAction('crew-1', VALID_INPUT);
 
     expect(result).toEqual({ success: true });
     expect(crewDeleteMock).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'crew-1' } }));
@@ -182,7 +222,7 @@ describe('deleteCrewAction — bramka roli i blokada aktywnych instalacji (CRM-D
   it('admin — instalacja w statusie PLANNED blokuje usunięcie, delete nie jest wywołane', async () => {
     crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', instalacje: [PLANNED_INSTALLATION] });
 
-    const result = await deleteCrewAction('crew-1');
+    const result = await deleteCrewAction('crew-1', VALID_INPUT);
 
     expect(crewDeleteMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
@@ -194,7 +234,7 @@ describe('deleteCrewAction — bramka roli i blokada aktywnych instalacji (CRM-D
   it('admin — instalacja w statusie IN_PROGRESS blokuje usunięcie, delete nie jest wywołane', async () => {
     crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', instalacje: [IN_PROGRESS_INSTALLATION] });
 
-    const result = await deleteCrewAction('crew-1');
+    const result = await deleteCrewAction('crew-1', VALID_INPUT);
 
     expect(crewDeleteMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
@@ -211,7 +251,7 @@ describe('deleteCrewAction — bramka roli i blokada aktywnych instalacji (CRM-D
       instalacje: [COMPLETED_INSTALLATION, CANCELLED_INSTALLATION],
     });
 
-    const result = await deleteCrewAction('crew-1');
+    const result = await deleteCrewAction('crew-1', VALID_INPUT);
 
     expect(result).toEqual({ success: true });
     expect(crewDeleteMock).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'crew-1' } }));
@@ -231,7 +271,7 @@ describe('deleteCrewAction — bramka roli i blokada aktywnych instalacji (CRM-D
       ],
     });
 
-    const result = await deleteCrewAction('crew-1');
+    const result = await deleteCrewAction('crew-1', VALID_INPUT);
 
     expect(crewDeleteMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
@@ -260,7 +300,7 @@ describe('deleteCrewAction — bramka roli i blokada aktywnych instalacji (CRM-D
   it('sprawdzenie blokujących instalacji i DELETE dzieją się w jednej transakcji', async () => {
     crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', instalacje: [] });
 
-    await deleteCrewAction('crew-1');
+    await deleteCrewAction('crew-1', VALID_INPUT);
 
     expect(transactionMock).toHaveBeenCalledTimes(1);
   });
@@ -271,7 +311,7 @@ describe('deleteCrewAction — bramka roli i blokada aktywnych instalacji (CRM-D
   it('przypadek pusty — ekipa bez żadnych instalacji usuwa się bez błędu', async () => {
     crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', instalacje: [] });
 
-    const result = await deleteCrewAction('crew-1');
+    const result = await deleteCrewAction('crew-1', VALID_INPUT);
 
     expect(result?.success).toBe(true);
     expect(result?.blockingInstallations ?? []).toEqual([]);

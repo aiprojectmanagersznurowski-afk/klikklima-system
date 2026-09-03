@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 
 export type CrewSummaryWithAvatar = CrewSummary & { avatarUrl?: string | null };
 
@@ -47,6 +48,7 @@ export function CrewsClient({
   const [uploadingCrewId, setUploadingCrewId] = useState<string | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editState, setEditState] = useState<EditState | null>(null)
+  const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
 
   const canCreateCrews = !!actorRole && can(actorRole, "crews", "create") === "yes";
   const canUpdateCrews = !!actorRole && can(actorRole, "crews", "update") === "yes";
@@ -98,16 +100,7 @@ export function CrewsClient({
 
   const [isPending, startTransition] = useTransition();
   const handleDelete = (id: string) => {
-    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
-      startTransition(async () => {
-        try {
-          await deleteCrewAction(id);
-          window.location.reload();
-        } catch (e) {
-          alert("Wystąpił błąd podczas usuwania rekordu.");
-        }
-      });
-    }
+    setDeleteDialogId(id);
   }
 
   const handleOpenEdit = (id: string) => {
@@ -331,6 +324,25 @@ export function CrewsClient({
           onSave={(formData, photoFile) =>
             handleSaveCrew(formData, photoFile, editState.status === "ready" ? editState.id : null)
           }
+        />
+      )}
+
+      {deleteDialogId && (
+        <DeleteJustificationDialog
+          title="Usuń zespół"
+          description="Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO)."
+          onConfirm={async (values) => {
+            const result = await deleteCrewAction(deleteDialogId, values);
+            if (!result.success) {
+              const blocking = result.blockingInstallations?.map(i => `${i.id} (${i.status})`).join(", ");
+              return { success: false, error: result.error + (blocking ? `\nBlokujące instalacje: ${blocking}` : "") };
+            }
+            return result;
+          }}
+          onClose={() => setDeleteDialogId(null)}
+          onSuccess={() => {
+            window.location.reload();
+          }}
         />
       )}
     </div>

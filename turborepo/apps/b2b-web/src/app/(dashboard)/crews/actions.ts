@@ -6,6 +6,15 @@ import { can } from "@klikklima/contracts"
 import { getCurrentActorRole, createClient } from "../../../utils/supabase/server"
 import { crewSchema } from "./schema"
 import type { ZodError } from "zod"
+import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
+
+class CrewBlockedError extends Error {
+  result: DeleteCrewResult
+  constructor(result: DeleteCrewResult) {
+    super("blocked")
+    this.result = result
+  }
+}
 
 function formatZodError(error: ZodError): string {
   const issue = error.issues[0];
@@ -421,13 +430,41 @@ const BLOCKING_INSTALLATION_STATUSES = ["PLANNED", "IN_PROGRESS"] as const;
  * instalacji i usunięcie ekipy zlecone równolegle nie mogą się zazębić.
  * Wzorem `deleteAuditorAction` (auditors/actions.ts).
  */
-export async function deleteCrewAction(id: string): Promise<DeleteCrewResult> {
+export async function deleteCrewAction(
+  id: string,
+  input: DeleteJustificationInput
+): Promise<DeleteCrewResult> {
+  let actorRole;
   try {
-    const actorRole = await getCurrentActorRole();
-    if (!actorRole || can(actorRole, 'crews', 'delete') !== 'yes') {
-      return { success: false, error: "Brak uprawnień do usunięcia ekipy." };
-    }
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do usunięcia ekipy." };
+  }
+  if (!actorRole || can(actorRole, 'crews', 'delete') !== 'yes') {
+    return { success: false, error: "Brak uprawnień do usunięcia ekipy." };
+  }
 
+  let actorEmail: string | undefined;
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    actorEmail = user?.email;
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error);
+    return { success: false, error: "Brak uprawnień do usunięcia ekipy." };
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do usunięcia ekipy." };
+  }
+
+  const parsed = deleteJustificationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Nieprawidłowe dane uzasadnienia lub podstawy prawnej." };
+  }
+  const { justification, legalBasis } = parsed.data;
+
+  try {
     const result = await prisma.$transaction(async (tx) => {
       const crew = await tx.zespoly_monterskie.findUnique({
         where: { id },
@@ -435,7 +472,7 @@ export async function deleteCrewAction(id: string): Promise<DeleteCrewResult> {
       });
 
       if (!crew) {
-        return { success: false, error: "Ekipa nie została znaleziona." };
+        throw new CrewBlockedError({ success: false, error: "Ekipa nie została znaleziona." });
       }
 
       const blockingInstallations = crew.instalacje.filter((installation: { status: string | null }) =>
@@ -443,17 +480,28 @@ export async function deleteCrewAction(id: string): Promise<DeleteCrewResult> {
       );
 
       if (blockingInstallations.length > 0) {
-        return {
+        throw new CrewBlockedError({
           success: false,
           error: "Nie można usunąć ekipy — ma przypisane aktywne instalacje. Przepnij je najpierw na inną ekipę.",
           blockingInstallations: blockingInstallations.map((installation: { id: string; status: string | null }) => ({
             id: installation.id,
             status: installation.status ?? '',
           })),
-        };
+        });
       }
 
       await tx.zespoly_monterskie.delete({ where: { id } });
+      await tx.auditLog.create({
+        data: {
+          operation: 'delete',
+          resource: 'crews',
+          recordId: id,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis,
+        },
+      });
       return { success: true };
     });
 
@@ -463,6 +511,9 @@ export async function deleteCrewAction(id: string): Promise<DeleteCrewResult> {
 
     return result;
   } catch (error) {
+    if (error instanceof CrewBlockedError) {
+      return error.result;
+    }
     console.error("Failed to delete crew:", error);
     return { success: false, error: "Wystąpił błąd podczas usuwania ekipy." };
   }

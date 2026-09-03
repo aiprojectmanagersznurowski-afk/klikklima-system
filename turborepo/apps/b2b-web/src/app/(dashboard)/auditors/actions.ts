@@ -6,6 +6,15 @@ import { can } from "@klikklima/contracts"
 import { getCurrentActorRole, createClient } from "../../../utils/supabase/server"
 import { auditorSchema } from "./schema"
 import type { ZodError } from "zod"
+import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
+
+class AuditorBlockedError extends Error {
+  result: DeleteAuditorResult
+  constructor(result: DeleteAuditorResult) {
+    super("blocked")
+    this.result = result
+  }
+}
 
 function formatZodError(error: ZodError): string {
   const issue = error.issues[0];
@@ -417,40 +426,88 @@ export type DeleteAuditorResult = {
  * dowolną wartość (np. `actorRole: 'admin'`) wprost z przeglądarki. Rola musi
  * pochodzić z sesji serwera (`getCurrentActorRole()`).
  */
-export async function deleteAuditorAction(id: string): Promise<DeleteAuditorResult> {
-  const actorRole = await getCurrentActorRole();
+export async function deleteAuditorAction(
+  id: string,
+  input: DeleteJustificationInput
+): Promise<DeleteAuditorResult> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do usunięcia audytora." };
+  }
   if (!actorRole || can(actorRole, 'auditors', 'delete') !== 'yes') {
     return { success: false, error: "Brak uprawnień do usunięcia audytora." };
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const auditor = await tx.audytorzy.findUnique({
-      where: { id },
-      include: { leady: { include: { klient: true } } },
-    });
+  let actorEmail: string | undefined;
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    actorEmail = user?.email;
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error);
+    return { success: false, error: "Brak uprawnień do usunięcia audytora." };
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do usunięcia audytora." };
+  }
 
-    if (!auditor) {
-      return { success: false, error: "Audytor nie został znaleziony." };
+  const parsed = deleteJustificationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Nieprawidłowe dane uzasadnienia lub podstawy prawnej." };
+  }
+  const { justification, legalBasis } = parsed.data;
+
+  let result: DeleteAuditorResult;
+  try {
+    result = await prisma.$transaction(async (tx) => {
+      const auditor = await tx.audytorzy.findUnique({
+        where: { id },
+        include: { leady: { include: { klient: true } } },
+      });
+
+      if (!auditor) {
+        throw new AuditorBlockedError({ success: false, error: "Audytor nie został znaleziony." });
+      }
+
+      const blockingLeads = auditor.leady.filter((lead: { status: string | null }) =>
+        HANGING_LEAD_STATUSES.includes(lead.status as (typeof HANGING_LEAD_STATUSES)[number])
+      );
+
+      if (blockingLeads.length > 0) {
+        throw new AuditorBlockedError({
+          success: false,
+          error: "Nie można usunąć audytora — ma przypisane aktywne leady. Przepnij je najpierw na innego audytora.",
+          blockingLeads: blockingLeads.map((lead: { id: string; klient?: { imie_i_nazwisko: string | null } | null }) => ({
+            id: lead.id,
+            clientName: lead.klient?.imie_i_nazwisko ?? null,
+          })),
+        });
+      }
+
+      await tx.audytorzy.delete({ where: { id } });
+      await tx.auditLog.create({
+        data: {
+          operation: 'delete',
+          resource: 'auditors',
+          recordId: id,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis,
+        },
+      });
+      return { success: true };
+    }, { isolationLevel: 'Serializable' });
+  } catch (error) {
+    if (error instanceof AuditorBlockedError) {
+      return error.result;
     }
-
-    const blockingLeads = auditor.leady.filter((lead: { status: string | null }) =>
-      HANGING_LEAD_STATUSES.includes(lead.status as (typeof HANGING_LEAD_STATUSES)[number])
-    );
-
-    if (blockingLeads.length > 0) {
-      return {
-        success: false,
-        error: "Nie można usunąć audytora — ma przypisane aktywne leady. Przepnij je najpierw na innego audytora.",
-        blockingLeads: blockingLeads.map((lead: { id: string; klient?: { imie_i_nazwisko: string | null } | null }) => ({
-          id: lead.id,
-          clientName: lead.klient?.imie_i_nazwisko ?? null,
-        })),
-      };
-    }
-
-    await tx.audytorzy.delete({ where: { id } });
-    return { success: true };
-  }, { isolationLevel: 'Serializable' });
+    console.error("Failed to delete auditor:", error);
+    return { success: false, error: "Nie udało się usunąć audytora." };
+  }
 
   if (result.success) {
     revalidatePath('/auditors');
