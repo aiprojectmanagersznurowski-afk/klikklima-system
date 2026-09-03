@@ -1,3 +1,23 @@
+-- ╔══════════════════════════════════════════════════════════════════════════════════════╗
+-- ║  TEN PLIK NIGDY NIE ZOSTAŁ URUCHOMIONY NA ŻYWEJ BAZIE.                                ║
+-- ║  Stwierdzone 2026-09-03 (SEC-EMAIL-UNIQUE): pg_indexes i pg_constraint dla obu tabel  ║
+-- ║  zwracają WYŁĄCZNIE klucz główny — audytorzy_email_key ani zespoly_monterskie_email_key║
+-- ║  nie istnieją. Plik jest merytorycznie POPRAWNY, po prostu nie został wykonany.        ║
+-- ║                                                                                        ║
+-- ║  ZASTĘPUJE GO:                                                                         ║
+-- ║    20260903061000_security_employee_email_unique_reassert.sql                          ║
+-- ║  Nowy plik powtarza tę samą intencję jako nowe, idempotentne zdarzenie w historii      ║
+-- ║  i dokłada blok strażniczy sprawdzający OBIE tabele przed pierwszym CREATE.            ║
+-- ║                                                                                        ║
+-- ║  DLACZEGO NOWY PLIK, A NIE POPRAWKA TUTAJ: ewidencja migracji w tym projekcie jest     ║
+-- ║  niewiarygodna (2 wpisy w supabase_migrations.schema_migrations przy 15 plikach        ║
+-- ║  w repozytorium, _prisma_migrations nie istnieje), więc nie da się WYKLUCZYĆ, że ten   ║
+-- ║  plik figuruje gdzieś jako wykonany. Ciało poniżej jest z tego powodu NIETKNIĘTE —     ║
+-- ║  to jedyna zmiana, jaką SEC-EMAIL-UNIQUE wprowadził do tego pliku, i jest komentarzem.║
+-- ║  To NIE jest duplikat przez pomyłkę. Uruchomienie obu plików, w dowolnej kolejności,   ║
+-- ║  daje jeden indeks na tabelę (IF NOT EXISTS).                                          ║
+-- ╚══════════════════════════════════════════════════════════════════════════════════════╝
+--
 -- WO: FLD-AVAILABILITY-SPLIT (uzupelnienie) — unikalnosc e-maila pracownika terenowego
 --
 -- POWOD. setSelfAvailabilityAction musi rozstrzygnac, czy `id` przekazane do akcji faktycznie
