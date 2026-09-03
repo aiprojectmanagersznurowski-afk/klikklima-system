@@ -29,7 +29,7 @@ Zapewnienie Dyspozytorowi i Administratorowi pełnego, scentralizowanego widoku 
 - `Dodaj nową inwestycję / adres`
 - `Wygeneruj link do płatności / rezerwacji` (ręczne wywołanie dla opornych klientów)
 - `Zgłoś usterkę` (bezpośrednie przejście do formularza usterki z pre-wypełnionymi danymi)
-- 🚨 `Usuń klienta` (Tylko dla roli Administrator – twarde usunięcie / usunięcie zgodne z RODO)
+- 🚨 `Usuń klienta` (Tylko dla roli Administrator – anonimizacja danych osobowych zgodna z RODO, bez twardego usunięcia rekordu i historii)
 
 ### Kryteria Akceptacji
 1. Użytkownik może wyszukać klienta po imieniu, nazwisku, telefonie lub adresie e-mail z globalnej wyszukiwarki.
