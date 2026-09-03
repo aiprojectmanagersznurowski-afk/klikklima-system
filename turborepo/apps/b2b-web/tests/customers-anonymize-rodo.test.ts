@@ -11,7 +11,14 @@ import { ROLES, can, AUDIT_REQUIREMENTS } from '@klikklima/contracts';
  * bazy przez poprzednią turę: tabela `audit_log` (model Prisma `AuditLog`, `@@map("audit_log")`,
  * wyzwalacz append-only `audit_log_append_only_trg`, CHECK-i na `operation`/`resource`/
  * `legal_basis`/`justification`) i kolumna `klienci.anonymized_at`. AC9 (append-only, warstwa
- * bazy) jest POZA ZAKRESEM tego pliku — pokryte gdzie indziej w poprzedniej turze.
+ * bazy) jest POZA ZAKRESEM tego pliku. SPROSTOWANIE (docs/workorders/SEC-AUDIT-COVERAGE-RETAG.md,
+ * Blok C3): do 2026-09-03 to zdanie było FAŁSZYWE — żaden plik testowy w repozytorium nie
+ * odwoływał się do migracji 20260901220000 (zweryfikowane grepem). Dziś jest pokryte statycznie
+ * (bez żywego Postgresa) w `sec-audit-log-append-only-migration-static.test.ts` (funkcja/trigger/
+ * ENABLE RLS/CHECK-i, tekst migracji) i `sec-audit-log-append-only-permissions.test.ts`
+ * (`PERMISSIONS.audit_log` ma `update`/`delete` puste) — oba otagowane wymaganiem
+ * SEC-AUDIT-LOG-APPEND-ONLY (bez dwukropka, żeby nie mylić skanera kk-trace, który
+ * liczy znaczniki tekstowo, z faktycznym pokryciem bloku `it` w TYM pliku).
  *
  * ═══════════════════════ ODKRYCIE PRZY PISANIU TEGO PLIKU (zgłoszenie, nie TEST-DEFECT) ═══
  *
@@ -73,7 +80,9 @@ import { ROLES, can, AUDIT_REQUIREMENTS } from '@klikklima/contracts';
  *   pośrednio: `revalidatePath` (efekt POZA transakcją) nie jest wołane, gdy `tx.auditLog.create`
  *   albo `tx.adresy.updateMany` odrzuci obietnicę. Że Postgres faktycznie wycofa `UPDATE` na
  *   `klienci` w tej samej transakcji, jest własnością silnika bazy, nie kodu JS.
- * - AC9 (wyzwalacz append-only) — jawnie POZA ZAKRESEM tego pliku (patrz WO, już pokryte).
+ * - AC9 (wyzwalacz append-only) — jawnie POZA ZAKRESEM tego pliku. Pokryte statycznie w
+ *   `sec-audit-log-append-only-migration-static.test.ts` i `sec-audit-log-append-only-permissions.test.ts`
+ *   (patrz sprostowanie w nagłówku pliku, Blok C3 SEC-AUDIT-COVERAGE-RETAG.md) — nie tutaj.
  * - Współbieżność (dwa RÓWNOLEGŁE wywołania rywalizujące o ten sam wiersz w PRAWDZIWEJ bazie):
  *   dowodzę wyłącznie, że KAŻDE z dwóch wywołań niezależnie wysyła `where: { id, anonymized_at:
  *   null }` — że Postgres serializuje drugie na `count: 0`, jest własnością bazy, nie mocka
@@ -163,6 +172,7 @@ it('kontrola pozytywna kontraktu — wyłącznie admin ma delete na clients w ma
 
 describe('anonymizeClientAction — bramka roli, KROK 1-2 (AC6)', () => {
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: CRM-DELETE-ADMIN-ONLY-CLIENTS
   it.each(DELETE_DENIED_ROLES)(
     'rola %s jest odrzucona PRZED jakimkolwiek zapytaniem: zero getUser, zero transakcji',
     async (role) => {
@@ -184,6 +194,7 @@ describe('anonymizeClientAction — bramka roli, KROK 1-2 (AC6)', () => {
 
   // Fail-closed: brak roli.
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: CRM-DELETE-ADMIN-ONLY-CLIENTS
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
@@ -198,6 +209,7 @@ describe('anonymizeClientAction — bramka roli, KROK 1-2 (AC6)', () => {
 
   // KROK 1: wyjątek z getCurrentActorRole() → odmowa uprawnień, nie generyczny błąd zapisu.
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: CRM-DELETE-ADMIN-ONLY-CLIENTS
   it('getCurrentActorRole rzuca → odmowa uprawnień (nie generyczny błąd zapisu), zero zapytań', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('sesja wygasła'));
 
@@ -270,6 +282,7 @@ describe('anonymizeClientAction — uzasadnienie i podstawa prawna, KROK 4 (AC7)
   });
 
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: SEC-AUDIT-LOG
   it('justification pusty jest odrzucony bez żadnego zapisu', async () => {
     const result = await anonymizeClientAction('klient-1', {
       justification: '',
@@ -281,6 +294,7 @@ describe('anonymizeClientAction — uzasadnienie i podstawa prawna, KROK 4 (AC7)
   });
 
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: SEC-AUDIT-LOG
   it('justification złożony z samych białych znaków jest odrzucony bez żadnego zapisu', async () => {
     const result = await anonymizeClientAction('klient-1', {
       justification: '            ',
@@ -293,6 +307,7 @@ describe('anonymizeClientAction — uzasadnienie i podstawa prawna, KROK 4 (AC7)
 
   // Granica: 9 znaków po trim (za krótko) jest odrzucone.
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: SEC-AUDIT-LOG
   it('justification krótszy niż 10 znaków po trim jest odrzucony bez żadnego zapisu', async () => {
     const result = await anonymizeClientAction('klient-1', {
       justification: '  123456789  ', // 9 znaków po trim
@@ -321,6 +336,7 @@ describe('anonymizeClientAction — uzasadnienie i podstawa prawna, KROK 4 (AC7)
   });
 
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: SEC-AUDIT-LOG
   it('legalBasis spoza AUDIT_REQUIREMENTS.legalBases jest odrzucony bez żadnego zapisu', async () => {
     expect(AUDIT_REQUIREMENTS.legalBases).not.toContain(INVALID_BASIS);
 
@@ -335,6 +351,7 @@ describe('anonymizeClientAction — uzasadnienie i podstawa prawna, KROK 4 (AC7)
 
   // Kontrola pozytywna: każda wartość dozwolona w kontrakcie przechodzi walidację.
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: SEC-AUDIT-LOG
   it.each(AUDIT_REQUIREMENTS.legalBases)('legalBasis %s (z kontraktu) jest dozwolony', async (basis) => {
     txKlientUpdateManyMock.mockResolvedValue({ count: 1 });
     txAdresyUpdateManyMock.mockResolvedValue({ count: 0 });
@@ -396,6 +413,7 @@ describe('anonymizeClientAction — ścieżka sukcesu, KROK 5 (AC1, AC8)', () =>
 
   // AC8: treść dokładna wpisu audytowego.
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: SEC-AUDIT-LOG
   it('AC8 — wpis audytowy ma operation/resource/recordId/actorEmail/actorRole/justification/legalBasis dokładnie jak przekazane', async () => {
     await anonymizeClientAction('klient-1', {
       justification: VALID_JUSTIFICATION,
@@ -555,6 +573,7 @@ describe('anonymizeClientAction — atomowość audytu, KROK 5 (AC5)', () => {
   // tego pośrednio: $transaction odrzuca obietnicę, akcja zwraca porażkę, a efekt POZA
   // transakcją (revalidatePath) w ogóle nie jest wołany.
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: SEC-AUDIT-LOG
   it('błąd audit_log.create → transakcja odrzucona, wynik porażka, revalidatePath NIE wołane', async () => {
     txKlientUpdateManyMock.mockResolvedValue({ count: 1 });
     txAdresyUpdateManyMock.mockResolvedValue({ count: 1 });
@@ -572,6 +591,7 @@ describe('anonymizeClientAction — atomowość audytu, KROK 5 (AC5)', () => {
   // Symetrycznie: błąd na adresy.updateMany → audit_log.create nigdy nie jest osiągnięte
   // (sekwencyjne wołania w tej samej transakcji), a klient i tak nie jest zanonimizowany.
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: SEC-AUDIT-LOG
   it('błąd adresy.updateMany → auditLog.create nie zostaje osiągnięte, wynik porażka', async () => {
     txKlientUpdateManyMock.mockResolvedValue({ count: 1 });
     txAdresyUpdateManyMock.mockRejectedValue(new Error('deadlock detected'));
@@ -651,6 +671,7 @@ describe('AC4 — jedyna ścieżka kasowania klienta (test statyczny)', () => {
   // ma ŻADNEJ kolumny nazwanej jak pole PII klienta/adresu — więc nie ma gdzie fizycznie
   // wstawić kopii "przed" anonimizacją, nawet gdyby ktoś spróbował.
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: SEC-AUDIT-LOG
   it('AC1 — model AuditLog w schema.prisma nie zawiera żadnej kolumny z PII klienta/adresu', () => {
     const schemaPath = path.resolve(
       __dirname,

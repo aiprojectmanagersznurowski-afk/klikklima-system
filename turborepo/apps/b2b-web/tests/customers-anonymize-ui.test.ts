@@ -79,6 +79,7 @@ function readCustomersPage(): string {
 
 describe('AC10 (1/4) — isAnonymizeMenuItemVisible: widoczność wyłącznie dla roli admin', () => {
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: CRM-DELETE-ADMIN-ONLY-CLIENTS
   it('zwraca true wyłącznie dla actorRole === "admin", false dla pozostałych ról i dla null', async () => {
     const { isAnonymizeMenuItemVisible } = await import(
       '../src/app/(dashboard)/customers/menu-visibility'
@@ -94,6 +95,7 @@ describe('AC10 (1/4) — isAnonymizeMenuItemVisible: widoczność wyłącznie dl
   // ma zwracać true — jeśli kontrakt kiedyś doda drugą rolę administracyjną, ten test
   // (nie tylko implementacja) będzie musiał zostać świadomie zaktualizowany.
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: CRM-DELETE-ADMIN-ONLY-CLIENTS
   it('dokładnie jedna rola w ROLES daje true — "admin"', async () => {
     const { isAnonymizeMenuItemVisible } = await import(
       '../src/app/(dashboard)/customers/menu-visibility'
@@ -116,6 +118,7 @@ describe('AC10 (1/4) — page.tsx przekazuje actorRole do CustomersClient (staty
 
 describe('AC10 (1/4) — customers-client.tsx wiąże isAnonymizeMenuItemVisible z pozycją menu "Anonimizuj (RODO)"', () => {
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: CRM-DELETE-ADMIN-ONLY-CLIENTS
   it('importuje isAnonymizeMenuItemVisible z ./menu-visibility i używa jej wyniku przed etykietą "Anonimizuj (RODO)"', () => {
     const content = readCustomersClient();
 
@@ -360,6 +363,7 @@ describe('AC10 — widoczność pozycji menu musi pytać kontrakt RBAC, nie zamr
    * faktycznie IMPORTUJE i WOŁA `can(...)`, a nie tylko przypadkiem zwraca ten sam wynik.
    */
   // @REQ: CRM-CLIENT-ANONYMIZE-RODO
+  // @REQ: CRM-DELETE-ADMIN-ONLY-CLIENTS
   it('isAnonymizeMenuItemVisible zwraca true dokładnie dla ról z can(role, "clients", "delete") === "yes"', async () => {
     const { ROLES, can } = await import('@klikklima/contracts');
     const { isAnonymizeMenuItemVisible } = await import(

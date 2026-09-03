@@ -94,6 +94,42 @@ describe('RLS deny-by-default zamrożone na leady/klienci/adresy (SEC-RLS-AUDITO
     expect((adresyBlock.match(/FOR SELECT/g) ?? []).length).toBe(0);
   });
 
+  // Blok A3 (docs/workorders/SEC-AUDIT-COVERAGE-RETAG.md): CRM-DELETE-ADMIN-ONLY-CLIENTS
+  // wymaga usunięcia klientów WYŁĄCZNIE przez akcję serwerową bramkowaną `can(role,
+  // 'clients','delete')` (patrz customers-anonymize-rodo.test.ts / customers-anonymize-ui.test.ts).
+  // Żaden z testów AC13.x powyżej nie sprawdza tego wprost: liczą wyłącznie `FOR SELECT`.
+  // Polityka `FOR DELETE`/`FOR ALL` na `klienci` dopisana do bloku sekcji 3 przeszłaby
+  // wszystkie asercje AC13.2b/AC13.3 bez zauważenia — to jest realna luka w warstwie RLS,
+  // zamykana dopiero tym testem.
+  // @REQ: CRM-DELETE-ADMIN-ONLY-CLIENTS
+  it('AC-A3: public.klienci — zero polityk FOR DELETE / FOR ALL w bloku tabeli i w całym pliku', () => {
+    const sql = readMigration();
+
+    // Część 1: sam blok `klienci` (od jego ENABLE do kolejnego ALTER TABLE innej tabeli).
+    const startMarker = 'ALTER TABLE public.klienci ENABLE ROW LEVEL SECURITY;';
+    const startIdx = sql.indexOf(startMarker);
+    expect(startIdx).toBeGreaterThan(-1);
+    const afterStart = sql.slice(startIdx + startMarker.length);
+    const nextAlterIdx = afterStart.indexOf('ALTER TABLE');
+    const klienciOnlyBlock = nextAlterIdx === -1 ? afterStart : afterStart.slice(0, nextAlterIdx);
+
+    expect((klienciOnlyBlock.match(/FOR DELETE/g) ?? []).length).toBe(0);
+    expect((klienciOnlyBlock.match(/FOR ALL/g) ?? []).length).toBe(0);
+
+    // Część 2: w CAŁYM pliku żadna polityka FOR DELETE/FOR ALL nie wskazuje public.klienci,
+    // niezależnie od tego, w którym miejscu pliku zostałaby dopisana.
+    const policyChunks = sql.split('CREATE POLICY').slice(1);
+    const deleteOrAllOnKlienci = policyChunks.filter((chunk) => {
+      const header = chunk.split('\n\n')[0] ?? chunk.slice(0, 200);
+      return (
+        (/FOR DELETE/.test(header) || /FOR ALL/.test(header)) &&
+        /ON public\.klienci\b/.test(header)
+      );
+    });
+
+    expect(deleteOrAllOnKlienci).toEqual([]);
+  });
+
   // Dowód globalny, dodatkowy do pociętych bloków powyżej: w CAŁYM pliku migracji
   // liczba polityk `FOR SELECT` jest znana i skończona (bramka logowania +
   // katalog publiczny) — żadna z nich nie dotyczy leady/klienci/adresy. To zamyka
