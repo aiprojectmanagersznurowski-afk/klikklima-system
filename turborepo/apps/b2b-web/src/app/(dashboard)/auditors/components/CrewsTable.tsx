@@ -1,5 +1,6 @@
 import React from 'react';
 import { Edit2, Trash2 } from 'lucide-react';
+import { EMPTY_VALUE } from '@/lib/empty-value';
 
 export function CrewsTable({ crews, onEdit, onDelete }: { crews: any[], onEdit: (c: any) => void, onDelete: (id: string) => void }) {
   return (
@@ -20,15 +21,15 @@ export function CrewsTable({ crews, onEdit, onDelete }: { crews: any[], onEdit: 
               <tr key={crew.id} className="hover:bg-secondary/30 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-semibold text-foreground">{crew.nazwa}</div>
-                  <div className="text-xs font-mono text-muted-foreground mt-0.5">NIP: {crew.nip || "-"}</div>
+                  <div className="text-xs font-mono text-muted-foreground mt-0.5">NIP: {crew.nip || EMPTY_VALUE}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-foreground">{crew.koordynator_imie_nazwisko || "-"}</div>
-                  <div className="text-xs font-mono text-muted-foreground mt-0.5">{crew.telefon_kontaktowy || "-"}</div>
+                  <div className="text-sm font-medium text-foreground">{crew.koordynator_imie_nazwisko || EMPTY_VALUE}</div>
+                  <div className="text-xs font-mono text-muted-foreground mt-0.5">{crew.telefon_kontaktowy || EMPTY_VALUE}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-mono font-medium text-foreground">{crew.kod_pocztowy_bazowy || "-"}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{crew.promien_dzialania_km ? `do ${crew.promien_dzialania_km}km` : "-"}</div>
+                  <div className="text-sm font-mono font-medium text-foreground">{crew.kod_pocztowy_bazowy || EMPTY_VALUE}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{crew.promien_dzialania_km ? `do ${crew.promien_dzialania_km}km` : EMPTY_VALUE}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap space-x-2">
                   {crew.certyfikat_fgaz && (

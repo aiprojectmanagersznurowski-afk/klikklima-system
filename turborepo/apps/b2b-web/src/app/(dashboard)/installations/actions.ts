@@ -11,7 +11,7 @@ export type InstallationSummary = {
   id: string;
   leadId: string;
   clientName: string;
-  clientAddress: string;
+  clientAddress: string | null;
   plannedDate: string | null;
   status: InstallationStatus;
   crewName: string | null;
@@ -87,7 +87,7 @@ export async function getInstallations(): Promise<InstallationSummary[]> {
       id: inst.id,
       leadId: inst.lead_id,
       clientName: inst.lead.klient?.imie_i_nazwisko || "Nieznany",
-      clientAddress: inst.lead.adres?.ulica_miasto || "Brak adresu",
+      clientAddress: inst.lead.adres?.ulica_miasto || null,
       plannedDate: inst.data_planowana ? inst.data_planowana.toISOString().split("T")[0] : null,
       status: inst.status,
       crewName: inst.zespol?.nazwa || null,

@@ -100,6 +100,11 @@ vi.mock('../src/utils/supabase/server', () => ({
 // jeden punkt prawdy o sesji, spójny niezależnie od tego, którą ścieżką kod
 // produkcyjny po nią sięgnie.
 getCurrentUserMock.mockImplementation(() => getUserMock());
+// `logistics/actions.ts` importuje `shortId` z `@/lib/format-id` (nierozwiązywalne bez
+// aliasu `@/*` w vitest.config.mts). Ten plik nie asercjonuje pola `id` zwróconego przez
+// `getLogisticsLeads`, więc mock powtarza prawdziwą implementację zamiast zerować
+// zachowanie produkcyjne.
+vi.mock('@/lib/format-id', () => ({ shortId: (id: string) => `#${id.substring(0, 8)}` }));
 
 const { getLeads } = await import('../src/app/(dashboard)/leads/actions');
 const { getLogisticsLeads } = await import('../src/app/(dashboard)/logistics/actions');

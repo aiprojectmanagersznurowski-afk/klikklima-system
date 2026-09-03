@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { formatDate } from "@/lib/format-date"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
+import { shortId } from "@/lib/format-id"
 
 export function IncidentsClient({ initialIncidents }: { initialIncidents: IncidentSummary[] }) {
   const [incidents] = useState<IncidentSummary[]>(initialIncidents)
@@ -113,7 +114,7 @@ export function IncidentsClient({ initialIncidents }: { initialIncidents: Incide
                     
                     <h3 className="font-bold text-foreground line-clamp-1">{incident.klient_name}</h3>
                     <p className="text-xs font-mono text-muted-foreground mt-0.5">
-                      {incident.numer_zgloszenia || `ID: ${incident.id.substring(0, 8)}`}
+                      {incident.numer_zgloszenia || shortId(incident.id)}
                     </p>
 
                     <div className="mt-4 flex-1">

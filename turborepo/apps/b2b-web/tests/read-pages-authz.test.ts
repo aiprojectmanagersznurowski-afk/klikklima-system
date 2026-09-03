@@ -122,6 +122,14 @@ vi.mock('@/lib/storage/signed-urls', () => ({
 vi.mock('@/components/ui/button', () => ({
   Button: (props: Record<string, unknown>) => props,
 }));
+// `customers/[id]/page.tsx` importuje TAKŻE `@/lib/format-date` (audyt spójności
+// wizualnej) — z tego samego powodu co `@/components/ui/button` powyżej (alias `@/*`
+// nierozwiązywalny bez konfiguracji w root `vitest.config.mts`). Ten plik testuje
+// wyłącznie bramkę roli (`notFound()` przed `findUnique`), nie format wyświetlanych
+// dat, więc mock powtarza prawdziwą sygnaturę bez logiki formatowania.
+vi.mock('@/lib/format-date', () => ({
+  formatDate: vi.fn(() => 'formatted-date'),
+}));
 
 vi.mock('../src/app/(dashboard)/customers/actions', () => ({
   getCustomers: getCustomersMock,

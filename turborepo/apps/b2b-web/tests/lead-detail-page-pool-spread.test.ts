@@ -43,8 +43,11 @@ import React from 'react';
  *    mimo że `vitest.config.mts` w korzeniu repo NIE definiuje aliasu `@/*` z
  *    `tsconfig.json` — bez tego mocka import padłby błędem "Cannot find package", czyli
  *    złym RED z niewłaściwego powodu, patrz CLAUDE.md tego agenta)
- *  - `@/components/ui/badge`, `@/components/ui/button` (z tego samego powodu co wyżej —
- *    same w sobie nierenderowane w tym teście, ale muszą się dać rozwiązać jako moduł)
+ *  - `@/components/ui/button`, `@/components/ui/status-pill`, `@/lib/format-date`,
+ *    `@/lib/empty-value` (z tego samego powodu co wyżej — same w sobie nierenderowane/
+ *    nieasercjonowane w tym teście, ale muszą się dać rozwiązać jako moduł; audyt spójności
+ *    wizualnej zastąpił `@/components/ui/badge` przez `StatusPill` i dopisał `formatDate`/
+ *    `EMPTY_VALUE` w page.tsx)
  *  - `./assign-auditor` (`AssignAuditor` — zamockowany JAKO CAŁY MODUŁ, żeby przechwycić
  *    `.type` w drzewie elementów; jego wewnętrzne rzutowanie typu na propsie `avatarUrl`
  *    nigdy się nie wykonuje, bo mock nie jest renderowany)
@@ -105,8 +108,10 @@ getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 vi.mock('@/lib/storage/signed-urls', () => ({
   signStoragePaths: signStoragePathsMock,
 }));
-vi.mock('@/components/ui/badge', () => ({ Badge: () => null }));
 vi.mock('@/components/ui/button', () => ({ Button: () => null }));
+vi.mock('@/components/ui/status-pill', () => ({ StatusPill: () => null }));
+vi.mock('@/lib/format-date', () => ({ formatDate: vi.fn(() => 'formatted-date') }));
+vi.mock('@/lib/empty-value', () => ({ EMPTY_VALUE: '—' }));
 vi.mock('../src/app/(dashboard)/leads/[id]/assign-auditor', () => ({
   AssignAuditor: AssignAuditorMock,
 }));
@@ -115,6 +120,14 @@ vi.mock('../src/app/(dashboard)/leads/[id]/edit-lead-modal', () => ({
 }));
 vi.mock('../src/app/(dashboard)/leads/[id]/delete-lead-button', () => ({
   DeleteLeadButton: () => null,
+}));
+// `leads-client.tsx` importuje TAKŻE `@/lib/format-id` (obok `@/lib/format-date`,
+// `@/lib/empty-value`) — nierozwiązywalne bez aliasu `@/*` w vitest.config.mts. page.tsx
+// potrzebuje z tego modułu wyłącznie `LEAD_STATUS_TONE` (mapa tonów dla <StatusPill>,
+// samego w sobie zamockowanego na `() => null` — wartość tonu nigdy nie jest asercjonowana
+// w tym pliku), więc cały moduł jest zastąpiony zamiast domockowywać jego zależności.
+vi.mock('../src/app/(dashboard)/leads/leads-client', () => ({
+  LEAD_STATUS_TONE: {},
 }));
 
 const LeadDetailsPage = (await import('../src/app/(dashboard)/leads/[id]/page')).default;

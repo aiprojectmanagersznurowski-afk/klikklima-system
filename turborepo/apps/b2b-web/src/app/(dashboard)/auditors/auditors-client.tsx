@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { differenceInDays } from "date-fns"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
+import { EMPTY_VALUE } from "@/lib/empty-value"
 
 type EditState =
   | { status: "loading" }
@@ -281,7 +282,7 @@ export function AuditorsClient({
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="size-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Obszar: <span className="text-foreground font-medium">{auditor.max_promien_dojazdu_km ? `do ${auditor.max_promien_dojazdu_km} km` : "Nie ustalono"}</span></span>
+                        <span className="text-sm text-muted-foreground">Obszar: <span className="text-foreground font-medium">{auditor.max_promien_dojazdu_km ? `do ${auditor.max_promien_dojazdu_km} km` : EMPTY_VALUE}</span></span>
                       </div>
                     </div>
                   </div>

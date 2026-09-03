@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react"
 import { ClipboardList, Package, Wrench, AlertTriangle, FileText, MapPin, Edit, Plus } from "lucide-react"
 import { addCustomerAddress } from "../actions"
 import { Button } from "@/components/ui/button"
+import { formatDate } from "@/lib/format-date"
 
 const LEAD_STATUS_PL: Record<string, string> = {
   "NEW": "Nowy",
@@ -112,7 +113,7 @@ export function Customer360Tabs({ customer }: { customer: any }) {
                       <p className="font-semibold text-foreground mt-1">Status: {LEAD_STATUS_PL[lead.status] || lead.status}</p>
                     </div>
                     <div className="text-right text-sm">
-                      <p className="text-muted-foreground">Ostatnia zmiana: {new Date(lead.updated_at).toLocaleDateString()}</p>
+                      <p className="text-muted-foreground">Ostatnia zmiana: {formatDate(lead.updated_at, "dd MMM yyyy")}</p>
                       {lead.finalna_wycena_pln && <p className="font-bold text-primary mt-1">{lead.finalna_wycena_pln} PLN</p>}
                     </div>
                   </div>
@@ -167,7 +168,7 @@ export function Customer360Tabs({ customer }: { customer: any }) {
                 {customer.leady.flatMap((l: any) => l.instalacje).map((inst: any) => (
                   <div key={inst.id} className="p-4 border border-border rounded-lg bg-background flex justify-between items-center">
                     <div>
-                      <p className="font-medium text-foreground">Montaż: {new Date(inst.created_at).toLocaleDateString()}</p>
+                      <p className="font-medium text-foreground">Montaż: {formatDate(inst.created_at, "dd MMM yyyy")}</p>
                       <p className="text-xs font-mono text-muted-foreground mt-1">Status: {inst.status}</p>
                     </div>
                   </div>
@@ -195,7 +196,7 @@ export function Customer360Tabs({ customer }: { customer: any }) {
                   <div key={ust.id} className="p-4 border border-destructive/20 rounded-lg bg-destructive/5 flex justify-between items-center">
                     <div>
                       <p className="font-semibold text-destructive">{ust.opis_usterki || "Brak opisu"}</p>
-                      <p className="text-xs font-mono text-muted-foreground mt-1">Zgłoszono: {new Date(ust.created_at).toLocaleDateString()}</p>
+                      <p className="text-xs font-mono text-muted-foreground mt-1">Zgłoszono: {formatDate(ust.created_at, "dd MMM yyyy")}</p>
                     </div>
                     <span className="px-3 py-1 bg-destructive text-destructive-foreground text-xs font-bold rounded">
                       {ust.status}

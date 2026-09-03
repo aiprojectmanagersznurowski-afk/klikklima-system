@@ -1,9 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import { format } from "date-fns";
-import { pl } from "date-fns/locale";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AssignAuditor } from "./assign-auditor";
@@ -11,8 +9,12 @@ import { EditLeadModal } from "./edit-lead-modal";
 import { DeleteLeadButton } from "./delete-lead-button";
 import { getAuditors } from "../actions";
 import { getLeadDetail } from "./actions";
+import { LEAD_STATUS_TONE } from "../leads-client";
 import { signStoragePaths } from "@/lib/storage/signed-urls";
 import type { TriageAnswers } from "@/lib/triage-answers";
+import { formatDate } from "@/lib/format-date";
+import { EMPTY_VALUE } from "@/lib/empty-value";
+import type { LeadStatus } from "@repo/database";
 
 export const dynamic = "force-dynamic";
 
@@ -38,23 +40,23 @@ export default async function LeadDetailsPage({
 
   const triage: TriageAnswers = (lead.odpowiedzi_triage as TriageAnswers | null) || {};
 
-  const name = lead.klient?.imie_i_nazwisko || "Brak danych";
-  const phone = lead.klient?.telefon || "Brak danych";
-  const email = lead.klient?.email || "Brak danych";
-  const address = lead.adres?.ulica_miasto || "Brak danych";
-  
-  const location = triage.location || "Brak danych";
-  const buildingState = triage.buildingState || "Brak danych";
-  const roomCount = triage.roomCount || "Brak danych";
-  const hasBalcony = triage.hasBalcony !== undefined ? (triage.hasBalcony ? "Tak" : "Nie") : "Brak danych";
+  const name = lead.klient?.imie_i_nazwisko || EMPTY_VALUE;
+  const phone = lead.klient?.telefon || EMPTY_VALUE;
+  const email = lead.klient?.email || EMPTY_VALUE;
+  const address = lead.adres?.ulica_miasto || EMPTY_VALUE;
+
+  const location = triage.location || EMPTY_VALUE;
+  const buildingState = triage.buildingState || EMPTY_VALUE;
+  const roomCount = triage.roomCount || EMPTY_VALUE;
+  const hasBalcony = triage.hasBalcony !== undefined ? (triage.hasBalcony ? "Tak" : "Nie") : EMPTY_VALUE;
   const floorNumber = triage.floor;
-  const floorDisplay = floorNumber === 0 ? "Parter" : floorNumber !== null && floorNumber !== undefined ? `Piętro ${floorNumber}` : "Brak danych";
+  const floorDisplay = floorNumber === 0 ? "Parter" : floorNumber !== null && floorNumber !== undefined ? `Piętro ${floorNumber}` : EMPTY_VALUE;
 
-  const roomSizes = triage.roomSizes 
+  const roomSizes = triage.roomSizes
     ? Object.entries(triage.roomSizes).map(([key, value]) => `Pokój ${key}: ${value}`).join(", ")
-    : "Brak danych";
+    : EMPTY_VALUE;
 
-  const estimatedQuote = lead.estymowana_wycena || "Brak estymacji";
+  const estimatedQuote = lead.estymowana_wycena || EMPTY_VALUE;
 
   // Device configuration info
   const extUnit = triage.selectedExternalUnit;
@@ -96,9 +98,11 @@ export default async function LeadDetailsPage({
             <div className="flex items-center justify-between mb-2">
               <h1 className="text-3xl font-bold text-foreground flex items-center gap-4">
                 {name}
-                <Badge variant="outline" className="text-sm bg-primary/10 text-primary border-primary/20 px-4 py-1">
-                  {(lead.status || "").replace(/_/g, " ")}
-                </Badge>
+                <StatusPill
+                  className="text-sm px-4 py-1"
+                  label={(lead.status || "").replace(/_/g, " ")}
+                  tone={lead.status ? LEAD_STATUS_TONE[lead.status as LeadStatus] : "neutral"}
+                />
               </h1>
               <div className="flex items-center gap-2">
                 <EditLeadModal 
@@ -116,7 +120,7 @@ export default async function LeadDetailsPage({
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-8 pb-8 border-b border-border">
-              ID: {lead.id} • Utworzono: {format(new Date(lead.created_at), "dd.MM.yyyy HH:mm", { locale: pl })}
+              ID: {lead.id} • Utworzono: {formatDate(lead.created_at, "dd.MM.yyyy HH:mm")}
             </p>
 
             <div className="space-y-12">
@@ -128,9 +132,9 @@ export default async function LeadDetailsPage({
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Preferowany termin audytu</p>
                       <p className="font-medium text-lg">
-                        {lead.data_rezerwacji 
-                          ? format(new Date(lead.data_rezerwacji), "dd.MM.yyyy HH:mm", { locale: pl }) 
-                          : "Brak wybranego terminu"}
+                        {lead.data_rezerwacji
+                          ? formatDate(lead.data_rezerwacji, "dd.MM.yyyy HH:mm")
+                          : EMPTY_VALUE}
                       </p>
                     </div>
                   </div>

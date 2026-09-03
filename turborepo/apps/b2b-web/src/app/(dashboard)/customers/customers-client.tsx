@@ -3,7 +3,7 @@
 import React, { useState, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Search, MoreHorizontal, User, Mail, Phone, Calendar, ArrowRight, ShieldAlert, FileText, Wrench, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, MoreHorizontal, User, Mail, Phone, Calendar, ExternalLink, ShieldAlert, FileText, Wrench, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CustomerSummary, anonymizeClientAction } from "./actions"
 import { AUDIT_REQUIREMENTS, type Role } from "@klikklima/contracts"
@@ -22,6 +22,8 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { formatDate } from "@/lib/format-date"
+import { shortId } from "@/lib/format-id"
+import { EMPTY_VALUE } from "@/lib/empty-value"
 
 function AnonymizeClientModal({
   customer,
@@ -232,13 +234,13 @@ export function CustomersClient({
             )}
             <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
-                <tr className="bg-secondary/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider sticky top-0 z-10 shadow-xs">
+                <tr className="bg-secondary/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider sticky top-0 z-30 shadow-xs">
                   <th className="p-3.5 px-6">Klient</th>
                   <th className="p-3.5 px-6">Kontakt</th>
                   <th className="p-3.5 px-6">Data dodania</th>
                   <th className="p-3.5 px-6 text-center">Leady</th>
                   <th className="p-3.5 px-6 text-center">Instalacje</th>
-                  <th className="p-3.5 px-6 text-right">Akcje</th>
+                  <th className="p-3.5 px-6 text-right sticky right-0 z-30 bg-secondary/50">Akcje</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -250,22 +252,32 @@ export function CustomersClient({
                   </tr>
                 ) : (
                   filtered.map(item => (
-                    <tr key={item.id} className="hover:bg-secondary/30 transition-colors">
+                    <tr
+                      key={item.id}
+                      onClick={() => {
+                        // MAJOR fix (reviewer): jeżeli użytkownik ma zaznaczony tekst
+                        // (np. próbował przeciągnięciem myszki zaznaczyć e-mail/numer klienta),
+                        // nie traktujemy tego jako intencji nawigacji do szczegółów.
+                        if (window.getSelection()?.toString()) return;
+                        router.push(`/customers/${item.id}`);
+                      }}
+                      className="group cursor-pointer hover:bg-secondary/30 transition-colors"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-foreground">{item.name}</span>
-                          <span className="text-[11px] font-mono text-muted-foreground mt-0.5">{item.id.substring(0,8)}...</span>
+                          <span className="text-[11px] font-mono text-muted-foreground mt-0.5">{shortId(item.id)}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
                           <span className="text-sm text-foreground flex items-center gap-1.5">
                             <Mail className="size-3.5 text-muted-foreground" />
-                            {item.email || "Brak e-mail"}
+                            {item.email || EMPTY_VALUE}
                           </span>
                           <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                             <Phone className="size-3.5 text-muted-foreground" />
-                            {item.phone || "Brak telefonu"}
+                            {item.phone || EMPTY_VALUE}
                           </span>
                         </div>
                       </td>
@@ -282,15 +294,17 @@ export function CustomersClient({
                           {item.installationsCount}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap text-right sticky right-0 z-20 transition-colors bg-card group-hover:bg-secondary/30"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="flex items-center justify-end gap-2">
-                          <Link 
-                            href={`/customers/${item.id}`} 
-                            className={`h-8 text-xs font-medium inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground px-3`}
-                          >
-                            Karta 360 <ArrowRight className="ml-1.5 size-3.5" />
+                          <Link href={`/customers/${item.id}`} onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-primary" title="Otwórz kartę klienta" aria-label="Otwórz kartę klienta">
+                              <ExternalLink size={16} />
+                            </Button>
                           </Link>
-                          
+
                           <DropdownMenu>
                             <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" disabled={isPending}>
                               <MoreHorizontal size={16} />

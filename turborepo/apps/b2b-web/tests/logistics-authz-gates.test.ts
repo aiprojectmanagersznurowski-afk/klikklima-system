@@ -113,6 +113,11 @@ getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 vi.mock('../src/app/(dashboard)/leads/actions', () => ({
   deleteLeadAction: deleteLeadActionMock,
 }));
+// `logistics/actions.ts` importuje `shortId` z `@/lib/format-id` (nierozwiązywalne bez
+// aliasu `@/*` w vitest.config.mts). Ten plik nie asercjonuje pola `id` zwróconego przez
+// `getLogisticsLeads`, więc mock powtarza prawdziwą implementację zamiast zerować
+// zachowanie produkcyjne.
+vi.mock('@/lib/format-id', () => ({ shortId: (id: string) => `#${id.substring(0, 8)}` }));
 
 const {
   shipLogisticsOrder,

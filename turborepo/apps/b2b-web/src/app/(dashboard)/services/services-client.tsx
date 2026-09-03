@@ -3,6 +3,7 @@
 import React, { useTransition,  useState } from "react"
 import { Search, Wrench, MoreHorizontal, CalendarClock, Phone , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill"
 import { ServiceSummary , deleteServiceAction } from "./actions"
 import { daysUntilService } from "../../../lib/service-schedule"
 import { isDeleteMenuItemVisible } from "./menu-visibility"
@@ -71,8 +72,8 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
                   <th className="px-6 py-4">Data Serwisu</th>
                   <th className="px-6 py-4">Klient i Kontakt</th>
                   <th className="px-6 py-4">Adres Instalacji</th>
-                  <th className="px-6 py-4">Status / Dni do serwisu</th>
-                  <th className="px-6 py-4 text-right">Akcje</th>
+                  <th className="px-6 py-4">Status & Dni do serwisu</th>
+                  <th className="px-6 py-4 text-right sticky right-0 z-30 bg-secondary/50">Akcje</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -87,26 +88,22 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
                     const rowKey = service.service_id ?? `forecast:${service.installation_id}`;
                     const daysLeft = daysUntilService(new Date(service.next_service_date));
 
-                    let statusColor = "text-muted-foreground";
-                    let statusBg = "bg-secondary";
+                    let statusTone: StatusPillTone = "neutral";
                     let statusText = `${daysLeft} dni`;
-                    
+
                     if (daysLeft < 0) {
-                      statusColor = "text-destructive-foreground";
-                      statusBg = "bg-destructive";
+                      statusTone = "danger";
                       statusText = `ZALEGŁY (${Math.abs(daysLeft)} dni)`;
                     } else if (daysLeft <= 30) {
-                      statusColor = "text-amber-900 dark:text-amber-100";
-                      statusBg = "bg-amber-100 dark:bg-amber-900/30";
+                      statusTone = "warning";
                       statusText = `PILNE (${daysLeft} dni)`;
                     } else if (daysLeft <= 60) {
-                      statusColor = "text-blue-900 dark:text-blue-100";
-                      statusBg = "bg-blue-100 dark:bg-blue-900/30";
+                      statusTone = "info";
                       statusText = `Wkrótce (${daysLeft} dni)`;
                     }
 
                     return (
-                      <tr key={rowKey} className="hover:bg-secondary/20 transition-colors">
+                      <tr key={rowKey} className="group hover:bg-secondary/20 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <CalendarClock className="size-4 text-muted-foreground" />
@@ -136,11 +133,9 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
                           <div className="text-muted-foreground">{service.address}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${statusBg} ${statusColor}`}>
-                            {statusText}
-                          </span>
+                          <StatusPill label={statusText} tone={statusTone} />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <td className="px-6 py-4 whitespace-nowrap text-right sticky right-0 z-20 bg-card group-hover:bg-secondary/20">
                           <DropdownMenu>
                             <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
                               <MoreHorizontal size={16} />

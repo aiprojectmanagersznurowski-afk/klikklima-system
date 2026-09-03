@@ -3,8 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { LeadStatus } from "@repo/database";
 import { formatDate } from "@/lib/format-date";
+import { shortId } from "@/lib/format-id";
+import { EMPTY_VALUE } from "@/lib/empty-value";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
@@ -43,6 +46,26 @@ type Lead = Extract<GetLeadsResult, { leads: unknown }>["leads"][number];
  * zamiast wymagać ręcznej aktualizacji dwóch kopii tego samego typu.
  */
 type AuditorPoolEntry = Awaited<ReturnType<typeof getAuditors>>[number];
+
+/**
+ * Ton statusu leada dla `StatusPill`. Etap "w toku" (audyt/logistyka/montaż w drodze)
+ * jest neutralny/informacyjny; etap "oczekuje na kogoś" (ryzyko przekroczenia SLA)
+ * jest ostrzegawczy; zimny lead i rollback (problem) są czerwone. Brak zielonego —
+ * zakaz §8.7 (kolory SLA tylko czerwony/pomarańczowy, sukces nigdy nie jest zielony).
+ */
+export const LEAD_STATUS_TONE: Record<LeadStatus, StatusPillTone> = {
+  NEW_LEAD: "info",
+  AWAITING_AUDIT: "warning",
+  AUDIT_COMPLETED: "info",
+  AWAITING_CREW_ASSIGNMENT: "warning",
+  HARDWARE_IN_WAREHOUSE: "info",
+  HARDWARE_IN_TRANSIT: "info",
+  AWAITING_INSTALLATION: "warning",
+  INSTALLATION_COMPLETED: "neutral",
+  QUOTE_REJECTED: "danger",
+  ROLLBACK_RESCHEDULING: "danger",
+  ARCHIVED_LOST: "neutral",
+};
 
 type StageFilter = LeadStatus | "ALL";
 
@@ -280,7 +303,7 @@ export function LeadsClient({
                   <th className="p-3 px-6">ID & Data wpłynięcia</th>
                   <th className="p-3 px-6">Klient & Adres</th>
                   {isShowingAll && <th className="p-3 px-6">Etap</th>}
-                  <th className="p-3 px-6">Kwota estymowana</th>
+                  <th className="p-3 px-6 text-right">Kwota estymowana</th>
                   <th className="p-3 px-6">Audytor</th>
                   <th className="p-3 px-6">Termin audytu</th>
                   <th className="p-3 px-6">Ekipa montażowa</th>
@@ -296,13 +319,13 @@ export function LeadsClient({
                   </tr>
                 ) : (
                   filteredLeads.map(lead => {
-                    const clientName = lead.klient?.imie_i_nazwisko || "Brak danych klienta";
-                    const fullAddress = lead.adres?.ulica_miasto || "Brak miasta";
+                    const clientName = lead.klient?.imie_i_nazwisko || EMPTY_VALUE;
+                    const fullAddress = lead.adres?.ulica_miasto || EMPTY_VALUE;
                     const dateFormatted = formatDate(lead.created_at, "d MMM yyyy, HH:mm");
                     const auditDate = lead.data_rezerwacji ? formatDate(lead.data_rezerwacji, "d MMM yyyy, HH:mm") : null;
-                    const estimatedQuote = lead.estymowana_wycena || "Brak";
+                    const estimatedQuote = lead.estymowana_wycena || EMPTY_VALUE;
                     const auditor = lead.audytor;
-                    const teamName = lead.instalacje?.[0]?.zespol?.nazwa || "Brak";
+                    const teamName = lead.instalacje?.[0]?.zespol?.nazwa || EMPTY_VALUE;
 
                     const isNewLead = lead.status === "NEW_LEAD";
                     const hoursSinceCreation = (new Date().getTime() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60);
@@ -328,7 +351,7 @@ export function LeadsClient({
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col">
-                            <span className="text-sm font-semibold font-mono tracking-tight text-foreground">#{lead.id.substring(0, 8)}</span>
+                            <span className="text-sm font-semibold font-mono tracking-tight text-foreground">{shortId(lead.id)}</span>
                             <span className="text-xs font-mono text-muted-foreground mt-0.5">{dateFormatted}</span>
                             {isDelayed && <span className="text-[10px] text-destructive font-semibold mt-1">Opóźniony (&gt;24h)</span>}
                           </div>
@@ -341,13 +364,14 @@ export function LeadsClient({
                         </td>
                         {isShowingAll && (
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20">
-                              {LEAD_STAGES.find(s => s.id === lead.status)?.short || "—"}
-                            </span>
+                            <StatusPill
+                              label={LEAD_STAGES.find(s => s.id === lead.status)?.short || EMPTY_VALUE}
+                              tone={lead.status ? LEAD_STATUS_TONE[lead.status as LeadStatus] : "neutral"}
+                            />
                           </td>
                         )}
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-semibold text-foreground">{estimatedQuote}</span>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <span className="text-sm font-semibold text-foreground tabular-nums">{estimatedQuote}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
@@ -418,7 +442,7 @@ export function LeadsClient({
                               <span>{auditDate}</span>
                             </div>
                           ) : (
-                            <span className="text-xs text-muted-foreground/60">-</span>
+                            <span className="text-xs text-muted-foreground/60">{EMPTY_VALUE}</span>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

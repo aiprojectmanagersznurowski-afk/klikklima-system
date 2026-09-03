@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
+import { EMPTY_VALUE } from "@/lib/empty-value"
 
 export type CrewSummaryWithAvatar = CrewSummary & { avatarUrl?: string | null };
 
@@ -271,7 +272,7 @@ export function CrewsClient({
                   
                   <h3 className="font-bold text-lg text-foreground line-clamp-1">{crew.nazwa}</h3>
                   <div className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
-                    <span className="font-medium text-foreground">{crew.koordynator_imie_nazwisko || "Brak koordynatora"}</span>
+                    <span className="font-medium text-foreground">{crew.koordynator_imie_nazwisko || EMPTY_VALUE}</span>
                     {crew.telefon_kontaktowy && <span>• {crew.telefon_kontaktowy}</span>}
                   </div>
 
@@ -286,7 +287,7 @@ export function CrewsClient({
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin className="size-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Obszar: <span className="text-foreground font-medium">{crew.promien_dzialania_km ? `do ${crew.promien_dzialania_km} km` : "Nie ustalono"}</span></span>
+                      <span className="text-sm text-muted-foreground">Obszar: <span className="text-foreground font-medium">{crew.promien_dzialania_km ? `do ${crew.promien_dzialania_km} km` : EMPTY_VALUE}</span></span>
                     </div>
                   </div>
                 </div>

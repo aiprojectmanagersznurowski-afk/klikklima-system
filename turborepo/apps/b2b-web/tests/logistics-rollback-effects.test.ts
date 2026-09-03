@@ -98,6 +98,11 @@ vi.mock('../src/utils/supabase/server', () => ({
 }));
 // P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
 getCurrentUserMock.mockResolvedValue({ data: { user: null } });
+// `logistics/actions.ts` importuje `shortId` z `@/lib/format-id` (nierozwiązywalne bez
+// aliasu `@/*` w vitest.config.mts). Żaden test w tym pliku nie asercjonuje pola `id`
+// zwróconego przez `getLogisticsLeads` (tylko `leadId`/`daysToInstall`/`installationDate`),
+// więc mock powtarza prawdziwą implementację zamiast zerować zachowanie produkcyjne.
+vi.mock('@/lib/format-id', () => ({ shortId: (id: string) => `#${id.substring(0, 8)}` }));
 
 type FakeInstallationRow = {
   id: string;

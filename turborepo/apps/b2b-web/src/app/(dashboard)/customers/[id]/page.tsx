@@ -4,8 +4,7 @@ import { can } from "@klikklima/contracts"
 import { User, Phone, Mail, MapPin, Building, Calendar, FileText, ClipboardList, PenTool, CheckCircle, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { format } from "date-fns"
-import { pl } from "date-fns/locale"
+import { formatDate } from "@/lib/format-date"
 import { Customer360Tabs } from "./tabs-client"
 import { getCurrentActorRole } from "../../../../utils/supabase/server"
 
@@ -68,7 +67,7 @@ export default async function Customer360Page({ params }: { params: Promise<{ id
                   </span>
                 )}
                 <span className="flex items-center gap-1.5">
-                  <Calendar className="size-4" /> W bazie od: {format(new Date(customer.created_at), "dd MMM yyyy", { locale: pl })}
+                  <Calendar className="size-4" /> W bazie od: {formatDate(customer.created_at, "dd MMM yyyy")}
                 </span>
               </div>
             </div>

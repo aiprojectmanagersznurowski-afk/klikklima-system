@@ -126,11 +126,11 @@ function SidebarNavigation({ collapsed, setCollapsed }: { collapsed: boolean, se
                 onClick={() => toggleGroup(item.id)}
                 title={collapsed ? item.label : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-md text-sm font-medium transition-all duration-200 w-full",
-                  collapsed ? "justify-center py-2.5 px-0" : "justify-between py-2.5 px-3",
+                  "flex items-center gap-3 rounded-md text-sm font-medium transition-all duration-200 w-full border-l-2",
+                  collapsed ? "justify-center py-2.5 px-0" : "justify-between py-2.5 pl-[10px] pr-3",
                   isGroupActive && !isOpen
-                    ? "bg-primary/10 text-primary font-semibold shadow-2xs"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    ? "bg-primary/10 text-primary font-semibold shadow-2xs border-primary"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent"
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -163,11 +163,11 @@ function SidebarNavigation({ collapsed, setCollapsed }: { collapsed: boolean, se
                 href={item.href!}
                 title={collapsed ? item.label : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-md text-sm font-medium transition-all duration-200 w-full",
-                  collapsed ? "justify-center py-2.5 px-0" : "justify-start py-2.5 px-3",
+                  "flex items-center gap-3 rounded-md text-sm font-medium transition-all duration-200 w-full border-l-2",
+                  collapsed ? "justify-center py-2.5 px-0" : "justify-start py-2.5 pl-[10px] pr-3",
                   isGroupActive
-                    ? "bg-primary/10 text-primary font-semibold shadow-2xs"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    ? "bg-primary/10 text-primary font-semibold shadow-2xs border-primary"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent"
                 )}
               >
                 <Icon className={cn("size-4 shrink-0 transition-colors", isGroupActive ? "text-primary" : "text-muted-foreground")} />
@@ -197,10 +197,10 @@ function SidebarNavigation({ collapsed, setCollapsed }: { collapsed: boolean, se
                       key={sub.id}
                       href={sub.href}
                       className={cn(
-                        "flex items-center py-2 px-3 rounded-md text-[13px] font-medium transition-colors",
+                        "flex items-center py-2 pl-[10px] pr-3 rounded-md text-[13px] font-medium transition-colors border-l-2",
                         isSubActive
-                          ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                          ? "bg-primary/10 text-primary font-semibold shadow-2xs border-primary"
+                          : "text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent"
                       )}
                     >
                       {sub.label}

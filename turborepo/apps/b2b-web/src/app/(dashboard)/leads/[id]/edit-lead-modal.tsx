@@ -51,7 +51,7 @@ export function EditLeadModal({ leadId, initialData, defaultOpen = false }: Edit
     <Dialog open={open} onOpenChange={setOpen}>
       {/* @ts-ignore */}
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50">
+        <Button variant="default" size="sm" className="gap-2">
           <Edit size={14} /> Edytuj dane
         </Button>
       </DialogTrigger>

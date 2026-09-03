@@ -9,3 +9,4 @@
 - [Luki w kk-trace to często problem tagowania](kk-trace-coverage-gaps-are-often-tagging.md) — zanim zaplanujesz implementację, sprawdź czy testy nie niosą nowszego `@REQ`; nagłówki testów potrafią kłamać o pokryciu.
 - [audit_log — stan żywej bazy vs rejestr](audit-log-live-state.md) — tabela ISTNIEJE mimo zapisu „nie uruchomiona”; legalBases ma już neutralne wartości; rozbicie SEC-AUDIT-LOG na 4 WO
 - [Sprzeczność before_snapshot: ROZSTRZYGNIĘTA](sprzecznosc-before-snapshot-rodo.md) — SEC-RODO-DELETE → SUPERSEDED, legal_basis dowolny; czeka na wykonanie przez contract-steward.
+- [Zasada: lead → klient przy zakończonej instalacji](project_lead_to_client_conversion_rule.md) — sprzeczna z dzisiejszym B2C-LEAD-ATOMIC (klient powstaje już przy wejściu leada); nierozstrzygnięte, nie implementować bez WO.

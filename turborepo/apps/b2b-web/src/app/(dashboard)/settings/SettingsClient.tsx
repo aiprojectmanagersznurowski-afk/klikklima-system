@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { formatDate } from "@/lib/format-date"
 import { addAuthorizedUser, deleteAuthorizedUser } from "./actions"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 
@@ -100,7 +101,7 @@ export function SettingsClient({ users }: { users: User[] }) {
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-gray-500">
-                      {new Date(user.createdAt).toLocaleDateString('pl-PL')}
+                      {formatDate(user.createdAt, "d MMMM yyyy")}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteUser(user.id)}>

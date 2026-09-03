@@ -94,6 +94,11 @@ vi.mock('../src/utils/supabase/server', () => ({
   createClient: createClientMock,
 }));
 getCurrentUserMock.mockImplementation(() => getUserMock());
+// `logistics/actions.ts` importuje `shortId` z `@/lib/format-id` (nierozwiązywalne bez
+// aliasu `@/*` w vitest.config.mts). Ten plik nie asercjonuje pola `id` zwróconego przez
+// funkcje odczytu logistyki, więc mock powtarza prawdziwą implementację zamiast zerować
+// zachowanie produkcyjne.
+vi.mock('@/lib/format-id', () => ({ shortId: (id: string) => `#${id.substring(0, 8)}` }));
 
 const { deleteLeadAction } = await import('../src/app/(dashboard)/leads/actions');
 const { deleteLogisticsOrderAction } = await import('../src/app/(dashboard)/logistics/actions');

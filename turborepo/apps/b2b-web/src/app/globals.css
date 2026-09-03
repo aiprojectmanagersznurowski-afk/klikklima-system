@@ -115,6 +115,9 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: var(--radius);
+  /* Jeden, stały promień dla wszystkich rozmiarów kontrolek (Button/Input) —
+     niezależny od wysokości, żeby xs/sm nie „gubiły" zaokrąglenia względem default/lg. */
+  --radius-control: 10px;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

@@ -17,6 +17,8 @@ import { useRouter } from "next/navigation"
 import { isToday } from "date-fns"
 import { formatDate } from "@/lib/format-date"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
+import { StatusPill } from "@/components/ui/status-pill"
+import { EMPTY_VALUE } from "@/lib/empty-value"
 
 export function InstallationsClient({ initialInstallations }: { initialInstallations: InstallationSummary[] }) {
   const router = useRouter()
@@ -49,8 +51,8 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
   const filtered = installations.filter(i => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      return i.clientName.toLowerCase().includes(q) || 
-             i.clientAddress.toLowerCase().includes(q) || 
+      return i.clientName.toLowerCase().includes(q) ||
+             (i.clientAddress && i.clientAddress.toLowerCase().includes(q)) ||
              (i.crewName && i.crewName.toLowerCase().includes(q));
     }
     return true;
@@ -138,7 +140,9 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
                             <span className="text-sm font-semibold text-foreground">{item.clientName}</span>
                             <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                               <MapPin className="size-3.5 text-muted-foreground" />
-                              {item.clientAddress}
+                              {item.clientAddress === null
+                                ? EMPTY_VALUE
+                                : item.clientAddress}
                             </span>
                           </div>
                         </td>
@@ -156,7 +160,7 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
                               )}
                             </div>
                           ) : (
-                            <span className="text-sm text-muted-foreground font-mono">Brak daty</span>
+                            <span className="text-sm text-muted-foreground font-mono">{EMPTY_VALUE}</span>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -174,24 +178,16 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {item.status === 'PLANNED' && (
-                            <span className="rounded-full px-3 py-1 text-xs font-semibold bg-accent/10 text-accent inline-flex items-center border border-accent/20">
-                              Zaplanowane
-                            </span>
+                            <StatusPill label="Zaplanowane" tone="info" />
                           )}
                           {item.status === 'IN_PROGRESS' && (
-                            <span className="rounded-full px-3 py-1 text-xs font-semibold bg-primary/10 text-primary inline-flex items-center border border-primary/20">
-                              W trakcie montażu
-                            </span>
+                            <StatusPill label="W trakcie montażu" tone="warning" />
                           )}
                           {item.status === 'COMPLETED' && (
-                            <span className="rounded-full px-3 py-1 text-xs font-semibold bg-green-500/10 text-green-600 dark:text-green-400 inline-flex items-center border border-green-500/20">
-                              Zakończone
-                            </span>
+                            <StatusPill label="Zakończone" tone="neutral" />
                           )}
                           {item.status === 'CANCELLED' && (
-                            <span className="rounded-full px-3 py-1 text-xs font-semibold bg-destructive/10 text-destructive inline-flex items-center border border-destructive/20">
-                              Anulowane
-                            </span>
+                            <StatusPill label="Anulowane" tone="danger" />
                           )}
                         </td>
                         <td

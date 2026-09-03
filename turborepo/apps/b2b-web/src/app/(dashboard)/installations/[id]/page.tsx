@@ -1,7 +1,5 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import { format } from "date-fns";
-import { pl } from "date-fns/locale";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -18,6 +16,8 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/format-date";
+import { EMPTY_VALUE } from "@/lib/empty-value";
 import { getInstallationDetail } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -117,8 +117,8 @@ export default async function InstallationDetailsPage({
     return;
   }
 
-  const clientName = detail.lead?.klient?.imie_i_nazwisko || "Brak danych klienta";
-  const address = detail.lead?.adres?.ulica_miasto || "Brak adresu";
+  const clientName = detail.lead?.klient?.imie_i_nazwisko || EMPTY_VALUE;
+  const address = detail.lead?.adres?.ulica_miasto || EMPTY_VALUE;
   const auditorName = detail.lead?.audytor?.imie_i_nazwisko || "Nie przypisano";
   const crewName = detail.zespol?.nazwa || "Nie przypisano";
 
@@ -163,9 +163,7 @@ export default async function InstallationDetailsPage({
                   <Calendar size={14} /> Data planowana
                 </p>
                 <p className="font-medium text-lg">
-                  {detail.data_planowana
-                    ? format(new Date(detail.data_planowana), "dd MMMM yyyy, HH:mm", { locale: pl })
-                    : "Brak wybranego terminu"}
+                  {formatDate(detail.data_planowana, "dd MMMM yyyy, HH:mm")}
                 </p>
               </div>
               <div>
@@ -174,7 +172,7 @@ export default async function InstallationDetailsPage({
                 </p>
                 <p className="font-medium text-lg">
                   {detail.data_zakonczenia
-                    ? format(new Date(detail.data_zakonczenia), "dd MMMM yyyy, HH:mm", { locale: pl })
+                    ? formatDate(detail.data_zakonczenia, "dd MMMM yyyy, HH:mm")
                     : "Instalacja jeszcze nie zakończona"}
                 </p>
               </div>
@@ -240,7 +238,7 @@ export default async function InstallationDetailsPage({
                         <p className="text-sm text-muted-foreground mt-0.5">{event.description}</p>
                       )}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {format(event.date, "dd MMMM yyyy, HH:mm", { locale: pl })}
+                        {formatDate(event.date, "dd MMMM yyyy, HH:mm")}
                       </p>
                     </div>
                   </li>

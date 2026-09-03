@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
+import { EMPTY_VALUE } from "@/lib/empty-value"
+import { formatDate } from "@/lib/format-date"
 
 export function LogisticsClient({ initialShipments }: { initialShipments: LogisticsLead[] }) {
   const [shipments, setShipments] = useState<LogisticsLead[]>(initialShipments)
@@ -180,7 +182,9 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
 
                     let slaBadge = (
                       <span className="text-xs text-muted-foreground font-mono">
-                        {item.installationDate ? `${item.installationDate} (Bezpieczny termin)` : "Brak ustalonego terminu"}
+                        {item.installationDate
+                          ? `${formatDate(item.installationDate, "d MMM yyyy")} (Bezpieczny termin)`
+                          : EMPTY_VALUE}
                       </span>
                     );
                     
@@ -231,7 +235,9 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col">
-                            <span className="text-sm font-mono font-medium text-foreground">{item.installationDate || "Brak"}</span>
+                            <span className="text-sm font-mono font-medium text-foreground">
+                              {item.installationDate ? formatDate(item.installationDate, "d MMM yyyy") : EMPTY_VALUE}
+                            </span>
                             <div className="mt-1">{slaBadge}</div>
                           </div>
                         </td>

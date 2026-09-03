@@ -10,6 +10,7 @@ import { deleteLeadAction } from "../leads/actions"
 import type { DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
 import { releaseCrewSlot, suspendLogisticsSla } from "./rollback-effects"
 import type { TriageAnswers } from "@/lib/triage-answers"
+import { shortId } from "../../../lib/format-id"
 
 export type LogisticsLead = {
   id: string
@@ -88,7 +89,7 @@ export async function getLogisticsLeads(): Promise<LogisticsLead[] | { success: 
     const trackingNumber = lead.logistyka_zamowienia?.[0]?.tracking_id || null
 
     return {
-      id: `LOG-${lead.id.substring(0, 8)}`,
+      id: shortId(lead.id),
       leadId: lead.id,
       clientName: lead.klient?.imie_i_nazwisko || "Nieznany",
       address: lead.adres?.ulica_miasto || "Brak adresu",
