@@ -11,6 +11,7 @@ import {
   can,
 } from "@klikklima/contracts";
 import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server";
+import { deleteJustificationSchema, type DeleteJustificationInput, type DeleteActionResult } from "../../../lib/audit/delete-justification-schema";
 
 /**
  * D6 (WO CRM-SAFE-RECORD-ACTIONS): "ważny w dniu montażu" porównujemy po dacie
@@ -569,15 +570,57 @@ export async function advanceLeadStatus(leadId: string, targetStatus: LeadStatus
  * usuwania/archiwizacji leadów (osobny temat) — tylko domykamy brak sprawdzenia roli
  * w akcji destrukcyjnej, zgodnie z PERMISSIONS.leads.delete = ['admin'].
  */
-export async function deleteLeadAction(id: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteLeadAction(
+  id: string,
+  input: DeleteJustificationInput
+): Promise<DeleteActionResult> {
+  let actorRole;
   try {
-    const actorRole = await getCurrentActorRole();
-    if (!actorRole || can(actorRole, "leads", "delete") !== "yes") {
-      return { success: false, error: "Brak uprawnień do usunięcia leada." };
-    }
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do usunięcia leada." };
+  }
+  if (!actorRole || can(actorRole, "leads", "delete") !== "yes") {
+    return { success: false, error: "Brak uprawnień do usunięcia leada." };
+  }
 
-    await prisma.leady.delete({
-      where: { id }
+  let actorEmail: string | undefined;
+  try {
+    const {
+      data: { user },
+    } = await getCurrentUser();
+    actorEmail = user?.email;
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error);
+    return { success: false, error: "Brak uprawnień do usunięcia leada." };
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do usunięcia leada." };
+  }
+
+  const parsed = deleteJustificationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Nieprawidłowe dane uzasadnienia lub podstawy prawnej." };
+  }
+  const { justification, legalBasis } = parsed.data;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.leady.delete({
+        where: { id }
+      });
+      await tx.auditLog.create({
+        data: {
+          operation: 'delete',
+          resource: 'leads',
+          recordId: id,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis,
+        },
+      });
     });
     revalidatePath('/leads');
     return { success: true };

@@ -4,6 +4,7 @@ import { prisma, InstallationStatus } from "@repo/database"
 import { revalidatePath } from "next/cache"
 import { can } from "@klikklima/contracts"
 import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server"
+import { deleteJustificationSchema, type DeleteJustificationInput, type DeleteActionResult } from "../../../lib/audit/delete-justification-schema"
 import type { TriageAnswers } from "@/lib/triage-answers"
 
 export type InstallationSummary = {
@@ -133,7 +134,10 @@ export async function updateInstallationStatus(id: string, newStatus: Installati
   }
 }
 
-export async function deleteInstallationAction(id: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteInstallationAction(
+  id: string,
+  input: DeleteJustificationInput
+): Promise<DeleteActionResult> {
   let actorRole;
   try {
     actorRole = await getCurrentActorRole();
@@ -145,9 +149,42 @@ export async function deleteInstallationAction(id: string): Promise<{ success: b
     return { success: false, error: "Brak uprawnień do usunięcia instalacji." };
   }
 
+  let actorEmail: string | undefined;
   try {
-    await prisma.instalacje.delete({
-      where: { id }
+    const {
+      data: { user },
+    } = await getCurrentUser();
+    actorEmail = user?.email;
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error);
+    return { success: false, error: "Brak uprawnień do usunięcia instalacji." };
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do usunięcia instalacji." };
+  }
+
+  const parsed = deleteJustificationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Nieprawidłowe dane uzasadnienia lub podstawy prawnej." };
+  }
+  const { justification, legalBasis } = parsed.data;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.instalacje.delete({
+        where: { id }
+      });
+      await tx.auditLog.create({
+        data: {
+          operation: 'delete',
+          resource: 'installations',
+          recordId: id,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis,
+        },
+      });
     });
     revalidatePath('/installations');
     return { success: true };

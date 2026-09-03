@@ -7,6 +7,7 @@ import { LeadStatus } from "@repo/database"
 import { can, findTransition } from "@klikklima/contracts"
 import { getCurrentActorRole } from "../../../utils/supabase/server"
 import { deleteLeadAction } from "../leads/actions"
+import type { DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
 import { releaseCrewSlot, suspendLogisticsSla } from "./rollback-effects"
 import type { TriageAnswers } from "@/lib/triage-answers"
 
@@ -304,8 +305,11 @@ export async function rollbackLogisticsOrder(leadId: string, reason?: string): P
   return { success: true };
 }
 
-export async function deleteLogisticsOrderAction(id: string): Promise<{ success: boolean; error?: string }> {
-  const result = await deleteLeadAction(id);
-  revalidatePath('/logistics');
+export async function deleteLogisticsOrderAction(
+  id: string,
+  input: DeleteJustificationInput
+): Promise<{ success: boolean; error?: string }> {
+  const result = await deleteLeadAction(id, input);
+  if (result.success) revalidatePath('/logistics');
   return result;
 }

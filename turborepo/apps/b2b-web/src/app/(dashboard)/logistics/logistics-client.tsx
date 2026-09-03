@@ -12,24 +12,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 
 export function LogisticsClient({ initialShipments }: { initialShipments: LogisticsLead[] }) {
   const [shipments, setShipments] = useState<LogisticsLead[]>(initialShipments)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("ALL")
   const [isPending, startTransition] = useTransition()
+  const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
 
   const handleDelete = (id: string) => {
-    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
-      startTransition(async () => {
-        try {
-          await deleteLogisticsOrderAction(id);
-          window.location.reload();
-        } catch (e) {
-          alert("Wystąpił błąd podczas usuwania rekordu.");
-        }
-      });
-    }
+    setDeleteDialogId(id);
   }
 
 
@@ -340,6 +333,18 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
           </div>
         </div>
       </div>
+
+      {deleteDialogId && (
+        <DeleteJustificationDialog
+          title="Usuń zlecenie logistyczne"
+          description="Uwaga! Operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO). Rekord zostanie trwale usunięty."
+          onConfirm={(values) => deleteLogisticsOrderAction(deleteDialogId, values)}
+          onClose={() => setDeleteDialogId(null)}
+          onSuccess={() => {
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

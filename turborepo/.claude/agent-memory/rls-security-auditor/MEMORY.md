@@ -8,3 +8,5 @@
 - [Brak UNIQUE na email pracowników w żywej bazie](project_email_unique_drift.md) — findUnique po e-mailu = LIMIT 1 i dowolny wiersz; używaj findMany+take:2.
 - [Karta klienta /customers/[id] bez bramki](project_customer_card_ungated.md) — pełne PII dla każdej roli, łańcuch: audytor → getLeadDetail → klient.id → karta.
 - [Nigdy nie pisz do żywej bazy](feedback_never_write_live_db.md) — nawet w transakcji z ROLLBACK; "wycofana transakcja" z [[feedback-rls-probe-as-role]] dotyczy wyłącznie SELECT-a predykatu, nie prawdziwego zapisu
+- [Styl raportu z audytu](feedback_audit_reporting_style.md) — dowód wykonania zamiast lektury, zero naciąganych „ryzyk"
+- [Stan audit_log na żywej bazie](project_audit_log_live_state.md) — tabela/CHECK-i/trigger istnieją; rejestr wymagań był nieaktualny, już poprawiony

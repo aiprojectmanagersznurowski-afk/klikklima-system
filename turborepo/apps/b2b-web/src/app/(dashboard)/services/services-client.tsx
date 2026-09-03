@@ -15,10 +15,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatDate } from "@/lib/format-date"
+import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 
 export function ServicesClient({ initialServices }: { initialServices: ServiceSummary[] }) {
   const [services] = useState<ServiceSummary[]>(initialServices)
   const [searchQuery, setSearchQuery] = useState("")
+  const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
 
   const filtered = services.filter(s => {
     if (searchQuery) {
@@ -32,17 +34,7 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
 
   const [isPending, startTransition] = useTransition();
   const handleDelete = (id: string) => {
-    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
-      startTransition(async () => {
-        try {
-          const result = await deleteServiceAction(id);
-          if (!result.success) throw new Error(result.error);
-          window.location.reload();
-        } catch (e) {
-          alert(e instanceof Error && e.message ? e.message : "Wystąpił błąd podczas usuwania rekordu.");
-        }
-      });
-    }
+    setDeleteDialogId(id);
   }
 
   return (
@@ -184,6 +176,18 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
           </div>
         </div>
       </div>
+
+      {deleteDialogId && (
+        <DeleteJustificationDialog
+          title="Usuń serwis"
+          description="Uwaga! Operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO). Rekord zostanie trwale usunięty."
+          onConfirm={(values) => deleteServiceAction(deleteDialogId, values)}
+          onClose={() => setDeleteDialogId(null)}
+          onSuccess={() => {
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

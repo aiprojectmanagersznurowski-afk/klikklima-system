@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@repo/database"
 import { can } from "@klikklima/contracts"
 import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server"
+import { deleteJustificationSchema, type DeleteJustificationInput, type DeleteActionResult } from "../../../lib/audit/delete-justification-schema"
 
 export type IncidentSummary = {
   id: string;
@@ -84,7 +85,10 @@ export async function getIncidents(): Promise<IncidentSummary[]> {
   }));
 }
 
-export async function deleteIncidentAction(id: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteIncidentAction(
+  id: string,
+  input: DeleteJustificationInput
+): Promise<DeleteActionResult> {
   let actorRole;
   try {
     actorRole = await getCurrentActorRole();
@@ -96,9 +100,42 @@ export async function deleteIncidentAction(id: string): Promise<{ success: boole
     return { success: false, error: "Brak uprawnień do usunięcia usterki." };
   }
 
+  let actorEmail: string | undefined;
   try {
-    await prisma.usterki_incidents.delete({
-      where: { id }
+    const {
+      data: { user },
+    } = await getCurrentUser();
+    actorEmail = user?.email;
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error);
+    return { success: false, error: "Brak uprawnień do usunięcia usterki." };
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do usunięcia usterki." };
+  }
+
+  const parsed = deleteJustificationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: "Nieprawidłowe dane uzasadnienia lub podstawy prawnej." };
+  }
+  const { justification, legalBasis } = parsed.data;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.usterki_incidents.delete({
+        where: { id }
+      });
+      await tx.auditLog.create({
+        data: {
+          operation: 'delete',
+          resource: 'incidents',
+          recordId: id,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis,
+        },
+      });
     });
     revalidatePath('/incidents');
     return { success: true };

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ROLES, PERMISSIONS, can } from '@klikklima/contracts';
+import { ROLES, PERMISSIONS, can, AUDIT_REQUIREMENTS } from '@klikklima/contracts';
 
 /**
  * SEC-AUTHZ-B2B-MUTATIONS + SRV-SOURCE-OF-TRUTH — pokrycie dla `services/actions.ts`.
@@ -26,21 +26,27 @@ import { ROLES, PERMISSIONS, can } from '@klikklima/contracts';
  * ../src/utils/supabase/server (getCurrentActorRole).
  */
 
-const { serviceFindUniqueMock, serviceDeleteMock, revalidatePathMock, getCurrentActorRoleMock, getCurrentUserMock } =
-  vi.hoisted(() => ({
-    serviceFindUniqueMock: vi.fn(),
-    serviceDeleteMock: vi.fn(),
-    revalidatePathMock: vi.fn(),
-    getCurrentActorRoleMock: vi.fn(),
-    getCurrentUserMock: vi.fn(),
-  }));
+const {
+  transactionMock,
+  serviceFindUniqueMock,
+  serviceDeleteMock,
+  auditLogCreateMock,
+  revalidatePathMock,
+  getCurrentActorRoleMock,
+  getCurrentUserMock,
+} = vi.hoisted(() => ({
+  transactionMock: vi.fn(),
+  serviceFindUniqueMock: vi.fn(),
+  serviceDeleteMock: vi.fn(),
+  auditLogCreateMock: vi.fn(),
+  revalidatePathMock: vi.fn(),
+  getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
+}));
 
 vi.mock('@repo/database', () => ({
   prisma: {
-    serwisy: {
-      findUnique: serviceFindUniqueMock,
-      delete: serviceDeleteMock,
-    },
+    $transaction: transactionMock,
   },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
@@ -48,8 +54,17 @@ vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
   getCurrentUser: getCurrentUserMock,
 }));
-// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
-getCurrentUserMock.mockResolvedValue({ data: { user: null } });
+getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
+
+const tx = {
+  serwisy: { findUnique: serviceFindUniqueMock, delete: serviceDeleteMock },
+  auditLog: { create: auditLogCreateMock },
+};
+
+const VALID_INPUT = {
+  justification: 'Duplikat rekordu serwisu utworzony przez pomylke operatora.',
+  legalBasis: AUDIT_REQUIREMENTS.legalBases[0],
+};
 
 const { deleteServiceAction } = await import('../src/app/(dashboard)/services/actions');
 
@@ -67,13 +82,17 @@ const EXISTING_SERVICE_RECORD = { id: EXISTING_SERVICE_ID, instalacja_id: 'inst-
 
 describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTHZ-B2B-MUTATIONS)', () => {
   beforeEach(() => {
+    transactionMock.mockReset();
     serviceFindUniqueMock.mockReset();
     serviceDeleteMock.mockReset();
+    auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
     getCurrentActorRoleMock.mockResolvedValue('admin');
+    getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
     serviceFindUniqueMock.mockResolvedValue(EXISTING_SERVICE_RECORD);
     serviceDeleteMock.mockResolvedValue(EXISTING_SERVICE_RECORD);
+    transactionMock.mockImplementation(async (callback: (tx: unknown) => unknown) => callback(tx));
   });
 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
@@ -83,7 +102,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
       getCurrentActorRoleMock.mockResolvedValue(role);
       expect(can(role, 'services', 'delete')).not.toBe('yes');
 
-      const result = await deleteServiceAction(EXISTING_SERVICE_ID);
+      const result = await deleteServiceAction(EXISTING_SERVICE_ID, VALID_INPUT);
 
       expect(getCurrentActorRoleMock).toHaveBeenCalled();
       expect(serviceFindUniqueMock).not.toHaveBeenCalled();
@@ -97,7 +116,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
-    const result = await deleteServiceAction(EXISTING_SERVICE_ID);
+    const result = await deleteServiceAction(EXISTING_SERVICE_ID, VALID_INPUT);
 
     expect(serviceFindUniqueMock).not.toHaveBeenCalled();
     expect(serviceDeleteMock).not.toHaveBeenCalled();
@@ -109,7 +128,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
   it('blad zapytania o role daje odmowe, nie nieobslugowany wyjatek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('blad zapytania o role'));
 
-    const result = await deleteServiceAction(EXISTING_SERVICE_ID);
+    const result = await deleteServiceAction(EXISTING_SERVICE_ID, VALID_INPUT);
 
     expect(serviceFindUniqueMock).not.toHaveBeenCalled();
     expect(serviceDeleteMock).not.toHaveBeenCalled();
@@ -121,7 +140,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
   it.each(ALLOWED_ROLES)('rola %s jest dozwolona, delete faktycznie wywolane na serwisy.id', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
 
-    const result = await deleteServiceAction(EXISTING_SERVICE_ID);
+    const result = await deleteServiceAction(EXISTING_SERVICE_ID, VALID_INPUT);
 
     expect(result).toEqual({ success: true });
     expect(serviceDeleteMock).toHaveBeenCalledWith(
@@ -150,7 +169,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
   it('odmowa ma jawny, odroznialny ksztalt (obiekt z success:false), nie wyjatek ani void', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
 
-    const result = await deleteServiceAction(EXISTING_SERVICE_ID);
+    const result = await deleteServiceAction(EXISTING_SERVICE_ID, VALID_INPUT);
 
     expect(result).toEqual(expect.objectContaining({ success: false }));
     expect(typeof result?.error).toBe('string');
@@ -163,7 +182,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
     getCurrentActorRoleMock.mockResolvedValue('monter');
     serviceFindUniqueMock.mockResolvedValue(null);
 
-    const result = await deleteServiceAction(NONEXISTENT_SERVICE_ID);
+    const result = await deleteServiceAction(NONEXISTENT_SERVICE_ID, VALID_INPUT);
 
     expect(serviceFindUniqueMock).not.toHaveBeenCalled();
     expect(serviceDeleteMock).not.toHaveBeenCalled();
@@ -177,7 +196,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
     async (role) => {
       getCurrentActorRoleMock.mockResolvedValue(role);
 
-      const result = await deleteServiceAction(EXISTING_SERVICE_ID);
+      const result = await deleteServiceAction(EXISTING_SERVICE_ID, VALID_INPUT);
 
       expect(result.success).toBe(false);
       expect(result.error).toMatch(/brak uprawnie/i);
@@ -188,18 +207,22 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
 
 describe('deleteServiceAction — AC7: rekord nieistniejacy (np. ID instalacji podstawione przez pomylke)', () => {
   beforeEach(() => {
+    transactionMock.mockReset();
     serviceFindUniqueMock.mockReset();
     serviceDeleteMock.mockReset();
+    auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
     getCurrentActorRoleMock.mockResolvedValue('admin');
+    getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
+    transactionMock.mockImplementation(async (callback: (tx: unknown) => unknown) => callback(tx));
   });
 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
   it('AC7 - wywolanie z ID nieistniejacym w serwisy zwraca controlled error, nie rzuca P2025', async () => {
     serviceFindUniqueMock.mockResolvedValue(null);
 
-    const result = await deleteServiceAction(INSTALLATION_ID_MISUSED_AS_SERVICE_ID);
+    const result = await deleteServiceAction(INSTALLATION_ID_MISUSED_AS_SERVICE_ID, VALID_INPUT);
 
     expect(result).toEqual(
       expect.objectContaining({ success: false, error: expect.stringMatching(/nie istnieje/i) }),
@@ -211,7 +234,7 @@ describe('deleteServiceAction — AC7: rekord nieistniejacy (np. ID instalacji p
   it('AC7 - kolejnosc: findUnique jest wywolane PRZED jakakolwiek proba delete', async () => {
     serviceFindUniqueMock.mockResolvedValue(null);
 
-    await deleteServiceAction(NONEXISTENT_SERVICE_ID);
+    await deleteServiceAction(NONEXISTENT_SERVICE_ID, VALID_INPUT);
 
     expect(serviceFindUniqueMock).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: NONEXISTENT_SERVICE_ID } }),
@@ -226,14 +249,14 @@ describe('deleteServiceAction — AC7: rekord nieistniejacy (np. ID instalacji p
     serviceFindUniqueMock.mockResolvedValueOnce(EXISTING_SERVICE_RECORD);
     serviceDeleteMock.mockResolvedValueOnce(EXISTING_SERVICE_RECORD);
 
-    const first = await deleteServiceAction(EXISTING_SERVICE_ID);
+    const first = await deleteServiceAction(EXISTING_SERVICE_ID, VALID_INPUT);
     expect(first).toEqual({ success: true });
     expect(serviceDeleteMock).toHaveBeenCalledTimes(1);
 
     // Drugie wywolanie: rekord juz nie istnieje.
     serviceFindUniqueMock.mockResolvedValueOnce(null);
 
-    const second = await deleteServiceAction(EXISTING_SERVICE_ID);
+    const second = await deleteServiceAction(EXISTING_SERVICE_ID, VALID_INPUT);
 
     expect(second).toEqual(
       expect.objectContaining({ success: false, error: expect.stringMatching(/nie istnieje/i) }),
@@ -244,18 +267,22 @@ describe('deleteServiceAction — AC7: rekord nieistniejacy (np. ID instalacji p
 
 describe('deleteServiceAction — AC5, D5: walidacja formatu UUID', () => {
   beforeEach(() => {
+    transactionMock.mockReset();
     serviceFindUniqueMock.mockReset();
     serviceDeleteMock.mockReset();
+    auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
     getCurrentActorRoleMock.mockResolvedValue('admin');
+    getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
+    transactionMock.mockImplementation(async (callback: (tx: unknown) => unknown) => callback(tx));
   });
 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
   it.each(['', 'nie-jest-uuidem', '../../etc/passwd', '12345', 'inst-1'])(
     'AC5/D5 - id o niepoprawnym formacie UUID (%s) jest odrzucone bez zadnego zapytania Prisma',
     async (badId) => {
-      const result = await deleteServiceAction(badId);
+      const result = await deleteServiceAction(badId, VALID_INPUT);
 
       expect(serviceFindUniqueMock).not.toHaveBeenCalled();
       expect(serviceDeleteMock).not.toHaveBeenCalled();
@@ -269,7 +296,7 @@ describe('deleteServiceAction — AC5, D5: walidacja formatu UUID', () => {
     serviceFindUniqueMock.mockResolvedValue({ id: OTHER_EXISTING_SERVICE_ID, instalacja_id: null });
     serviceDeleteMock.mockResolvedValue({ id: OTHER_EXISTING_SERVICE_ID });
 
-    const result = await deleteServiceAction(OTHER_EXISTING_SERVICE_ID);
+    const result = await deleteServiceAction(OTHER_EXISTING_SERVICE_ID, VALID_INPUT);
 
     expect(result).toEqual({ success: true });
     expect(serviceDeleteMock).toHaveBeenCalledWith(

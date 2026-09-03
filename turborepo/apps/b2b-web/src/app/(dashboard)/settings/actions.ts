@@ -4,7 +4,8 @@ import { prisma } from "@repo/database"
 import type { LegalDocumentKind } from "@repo/database"
 import { revalidatePath } from "next/cache"
 import { can, ROLES } from "@klikklima/contracts"
-import { getCurrentActorRole } from "../../../utils/supabase/server"
+import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server"
+import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
 
 /**
  * SEC-AUTHZ-USER-MGMT: `role` tutaj to dana WEJŚCIOWA nowego konta (kogo dodajemy
@@ -200,15 +201,57 @@ export async function publishLegalDocumentVersionAction(
   }
 }
 
-export async function deleteAuthorizedUser(id: string) {
+export async function deleteAuthorizedUser(
+  id: string,
+  input: DeleteJustificationInput
+) {
+  let actorRole
   try {
-    const actorRole = await getCurrentActorRole()
-    if (!actorRole || can(actorRole, 'authorized_users', 'delete') !== 'yes') {
-      return { success: false, error: "Brak uprawnień do usunięcia konta." }
-    }
+    actorRole = await getCurrentActorRole()
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error)
+    return { success: false, error: "Brak uprawnień do usunięcia konta." }
+  }
+  if (!actorRole || can(actorRole, 'authorized_users', 'delete') !== 'yes') {
+    return { success: false, error: "Brak uprawnień do usunięcia konta." }
+  }
 
-    await prisma.authorizedUser.delete({
-      where: { id }
+  let actorEmail: string | undefined
+  try {
+    const {
+      data: { user },
+    } = await getCurrentUser()
+    actorEmail = user?.email
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error)
+    return { success: false, error: "Brak uprawnień do usunięcia konta." }
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do usunięcia konta." }
+  }
+
+  const parsed = deleteJustificationSchema.safeParse(input)
+  if (!parsed.success) {
+    return { success: false, error: "Nieprawidłowe dane uzasadnienia lub podstawy prawnej." }
+  }
+  const { justification, legalBasis } = parsed.data
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.authorizedUser.delete({
+        where: { id }
+      })
+      await tx.auditLog.create({
+        data: {
+          operation: 'delete',
+          resource: 'authorized_users',
+          recordId: id,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis,
+        },
+      })
     })
 
     revalidatePath("/settings")

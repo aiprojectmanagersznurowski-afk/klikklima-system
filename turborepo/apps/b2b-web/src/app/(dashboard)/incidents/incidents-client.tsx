@@ -13,10 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { formatDate } from "@/lib/format-date"
+import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 
 export function IncidentsClient({ initialIncidents }: { initialIncidents: IncidentSummary[] }) {
   const [incidents] = useState<IncidentSummary[]>(initialIncidents)
   const [searchQuery, setSearchQuery] = useState("")
+  const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
 
   const filtered = incidents.filter(i => {
     if (searchQuery) {
@@ -30,20 +32,7 @@ export function IncidentsClient({ initialIncidents }: { initialIncidents: Incide
 
   const [isPending, startTransition] = useTransition();
   const handleDelete = (id: string) => {
-    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
-      startTransition(async () => {
-        try {
-          const result = await deleteIncidentAction(id);
-          if (!result.success) {
-            alert(result.error);
-            return;
-          }
-          window.location.reload();
-        } catch (e) {
-          alert("Wystąpił błąd podczas usuwania rekordu.");
-        }
-      });
-    }
+    setDeleteDialogId(id);
   }
 
   return (
@@ -159,6 +148,18 @@ export function IncidentsClient({ initialIncidents }: { initialIncidents: Incide
           )}
         </div>
       </div>
+
+      {deleteDialogId && (
+        <DeleteJustificationDialog
+          title="Usuń zgłoszenie"
+          description="Uwaga! Operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO). Rekord zostanie trwale usunięty."
+          onConfirm={(values) => deleteIncidentAction(deleteDialogId, values)}
+          onClose={() => setDeleteDialogId(null)}
+          onSuccess={() => {
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

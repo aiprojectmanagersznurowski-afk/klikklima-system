@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { addAuthorizedUser, deleteAuthorizedUser } from "./actions"
+import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 
 type User = {
   id: string
@@ -20,6 +21,7 @@ export function SettingsClient({ users }: { users: User[] }) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [deleteDialogUserId, setDeleteDialogUserId] = useState<string | null>(null);
 
   const handleAddUser = async () => {
     setError("");
@@ -39,10 +41,8 @@ export function SettingsClient({ users }: { users: User[] }) {
     }
   };
 
-  const handleDeleteUser = async (id: string) => {
-    if (confirm("Czy na pewno chcesz usunąć dostęp temu użytkownikowi?")) {
-      await deleteAuthorizedUser(id);
-    }
+  const handleDeleteUser = (id: string) => {
+    setDeleteDialogUserId(id);
   };
 
   const getInitials = (email: string) => email.substring(0, 2).toUpperCase();
@@ -162,6 +162,18 @@ export function SettingsClient({ users }: { users: User[] }) {
             </div>
           </Card>
         </div>
+      )}
+
+      {deleteDialogUserId && (
+        <DeleteJustificationDialog
+          title="Usuń dostęp pracownika"
+          description="Czy na pewno chcesz usunąć dostęp temu użytkownikowi? Ta operacja jest nieodwracalna."
+          onConfirm={(values) => deleteAuthorizedUser(deleteDialogUserId, values)}
+          onClose={() => setDeleteDialogUserId(null)}
+          onSuccess={() => {
+            setDeleteDialogUserId(null);
+          }}
+        />
       )}
     </div>
   );

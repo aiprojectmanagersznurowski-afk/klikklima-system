@@ -23,6 +23,7 @@ import { ReturnToFunnelDialog } from "./return-to-funnel-dialog";
 import { ArchiveLostDialog } from "./archive-lost-dialog";
 import { AssignCrewDialog } from "./assign-crew-dialog";
 import { can, type Role } from "@klikklima/contracts";
+import { DeleteJustificationDialog } from "@/components/delete-justification-dialog";
 
 /**
  * SEC-LEADS-LIST-SCALARS: wyprowadzone bezpośrednio z rzeczywistego zwracanego typu
@@ -126,24 +127,11 @@ export function LeadsClient({
   const [returnDialogLeadId, setReturnDialogLeadId] = useState<string | null>(null);
   const [archiveDialogLeadId, setArchiveDialogLeadId] = useState<string | null>(null);
   const [assignCrewDialogLeadId, setAssignCrewDialogLeadId] = useState<string | null>(null);
+  const [deleteDialogLeadId, setDeleteDialogLeadId] = useState<string | null>(null);
 
   const handleDelete = (id: string) => {
-    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
-      startTransition(async () => {
-        try {
-          const result = await deleteLeadAction(id);
-          if (!result.success) {
-            alert(result.error ?? "Nie udało się usunąć leada.");
-            return;
-          }
-          window.location.reload();
-        } catch (e) {
-          alert("Wystąpił błąd podczas usuwania rekordu.");
-        }
-      });
-    }
-  }
-;
+    setDeleteDialogLeadId(id);
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [leads, setLeads] = useState(initialLeads);
 
@@ -591,6 +579,22 @@ export function LeadsClient({
           onSuccess={() => {
             setArchiveDialogLeadId(null);
             startTransition(() => router.refresh());
+          }}
+        />
+      )}
+
+      {deleteDialogLeadId && (
+        <DeleteJustificationDialog
+          title="Usuń leada"
+          description={
+            <>
+              Uwaga! Operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO). Rekord zostanie trwale usunięty.
+            </>
+          }
+          onConfirm={(values) => deleteLeadAction(deleteDialogLeadId, values)}
+          onClose={() => setDeleteDialogLeadId(null)}
+          onSuccess={() => {
+            window.location.reload();
           }}
         />
       )}

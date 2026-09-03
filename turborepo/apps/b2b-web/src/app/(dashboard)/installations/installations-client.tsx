@@ -15,27 +15,16 @@ import {
 import Link from "next/link"
 import { isToday } from "date-fns"
 import { formatDate } from "@/lib/format-date"
+import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 
 export function InstallationsClient({ initialInstallations }: { initialInstallations: InstallationSummary[] }) {
   const [installations, setInstallations] = useState<InstallationSummary[]>(initialInstallations)
   const [searchQuery, setSearchQuery] = useState("")
   const [isPending, startTransition] = useTransition()
+  const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
 
   const handleDelete = (id: string) => {
-    if (confirm(`Uwaga! Czy na pewno chcesz trwale usunąć ten rekord? Ta operacja jest nieodwracalna i zarezerwowana dla Administratora (RODO).`)) {
-      startTransition(async () => {
-        try {
-          const result = await deleteInstallationAction(id);
-          if (!result.success) {
-            alert(result.error);
-            return;
-          }
-          window.location.reload();
-        } catch (e) {
-          alert("Wystąpił błąd podczas usuwania rekordu.");
-        }
-      });
-    }
+    setDeleteDialogId(id);
   }
 
 

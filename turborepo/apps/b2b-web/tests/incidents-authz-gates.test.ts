@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ROLES, PERMISSIONS, can } from '@klikklima/contracts';
+import { ROLES, PERMISSIONS, can, AUDIT_REQUIREMENTS } from '@klikklima/contracts';
 
 /**
  * SEC-AUTHZ-B2B-MUTATIONS — pokrycie dla `incidents/actions.ts`
@@ -19,10 +19,27 @@ import { ROLES, PERMISSIONS, can } from '@klikklima/contracts';
  *
  * Mockujemy @repo/database, next/cache (revalidatePath) i
  * ../src/utils/supabase/server (getCurrentActorRole).
+ *
+ * Mechanicznie zaktualizowane pod SEC-AUDIT-LOG-DELETE (docs/workorders/SEC-AUDIT-LOG-DELETE.md):
+ * `deleteIncidentAction` zyskuje drugi parametr `input: { justification, legalBasis }`, a `delete`
+ * przenosi sie do `prisma.$transaction` (wzorzec $transaction-only skopiowany z
+ * leads-delete-admin-only.test.ts). Ten plik NADAL dowodzi wylacznie bramki roli
+ * (SEC-AUTHZ-B2B-MUTATIONS) — wpis do `audit_log` pokrywa osobno
+ * sec-audit-log-delete-wave-a.test.ts. `getCurrentUser` musi zwracac email, inaczej
+ * akcja odmawia przed dotarciem do bramki roli w testach kontroli pozytywnej.
  */
 
-const { incidentDeleteMock, revalidatePathMock, getCurrentActorRoleMock, getCurrentUserMock } = vi.hoisted(() => ({
+const {
+  transactionMock,
+  incidentDeleteMock,
+  auditLogCreateMock,
+  revalidatePathMock,
+  getCurrentActorRoleMock,
+  getCurrentUserMock,
+} = vi.hoisted(() => ({
+  transactionMock: vi.fn(),
   incidentDeleteMock: vi.fn(),
+  auditLogCreateMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
@@ -30,9 +47,7 @@ const { incidentDeleteMock, revalidatePathMock, getCurrentActorRoleMock, getCurr
 
 vi.mock('@repo/database', () => ({
   prisma: {
-    usterki_incidents: {
-      delete: incidentDeleteMock,
-    },
+    $transaction: transactionMock,
   },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
@@ -40,8 +55,17 @@ vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
   getCurrentUser: getCurrentUserMock,
 }));
-// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
-getCurrentUserMock.mockResolvedValue({ data: { user: null } });
+getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
+
+const tx = {
+  usterki_incidents: { delete: incidentDeleteMock },
+  auditLog: { create: auditLogCreateMock },
+};
+
+const VALID_INPUT = {
+  justification: 'Duplikat zgloszenia utworzony przez pomylke operatora.',
+  legalBasis: AUDIT_REQUIREMENTS.legalBases[0],
+};
 
 const { deleteIncidentAction } = await import('../src/app/(dashboard)/incidents/actions');
 
@@ -50,10 +74,14 @@ const DENIED_ROLES = ROLES.filter((r) => can(r, 'incidents', 'delete') !== 'yes'
 
 describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () => {
   beforeEach(() => {
+    transactionMock.mockReset();
     incidentDeleteMock.mockReset();
+    auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
     getCurrentActorRoleMock.mockResolvedValue('admin');
+    getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
+    transactionMock.mockImplementation(async (callback: (tx: unknown) => unknown) => callback(tx));
   });
 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
@@ -63,7 +91,7 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
       getCurrentActorRoleMock.mockResolvedValue(role);
       expect(can(role, 'incidents', 'delete')).not.toBe('yes');
 
-      const result = await deleteIncidentAction('incident-1');
+      const result = await deleteIncidentAction('incident-1', VALID_INPUT);
 
       expect(getCurrentActorRoleMock).toHaveBeenCalled();
       expect(incidentDeleteMock).not.toHaveBeenCalled();
@@ -76,7 +104,7 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
-    const result = await deleteIncidentAction('incident-1');
+    const result = await deleteIncidentAction('incident-1', VALID_INPUT);
 
     expect(incidentDeleteMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
@@ -87,7 +115,7 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
   it('blad zapytania o role daje odmowe, nie nieobslugowany wyjatek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('blad zapytania o role'));
 
-    const result = await deleteIncidentAction('incident-1');
+    const result = await deleteIncidentAction('incident-1', VALID_INPUT);
 
     expect(incidentDeleteMock).not.toHaveBeenCalled();
     expect(result).toMatchObject({ success: false });
@@ -99,7 +127,7 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
     getCurrentActorRoleMock.mockResolvedValue(role);
     incidentDeleteMock.mockResolvedValue({});
 
-    const result = await deleteIncidentAction('incident-1');
+    const result = await deleteIncidentAction('incident-1', VALID_INPUT);
 
     expect(result).toEqual({ success: true });
     expect(incidentDeleteMock).toHaveBeenCalledWith(
@@ -121,7 +149,7 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
   it('odmowa ma jawny, odroznialny ksztalt (obiekt z success:false), nie wyjatek ani void', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
 
-    const result = await deleteIncidentAction('incident-1');
+    const result = await deleteIncidentAction('incident-1', VALID_INPUT);
 
     expect(result).toEqual(expect.objectContaining({ success: false }));
     expect(typeof result?.error).toBe('string');
@@ -134,7 +162,7 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
   it('odmowa dla roli bez uprawnien zachodzi niezaleznie od istnienia rekordu', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
 
-    const result = await deleteIncidentAction('incident-nieistniejacy');
+    const result = await deleteIncidentAction('incident-nieistniejacy', VALID_INPUT);
 
     expect(incidentDeleteMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
@@ -159,7 +187,7 @@ describe('incidents/actions.ts — Punkt 18: fail-closed przed try (BATCH-MEDIUM
   it('deleteIncidentAction: getCurrentActorRole rzuca -> odmowa uprawnien (nie generyczny blad zapisu), zero wywolan mutacji usunięcia usterki', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('sesja wygasla'));
 
-    const result = await deleteIncidentAction('incident-1');
+    const result = await deleteIncidentAction('incident-1', VALID_INPUT);
 
     expect(incidentDeleteMock).not.toHaveBeenCalled();
     expect(result.success).toBe(false);

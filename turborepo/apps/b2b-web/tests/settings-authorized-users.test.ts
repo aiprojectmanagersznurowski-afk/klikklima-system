@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PERMISSIONS, can, ROLES } from '@klikklima/contracts';
+import { PERMISSIONS, can, ROLES, AUDIT_REQUIREMENTS } from '@klikklima/contracts';
 
 /**
  * Wymaganie: SEC-AUTHZ-USER-MGMT (contracts/requirements.contract.mjs), status TODO.
@@ -77,6 +77,8 @@ const {
   authorizedUserCreateMock,
   authorizedUserDeleteMock,
   authorizedUserFindUniqueMock,
+  transactionMock,
+  auditLogCreateMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
   getCurrentUserMock,
@@ -84,6 +86,8 @@ const {
   authorizedUserCreateMock: vi.fn(),
   authorizedUserDeleteMock: vi.fn(),
   authorizedUserFindUniqueMock: vi.fn(),
+  transactionMock: vi.fn(),
+  auditLogCreateMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
@@ -93,9 +97,9 @@ vi.mock('@repo/database', () => ({
   prisma: {
     authorizedUser: {
       create: authorizedUserCreateMock,
-      delete: authorizedUserDeleteMock,
       findUnique: authorizedUserFindUniqueMock,
     },
+    $transaction: transactionMock,
   },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
@@ -105,6 +109,22 @@ vi.mock('../src/utils/supabase/server', () => ({
 }));
 // P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
 getCurrentUserMock.mockResolvedValue({ data: { user: null } });
+
+// Mechanicznie zaktualizowane pod SEC-AUDIT-LOG-DELETE: `deleteAuthorizedUser`
+// zyskuje drugi parametr `input: { justification, legalBasis }`, a `delete` przenosi
+// sie do `prisma.$transaction` (wzorzec $transaction-only skopiowany z
+// leads-delete-admin-only.test.ts). Ten plik NADAL dowodzi wylacznie bramki roli
+// (SEC-AUTHZ-USER-MGMT) — wpis do `audit_log` pokrywa osobno
+// sec-audit-log-delete-wave-a.test.ts.
+const tx = {
+  authorizedUser: { delete: authorizedUserDeleteMock },
+  auditLog: { create: auditLogCreateMock },
+};
+
+const VALID_INPUT = {
+  justification: 'Duplikat konta uzytkownika utworzony przez pomylke operatora.',
+  legalBasis: AUDIT_REQUIREMENTS.legalBases[0],
+};
 
 const { addAuthorizedUser, deleteAuthorizedUser } = await import(
   '../src/app/(dashboard)/settings/actions'
@@ -118,9 +138,13 @@ describe('addAuthorizedUser / deleteAuthorizedUser - bramka RBAC i walidacja rol
     authorizedUserCreateMock.mockReset();
     authorizedUserDeleteMock.mockReset();
     authorizedUserFindUniqueMock.mockReset();
+    transactionMock.mockReset();
+    auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
     getCurrentActorRoleMock.mockResolvedValue('admin');
+    getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
+    transactionMock.mockImplementation(async (callback: (tx: unknown) => unknown) => callback(tx));
   });
 
   // Kontrola pozytywna: macierz RBAC rzeczywiście przyznaje adminowi obie zdolności.
@@ -154,7 +178,7 @@ describe('addAuthorizedUser / deleteAuthorizedUser - bramka RBAC i walidacja rol
       getCurrentActorRoleMock.mockResolvedValue(role);
       expect(can(role, 'authorized_users', 'delete')).toBe('no');
 
-      const result = await deleteAuthorizedUser('usr-1');
+      const result = await deleteAuthorizedUser('usr-1', VALID_INPUT);
 
       expect(result.success).toBe(false);
       expect(authorizedUserDeleteMock).not.toHaveBeenCalled();
@@ -177,7 +201,7 @@ describe('addAuthorizedUser / deleteAuthorizedUser - bramka RBAC i walidacja rol
   it('deleteAuthorizedUser - brak roli (null) jest odrzucony fail-closed, nie przepuszczony', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
-    const result = await deleteAuthorizedUser('usr-1');
+    const result = await deleteAuthorizedUser('usr-1', VALID_INPUT);
 
     expect(result.success).toBe(false);
     expect(authorizedUserDeleteMock).not.toHaveBeenCalled();
@@ -201,7 +225,7 @@ describe('addAuthorizedUser / deleteAuthorizedUser - bramka RBAC i walidacja rol
   it('deleteAuthorizedUser - blad zapytania o role daje odmowe, nie nieobslugiwany wyjatek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('błąd zapytania o rolę'));
 
-    await expect(deleteAuthorizedUser('usr-1')).resolves.toMatchObject({ success: false });
+    await expect(deleteAuthorizedUser('usr-1', VALID_INPUT)).resolves.toMatchObject({ success: false });
     expect(authorizedUserDeleteMock).not.toHaveBeenCalled();
     expect(authorizedUserFindUniqueMock).not.toHaveBeenCalled();
   });
@@ -224,7 +248,7 @@ describe('addAuthorizedUser / deleteAuthorizedUser - bramka RBAC i walidacja rol
   it('admin - deleteAuthorizedUser przechodzi bramke i usuwa rekord', async () => {
     authorizedUserDeleteMock.mockResolvedValue({ id: 'usr-1' });
 
-    const result = await deleteAuthorizedUser('usr-1');
+    const result = await deleteAuthorizedUser('usr-1', VALID_INPUT);
 
     expect(result.success).toBe(true);
     expect(authorizedUserDeleteMock).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'usr-1' } }));
@@ -254,8 +278,8 @@ describe('addAuthorizedUser / deleteAuthorizedUser - bramka RBAC i walidacja rol
   it('deleteAuthorizedUser - odmowa nie ujawnia istnienia konta (identyczny wynik, zero zapytan do bazy)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
 
-    const forExisting = await deleteAuthorizedUser('usr-istniejacy');
-    const forMissing = await deleteAuthorizedUser('usr-nieistniejacy');
+    const forExisting = await deleteAuthorizedUser('usr-istniejacy', VALID_INPUT);
+    const forMissing = await deleteAuthorizedUser('usr-nieistniejacy', VALID_INPUT);
 
     expect(forExisting).toEqual(forMissing);
     expect(forExisting.success).toBe(false);

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ROLES, PERMISSIONS, can } from '@klikklima/contracts';
+import { ROLES, PERMISSIONS, can, AUDIT_REQUIREMENTS } from '@klikklima/contracts';
 
 /**
  * SEC-AUTHZ-B2B-MUTATIONS — pokrycie dla `logistics/actions.ts`
@@ -121,6 +121,15 @@ const {
   rollbackLogisticsOrder,
   deleteLogisticsOrderAction,
 } = await import('../src/app/(dashboard)/logistics/actions');
+
+// Mechanicznie zaktualizowane pod SEC-AUDIT-LOG-DELETE: deleteLeadAction (do ktorej
+// deleteLogisticsOrderAction deleguje) przyjmuje odtad drugi parametr
+// input: { justification, legalBasis } — ten plik dowodzi WYLACZNIE delegacji (AC13),
+// wiec VALID_INPUT jest tu przekazywane bez wlasnej walidacji.
+const VALID_INPUT = {
+  justification: 'Duplikat zamowienia logistycznego utworzony przez pomylke operatora.',
+  legalBasis: AUDIT_REQUIREMENTS.legalBases[0],
+};
 
 const LEADS_UPDATE_ALLOWED = ROLES.filter((r) => can(r, 'leads', 'update') === 'yes');
 const LEADS_UPDATE_DENIED = ROLES.filter((r) => can(r, 'leads', 'update') !== 'yes');
@@ -561,9 +570,9 @@ describe('deleteLogisticsOrderAction — konsolidacja do deleteLeadAction (SEC-A
   it('woła zaimportowana deleteLeadAction z leadId i zwraca jej wynik (sukces)', async () => {
     deleteLeadActionMock.mockResolvedValue({ success: true });
 
-    const result = await deleteLogisticsOrderAction('lead-1');
+    const result = await deleteLogisticsOrderAction('lead-1', VALID_INPUT);
 
-    expect(deleteLeadActionMock).toHaveBeenCalledWith('lead-1');
+    expect(deleteLeadActionMock).toHaveBeenCalledWith('lead-1', VALID_INPUT);
     expect(result).toEqual({ success: true });
   });
 
@@ -574,9 +583,9 @@ describe('deleteLogisticsOrderAction — konsolidacja do deleteLeadAction (SEC-A
   it('przekazuje dalej wynik odmowy z deleteLeadAction, nie wola wlasnego prisma.leady.delete', async () => {
     deleteLeadActionMock.mockResolvedValue({ success: false, error: 'Brak uprawnień do usunięcia leada.' });
 
-    const result = await deleteLogisticsOrderAction('lead-1');
+    const result = await deleteLogisticsOrderAction('lead-1', VALID_INPUT);
 
-    expect(deleteLeadActionMock).toHaveBeenCalledWith('lead-1');
+    expect(deleteLeadActionMock).toHaveBeenCalledWith('lead-1', VALID_INPUT);
     expect(leadDeleteMock).not.toHaveBeenCalled();
     expect(result).toEqual({ success: false, error: 'Brak uprawnień do usunięcia leada.' });
   });

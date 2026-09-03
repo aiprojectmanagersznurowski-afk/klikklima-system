@@ -1,1 +1,2 @@
 - [Mutation verification pattern](feedback_mutation_verification_pattern.md) — use reviewer's scratchpad vitest transform-plugin harness to prove new assertions catch specific mutants; Write tool blocked even in scratchpad, use `cat > ... <<'EOF'` via Bash.
+- [Delete-action wave RED pattern](feedback_delete_action_wave_pattern.md) — mock only `prisma.$transaction` (not per-model) when testing bare-delete-to-transaction refactors; static AC11 checks need brace-balancing, not greedy regex.

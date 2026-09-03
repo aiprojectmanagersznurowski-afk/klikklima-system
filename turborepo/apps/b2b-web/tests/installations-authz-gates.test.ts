@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ROLES, PERMISSIONS, can } from '@klikklima/contracts';
+import { ROLES, PERMISSIONS, can, AUDIT_REQUIREMENTS } from '@klikklima/contracts';
 
 /**
  * SEC-AUTHZ-B2B-MUTATIONS — pokrycie dla `installations/actions.ts`
@@ -36,32 +36,50 @@ const {
   installationUpdateMock,
   installationDeleteMock,
   leadUpdateMock,
+  transactionMock,
+  auditLogCreateMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
+  getCurrentUserMock,
 } = vi.hoisted(() => ({
   installationUpdateMock: vi.fn(),
   installationDeleteMock: vi.fn(),
   leadUpdateMock: vi.fn(),
+  transactionMock: vi.fn(),
+  auditLogCreateMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
+  getCurrentUserMock: vi.fn(),
 }));
 
 vi.mock('@repo/database', () => ({
   prisma: {
     instalacje: {
       update: installationUpdateMock,
-      delete: installationDeleteMock,
     },
     leady: {
       update: leadUpdateMock,
     },
+    $transaction: transactionMock,
   },
   InstallationStatus: {},
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
+  getCurrentUser: getCurrentUserMock,
 }));
+getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
+
+const deleteTx = {
+  instalacje: { delete: installationDeleteMock },
+  auditLog: { create: auditLogCreateMock },
+};
+
+const VALID_INPUT = {
+  justification: 'Duplikat rekordu montazu utworzony przez pomylke operatora.',
+  legalBasis: AUDIT_REQUIREMENTS.legalBases[0],
+};
 
 const { updateInstallationStatus, deleteInstallationAction } = await import(
   '../src/app/(dashboard)/installations/actions'
@@ -206,9 +224,13 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
     installationUpdateMock.mockReset();
     installationDeleteMock.mockReset();
     leadUpdateMock.mockReset();
+    transactionMock.mockReset();
+    auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
     getCurrentActorRoleMock.mockResolvedValue('admin');
+    getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
+    transactionMock.mockImplementation(async (callback: (tx: unknown) => unknown) => callback(deleteTx));
   });
 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
@@ -218,7 +240,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
       getCurrentActorRoleMock.mockResolvedValue(role);
       expect(can(role, 'installations', 'delete')).not.toBe('yes');
 
-      const result = await deleteInstallationAction('inst-1');
+      const result = await deleteInstallationAction('inst-1', VALID_INPUT);
 
       expect(getCurrentActorRoleMock).toHaveBeenCalled();
       expect(installationDeleteMock).not.toHaveBeenCalled();
@@ -233,7 +255,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
     expect(can('monter', 'installations', 'delete')).toBe('no');
     getCurrentActorRoleMock.mockResolvedValue('monter');
 
-    const result = await deleteInstallationAction('inst-1');
+    const result = await deleteInstallationAction('inst-1', VALID_INPUT);
 
     expect(installationDeleteMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
@@ -244,7 +266,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
-    const result = await deleteInstallationAction('inst-1');
+    const result = await deleteInstallationAction('inst-1', VALID_INPUT);
 
     expect(installationDeleteMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
@@ -255,7 +277,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
   it('blad zapytania o role daje odmowe, nie nieobslugowany wyjatek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('blad zapytania o role'));
 
-    const result = await deleteInstallationAction('inst-1');
+    const result = await deleteInstallationAction('inst-1', VALID_INPUT);
 
     expect(installationDeleteMock).not.toHaveBeenCalled();
     expect(result).toMatchObject({ success: false });
@@ -267,7 +289,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
     getCurrentActorRoleMock.mockResolvedValue(role);
     installationDeleteMock.mockResolvedValue({});
 
-    const result = await deleteInstallationAction('inst-1');
+    const result = await deleteInstallationAction('inst-1', VALID_INPUT);
 
     expect(result).toEqual({ success: true });
     expect(installationDeleteMock).toHaveBeenCalledWith(
@@ -286,7 +308,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
   it('odmowa ma jawny, odroznialny ksztalt (obiekt z success:false), nie wyjatek ani void', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
 
-    const result = await deleteInstallationAction('inst-1');
+    const result = await deleteInstallationAction('inst-1', VALID_INPUT);
 
     expect(result).toEqual(expect.objectContaining({ success: false }));
     expect(typeof result?.error).toBe('string');
@@ -327,7 +349,7 @@ describe('installations/actions.ts — Punkt 18: fail-closed przed try (BATCH-ME
   it('deleteInstallationAction: getCurrentActorRole rzuca -> odmowa uprawnien (nie generyczny blad zapisu), zero wywolan mutacji usunięcia montażu', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('sesja wygasla'));
 
-    const result = await deleteInstallationAction('inst-1');
+    const result = await deleteInstallationAction('inst-1', VALID_INPUT);
 
     expect(installationDeleteMock).not.toHaveBeenCalled();
     expect(result.success).toBe(false);

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PERMISSIONS, can } from '@klikklima/contracts';
+import { PERMISSIONS, can, AUDIT_REQUIREMENTS } from '@klikklima/contracts';
 
 /**
  * CRM-DELETE-ADMIN-ONLY — pokrycie dla `deleteLeadAction` w
@@ -23,8 +23,16 @@ import { PERMISSIONS, can } from '@klikklima/contracts';
  *
  * Mockujemy @repo/database (brak zywej instancji testowej), next/cache
  * (revalidatePath wymaga kontekstu zadania Next.js) i
- * ../src/utils/supabase/server (getCurrentActorRole). Model Prisma po polsku
+ * ../src/utils/supabase/server (getCurrentActorRole, createClient). Model Prisma po polsku
  * (leady) — dlug KK-NAMING-BASELINE, ADR-002 zamrozony.
+ *
+ * Mechanicznie zaktualizowane pod SEC-AUDIT-LOG-DELETE (docs/workorders/SEC-AUDIT-LOG-DELETE.md):
+ * `deleteLeadAction` zyskuje drugi parametr `input: { justification, legalBasis }`, a `delete`
+ * przenosi sie do `prisma.$transaction`. Ten plik NADAL dowodzi wylacznie bramki roli
+ * (CRM-DELETE-ADMIN-ONLY-LEADS) — wpis do `audit_log` pokrywa osobno
+ * sec-audit-log-delete-wave-a.test.ts. Wzorzec mocka ($transaction-only, zero modelu
+ * bezposrednio na `prisma`) skopiowany z tamtego pliku, zeby oba pliki zgadzaly sie co do
+ * ksztaltu API i zaden test nie przechodzil przypadkiem na starym mocku.
  *
  * Swiadome ograniczenie: warstwa UI (ukrycie przycisku "Usun" dla rol nie-admin)
  * i warstwa RLS sa OSOBNE od tej bramki Server Action i testowane gdzie indziej —
@@ -32,18 +40,29 @@ import { PERMISSIONS, can } from '@klikklima/contracts';
  * osobno. Ten plik pokrywa wylacznie warstwe Server Action.
  */
 
-const { leadDeleteMock, revalidatePathMock, getCurrentActorRoleMock, getCurrentUserMock } = vi.hoisted(() => ({
+const {
+  transactionMock,
+  leadDeleteMock,
+  auditLogCreateMock,
+  revalidatePathMock,
+  getCurrentActorRoleMock,
+  getCurrentUserMock,
+  getUserMock,
+  createClientMock,
+} = vi.hoisted(() => ({
+  transactionMock: vi.fn(),
   leadDeleteMock: vi.fn(),
+  auditLogCreateMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
+  getUserMock: vi.fn(),
+  createClientMock: vi.fn(),
 }));
 
 vi.mock('@repo/database', () => ({
   prisma: {
-    leady: {
-      delete: leadDeleteMock,
-    },
+    $transaction: transactionMock,
   },
   LeadStatus: {},
 }));
@@ -51,9 +70,17 @@ vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
   getCurrentUser: getCurrentUserMock,
+  createClient: createClientMock,
 }));
-// P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
-getCurrentUserMock.mockResolvedValue({ data: { user: null } });
+getCurrentUserMock.mockImplementation(() => getUserMock());
+
+const tx = {
+  leady: { delete: leadDeleteMock },
+  auditLog: { create: auditLogCreateMock },
+};
+
+const VALID_JUSTIFICATION = 'Duplikat rekordu utworzony przez pomylke operatora.';
+const VALID_INPUT = { justification: VALID_JUSTIFICATION, legalBasis: AUDIT_REQUIREMENTS.legalBases[0] };
 
 const { deleteLeadAction } = await import('../src/app/(dashboard)/leads/actions');
 
@@ -63,10 +90,18 @@ const UNAUTHORIZED_DELETE_ROLES = ['dyspozytor', 'audytor', 'monter'] as const;
 
 describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY)', () => {
   beforeEach(() => {
+    transactionMock.mockReset();
     leadDeleteMock.mockReset();
+    auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
+    getUserMock.mockReset();
+    createClientMock.mockReset();
+
+    transactionMock.mockImplementation(async (callback: (tx: unknown) => unknown) => callback(tx));
     getCurrentActorRoleMock.mockResolvedValue('admin');
+    getUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
+    createClientMock.mockResolvedValue({ auth: { getUser: getUserMock } });
   });
 
   // Server Action odrzuca zadanie roli nie-admin, PRZED jakimkolwiek zapytaniem do
@@ -78,8 +113,9 @@ describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY
       getCurrentActorRoleMock.mockResolvedValue(role);
       expect(can(role, 'leads', 'delete')).toBe('no');
 
-      const result = await deleteLeadAction('lead-1');
+      const result = await deleteLeadAction('lead-1', VALID_INPUT);
 
+      expect(transactionMock).not.toHaveBeenCalled();
       expect(leadDeleteMock).not.toHaveBeenCalled();
       expect(result.success).toBe(false);
     },
@@ -90,8 +126,9 @@ describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
-    const result = await deleteLeadAction('lead-1');
+    const result = await deleteLeadAction('lead-1', VALID_INPUT);
 
+    expect(transactionMock).not.toHaveBeenCalled();
     expect(leadDeleteMock).not.toHaveBeenCalled();
     expect(result.success).toBe(false);
   });
@@ -101,18 +138,21 @@ describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY
   it('blad zapytania o role daje odmowe, nie nieobslugowany wyjatek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('blad zapytania o role'));
 
-    const result = await deleteLeadAction('lead-1');
+    const result = await deleteLeadAction('lead-1', VALID_INPUT);
 
+    expect(transactionMock).not.toHaveBeenCalled();
     expect(leadDeleteMock).not.toHaveBeenCalled();
     expect(result).toMatchObject({ success: false });
   });
 
-  // Kontrola pozytywna: admin -> sukces, delete faktycznie wywolane.
+  // Kontrola pozytywna: admin -> sukces, delete faktycznie wywolane (wewnatrz $transaction,
+  // razem z wpisem audytowym pokrywanym w sec-audit-log-delete-wave-a.test.ts).
   // @REQ: CRM-DELETE-ADMIN-ONLY
   it('admin - dozwolony, wywolanie konczy sie usunieciem leada', async () => {
     leadDeleteMock.mockResolvedValue({});
+    auditLogCreateMock.mockResolvedValue({ id: 'audit-1' });
 
-    const result = await deleteLeadAction('lead-1');
+    const result = await deleteLeadAction('lead-1', VALID_INPUT);
 
     expect(result).toEqual({ success: true });
     expect(leadDeleteMock).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'lead-1' } }));
@@ -132,7 +172,7 @@ describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY
   it('odmowa ma jawny, odroznialny ksztalt (obiekt z success:false), nie wyjatek', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
 
-    const result = await deleteLeadAction('lead-1');
+    const result = await deleteLeadAction('lead-1', VALID_INPUT);
 
     expect(result).toEqual(expect.objectContaining({ success: false }));
     expect(typeof result.error).toBe('string');
