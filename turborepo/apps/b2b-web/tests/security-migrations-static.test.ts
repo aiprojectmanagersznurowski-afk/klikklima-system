@@ -76,3 +76,58 @@ describe('Punkt 10 — lockdown bucketów bazawiedzy i urzadzenia (statyczne, mi
     expect(sql).toContain("USING (bucket_id IN ('bazawiedzy', 'urzadzenia'));");
   });
 });
+
+describe('SEC-EMAIL-UNIQUE — przywrócenie UNIQUE na e-mailu pracownika (statyczne, migracja niezaaplikowana)', () => {
+  const FILE = '20260903061000_security_employee_email_unique_reassert.sql';
+
+  // Bez tagu @REQ: ten test zamraża wyłącznie TREŚĆ pliku migracji, nie kryteria
+  // akceptacji SEC-EMAIL-UNIQUE — wymaganie ma status IMPLEMENTING właśnie dlatego,
+  // że inne kryteria (integracyjne, na żywej bazie) nie są tu pokryte. Tag @REQ
+  // dałby fałszywą zieleń dla wymagania, które w rzeczywistości nie jest domknięte.
+
+  it('migracja tworzy unikalny indeks na email dla audytorzy i zespoly_monterskie', () => {
+    const sql = readMigration(FILE);
+
+    expect(sql).toContain('CREATE UNIQUE INDEX IF NOT EXISTS audytorzy_email_key');
+    expect(sql).toContain('CREATE UNIQUE INDEX IF NOT EXISTS zespoly_monterskie_email_key');
+  });
+
+  it('migracja zawiera blok DO $$ z RAISE EXCEPTION sprawdzający duplikaty dla obu tabel', () => {
+    const sql = readMigration(FILE);
+
+    expect(sql).toContain('DO $$');
+
+    // Musi być dokładnie dwa wystąpienia aktywnego (nie zakomentowanego)
+    // RAISE EXCEPTION — jedno per tabela. Plik wspomina "RAISE EXCEPTION"
+    // także w prozie komentarza opisującego decyzję projektową, więc liczymy
+    // tylko linie spoza komentarzy, żeby nie fałszować liczby wystąpień.
+    const activeSql = sql
+      .split('\n')
+      .filter((line) => !line.trim().startsWith('--'))
+      .join('\n');
+    const raiseExceptionMatches = activeSql.match(/RAISE EXCEPTION/g) ?? [];
+    expect(raiseExceptionMatches.length).toBe(2);
+
+    expect(sql).toMatch(
+      /RAISE EXCEPTION\s*\n\s*'SEC-EMAIL-UNIQUE: tabela public\.audytorzy zawiera/,
+    );
+    expect(sql).toMatch(
+      /RAISE EXCEPTION\s*\n\s*'SEC-EMAIL-UNIQUE: tabela public\.zespoly_monterskie zawiera/,
+    );
+  });
+
+  it('migracja nie używa CONCURRENTLY w aktywnym kodzie SQL (dopuszczalne wyłącznie w komentarzu)', () => {
+    const sql = readMigration(FILE);
+
+    const activeSql = sql
+      .split('\n')
+      .filter((line) => !line.trim().startsWith('--'))
+      .join('\n');
+
+    // CONCURRENTLY może wystąpić w komentarzu opisującym warunek unieważnienia
+    // decyzji (sekcja 2), ale nie wolno mu wystąpić w linii wykonywanego SQL —
+    // CREATE INDEX CONCURRENTLY nie działa wewnątrz bloku transakcyjnego.
+    expect(sql).toContain('CONCURRENTLY');
+    expect(activeSql).not.toContain('CONCURRENTLY');
+  });
+});
