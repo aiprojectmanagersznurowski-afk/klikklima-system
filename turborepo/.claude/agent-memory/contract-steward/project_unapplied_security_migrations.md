@@ -1,6 +1,6 @@
 ---
 name: unapplied-security-migrations
-description: Wzorzec pracy dla migracji, których obecność w repo nie dowodzi zastosowania — historia sześciu migracji, wszystkie zweryfikowane jako URUCHOMIONE na żywo (stan na 2026-09-03)
+description: Wzorzec pracy dla migracji, których obecność w repo nie dowodzi zastosowania — sześć migracji bezpieczeństwa + perf_foreign_key_indexes, wszystkie zweryfikowane jako URUCHOMIONE na żywo (stan na 2026-09-03); także starzenie się pomiarów w nagłówkach
 metadata:
   type: project
 ---
@@ -43,6 +43,20 @@ plik, nie samą ramkę — zdania typu „żywa baza tego nie ma", „dopóki pl
 jest jedyną ochroną" są rozsiane po uzasadnieniach i każde z nich staje się nieprawdą. Zdania
 opisujące stan sprzed naprawy przestawiaj w czas przeszły i oznaczaj jako stan wyjściowy, zamiast
 je kasować — uzasadnienie decyzji ma zostać, kłamstwo o stanie serwera nie.
+
+**Dryf nagłówka NIE dotyczy tylko migracji bezpieczeństwa.** 2026-09-03 ten sam błąd znaleziono w
+migracji wydajnościowej `20260902170500_perf_foreign_key_indexes.sql`: człowiek zweryfikował ją na
+żywo w trakcie audytu wydajności, ale zapomniał poprawić ramkę. Wszystkie 11 indeksów potwierdzone
+w `pg_indexes` (schemat `public`, odczyt 2026-09-03), nagłówek przepisany. Wniosek: przeglądaj
+nagłówki KAŻDEJ migracji, nie tylko tych z etykietą SEC-.
+
+**Ramka to nie jedyne kłamstwo w pliku — daty pomiarów starzeją się osobno.** Ten sam plik zawierał
+sekcję „TA MIGRACJA DAJE DZIŚ ZERO" opartą na pomiarze „0 klientów, 0 leadów" z 2026-09-02.
+2026-09-03 te same tabele miały `klienci = 8027`, `leady = 8015`, `adresy = 8008` — uzasadnienie
+wydajnościowe przestało być prawdziwe niezależnie od tego, czy migracja została uruchomiona.
+Dlatego przy poprawianiu nagłówka sprawdzaj także LICZBY, na których opiera się uzasadnienie, a nie
+tylko zdania o zastosowaniu. Cudzego pomiaru nie nadpisuj: zostaw oryginał i dopisz datowany
+DOPISEK z nowym odczytem, wprost mówiąc, czego NIE zmierzyłeś (tu: skąd wzięło się ~8 tys. wierszy).
 
 **Nieaktualny komentarz myli w OBIE strony.** Raz przeczytano ramkę „nie uruchomiona" na migracji
 faktycznie zastosowanej i wyciągnięto z tego wniosek o złym stanie bazy; symetrycznie ramka

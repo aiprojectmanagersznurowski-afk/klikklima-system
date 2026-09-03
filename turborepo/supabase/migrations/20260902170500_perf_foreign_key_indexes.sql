@@ -3,10 +3,22 @@
 -- Źródło decyzji: docs/performance/AUDYT-B2B-2026-09-02.md
 --
 -- ╔══════════════════════════════════════════════════════════════════════════════════════╗
--- ║  UWAGA: TA MIGRACJA NIE ZOSTAŁA URUCHOMIONA NA ŻYWEJ BAZIE.                           ║
--- ║  Napisana 2026-09-02, zacommitowana jako plik, świadomie NIEZAAPLIKOWANA.             ║
--- ║  Uruchomienie wymaga OSOBNEJ, JAWNEJ zgody człowieka.                                 ║
--- ║  Obecność pliku ani zielony `prisma validate` NIE dowodzą, że te indeksy istnieją.    ║
+-- ║  STATUS: TA MIGRACJA ZOSTAŁA URUCHOMIONA NA ŻYWEJ BAZIE i ZWERYFIKOWANA.             ║
+-- ║  Napisana 2026-09-02, uruchomiona na żywej bazie — wszystkie 11 indeksów ISTNIEJE.   ║
+-- ║                                                                                      ║
+-- ║  DOWÓD (nie „plik jest w repo" i nie „prisma validate jest zielony" — odczyt z bazy  ║
+-- ║  wykonany 2026-09-03): pg_indexes, schemaname = 'public', zwraca wszystkie 11 nazw   ║
+-- ║  wymienionych w tym pliku, co do jednej:                                             ║
+-- ║    leady_audytor_id_idx, leady_klient_id_idx,                                        ║
+-- ║    leady_status_data_rezerwacji_created_at_idx, instalacje_lead_id_idx,              ║
+-- ║    instalacje_zespol_id_idx, serwisy_instalacja_id_idx, serwisy_zespol_id_idx,       ║
+-- ║    usterki_incidents_instalacja_id_idx, usterki_incidents_zespol_id_idx,             ║
+-- ║    adresy_klient_id_idx, logistyka_zamowienia_lead_id_created_at_idx.                ║
+-- ║                                                                                      ║
+-- ║  Ewidencja migracji w tym projekcie pozostaje niewiarygodna (wpisy w tabeli          ║
+-- ║  supabase_migrations.schema_migrations nie pokrywają liczby plików), więc jedynym    ║
+-- ║  źródłem prawdy o schemacie są nadal pg_indexes / pg_constraint, nie ten nagłówek.   ║
+-- ║  Ten nagłówek jest ZAPISEM ODCZYTU Z 2026-09-03, nie gwarancją na zawsze.            ║
 -- ╚══════════════════════════════════════════════════════════════════════════════════════╝
 --
 -- ╔══════════════════════════════════════════════════════════════════════════════════════╗
@@ -20,8 +32,25 @@
 -- ║  _count zamiast zagnieżdżonego include): getCustomers 893 → 324 ms.                   ║
 -- ╚══════════════════════════════════════════════════════════════════════════════════════╝
 --
+-- DOPISEK 2026-09-03 (nie zmieniam ramki wyżej — została taka, jaka była 2026-09-02).
+-- Ramka wyżej jest prawdziwa WYŁĄCZNIE dla stanu danych z 2026-09-02. Przy tym samym
+-- odczycie z bazy, który potwierdził istnienie indeksów, policzone zostały wiersze:
+--   klienci = 8027, leady = 8015, adresy = 8008, instalacje = 1, serwisy = 0,
+--   logistyka_zamowienia = 0.
+-- Zdanie „TA MIGRACJA DAJE DZIŚ ZERO" NIE opisuje już dnia dzisiejszego: przy ~8 tys.
+-- wierszy w leady, klienci i adresy planer może realnie sięgnąć po indeksy na
+-- audytor_id, klient_id i (status, data_rezerwacji, created_at).
+-- Świadomie NIE przepisuję tu wniosku wydajnościowego, bo nie mam pomiaru: skąd wzięło
+-- się te ~8 tys. wierszy (import, seed, test obciążeniowy?) i czy zostaną w bazie —
+-- to pytanie do człowieka. Dopóki nie ma nowego pomiaru EXPLAIN ANALYZE, jedyne, co
+-- ten dopisek stwierdza, to że STARE UZASADNIENIE OPIERA SIĘ NA NIEAKTUALNYCH LICZBACH.
+-- Nadal obowiązuje natomiast druga część ramki: przyspieszenie panelu z commita
+-- perf(b2b) (893 → 324 ms) pochodzi z dedupu roundtripów auth, NIE z tych indeksów.
+--
 -- Powód istnienia: PostgreSQL tworzy indeks automatycznie dla PRIMARY KEY i UNIQUE,
--- ale NIE dla kolumny będącej kluczem obcym. Zmierzony stan indeksów na żywej bazie:
+-- ale NIE dla kolumny będącej kluczem obcym. Stan indeksów zmierzony 2026-09-02, PRZED
+-- uruchomieniem tego pliku (zachowany jako uzasadnienie — NIE jest to opis stanu dzisiejszego,
+-- dziś indeksy z tego pliku już istnieją, patrz ramka STATUS wyżej):
 --   leady:      leady_pkey, leady_status_idx, leady_created_at_idx
 --   klienci:    tylko klienci_pkey
 --   adresy:     tylko adresy_pkey
@@ -30,8 +59,9 @@
 --
 -- CONCURRENTLY: świadomie NIE użyte. `CREATE INDEX CONCURRENTLY` nie może działać
 -- wewnątrz bloku transakcyjnego, a mechanizm uruchamiania migracji w tym repozytorium
--- nie daje gwarancji, że plik nie zostanie owinięty w transakcję. Przy tabelach o tej
--- wielkości (0–1 wiersz) blokada ACCESS EXCLUSIVE trwa milisekundy i jest bez znaczenia.
+-- nie daje gwarancji, że plik nie zostanie owinięty w transakcję. W MOMENCIE URUCHOMIENIA
+-- tabele miały 0–1 wiersz, więc blokada ACCESS EXCLUSIVE trwała milisekundy i była bez
+-- znaczenia (o dzisiejszych liczbach wierszy — patrz DOPISEK 2026-09-03 wyżej).
 -- Gdyby tę migrację uruchamiać dopiero na dużych, produkcyjnie obciążonych tabelach —
 -- należy najpierw rozbić ją na osobne polecenia CONCURRENTLY poza transakcją.
 --
