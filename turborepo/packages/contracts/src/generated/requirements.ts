@@ -354,10 +354,10 @@ export const REQUIREMENTS = [
   {
     "id": "CRM-DELETE-ADMIN-ONLY-CLIENTS",
     "domain": "security",
-    "status": "TODO",
+    "status": "SUPERSEDED",
     "risk": "HIGH",
-    "source": "b2b_crm_specifications.md#globalne (rozbicie CRM-DELETE-ADMIN-ONLY, WO BATCH-MEDIUM-LOW-CLEANUP punkt 22, 2026-09-01); ścieżka kodu: apps/b2b-web/src/app/(dashboard)/customers/actions.ts. ERRATA 2026-09-01 (WO CLIENT-ANONYMIZATION-RODO, Faza A punkt A5): kryterium warstwy Server Action mówiło „prisma.klienci.delete nie zostało wywołane\". Po Fazie B ta metoda nie jest wywoływana NIGDY (delete zastąpiony anonimizacją przez updateMany), więc kryterium przechodziłoby trywialnie dla każdej roli i przestałoby cokolwiek rozróżniać. Metodą, której nie wolno osiągnąć roli nie-admin, jest teraz prisma.klienci.updateMany — i to ona jest w kryterium.",
-    "statement": "Usunięcie klienta (zasób clients) jest dostępne wyłącznie dla roli admin, egzekwowane niezależnie w interfejsie, w Server Action i w RLS."
+    "source": "b2b_crm_specifications.md#globalne (rozbicie CRM-DELETE-ADMIN-ONLY, WO BATCH-MEDIUM-LOW-CLEANUP punkt 22, 2026-09-01); ścieżka kodu: apps/b2b-web/src/app/(dashboard)/customers/actions.ts. ERRATA 2026-09-01 (WO CLIENT-ANONYMIZATION-RODO, Faza A punkt A5): kryterium warstwy Server Action mówiło o metodzie delete Prismy na tabeli clients; po Fazie B ta metoda nie jest wywoływana NIGDY (delete zastąpiony anonimizacją przez updateMany), więc kryterium przechodziłoby trywialnie dla każdej roli. ZASTĄPIONE 2026-09-03 decyzją człowieka w oknie kontraktowym SEC-RODO-DELETE-RECONCILE: WO docs/workorders/SEC-AUDIT-COVERAGE-RETAG.md odradzał ten krok wyłącznie z powodu brakującego dowodu warstwy RLS (Blok A3), a dowód powstał — apps/b2b-web/tests/rls-deny-by-default-freeze.test.ts, blok „AC-A3”. Pokrycie liczy się teraz na CRM-CLIENT-ANONYMIZE-RODO.",
+    "statement": "ZASTĄPIONE przez CRM-CLIENT-ANONYMIZE-RODO. Reguła (usunięcie klienta wyłącznie dla roli admin, egzekwowane niezależnie w interfejsie, w Server Action i w RLS) obowiązuje dalej i ma dowód w trzech warstwach, ale jej kryteria żyją we wpisie następcy, bo dla zasobu clients samo usunięcie zostało zastąpione anonimizacją. Dowód warstwy RLS jest testem statycznym nad tekstem migracji 20260824185845_security_enable_rls_baseline.sql (RLS włączone, zero polityk DELETE/ALL na tabeli clients), nie próbą na żywej bazie — to świadomie przyjęty poziom dowodu, wynikający z braku Postgresa w tym środowisku."
   },
   {
     "id": "CRM-CLIENT-ANONYMIZE-RODO",
@@ -594,10 +594,10 @@ export const REQUIREMENTS = [
   {
     "id": "SEC-RODO-DELETE",
     "domain": "security",
-    "status": "TODO",
+    "status": "SUPERSEDED",
     "risk": "HIGH",
-    "source": "database_model.md#4",
-    "statement": "Usunięcie klienta (RODO) anonimizuje dane kontaktowe, zachowując wartość zrealizowanego montażu."
+    "source": "database_model.md#4 (ślad historyczny — zachowany celowo); zastąpione 2026-09-03 decyzją człowieka w oknie kontraktowym SEC-RODO-DELETE-RECONCILE, na podstawie analizy w docs/workorders/SEC-AUDIT-COVERAGE-RETAG.md (sekcja „Ryzyka i nieznane”). Następcą jest CRM-CLIENT-ANONYMIZE-RODO — tam liczy się pokrycie testami.",
+    "statement": "ZASTĄPIONE przez CRM-CLIENT-ANONYMIZE-RODO. Zasada (usunięcie klienta na żądanie RODO anonimizuje dane kontaktowe, zachowując wartość zrealizowanego montażu) obowiązuje dalej, ale jej kryteria i pokrycie żyją we wpisie następcy. Z trzech dawnych kryteriów pierwsze (brak kaskadowego kasowania) przeszło do następcy, a dwa pozostałe odpadły: legal_basis nie jest stałą RODO_ERASURE_REQUEST, bo operator świadomie wybiera podstawę prawną z zamkniętej listy pięciu wartości, natomiast migawka before_snapshot jest nierealizowalna — jest wprost sprzeczna z kryterium następcy „żadna funkcja nie przechowuje kopii danych osobowych klienta sprzed anonimizacji”, zamrożonym testem customers-anonymize-rodo.test.ts, a model AuditLog nie ma i nie dostanie takiej kolumny."
   },
   {
     "id": "SEC-AUDIT-LOG",
