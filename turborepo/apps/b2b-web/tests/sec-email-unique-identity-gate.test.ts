@@ -168,6 +168,7 @@ beforeEach(() => {
   availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
 });
 
+// @REQ: SEC-EMAIL-UNIQUE
 describe('getLeads() — duplikat/brak dopasowania audytorzy.email (SEC-EMAIL-UNIQUE, miejsce #1)', () => {
   it('AC-A1: dwa wiersze audytorzy o tym samym e-mailu → odmowa, prisma.leady.findMany NIE jest wołane', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
@@ -244,6 +245,7 @@ describe('getLeads() — duplikat/brak dopasowania audytorzy.email (SEC-EMAIL-UN
   });
 });
 
+// @REQ: SEC-EMAIL-UNIQUE
 describe('getLeadDetail() — duplikat/brak dopasowania audytorzy.email (SEC-EMAIL-UNIQUE, miejsce #2)', () => {
   it('AC-A2: dwa wiersze audytorzy o tym samym e-mailu → odmowa, prisma.leady.findUnique NIE jest wołane', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
@@ -304,6 +306,7 @@ describe('getLeadDetail() — duplikat/brak dopasowania audytorzy.email (SEC-EMA
   });
 });
 
+// @REQ: SEC-EMAIL-UNIQUE
 describe('setSelfAvailabilityAction (auditors/actions.ts) — duplikat audytorzy.email (SEC-EMAIL-UNIQUE, miejsce #3)', () => {
   it('AC-A3: dwa wiersze, ta sama osoba zdublowana — odmowa, availabilityDeclaration.upsert NIE jest wołane', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
@@ -394,6 +397,7 @@ describe('setSelfAvailabilityAction (auditors/actions.ts) — duplikat audytorzy
   });
 });
 
+// @REQ: SEC-EMAIL-UNIQUE
 describe('setSelfAvailabilityAction (crews/actions.ts) — duplikat zespoly_monterskie.email (SEC-EMAIL-UNIQUE, miejsce #5)', () => {
   it('AC-A3: dwa wiersze, ta sama ekipa zdublowana — odmowa, availabilityDeclaration.upsert NIE jest wołane', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
@@ -481,6 +485,7 @@ describe('setSelfAvailabilityAction (crews/actions.ts) — duplikat zespoly_mont
   });
 });
 
+// @REQ: SEC-EMAIL-UNIQUE
 describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — duplikat audytorzy.email (SEC-EMAIL-UNIQUE, miejsce #4, najgroźniejsze)', () => {
   it('AC-A4: dwa wiersze o tym samym e-mailu → odmowa, employeeConsent.create NIE jest wołane (zgoda prawna nie zapisuje się na żaden z dwóch wierszy)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
@@ -544,6 +549,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — duplikat au
   });
 });
 
+// @REQ: SEC-EMAIL-UNIQUE
 describe('acceptLegalDocumentVersionAction (crews/actions.ts) — duplikat zespoly_monterskie.email (SEC-EMAIL-UNIQUE, miejsce #6, najgroźniejsze)', () => {
   it('AC-A4: dwa wiersze o tym samym e-mailu → odmowa, employeeConsent.create NIE jest wołane', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');

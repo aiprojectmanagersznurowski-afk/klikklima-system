@@ -79,6 +79,7 @@ function countLiveFindUniqueByEmail(srcDir: string): { file: string; count: numb
   return hits;
 }
 
+// @REQ: SEC-EMAIL-UNIQUE
 describe('AC-A7 — zero findUnique({ where: { email } }) na audytorzy/zespoly_monterskie w apps/b2b-web/src', () => {
   it('AC-A7: żaden plik źródłowy nie zawiera już żywego wywołania audytorzy/zespoly_monterskie.findUnique({ where: { email... } })', () => {
     const __dirname = dirname(fileURLToPath(import.meta.url));
