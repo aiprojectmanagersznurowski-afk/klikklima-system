@@ -10,6 +10,7 @@ import { AUDIT_REQUIREMENTS, type Role } from "@klikklima/contracts"
 import { isAnonymizeMenuItemVisible } from "./menu-visibility"
 import { getPaginationState } from "./pagination-state"
 import { anonymizeClientSchema, ANONYMIZED_NAME_PLACEHOLDER, type AnonymizeClientFormValues } from "./anonymize-client-schema"
+import { CreateCustomerDialog } from "./create-customer-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -169,6 +170,7 @@ export function CustomersClient({
   const [searchQuery, setSearchQuery] = useState("")
   const [isPending, startTransition] = useTransition()
   const [anonymizeTarget, setAnonymizeTarget] = useState<CustomerSummary | null>(null)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
   const { showPagination, canGoPrev, canGoNext, prevHref, nextHref } = getPaginationState(
     currentPage,
@@ -194,9 +196,12 @@ export function CustomersClient({
           <p className="text-sm text-muted-foreground mt-1">Single Source of Truth dla danych klientów, leadów i instalacji.</p>
         </div>
         <div className="flex gap-3">
-          <Button className="rounded-md font-semibold shadow-sm flex items-center gap-2">
+          <Button
+            className="rounded-md font-semibold shadow-sm flex items-center gap-2"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
             <User className="size-4" />
-            Dodaj Klienta Ręcznie
+            Dodaj klienta
           </Button>
         </div>
       </div>
@@ -362,6 +367,10 @@ export function CustomersClient({
           onClose={() => setAnonymizeTarget(null)}
           setCustomers={setCustomers}
         />
+      )}
+
+      {isCreateDialogOpen && (
+        <CreateCustomerDialog onClose={() => setIsCreateDialogOpen(false)} />
       )}
     </div>
   );

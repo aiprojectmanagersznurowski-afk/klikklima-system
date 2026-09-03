@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { can } from "@klikklima/contracts"
 import { getCurrentActorRole, createClient } from "../../../utils/supabase/server"
 import { anonymizeClientSchema, ANONYMIZED_NAME_PLACEHOLDER } from "./anonymize-client-schema"
+import { createCustomerSchema } from "./create-customer-schema"
 
 export type CustomerSummary = {
   id: string;
@@ -158,6 +159,43 @@ export async function anonymizeClientAction(
   } catch (error) {
     console.error("Failed to anonymize customer:", error);
     return { success: false, error: "Nie udało się usunąć klienta." };
+  }
+}
+
+export async function createCustomerAction(
+  input: { imieINazwisko: string; email?: string; telefon?: string }
+): Promise<{ success: boolean; error?: string; customerId?: string }> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do dodania klienta." };
+  }
+  if (!actorRole || can(actorRole, "clients", "create") !== "yes") {
+    return { success: false, error: "Brak uprawnień do dodania klienta." };
+  }
+
+  const parsed = createCustomerSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || "Nieprawidłowe dane klienta." };
+  }
+  const { imieINazwisko, email, telefon } = parsed.data;
+
+  try {
+    const customer = await prisma.klienci.create({
+      data: {
+        imie_i_nazwisko: imieINazwisko,
+        email: email || null,
+        telefon: telefon || null,
+      },
+    });
+
+    revalidatePath('/customers');
+    return { success: true, customerId: customer.id };
+  } catch (error) {
+    console.error("Failed to create customer:", error);
+    return { success: false, error: "Nie udało się dodać klienta." };
   }
 }
 

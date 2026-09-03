@@ -13,11 +13,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { isToday } from "date-fns"
 import { formatDate } from "@/lib/format-date"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 
 export function InstallationsClient({ initialInstallations }: { initialInstallations: InstallationSummary[] }) {
+  const router = useRouter()
   const [installations, setInstallations] = useState<InstallationSummary[]>(initialInstallations)
   const [searchQuery, setSearchQuery] = useState("")
   const [isPending, startTransition] = useTransition()
@@ -119,7 +121,14 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
                     return (
                       <tr
                         key={item.id}
-                        className={`group hover:bg-secondary/30 transition-colors ${
+                        onClick={() => {
+                          // Wzorzec z leads-client.tsx: jeżeli użytkownik ma zaznaczony tekst
+                          // (np. próbował przeciągnięciem myszki zaznaczyć adres/nazwisko klienta),
+                          // nie traktujemy tego jako intencji nawigacji do szczegółów.
+                          if (window.getSelection()?.toString()) return;
+                          router.push(`/installations/${item.id}`);
+                        }}
+                        className={`group cursor-pointer hover:bg-secondary/30 transition-colors ${
                           isLate ? "border-l-4 border-l-amber-500 bg-amber-500/5" :
                           isTodayInstall ? "border-l-4 border-l-primary bg-primary/5" : ""
                         }`}
@@ -189,6 +198,7 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
                           className={`px-6 py-4 whitespace-nowrap text-right sticky right-0 z-20 group-hover:bg-secondary/30 ${
                             isLate ? "bg-amber-500/5" : isTodayInstall ? "bg-primary/5" : "bg-card"
                           }`}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex items-center justify-end gap-2">
                             <DropdownMenu>

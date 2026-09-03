@@ -1,3 +1,3 @@
-- [react-hook-form not installed in b2b-web](feedback_no_react_hook_form_in_b2b.md) — CLAUDE.md mandates RHF+zod but repo has zero installs; use single-object useState instead, flag the gap.
+- [react-hook-form + zodResolver — RESOLVED, now the standard](feedback_no_react_hook_form_in_b2b.md) — RHF/zod installed and used by every form dialog; copy the shared-schema pattern, don't reach for ad hoc useState anymore.
 - [CRM-SAFE-RECORD-ACTIONS UI status](project_crm_safe_record_actions.md) — what shipped in GREEN 3/3 UI turn, and that E4 crew-assignment UI does not exist yet (deferred, needs own WO).
 - [E4-CREW-ASSIGNMENT-UI completed](project_e4_crew_assignment_ui.md) — UI for crew assignment is complete. The system now enforces valid certificates for F-Gaz and SEP by using `getCrews(installationDate)`. The `data_rezerwacji` field represents the `installationDate`.

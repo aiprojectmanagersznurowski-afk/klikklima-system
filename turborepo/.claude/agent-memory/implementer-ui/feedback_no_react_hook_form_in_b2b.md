@@ -1,12 +1,14 @@
 ---
 name: feedback-no-react-hook-form-in-b2b
-description: react-hook-form + zodResolver is mandated by CLAUDE.md but is not an installed dependency anywhere in this monorepo as of 2026-08-20
+description: RESOLVED — react-hook-form + zodResolver was missing as of 2026-08-20, is now installed and the established pattern for every form dialog in apps/b2b-web
 metadata:
   type: feedback
 ---
 
-`apps/b2b-web` (and the rest of the repo) has zero usages of `react-hook-form` or `@hookform/resolvers` — confirmed via `grep -rl "react-hook-form"` across `apps/b2b-web/src` and `node_modules`/lockfile checks, all empty. The CLAUDE.md stack table lists RHF+zodResolver as the mandatory form stack, but no app actually has the dependency installed.
+**AKTUALIZACJA:** ten wpis opisywał stan sprzed dodania zależności. Od anonimizacji klienta (`CRM-CLIENT-ANONYMIZE-RODO`) i wszystkich formularzy uzasadnienia w `SEC-AUDIT-LOG-DELETE` (obie fale), `react-hook-form`, `@hookform/resolvers` i `zod` są w `package.json` `apps/b2b-web` i aktywnie używane — potwierdzone m.in. w `customers/customers-client.tsx` (`AnonymizeClientModal`), `components/delete-justification-dialog.tsx`, `customers/create-customer-dialog.tsx`.
 
-**Why:** Discovered while building the "Zwróć do obiegu" and "Archiwizuj (Lost)" dialogs in `apps/b2b-web/src/app/(dashboard)/leads/` (WO CRM-SAFE-RECORD-ACTIONS, GREEN 3/3). Installing a new dependency mid-feature as an `implementer-ui` turn (scoped to components only, no build tooling changes authorized) was out of scope, and no other component in the app demonstrates the intended RHF pattern to follow.
+**Wzorzec ustalony**: `react-hook-form` + `zodResolver(sharedSchema)`, gdzie `sharedSchema` jest eksportowany z osobnego pliku obok akcji serwerowej (np. `create-customer-schema.ts`, `delete-justification-schema.ts`) i importowany zarówno przez formularz, jak i przez Server Action — jedno źródło walidacji, nie duplikat. Nowe dialogi formularzy mają kopiować ten wzorzec wprost, nie budować ad hoc `useState`.
 
-**How to apply:** Until someone (human or `contract-steward`-equivalent for tooling) actually adds `react-hook-form`/`@hookform/resolvers`/`zod` as deps to `apps/b2b-web`, don't block on the RHF mandate for small dialogs. Acceptable pragmatic substitute: a single `useState` holding one form-shaped object (not one `useState` per field — that part of the rule is still honored), manual validation before submit. Flag this gap in the turn's final report rather than silently picking a workaround; if a future WO explicitly requires a bigger form (many fields, complex validation), raise the RHF dependency gap as a blocking question before building it with ad hoc state.
+**Why:** poprzednia notatka radziła obejście (`useState` na cały obiekt formularza) jako pragmatyczny substytut, dopóki zależność nie zostanie dodana. Zależność już jest — obejście nie ma dziś zastosowania, poza bardzo trywialnymi przypadkami bez walidacji.
+
+Powiązane: [[project_crm_safe_record_actions]] (gdzie ograniczenie zostało pierwotnie odnotowane).
