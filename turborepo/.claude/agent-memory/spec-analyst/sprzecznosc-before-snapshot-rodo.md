@@ -17,6 +17,8 @@ Zidentyfikowana 2026-09-03. Dwa wymagania w `contracts/requirements.contract.mjs
 
 **Wykonanie:** wymaga otwartego okna kontraktowego i roli `contract-steward` — sama decyzja zapadła, ale `contracts/requirements.contract.mjs` jeszcze jej nie odzwierciedla (stan na koniec tej tury). Nie planuj implementacji `SEC-RODO-DELETE` do czasu wykonania tego kroku.
 
+**Uzupełnienie 2026-09-03 (druga tura):** `before_snapshot` występuje NIE TYLKO w `SEC-RODO-DELETE`. To samo kryterium siedzi w AC `SEC-AUDIT-LOG` („before_snapshot nie zawiera danych osobowych w postaci jawnej"), a kolumny `before_snapshot` nie ma ani w migracji `20260901220000`, ani w modelu `AuditLog`. `contract-steward` musi usunąć to AC z `SEC-AUDIT-LOG` w tym samym oknie, inaczej wymaganie zostanie na zawsze niespełnialne.
+
 **Why:** To jest przykład sprzeczności, której nie wolno rozstrzygać zgadywaniem — `audit_log` jest append-only, błędnego wpisu nie da się poprawić.
 
 Powiązana: [[kk-trace-coverage-gaps-are-often-tagging]]. Szczegóły z cytatami: `docs/workorders/SEC-AUDIT-COVERAGE-RETAG.md`.

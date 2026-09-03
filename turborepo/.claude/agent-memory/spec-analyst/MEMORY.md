@@ -7,4 +7,5 @@
 - [Jak odpytać żywą bazę](db-probe-recipe.md) — skrypt musi leżeć w `packages/database`, `node -r dotenv/config`; grep na `.env` jest zablokowany.
 - [Tożsamość po wartości e-maila](identity-by-email-fragility.md) — źródło całej klasy podatności `:own`; ustalony wzorzec obrony `findMany take:2`.
 - [Luki w kk-trace to często problem tagowania](kk-trace-coverage-gaps-are-often-tagging.md) — zanim zaplanujesz implementację, sprawdź czy testy nie niosą nowszego `@REQ`; nagłówki testów potrafią kłamać o pokryciu.
+- [audit_log — stan żywej bazy vs rejestr](audit-log-live-state.md) — tabela ISTNIEJE mimo zapisu „nie uruchomiona”; legalBases ma już neutralne wartości; rozbicie SEC-AUDIT-LOG na 4 WO
 - [Sprzeczność before_snapshot: ROZSTRZYGNIĘTA](sprzecznosc-before-snapshot-rodo.md) — SEC-RODO-DELETE → SUPERSEDED, legal_basis dowolny; czeka na wykonanie przez contract-steward.
