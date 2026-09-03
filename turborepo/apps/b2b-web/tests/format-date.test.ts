@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeAll } from 'vitest';
 
 /**
  * Wymaganie: FNL-B-FORMATDATE (Work Order BATCH-MEDIUM-LOW-CLEANUP.md, punkt 2).
@@ -26,9 +26,27 @@ import { describe, it, expect, afterEach } from 'vitest';
  * przed wywołaniem `formatDate()` w teście jest wystarczające i bezpieczne —
  * przywracamy oryginalną wartość w `afterEach`, żeby nie wyciekało między
  * testami w tym samym procesie vitest.
+ *
+ * Optymalizacja wydajności testu (bez zmiany żadnej asercji ani zachowania):
+ * pierwsze w całym procesie wywołanie `formatInTimeZone`/`Intl` w Node kosztuje
+ * ok. 1.5-1.7s jednorazowej inicjalizacji danych stref czasowych ICU — zmierzone
+ * eksperymentalnie: ten sam koszt występuje niezależnie od tego, czy moduł jest
+ * importowany raz czy 8 razy w pętli, i niezależnie od tego, czy `process.env.TZ`
+ * jest w ogóle przełączane. Koszt spada zawsze na PIERWSZE wywołanie `formatDate`
+ * w procesie testowym, więc bez rozgrzewki obciążałby przypadkowo dowolny test
+ * w tym pliku (akurat AC2.1, bo jest pierwszy). Rozgrzewka w `beforeAll` przenosi
+ * ten koszt do osobnego budżetu czasowego (`hookTimeout`), więc nie konkuruje
+ * z limitem czasu pojedynczego testu (`testTimeout`) — sam test AC2.1 nadal
+ * dowodzi dokładnie tego samego (identyczny tekst niezależnie od strefy hosta
+ * dla wszystkich 4 wzorców), tylko liczy się od momentu, gdy ICU jest już rozgrzane.
  */
 
 const ORIGINAL_TZ = process.env.TZ;
+
+beforeAll(async () => {
+  const { formatDate } = await import('../src/lib/format-date');
+  formatDate('2026-06-15T10:30:00Z', 'dd.MM.yyyy');
+});
 
 afterEach(() => {
   if (ORIGINAL_TZ === undefined) {
