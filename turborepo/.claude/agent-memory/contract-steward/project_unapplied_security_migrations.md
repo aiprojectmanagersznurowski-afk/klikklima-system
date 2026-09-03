@@ -1,11 +1,11 @@
 ---
 name: unapplied-security-migrations
-description: Wzorzec pracy dla migracji, których obecność w repo nie dowodzi zastosowania — historia pięciu migracji tej sesji, wszystkie już zweryfikowane jako URUCHOMIONE na żywo (stan na 2026-09-02)
+description: Wzorzec pracy dla migracji, których obecność w repo nie dowodzi zastosowania — historia sześciu migracji, wszystkie zweryfikowane jako URUCHOMIONE na żywo (stan na 2026-09-03)
 metadata:
   type: project
 ---
 
-**AKTUALIZACJA 2026-09-02: wszystkie pięć migracji z tej notatki zostało uruchomionych na żywej
+**AKTUALIZACJA 2026-09-03: wszystkie SZEŚĆ migracji z tej notatki zostało uruchomionych na żywej
 bazie i zweryfikowanych bezpośrednim zapytaniem (nie tylko lekturą pliku).** Ta notatka opisuje
 teraz WZORZEC do stosowania przy KOLEJNYCH migracjach bezpieczeństwa/schematu, nie aktualny stan
 zaległości — nie zakładaj, że którakolwiek z wymienionych niżej wciąż czeka.
@@ -16,6 +16,11 @@ Historia (wszystkie potwierdzone jako zastosowane):
 - `20260901120000_security_revoke_authorized_user_writes.sql` — REVOKE zastosowany (potwierdzone `information_schema.role_table_grants`)
 - `20260901120100_security_knowledge_base_buckets_private.sql` — buckety `public=false` (potwierdzone `storage.buckets`, curl na trzech podpisanych URL-ach z `apps/b2c-web/lib/articles.ts` → 200)
 - `20260901210000_logistics_sla_paused_at.sql` — kolumna `leady.logistics_sla_paused_at` istnieje (potwierdzone `information_schema.columns`)
+- `20260903061000_security_employee_email_unique_reassert.sql` — UNIQUE na `audytorzy.email`
+  i `zespoly_monterskie.email` (potwierdzone `pg_indexes` + realną próbą duplikatu → `23505
+  unique_violation`; dodatkowo `prisma migrate diff` przestał zgłaszać dryf na tej kolumnie).
+  Zastąpił martwy `20260822120000_fld_availability_split_employee_email_unique.sql`, który
+  nigdy nie został uruchomiony i zostaje w repo wyłącznie jako ślad historii.
 - `20260901220000_rodo_audit_log_and_client_anonymization.sql` — tabela `audit_log` istnieje z poprawnymi CHECK-ami, wyzwalaczem `audit_log_append_only_trg` (zweryfikowany transakcją z wymuszonym rollbackiem — UPDATE poprawnie odrzucony, zero wiersza testowego pozostałego), RLS włączone, `klienci.anonymized_at` istnieje
 
 **Why:** obecność pliku migracji w repo dowodzi INTENCJI, nie STANU SERWERA. Raz pomylono te dwie
@@ -31,6 +36,18 @@ bezpośrednim zapytaniem do bazy, NIE tylko `exit 0` skryptu; (4) dla append-onl
 przez `$transaction` z wymuszonym rzuceniem błędu na końcu (rollback), nigdy przez INSERT+DELETE
 (DELETE zostanie odrzucony przez sam trigger, zostawiając trwały wiersz-śmieć w tabeli, której z
 definicji nie da się już wyczyścić); (5) skrypty pomocnicze (`run-migration.mjs`, `verify-*.mjs`)
-zawsze usuwane po użyciu, nigdy nie commitowane.
+zawsze usuwane po użyciu, nigdy nie commitowane; (6) **PO uruchomieniu — natychmiast przepisz
+nagłówek pliku**: ramka `NIE ZOSTAŁA URUCHOMIONA` znika, wchodzi potwierdzenie z datą i DOWODEM
+(konkretny odczyt z katalogu systemowego + kod błędu z próby naruszenia). Przejrzyj przy tym CAŁY
+plik, nie samą ramkę — zdania typu „żywa baza tego nie ma", „dopóki plik nie jest uruchomiony, kod
+jest jedyną ochroną" są rozsiane po uzasadnieniach i każde z nich staje się nieprawdą. Zdania
+opisujące stan sprzed naprawy przestawiaj w czas przeszły i oznaczaj jako stan wyjściowy, zamiast
+je kasować — uzasadnienie decyzji ma zostać, kłamstwo o stanie serwera nie.
+
+**Nieaktualny komentarz myli w OBIE strony.** Raz przeczytano ramkę „nie uruchomiona" na migracji
+faktycznie zastosowanej i wyciągnięto z tego wniosek o złym stanie bazy; symetrycznie ramka
+„uruchomiona" na pliku niezastosowanym uśpiłaby czujność. Dlatego nagłówek zawsze niesie DATĘ
+odczytu i zdanie, że jest zapisem z konkretnego dnia, a nie gwarancją na zawsze — jedynym
+źródłem prawdy pozostają `pg_indexes` / `pg_constraint`.
 
 Powiązane: [[live-db-objects-outside-migrations]], [[naming-baseline-on-migrations]].

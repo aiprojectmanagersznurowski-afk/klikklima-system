@@ -10,7 +10,9 @@
 - [Dryf pola status w rejestrze wymagań](project_requirement_status_drift.md) — żadna bramka nie pilnuje `status`; obecność testu przy ID nie dowodzi każdego kryterium acceptance.
 - [Brak kont innych niż admin](project_no_nonadmin_accounts.md) — potwierdzone 2026-08-26; luki RBAC audytor/monter są prewencyjne, ale risk zostaje HIGH.
 - [Obiekty bazy poza migracjami](project_live_db_objects_outside_migrations.md) — available_combinations i buckety Storage żyją tylko na produkcji; SQL na nich wymaga osłony to_regclass.
-- [Nieuruchomione migracje bezpieczeństwa](project_unapplied_security_migrations.md) — trzy pliki w repo, zero z nich na żywej bazie; plik dowodzi intencji, nie stanu serwera.
+- [Migracje bezpieczeństwa: plik vs stan serwera](project_unapplied_security_migrations.md) — wszystkie 6 uruchomione (2026-09-03); wzorzec: po zastosowaniu przepisz nagłówek, bo mylił w obie strony.
+- [Domykanie wymagania z resztkowym długiem](feedback_closing_requirement_with_residual_debt.md) — kryterium NIEPOKRYTE przy DONE: wynieś do osobnego ID, nigdy nie kasuj.
 - [Weryfikacja premisy przed baseline](feedback_verify_premise_before_baseline.md) — „wszystko w testach" bywa nieścisłe; rozbijam deltę per plik przed --update-baseline.
 - [Retroaktywne ID zapala kk-trace](project_retroactive_req_trace_red.md) — rejestracja po testach = czerwona bramka, bo tagi @REQ może dopisać tylko test-author.
+- [Steward nie ma prawa zapisu do tests/](project_steward_cannot_write_tests.md) — statyczny test zamrażający migrację to zadanie test-author, mimo mylącego precedensu w historii.
 - [Ziarnistość ID wymagań](feedback_requirement_id_granularity.md) — jedno ID na encję obejmujące create i update, podział po encji, nie po operacji.

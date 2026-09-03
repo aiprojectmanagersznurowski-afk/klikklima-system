@@ -1,11 +1,18 @@
 -- ╔══════════════════════════════════════════════════════════════════════════════════════╗
--- ║  TEN PLIK NIGDY NIE ZOSTAŁ URUCHOMIONY NA ŻYWEJ BAZIE.                                ║
--- ║  Stwierdzone 2026-09-03 (SEC-EMAIL-UNIQUE): pg_indexes i pg_constraint dla obu tabel  ║
--- ║  zwracają WYŁĄCZNIE klucz główny — audytorzy_email_key ani zespoly_monterskie_email_key║
--- ║  nie istnieją. Plik jest merytorycznie POPRAWNY, po prostu nie został wykonany.        ║
+-- ║  TEN PLIK NIGDY NIE ZOSTAŁ URUCHOMIONY NA ŻYWEJ BAZIE — I JUŻ NIE MA POTRZEBY.         ║
+-- ║  Stwierdzone 2026-09-03 (SEC-EMAIL-UNIQUE): tuż przed naprawą pg_indexes               ║
+-- ║  i pg_constraint dla obu tabel zwracały WYŁĄCZNIE klucz główny — audytorzy_email_key   ║
+-- ║  ani zespoly_monterskie_email_key nie istniały. Plik jest merytorycznie POPRAWNY,      ║
+-- ║  po prostu nigdy nie został wykonany.                                                  ║
 -- ║                                                                                        ║
--- ║  ZASTĘPUJE GO:                                                                         ║
+-- ║  ZASTĄPIŁ GO — I ZOSTAŁ JUŻ URUCHOMIONY:                                               ║
 -- ║    20260903061000_security_employee_email_unique_reassert.sql                          ║
+-- ║  URUCHOMIONY NA ŻYWEJ BAZIE 2026-09-03 i zweryfikowany: oba indeksy UNIQUE istnieją    ║
+-- ║  w pg_indexes, a próba wstawienia duplikatu e-maila kończy się błędem 23505            ║
+-- ║  unique_violation. Skutek dla czytającego TEN plik: ograniczenie, które on opisuje,    ║
+-- ║  JEST DZIŚ NA BAZIE — ale postawił je tamten plik, nie ten. Nie uruchamiaj tego pliku  ║
+-- ║  „żeby nadrobić": byłby to no-op (IF NOT EXISTS), a wpis w ewidencji tylko zaciemniłby ║
+-- ║  historię. Ten plik jest MARTWY i zostaje wyłącznie jako ślad w historii.              ║
 -- ║  Nowy plik powtarza tę samą intencję jako nowe, idempotentne zdarzenie w historii      ║
 -- ║  i dokłada blok strażniczy sprawdzający OBIE tabele przed pierwszym CREATE.            ║
 -- ║                                                                                        ║

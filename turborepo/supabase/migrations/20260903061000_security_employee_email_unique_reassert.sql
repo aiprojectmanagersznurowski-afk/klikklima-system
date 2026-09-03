@@ -6,20 +6,33 @@
 --                 oraz kryteria akceptacji AC-C1 … AC-C6
 --
 -- ╔══════════════════════════════════════════════════════════════════════════════════════╗
--- ║  UWAGA: TA MIGRACJA NIE ZOSTAŁA URUCHOMIONA NA ŻYWEJ BAZIE.                           ║
--- ║  Napisana 2026-09-03, zacommitowana jako plik, świadomie NIEZAAPLIKOWANA.             ║
--- ║  Uruchomienie wymaga OSOBNEJ, JAWNEJ zgody człowieka (Faza C2 z Work Ordera).         ║
--- ║  Obecność tego pliku ani zielony test statyczny NIE dowodzą, że indeksy istnieją.     ║
--- ║  Plik zamraża INTENCJĘ, nie stan serwera. Jedynym źródłem prawdy o schemacie są       ║
--- ║  pg_indexes / pg_constraint — ewidencja migracji w tym projekcie jest niewiarygodna   ║
--- ║  (2 wpisy w supabase_migrations.schema_migrations przy 15 plikach w repozytorium).    ║
+-- ║  STATUS: TA MIGRACJA ZOSTAŁA URUCHOMIONA NA ŻYWEJ BAZIE 2026-09-03 i ZWERYFIKOWANA.   ║
+-- ║  Napisana 2026-09-03, uruchomiona tego samego dnia po jawnej zgodzie człowieka        ║
+-- ║  (Faza C2 z Work Ordera). Oba indeksy ISTNIEJĄ.                                       ║
+-- ║                                                                                       ║
+-- ║  DOWÓD (nie „plik jest w repo" i nie „test statyczny jest zielony" — odczyt z bazy):  ║
+-- ║   1. pg_indexes, schemaname='public', 2026-09-03:                                     ║
+-- ║        audytorzy_email_key          CREATE UNIQUE INDEX … audytorzy USING btree (email)        ║
+-- ║        zespoly_monterskie_email_key CREATE UNIQUE INDEX … zespoly_monterskie USING btree (email) ║
+-- ║   2. Próba wstawienia duplikatu e-maila jest realnie odrzucana przez bazę:            ║
+-- ║        SQLSTATE 23505, unique_violation. Test wykonany i posprzątany — zero           ║
+-- ║        pozostałości w danych.                                                         ║
+-- ║   3. prisma migrate diff (schema.prisma ↔ żywa baza) nie zgłasza już RÓŻNICY na       ║
+-- ║        kolumnie email w żadnej z tych dwóch tabel. Dryf opisany niżej JEST ZAMKNIĘTY. ║
+-- ║                                                                                       ║
+-- ║  Uwaga na przyszłość, w obie strony: ewidencja migracji w tym projekcie pozostaje     ║
+-- ║  niewiarygodna (2 wpisy w supabase_migrations.schema_migrations przy 15 plikach),     ║
+-- ║  więc jedynym źródłem prawdy o schemacie są nadal pg_indexes / pg_constraint.         ║
+-- ║  Ten nagłówek jest zapisem odczytu z 2026-09-03, nie gwarancją na zawsze.             ║
 -- ╚══════════════════════════════════════════════════════════════════════════════════════╝
 --
--- POWÓD ISTNIENIA. packages/database/prisma/schema.prisma deklaruje `email String? @unique`
--- dla modeli Audytorzy i ZespolyMonterskie, ale ŻYWA BAZA tego ograniczenia nie ma:
--- pg_indexes i pg_constraint dla obu tabel zwracają wyłącznie klucz główny (zweryfikowane
--- bezpośrednim zapytaniem 2026-09-03). Dryf jest JEDNOKIERUNKOWY — schemat wyprzedza bazę —
--- więc naprawa jest wyłącznie migracyjna i schema.prisma NIE jest tą zmianą dotykany.
+-- POWÓD ISTNIENIA (stan sprzed uruchomienia, zachowany jako uzasadnienie — NIE jest to opis
+-- stanu dzisiejszego). packages/database/prisma/schema.prisma deklaruje `email String? @unique`
+-- dla modeli Audytorzy i ZespolyMonterskie, a ŻYWA BAZA tego ograniczenia NIE MIAŁA:
+-- pg_indexes i pg_constraint dla obu tabel zwracały wyłącznie klucz główny (zweryfikowane
+-- bezpośrednim zapytaniem 2026-09-03, przed uruchomieniem tego pliku). Dryf był
+-- JEDNOKIERUNKOWY — schemat wyprzedzał bazę — więc naprawa była wyłącznie migracyjna
+-- i schema.prisma NIE jest tą zmianą dotykany.
 -- Odrzucony jawnie wariant „zaktualizować schemat do rzeczywistości" (usunięcie @unique):
 -- zalegalizowałby podatność zamiast ją zamknąć.
 --
@@ -28,9 +41,11 @@
 -- w KODZIE przez Fazę A tego WO — findMany({ take: 2 }) plus odmowa przy matches.length !== 1.
 -- Ta migracja podnosi gwarancję z „kod sprawdza" do „baza nie pozwala". Bramka w kodzie
 -- ZOSTAJE i po uruchomieniu tego pliku: przeżywa rollback indeksu (sekcja ROLLBACK to dwa
--- DROP INDEX), a dopóki plik nie jest uruchomiony, jest JEDYNĄ ochroną.
+-- DROP INDEX). Plik jest już uruchomiony, więc ochrona jest dziś dwuwarstwowa — to NIE jest
+-- powód, by warstwę kodową usunąć.
 --
--- STAN DANYCH w chwili pisania (2026-09-03, żywa baza):
+-- STAN DANYCH w chwili pisania, czyli tuż przed uruchomieniem (2026-09-03, żywa baza).
+-- To dzięki tym liczbom blok strażniczy z sekcji 1 przeszedł bez wyjątku:
 --   audytorzy          — 3 wiersze, 3 e-maile niepuste, 0 NULL, 0 pustych stringów,
 --                        0 duplikatów, 0 duplikatów po lower(email)
 --   zespoly_monterskie — 2 wiersze, 2 e-maile niepuste, 0 NULL, 0 pustych stringów,
@@ -53,7 +68,9 @@
 -- 0. Stosunek do migracji 20260822120000_fld_availability_split_employee_email_unique.sql
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Tamten plik zawiera DOKŁADNIE te same dwa CREATE UNIQUE INDEX i jest merytorycznie
--- poprawny. Nigdy nie został uruchomiony — dowodem jest brak indeksów w pg_indexes.
+-- poprawny. Nigdy nie został uruchomiony — dowodem był brak indeksów w pg_indexes
+-- stwierdzony 2026-09-03, ZANIM uruchomiono ten plik. Uwaga dla czytającego dziś:
+-- indeksy już istnieją, ale postawił je TEN plik, nie tamten.
 --
 -- Ten plik go NIE poprawia i NIE zastępuje przez edycję w miejscu, tylko powtarza jego
 -- intencję jako nowe, idempotentne zdarzenie w historii. Powód: ewidencja migracji w tym
@@ -178,9 +195,10 @@ COMMENT ON INDEX public.zespoly_monterskie_email_key IS
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 3. WERYFIKACJA PO URUCHOMIENIU (uruchom RĘCZNIE, to nie jest część migracji)
+-- 3. WERYFIKACJA PO URUCHOMIENIU — WYKONANA 2026-09-03, WYNIK POZYTYWNY
 -- ─────────────────────────────────────────────────────────────────────────────
--- Zielony przebieg pliku nie jest dowodem — dowodem jest odczyt z katalogu systemowego:
+-- Zielony przebieg pliku nie jest dowodem — dowodem jest odczyt z katalogu systemowego.
+-- Poniższe zapytanie zostało uruchomione i zwróciło oba oczekiwane wiersze:
 --
 --   SELECT tablename, indexname, indexdef
 --     FROM pg_indexes
@@ -189,11 +207,15 @@ COMMENT ON INDEX public.zespoly_monterskie_email_key IS
 --    ORDER BY tablename, indexname;
 --
 -- Oczekiwane: po jednym wierszu audytorzy_email_key i zespoly_monterskie_email_key,
--- oba z UNIQUE INDEX na (email).
+-- oba z UNIQUE INDEX na (email). OTRZYMANE 2026-09-03: dokładnie to.
 --
--- Po potwierdzeniu: wpisać datę uruchomienia do docs/workorders/SEC-EMAIL-UNIQUE.md
--- i USUNĄĆ ramkę „NIE ZOSTAŁA URUCHOMIONA" z góry tego pliku — inaczej następny czytelnik
--- nadal będzie miał prawo zakładać, że baza jest niezabezpieczona.
+-- Dodatkowo wykonano próbę zapisu duplikatu (test zachowania, nie samego katalogu):
+-- baza odrzuciła INSERT błędem 23505 unique_violation. Ograniczenie DZIAŁA, nie tylko
+-- istnieje. Dane testowe usunięte, zero pozostałości.
+--
+-- Ramka „NIE ZOSTAŁA URUCHOMIONA" została z góry tego pliku USUNIĘTA i zastąpiona
+-- potwierdzeniem — nieaktualny komentarz czyta się jako dowód, a w tym projekcie
+-- pomylił już czytelnika w obie strony.
 
 
 -- ─────────────────────────────────────────────────────────────────────────────

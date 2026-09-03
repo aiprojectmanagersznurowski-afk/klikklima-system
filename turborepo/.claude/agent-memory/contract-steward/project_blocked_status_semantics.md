@@ -1,6 +1,6 @@
 ---
 name: blocked-status-semantics
-description: Przyjęta semantyka statusu BLOCKED w rejestrze wymagań, ścieżka wyjścia BLOCKED->TODO i koszt stałych ostrzeżeń R16-proposed (dziś 5)
+description: Przyjęta semantyka statusu BLOCKED w rejestrze wymagań, ścieżka wyjścia BLOCKED->TODO i koszt stałych ostrzeżeń R16-proposed (2026-09-03: 6)
 metadata:
   type: project
 ---
@@ -22,8 +22,10 @@ zostaje to, co WO faktycznie dowozi i da się przetestować dziś, a egzekwowani
 przyszłego ID (wzorem `FLD-AUTH-BLOCKED`, które przejęło bramkę logowania z `CRM-AUDYT-AC1`).
 
 **Koszt, o którym trzeba pamiętać:** każde `BLOCKED` generuje ostrzeżenie `R16-proposed`. Liczba ostrzeżeń
-`kk-validate` wzrosła z 0 do 7, a po WO `FLD-CONSENT-DOCS` spadła do 5 (zostają FLD-GEO-UNLOCK, FLD-GEO-EN-ROUTE,
-FLD-GPS-RODO, FLD-AUTH-BLOCKED, FLD-PHOTO-SET). Dziś to nieszkodliwe — **żadna bramka nie uruchamia
+`kk-validate` wzrosła z 0 do 7, a po WO `FLD-CONSENT-DOCS` spadła do 5. Stan zweryfikowany 2026-09-03: **6**
+(FLD-GEO-UNLOCK, FLD-GEO-EN-ROUTE, FLD-GPS-RODO, FLD-AUTH-BLOCKED, FLD-CONSENT-TRIGGERS-INTEGRATION,
+FLD-PHOTO-SET) — doszło `FLD-CONSENT-TRIGGERS-INTEGRATION`. Licz je na bieżąco, nie z tej notatki.
+Dziś to nieszkodliwe — **żadna bramka nie uruchamia
 `kk-validate --strict`** (sprawdzone: `scripts/verify.sh`, `.github/workflows/kk-gate.yml`, `.githooks/pre-commit`,
 `package.json`). Dodanie `--strict` do którejkolwiek z nich zapali je wszystkie na czerwono.
 
