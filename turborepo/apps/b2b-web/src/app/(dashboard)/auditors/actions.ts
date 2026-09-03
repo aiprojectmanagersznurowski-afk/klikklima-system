@@ -140,8 +140,17 @@ export async function setSelfAvailabilityAction(
     return { success: false, error: "Brak sesji użytkownika." };
   }
 
-  const own = await prisma.audytorzy.findUnique({ where: { email: user.email } });
-  if (!own || own.id !== id) {
+  // SEC-EMAIL-UNIQUE: identyfikacja "czyj to rekord" po e-mailu, nie po `findUnique`
+  // (audytorzy.email nie ma dziś ograniczenia UNIQUE na żywej bazie — patrz WO). Świadomie
+  // BEZ sprawdzenia `is_active`: ta akcja jest rozłączna z blokadą administratora (patrz
+  // komentarz nad funkcją, D-A WO FLD-AVAILABILITY-SPLIT) — zablokowany audytor nadal może
+  // zadeklarować własną niedostępność, to nie jest ścieżka do odblokowania się.
+  const matches = await prisma.audytorzy.findMany({ where: { email: user.email }, take: 2 });
+  if (matches.length !== 1) {
+    return { success: false, error: "Nie można zmienić dostępności innego audytora." };
+  }
+  const own = matches[0];
+  if (own.id !== id) {
     return { success: false, error: "Nie można zmienić dostępności innego audytora." };
   }
 
@@ -188,10 +197,11 @@ export async function acceptLegalDocumentVersionAction(
     return { success: false, error: "Brak sesji użytkownika." };
   }
 
-  const own = await prisma.audytorzy.findUnique({ where: { email: user.email } });
-  if (!own) {
+  const matches = await prisma.audytorzy.findMany({ where: { email: user.email }, take: 2 });
+  if (matches.length !== 1 || matches[0].is_active === false) {
     return { success: false, error: "Nie znaleziono własnego rekordu audytora." };
   }
+  const own = matches[0];
 
   try {
     const consent = await prisma.employeeConsent.create({

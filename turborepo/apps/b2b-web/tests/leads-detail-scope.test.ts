@@ -47,7 +47,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const {
   leadFindUniqueMock,
-  auditorFindUniqueMock,
+  auditorFindManyMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
   getCurrentUserMock,
@@ -55,7 +55,7 @@ const {
   createClientMock,
 } = vi.hoisted(() => ({
   leadFindUniqueMock: vi.fn(),
-  auditorFindUniqueMock: vi.fn(),
+  auditorFindManyMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
@@ -63,13 +63,17 @@ const {
   createClientMock: vi.fn(),
 }));
 
+// SEC-EMAIL-UNIQUE (Faza A, implementer-server): tożsamość "własnego" audytora idzie
+// dziś przez `findMany({ where: { email }, select: { id, is_active }, take: 2 })`, nie
+// `findUnique` — email już nie jest unikalny (leads/[id]/actions.ts:45).
+// `prisma.leady.findUnique` NIE zmienia się — to inne zapytanie (po `id`, nie `email`).
 vi.mock('@repo/database', () => ({
   prisma: {
     leady: {
       findUnique: leadFindUniqueMock,
     },
     audytorzy: {
-      findUnique: auditorFindUniqueMock,
+      findMany: auditorFindManyMock,
     },
   },
 }));
@@ -115,7 +119,7 @@ function fullLeadRecord(overrides: Partial<Record<string, unknown>> = {}) {
 
 beforeEach(() => {
   leadFindUniqueMock.mockReset();
-  auditorFindUniqueMock.mockReset();
+  auditorFindManyMock.mockReset();
   revalidatePathMock.mockReset();
   getCurrentActorRoleMock.mockReset();
   getUserMock.mockReset();
@@ -135,7 +139,7 @@ describe('getLeadDetail() — bramka roli i filtr własności na /leads/[id] (SE
 
     expect(result.success).toBe(true);
     expect((result as { success: true; lead: any }).lead?.id).toBe(LEAD_ID);
-    expect(auditorFindUniqueMock).not.toHaveBeenCalled();
+    expect(auditorFindManyMock).not.toHaveBeenCalled();
   });
 
   // @REQ: SEC-RLS-AUDITOR-SCOPE
@@ -154,7 +158,7 @@ describe('getLeadDetail() — bramka roli i filtr własności na /leads/[id] (SE
   it('audytor: otwierający WŁASNY lead (audytor_id === własny id z sesji) dostaje pełny rekord', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
     leadFindUniqueMock.mockResolvedValue(fullLeadRecord({ audytor_id: AUDITOR_ID }));
 
     const result = await getLeadDetail(LEAD_ID);
@@ -168,15 +172,15 @@ describe('getLeadDetail() — bramka roli i filtr własności na /leads/[id] (SE
   // faktem wywołania (ten jest już pokryty testem powyżej dla audytora WŁASNEGO
   // leada).
   // @REQ: SEC-RLS-AUDITOR-SCOPE
-  it('audytor: audytorzy.findUnique() jest wołane z select: { id: true, is_active: true } dokładnie, nic więcej', async () => {
+  it('audytor: audytorzy.findMany() jest wołane z select: { id: true, is_active: true } dokładnie, nic więcej', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID, is_active: true });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
     leadFindUniqueMock.mockResolvedValue(fullLeadRecord({ audytor_id: AUDITOR_ID }));
 
     await getLeadDetail(LEAD_ID);
 
-    const callArgs = auditorFindUniqueMock.mock.calls[0]?.[0] ?? {};
+    const callArgs = auditorFindManyMock.mock.calls[0]?.[0] ?? {};
     expect(callArgs.select).toEqual({ id: true, is_active: true });
   });
 
@@ -185,7 +189,7 @@ describe('getLeadDetail() — bramka roli i filtr własności na /leads/[id] (SE
   it('audytor: otwierający CUDZY lead (audytor_id inny niż własny id z sesji) dostaje odmowę bez żadnych danych leada', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
     leadFindUniqueMock.mockResolvedValue(fullLeadRecord({ audytor_id: OTHER_AUDITOR_ID }));
 
     const result = await getLeadDetail(LEAD_ID);
@@ -200,7 +204,7 @@ describe('getLeadDetail() — bramka roli i filtr własności na /leads/[id] (SE
   it('audytor: lead z audytor_id = null (nieprzypisany) — odmowa, nie sukces z pustymi polami', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
     leadFindUniqueMock.mockResolvedValue(fullLeadRecord({ audytor_id: null }));
 
     const result = await getLeadDetail(LEAD_ID);
@@ -226,7 +230,7 @@ describe('getLeadDetail() — bramka roli i filtr własności na /leads/[id] (SE
   it('AC4: kształt odmowy dla leada cudzego jest identyczny jak dla leada nieistniejącego (nieodróżnialność)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
 
     leadFindUniqueMock.mockResolvedValue(fullLeadRecord({ audytor_id: OTHER_AUDITOR_ID }));
     const foreignLeadResult = await getLeadDetail(LEAD_ID);
@@ -262,10 +266,10 @@ describe('getLeadDetail() — bramka roli i filtr własności na /leads/[id] (SE
   // Fail-closed #3: audytor bez rekordu w audytorzy — najgroźniejszy przypadek
   // brzegowy z WO, analogiczny do fail-closed #3 w getLeads().
   // @REQ: SEC-RLS-AUDITOR-SCOPE
-  it('fail-closed: rola audytor, ale audytorzy.findUnique(email z sesji) zwraca null → odmowa, findUnique(lead) NIE jest wołane', async () => {
+  it('fail-closed: rola audytor, ale audytorzy.findMany(email z sesji) zwraca pustą tablicę → odmowa, findUnique(lead) NIE jest wołane', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue(null);
+    auditorFindManyMock.mockResolvedValue([]);
 
     const result = await getLeadDetail(LEAD_ID);
 
@@ -283,7 +287,7 @@ describe('getLeadDetail() — bramka roli i filtr własności na /leads/[id] (SE
 
     expect(result.success).toBe(false);
     expect(leadFindUniqueMock).not.toHaveBeenCalled();
-    expect(auditorFindUniqueMock).not.toHaveBeenCalled();
+    expect(auditorFindManyMock).not.toHaveBeenCalled();
   });
 
   // Konto zablokowane (analogiczne do MAJOR 2 w getLeads()) — middleware nie chroni
@@ -292,7 +296,7 @@ describe('getLeadDetail() — bramka roli i filtr własności na /leads/[id] (SE
   it('audytor: konto is_active=false w audytorzy → odmowa BEZPOŚREDNIO w getLeadDetail(), findUnique(lead) NIE jest wołane', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID, is_active: false });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: false }]);
 
     const result = await getLeadDetail(LEAD_ID);
 

@@ -130,8 +130,16 @@ export async function setSelfAvailabilityAction(
     return { success: false, error: "Brak sesji użytkownika." };
   }
 
-  const own = await prisma.zespoly_monterskie.findUnique({ where: { email: user.email } });
-  if (!own || own.id !== id) {
+  // SEC-EMAIL-UNIQUE: identyfikacja "czyja to ekipa" po e-mailu, nie po `findUnique`
+  // (zespoly_monterskie.email nie ma dziś ograniczenia UNIQUE na żywej bazie — patrz WO).
+  // Świadomie BEZ sprawdzenia `aktywny`: ta akcja jest rozłączna z blokadą administratora
+  // (patrz komentarz nad funkcją) — zablokowana ekipa nadal może zadeklarować niedostępność.
+  const matches = await prisma.zespoly_monterskie.findMany({ where: { email: user.email }, take: 2 });
+  if (matches.length !== 1) {
+    return { success: false, error: "Nie można zmienić dostępności innej ekipy." };
+  }
+  const own = matches[0];
+  if (own.id !== id) {
     return { success: false, error: "Nie można zmienić dostępności innej ekipy." };
   }
 
@@ -174,10 +182,11 @@ export async function acceptLegalDocumentVersionAction(
     return { success: false, error: "Brak sesji użytkownika." };
   }
 
-  const own = await prisma.zespoly_monterskie.findUnique({ where: { email: user.email } });
-  if (!own) {
+  const matches = await prisma.zespoly_monterskie.findMany({ where: { email: user.email }, take: 2 });
+  if (matches.length !== 1 || matches[0].aktywny === false) {
     return { success: false, error: "Nie znaleziono własnego rekordu ekipy." };
   }
+  const own = matches[0];
 
   try {
     const consent = await prisma.employeeConsent.create({

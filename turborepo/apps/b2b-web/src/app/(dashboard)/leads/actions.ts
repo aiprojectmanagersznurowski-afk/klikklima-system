@@ -350,14 +350,15 @@ export async function getLeads(options?: {
       return { success: false, error: "Brak sesji użytkownika." };
     }
 
-    const own = await prisma.audytorzy.findUnique({
+    const matches = await prisma.audytorzy.findMany({
       where: { email: user.email },
       select: { id: true, is_active: true },
+      take: 2,
     });
-    if (!own || own.is_active === false) {
+    if (matches.length !== 1 || matches[0].is_active === false) {
       return { success: false, error: "Nie znaleziono powiązanego konta audytora." };
     }
-    scopeWhere = { audytor_id: own.id };
+    scopeWhere = { audytor_id: matches[0].id };
   }
 
   try {

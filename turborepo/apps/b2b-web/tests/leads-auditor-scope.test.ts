@@ -54,7 +54,7 @@ const {
   leadFindManyMock,
   leadCountMock,
   leadGroupByMock,
-  auditorFindUniqueMock,
+  auditorFindManyMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
   getCurrentUserMock,
@@ -64,7 +64,7 @@ const {
   leadFindManyMock: vi.fn(),
   leadCountMock: vi.fn(),
   leadGroupByMock: vi.fn(),
-  auditorFindUniqueMock: vi.fn(),
+  auditorFindManyMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
@@ -72,6 +72,10 @@ const {
   createClientMock: vi.fn(),
 }));
 
+// SEC-EMAIL-UNIQUE (Faza A, implementer-server): `email` przestał być unikalny w
+// schemacie, więc tożsamość "własnego" audytora idzie dziś przez
+// `findMany({ where: { email }, select: { id, is_active }, take: 2 })`, nie
+// `findUnique` — patrz leads/actions.ts:353.
 vi.mock('@repo/database', () => ({
   prisma: {
     leady: {
@@ -80,7 +84,7 @@ vi.mock('@repo/database', () => ({
       groupBy: leadGroupByMock,
     },
     audytorzy: {
-      findUnique: auditorFindUniqueMock,
+      findMany: auditorFindManyMock,
     },
   },
   LeadStatus: {},
@@ -112,7 +116,7 @@ beforeEach(() => {
   leadFindManyMock.mockReset();
   leadCountMock.mockReset();
   leadGroupByMock.mockReset();
-  auditorFindUniqueMock.mockReset();
+  auditorFindManyMock.mockReset();
   revalidatePathMock.mockReset();
   getCurrentActorRoleMock.mockReset();
   getUserMock.mockReset();
@@ -129,7 +133,7 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
   it('audytor: where przekazane do findMany zawiera audytor_id równy WŁASNEMU id dociągniętemu przez audytorzy.email z sesji', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
 
     await getLeads();
 
@@ -140,33 +144,36 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
   });
 
   // @REQ: SEC-RLS-AUDITOR-SCOPE
-  it('audytor: tożsamość jest dociągana przez audytorzy.findUnique({ where: { email } }) z e-mailem SESJI, nie z żadnego argumentu getLeads()', async () => {
+  it('audytor: tożsamość jest dociągana przez audytorzy.findMany({ where: { email }, take: 2 }) z e-mailem SESJI, nie z żadnego argumentu getLeads()', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
 
     await getLeads();
 
-    expect(auditorFindUniqueMock).toHaveBeenCalledTimes(1);
-    const identityArgs = auditorFindUniqueMock.mock.calls[0]?.[0] ?? {};
+    expect(auditorFindManyMock).toHaveBeenCalledTimes(1);
+    const identityArgs = auditorFindManyMock.mock.calls[0]?.[0] ?? {};
     expect(identityArgs.where?.email).toBe(AUDITOR_EMAIL);
+    expect(identityArgs.take).toBe(2);
   });
 
   // Punkt 14 (BATCH-MEDIUM-LOW-CLEANUP): dociąganie tożsamości audytora musi
   // pobierać WYŁĄCZNIE id i is_active — żadnego innego pola (imię, telefon,
   // certyfikaty...) z rekordu audytora, którego getLeads() nie potrzebuje do
   // zbudowania where. Dowodem jest dokładny kształt `select` przekazany do
-  // mocka `findUnique`, nie sam fakt jego wywołania (ten jest już pokryty
+  // mocka `findMany`, nie sam fakt jego wywołania (ten jest już pokryty
   // testem powyżej).
+  // SEC-EMAIL-UNIQUE (Faza A): `findUnique` → `findMany` (email już nie jest
+  // unikalny), ale `select` przekazywany do zapytania pozostał identyczny.
   // @REQ: SEC-RLS-AUDITOR-SCOPE
-  it('audytor: audytorzy.findUnique() jest wołane z select: { id: true, is_active: true } dokładnie, nic więcej', async () => {
+  it('audytor: audytorzy.findMany() jest wołane z select: { id: true, is_active: true } dokładnie, nic więcej', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID, is_active: true });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
 
     await getLeads();
 
-    const callArgs = auditorFindUniqueMock.mock.calls[0]?.[0] ?? {};
+    const callArgs = auditorFindManyMock.mock.calls[0]?.[0] ?? {};
     expect(callArgs.select).toEqual({ id: true, is_active: true });
   });
 
@@ -174,7 +181,7 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
   it('audytor: filtr własności MERGE-uje się z filtrem status/bucket istniejącym już w where, nie zastępuje go', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
 
     await getLeads({ status: 'AWAITING_AUDIT' });
 
@@ -193,7 +200,7 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
     expect(leadFindManyMock).toHaveBeenCalledTimes(1);
     const callArgs = leadFindManyMock.mock.calls[0]?.[0] ?? {};
     expect(callArgs.where ?? {}).not.toHaveProperty('audytor_id');
-    expect(auditorFindUniqueMock).not.toHaveBeenCalled();
+    expect(auditorFindManyMock).not.toHaveBeenCalled();
   });
 
   // @REQ: SEC-RLS-AUDITOR-SCOPE
@@ -245,11 +252,13 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
   // Fail-closed #3: audytor zalogowany, ale brak rekordu w audytorzy (konto usunięte/
   // nigdy nie utworzone) — NAJGROŹNIEJSZY przypadek: where nie może zostać zbudowane
   // z undefined, bo Prisma taki warunek IGNORUJE i oddaje komplet leadów.
+  // SEC-EMAIL-UNIQUE (Faza A): pusta tablica jest odpowiednikiem dawnego `null` z
+  // findUnique — brak dopasowania po e-mailu.
   // @REQ: SEC-RLS-AUDITOR-SCOPE
-  it('fail-closed: rola audytor, ale audytorzy.findUnique(email z sesji) zwraca null → odmowa, findMany NIE jest wołane (nigdy where z undefined)', async () => {
+  it('fail-closed: rola audytor, ale audytorzy.findMany(email z sesji) zwraca pustą tablicę → odmowa, findMany(leady) NIE jest wołane (nigdy where z undefined)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue(null);
+    auditorFindManyMock.mockResolvedValue([]);
 
     const result = await getLeads();
 
@@ -267,7 +276,7 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
 
     expect(result).toEqual({ success: false, error: expect.any(String) });
     expect(leadFindManyMock).not.toHaveBeenCalled();
-    expect(auditorFindUniqueMock).not.toHaveBeenCalled();
+    expect(auditorFindManyMock).not.toHaveBeenCalled();
   });
 
   // Liczniki i paginacja są częścią zakresu (AC „stageCounts... jest wyciekiem informacji
@@ -276,7 +285,7 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
   it('audytor: prisma.leady.groupBy (stageCounts) jest wołane z tym samym filtrem audytor_id', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
 
     await getLeads();
 
@@ -290,7 +299,7 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
   it('audytor: prisma.leady.count (totalCount/totalPages) jest wołane z tym samym filtrem audytor_id', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
 
     await getLeads();
 
@@ -323,7 +332,7 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
   it('audytor: where.audytor_id nigdy nie przyjmuje wartości innej niż WŁASNE id z sesji (kontrola negatywna)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
 
     await getLeads();
 
@@ -350,7 +359,7 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
   it('audytor: podanie CUDZEGO audytor_id w argumencie getLeads() nie ma żadnego wpływu na where — liczy się wyłącznie tożsamość z sesji', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: true }]);
 
     const maliciousOptions = { status: 'NEW_LEAD', audytor_id: OTHER_AUDITOR_ID };
     await getLeads(maliciousOptions as Parameters<typeof getLeads>[0]);
@@ -373,7 +382,7 @@ describe('getLeads() — zawężenie zakresu audytora (SEC-RLS-AUDITOR-SCOPE)', 
   it('audytor: konto is_active=false w audytorzy → odmowa BEZPOŚREDNIO w getLeads(), prisma.leady.{findMany,count,groupBy} NIE są wołane', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     mockSessionEmail(AUDITOR_EMAIL);
-    auditorFindUniqueMock.mockResolvedValue({ id: AUDITOR_ID, is_active: false });
+    auditorFindManyMock.mockResolvedValue([{ id: AUDITOR_ID, is_active: false }]);
 
     const result = await getLeads();
 

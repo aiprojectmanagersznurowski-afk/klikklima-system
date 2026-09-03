@@ -118,8 +118,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  */
 
 const {
-  auditorFindUniqueMock,
-  crewFindUniqueMock,
+  auditorFindManyMock,
+  crewFindManyMock,
   employeeConsentCreateMock,
   employeeConsentUpdateMock,
   employeeConsentFindFirstMock,
@@ -130,8 +130,8 @@ const {
   getUserMock,
   createClientMock,
 } = vi.hoisted(() => ({
-  auditorFindUniqueMock: vi.fn(),
-  crewFindUniqueMock: vi.fn(),
+  auditorFindManyMock: vi.fn(),
+  crewFindManyMock: vi.fn(),
   employeeConsentCreateMock: vi.fn(),
   employeeConsentUpdateMock: vi.fn(),
   employeeConsentFindFirstMock: vi.fn(),
@@ -143,13 +143,16 @@ const {
   createClientMock: vi.fn(),
 }));
 
+// SEC-EMAIL-UNIQUE (Faza A, implementer-server): tożsamość "własnego" rekordu idzie
+// dziś przez `findMany({ where: { email }, take: 2 })`, nie `findUnique` — email już
+// nie jest unikalny (auditors/actions.ts:143, crews/actions.ts:133).
 vi.mock('@repo/database', () => ({
   prisma: {
     audytorzy: {
-      findUnique: auditorFindUniqueMock,
+      findMany: auditorFindManyMock,
     },
     zespoly_monterskie: {
-      findUnique: crewFindUniqueMock,
+      findMany: crewFindManyMock,
     },
     employeeConsent: {
       create: employeeConsentCreateMock,
@@ -183,8 +186,8 @@ const CREW_EMAIL = 'ekipa.warszawa@klikklima.pl';
 const CURRENT_VERSION_ID = 'ldv-rodo-v3';
 
 beforeEach(() => {
-  auditorFindUniqueMock.mockReset();
-  crewFindUniqueMock.mockReset();
+  auditorFindManyMock.mockReset();
+  crewFindManyMock.mockReset();
   employeeConsentCreateMock.mockReset();
   employeeConsentUpdateMock.mockReset();
   employeeConsentFindFirstMock.mockReset();
@@ -204,7 +207,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('audytor akceptuje obowiązującą wersję: zapis zawiera własny auditorId, podany versionId, i zwraca id + acceptedAt z bazy', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL }]);
     const acceptedAt = new Date('2026-08-24T10:15:00Z');
     employeeConsentCreateMock.mockResolvedValue({
       id: 'consent-1',
@@ -223,7 +226,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
     // klienta (np. versionId podstawionym jako id własnego rekordu). Bez tej asercji mutant
     // `{ where: { id: versionId } }` przechodzi ten test niezauważony (mock zwraca statyczną
     // wartość niezależnie od argumentu).
-    expect(auditorFindUniqueMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL } });
+    expect(auditorFindManyMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL }, take: 2 });
     expect(employeeConsentCreateMock).toHaveBeenCalledWith({
       data: { auditorId: 'aud-1', versionId: CURRENT_VERSION_ID },
     });
@@ -240,7 +243,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('zapisany auditorId to zawsze własny rekord z sesji, niezależnie od jego wartości (brak jakiegokolwiek argumentu sterującego właścicielem)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-completely-different-id-999', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-completely-different-id-999', email: AUDITOR_EMAIL }]);
     employeeConsentCreateMock.mockResolvedValue({
       id: 'consent-2',
       auditorId: 'aud-completely-different-id-999',
@@ -254,7 +257,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
     // (mutant `{ where: { id: versionId } }` rozstrzygnąłby tożsamość argumentem klienta —
     // ten mock zwraca statyczną wartość niezależnie od `where`, więc bez tej asercji mutant
     // przechodzi test cicho).
-    expect(auditorFindUniqueMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL } });
+    expect(auditorFindManyMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL }, take: 2 });
     expect(employeeConsentCreateMock).toHaveBeenCalledWith({
       data: { auditorId: 'aud-completely-different-id-999', versionId: CURRENT_VERSION_ID },
     });
@@ -269,12 +272,12 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('rola admin (BRAK create na employee_consents mimo bycia administratorem) jest odrzucona fail-closed, przed sięgnięciem do bazy', async () => {
     getCurrentActorRoleMock.mockResolvedValue('admin');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL }]);
 
     const result = await acceptAuditorConsent(CURRENT_VERSION_ID);
 
     expect(result.success).toBe(false);
-    expect(auditorFindUniqueMock).not.toHaveBeenCalled();
+    expect(auditorFindManyMock).not.toHaveBeenCalled();
     expect(employeeConsentCreateMock).not.toHaveBeenCalled();
   });
 
@@ -282,12 +285,12 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('rola dyspozytor (brak create na employee_consents) jest odrzucona fail-closed, przed sięgnięciem do bazy', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL }]);
 
     const result = await acceptAuditorConsent(CURRENT_VERSION_ID);
 
     expect(result.success).toBe(false);
-    expect(auditorFindUniqueMock).not.toHaveBeenCalled();
+    expect(auditorFindManyMock).not.toHaveBeenCalled();
     expect(employeeConsentCreateMock).not.toHaveBeenCalled();
   });
 
@@ -300,12 +303,12 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('rola monter (prawidłowa dla zasobu, ale to nie jej własny audytor) jest odrzucona po stronie serwera, przed sięgnięciem do bazy', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL }]);
 
     const result = await acceptAuditorConsent(CURRENT_VERSION_ID);
 
     expect(result.success).toBe(false);
-    expect(auditorFindUniqueMock).not.toHaveBeenCalled();
+    expect(auditorFindManyMock).not.toHaveBeenCalled();
     expect(employeeConsentCreateMock).not.toHaveBeenCalled();
   });
 
@@ -316,7 +319,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('brak roli (null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL }]);
 
     const result = await acceptAuditorConsent(CURRENT_VERSION_ID);
 
@@ -334,7 +337,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
     const result = await acceptAuditorConsent(CURRENT_VERSION_ID);
 
     expect(result.success).toBe(false);
-    expect(auditorFindUniqueMock).not.toHaveBeenCalled();
+    expect(auditorFindManyMock).not.toHaveBeenCalled();
     expect(employeeConsentCreateMock).not.toHaveBeenCalled();
   });
 
@@ -344,7 +347,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('brak własnego rekordu audytora (konto usunięte w międzyczasie) jest odrzucony, bez wywołania create', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue(null);
+    auditorFindManyMock.mockResolvedValue([]);
 
     const result = await acceptAuditorConsent(CURRENT_VERSION_ID);
 
@@ -360,7 +363,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('odrzucenie zapytania przez bazę (symulacja FK / wyzwalacza "wersja nieobowiązująca") kończy się { success: false }, nie wyjątkiem', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL }]);
     employeeConsentCreateMock.mockRejectedValue(
       Object.assign(new Error('employee_consents: mozna zaakceptowac wylacznie wersje obowiazujaca w chwili zapisu (AC3)'), {
         code: 'P2003',
@@ -370,7 +373,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
     await expect(acceptAuditorConsent('ldv-draft-or-superseded')).resolves.toMatchObject({
       success: false,
     });
-    expect(auditorFindUniqueMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL } });
+    expect(auditorFindManyMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL }, take: 2 });
   });
 
   // Przypadek pusty (dane wejściowe): versionId pusty łańcuch — akcja NIE waliduje treści
@@ -380,13 +383,13 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('pusty versionId prowadzi do odrzuconego zapytania obsłużonego jako { success: false }, nie do cichego sukcesu', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL }]);
     employeeConsentCreateMock.mockRejectedValue(Object.assign(new Error('invalid input syntax for type uuid'), { code: 'P2003' }));
 
     const result = await acceptAuditorConsent('');
 
     expect(result.success).toBe(false);
-    expect(auditorFindUniqueMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL } });
+    expect(auditorFindManyMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL }, take: 2 });
   });
 
   // Kryterium 5 (strukturalnie): publikacja nowej wersji nie ma tu ŻADNEJ ścieżki, bo ta akcja
@@ -395,12 +398,12 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('akcja nigdy nie wywołuje employeeConsent.update (jedyna operacja to create — rejestr jest append-only)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL }]);
     employeeConsentCreateMock.mockResolvedValue({ id: 'consent-3', auditorId: 'aud-1', versionId: CURRENT_VERSION_ID, acceptedAt: new Date() });
 
     await acceptAuditorConsent(CURRENT_VERSION_ID);
 
-    expect(auditorFindUniqueMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL } });
+    expect(auditorFindManyMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL }, take: 2 });
     expect(employeeConsentUpdateMock).not.toHaveBeenCalled();
   });
 
@@ -412,7 +415,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('dwa równoległe wywołania akceptacji tej samej wersji przez tego samego audytora kierują oba zapisy przez create z identycznym payloadem', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL }]);
     employeeConsentCreateMock.mockResolvedValue({ id: 'consent-x', auditorId: 'aud-1', versionId: CURRENT_VERSION_ID, acceptedAt: new Date() });
 
     await Promise.all([
@@ -424,8 +427,8 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
     for (const call of employeeConsentCreateMock.mock.calls) {
       expect(call[0]).toEqual({ data: { auditorId: 'aud-1', versionId: CURRENT_VERSION_ID } });
     }
-    for (const call of auditorFindUniqueMock.mock.calls) {
-      expect(call[0]).toEqual({ where: { email: AUDITOR_EMAIL } });
+    for (const call of auditorFindManyMock.mock.calls) {
+      expect(call[0]).toEqual({ where: { email: AUDITOR_EMAIL }, take: 2 });
     }
     expect(employeeConsentFindFirstMock).not.toHaveBeenCalled();
     expect(employeeConsentFindUniqueMock).not.toHaveBeenCalled();
@@ -439,7 +442,7 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
   it('drugie, sekwencyjne wywołanie tej samej akceptacji ponownie woła create z identycznym payloadem (nieduplikowanie żyje w bazie, nie w akcji)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL }]);
     employeeConsentCreateMock.mockResolvedValue({ id: 'consent-y', auditorId: 'aud-1', versionId: CURRENT_VERSION_ID, acceptedAt: new Date() });
 
     await acceptAuditorConsent(CURRENT_VERSION_ID);
@@ -447,8 +450,8 @@ describe('acceptLegalDocumentVersionAction (auditors/actions.ts) — audytor akc
 
     expect(employeeConsentCreateMock).toHaveBeenCalledTimes(2);
     expect(employeeConsentCreateMock.mock.calls[0][0]).toEqual(employeeConsentCreateMock.mock.calls[1][0]);
-    for (const call of auditorFindUniqueMock.mock.calls) {
-      expect(call[0]).toEqual({ where: { email: AUDITOR_EMAIL } });
+    for (const call of auditorFindManyMock.mock.calls) {
+      expect(call[0]).toEqual({ where: { email: AUDITOR_EMAIL }, take: 2 });
     }
   });
 });
@@ -458,7 +461,7 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
   it('ekipa akceptuje obowiązującą wersję: zapis zawiera własny crewId, podany versionId, i zwraca id + acceptedAt z bazy', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL }]);
     const acceptedAt = new Date('2026-08-24T11:00:00Z');
     employeeConsentCreateMock.mockResolvedValue({
       id: 'consent-crew-1',
@@ -474,7 +477,7 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
     expect(result.id).toBe('consent-crew-1');
     expect(result.acceptedAt).toEqual(acceptedAt);
     // Symetrycznie do wariantu audytorskiego: tożsamość rozstrzygana WYŁĄCZNIE e-mailem z sesji.
-    expect(crewFindUniqueMock).toHaveBeenCalledWith({ where: { email: CREW_EMAIL } });
+    expect(crewFindManyMock).toHaveBeenCalledWith({ where: { email: CREW_EMAIL }, take: 2 });
     expect(employeeConsentCreateMock).toHaveBeenCalledWith({
       data: { crewId: 'crew-1', versionId: CURRENT_VERSION_ID },
     });
@@ -486,12 +489,12 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
   it('rola admin (BRAK create na employee_consents) jest odrzucona fail-closed, przed sięgnięciem do bazy', async () => {
     getCurrentActorRoleMock.mockResolvedValue('admin');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL }]);
 
     const result = await acceptCrewConsent(CURRENT_VERSION_ID);
 
     expect(result.success).toBe(false);
-    expect(crewFindUniqueMock).not.toHaveBeenCalled();
+    expect(crewFindManyMock).not.toHaveBeenCalled();
     expect(employeeConsentCreateMock).not.toHaveBeenCalled();
   });
 
@@ -499,12 +502,12 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
   it('rola dyspozytor (brak create na employee_consents) jest odrzucona fail-closed, przed sięgnięciem do bazy', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL }]);
 
     const result = await acceptCrewConsent(CURRENT_VERSION_ID);
 
     expect(result.success).toBe(false);
-    expect(crewFindUniqueMock).not.toHaveBeenCalled();
+    expect(crewFindManyMock).not.toHaveBeenCalled();
     expect(employeeConsentCreateMock).not.toHaveBeenCalled();
   });
 
@@ -515,12 +518,12 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
   it('rola audytor (prawidłowa dla zasobu, ale to nie jej własna ekipa) jest odrzucona po stronie serwera, przed sięgnięciem do bazy', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL }]);
 
     const result = await acceptCrewConsent(CURRENT_VERSION_ID);
 
     expect(result.success).toBe(false);
-    expect(crewFindUniqueMock).not.toHaveBeenCalled();
+    expect(crewFindManyMock).not.toHaveBeenCalled();
     expect(employeeConsentCreateMock).not.toHaveBeenCalled();
   });
 
@@ -528,7 +531,7 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
   it('brak roli (null) jest odrzucony fail-closed dla ekipy', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL }]);
 
     const result = await acceptCrewConsent(CURRENT_VERSION_ID);
 
@@ -545,7 +548,7 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
     const result = await acceptCrewConsent(CURRENT_VERSION_ID);
 
     expect(result.success).toBe(false);
-    expect(crewFindUniqueMock).not.toHaveBeenCalled();
+    expect(crewFindManyMock).not.toHaveBeenCalled();
     expect(employeeConsentCreateMock).not.toHaveBeenCalled();
   });
 
@@ -554,7 +557,7 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
   it('brak własnego rekordu ekipy (konto usunięte w międzyczasie) jest odrzucony, bez wywołania create', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue(null);
+    crewFindManyMock.mockResolvedValue([]);
 
     const result = await acceptCrewConsent(CURRENT_VERSION_ID);
 
@@ -566,7 +569,7 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
   it('odrzucenie zapytania przez bazę (symulacja FK / wyzwalacza "wersja nieobowiązująca") kończy się { success: false } dla ekipy, nie wyjątkiem', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL }]);
     employeeConsentCreateMock.mockRejectedValue(
       Object.assign(new Error('employee_consents: mozna zaakceptowac wylacznie wersje obowiazujaca w chwili zapisu (AC3)'), {
         code: 'P2003',
@@ -576,19 +579,19 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
     await expect(acceptCrewConsent('ldv-draft-or-superseded')).resolves.toMatchObject({
       success: false,
     });
-    expect(crewFindUniqueMock).toHaveBeenCalledWith({ where: { email: CREW_EMAIL } });
+    expect(crewFindManyMock).toHaveBeenCalledWith({ where: { email: CREW_EMAIL }, take: 2 });
   });
 
   // @REQ: FLD-CONSENT-ACCEPT
   it('akcja ekipy nigdy nie wywołuje employeeConsent.update (jedyna operacja to create)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL }]);
     employeeConsentCreateMock.mockResolvedValue({ id: 'consent-crew-2', crewId: 'crew-1', versionId: CURRENT_VERSION_ID, acceptedAt: new Date() });
 
     await acceptCrewConsent(CURRENT_VERSION_ID);
 
-    expect(crewFindUniqueMock).toHaveBeenCalledWith({ where: { email: CREW_EMAIL } });
+    expect(crewFindManyMock).toHaveBeenCalledWith({ where: { email: CREW_EMAIL }, take: 2 });
     expect(employeeConsentUpdateMock).not.toHaveBeenCalled();
   });
 
@@ -596,7 +599,7 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
   it('dwa równoległe wywołania akceptacji tej samej wersji przez tę samą ekipę kierują oba zapisy przez create z identycznym payloadem', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL }]);
     employeeConsentCreateMock.mockResolvedValue({ id: 'consent-crew-x', crewId: 'crew-1', versionId: CURRENT_VERSION_ID, acceptedAt: new Date() });
 
     await Promise.all([
@@ -608,8 +611,8 @@ describe('acceptLegalDocumentVersionAction (crews/actions.ts) — ekipa akceptuj
     for (const call of employeeConsentCreateMock.mock.calls) {
       expect(call[0]).toEqual({ data: { crewId: 'crew-1', versionId: CURRENT_VERSION_ID } });
     }
-    for (const call of crewFindUniqueMock.mock.calls) {
-      expect(call[0]).toEqual({ where: { email: CREW_EMAIL } });
+    for (const call of crewFindManyMock.mock.calls) {
+      expect(call[0]).toEqual({ where: { email: CREW_EMAIL }, take: 2 });
     }
   });
 });
@@ -624,7 +627,7 @@ describe('FLD-CONSENT-ACCEPT — pracownik obu światów akceptuje dwa razy (R1 
   it('akceptacja jako audytor i akceptacja jako ekipa (ta sama wersja) tworzą dwa osobne zapisy z rozłącznymi kluczami obcymi', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'person-as-auditor', email: AUDITOR_EMAIL });
+    auditorFindManyMock.mockResolvedValue([{ id: 'person-as-auditor', email: AUDITOR_EMAIL }]);
     employeeConsentCreateMock.mockResolvedValueOnce({
       id: 'consent-dual-1',
       auditorId: 'person-as-auditor',
@@ -635,7 +638,7 @@ describe('FLD-CONSENT-ACCEPT — pracownik obu światów akceptuje dwa razy (R1 
 
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'person-as-crew', email: CREW_EMAIL });
+    crewFindManyMock.mockResolvedValue([{ id: 'person-as-crew', email: CREW_EMAIL }]);
     employeeConsentCreateMock.mockResolvedValueOnce({
       id: 'consent-dual-2',
       crewId: 'person-as-crew',
@@ -652,7 +655,7 @@ describe('FLD-CONSENT-ACCEPT — pracownik obu światów akceptuje dwa razy (R1 
     expect(firstCallArgs[0].data).not.toHaveProperty('crewId');
     expect(secondCallArgs[0].data).not.toHaveProperty('auditorId');
     // Tożsamość w obu światach rozstrzygana wyłącznie e-mailem z sesji, nigdy versionId.
-    expect(auditorFindUniqueMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL } });
-    expect(crewFindUniqueMock).toHaveBeenCalledWith({ where: { email: CREW_EMAIL } });
+    expect(auditorFindManyMock).toHaveBeenCalledWith({ where: { email: AUDITOR_EMAIL }, take: 2 });
+    expect(crewFindManyMock).toHaveBeenCalledWith({ where: { email: CREW_EMAIL }, take: 2 });
   });
 });

@@ -34,9 +34,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  */
 
 const {
-  auditorFindUniqueMock,
+  auditorFindManyMock,
   auditorUpdateMock,
-  crewFindUniqueMock,
+  crewFindManyMock,
   crewUpdateMock,
   availabilityUpsertMock,
   availabilityDeleteMock,
@@ -46,9 +46,9 @@ const {
   getUserMock,
   createClientMock,
 } = vi.hoisted(() => ({
-  auditorFindUniqueMock: vi.fn(),
+  auditorFindManyMock: vi.fn(),
   auditorUpdateMock: vi.fn(),
-  crewFindUniqueMock: vi.fn(),
+  crewFindManyMock: vi.fn(),
   crewUpdateMock: vi.fn(),
   availabilityUpsertMock: vi.fn(),
   availabilityDeleteMock: vi.fn(),
@@ -59,14 +59,17 @@ const {
   createClientMock: vi.fn(),
 }));
 
+// SEC-EMAIL-UNIQUE (Faza A, implementer-server): tożsamość "własnego" rekordu idzie
+// dziś przez `findMany({ where: { email }, take: 2 })`, nie `findUnique` — email już
+// nie jest unikalny (auditors/actions.ts:143, crews/actions.ts:133).
 vi.mock('@repo/database', () => ({
   prisma: {
     audytorzy: {
-      findUnique: auditorFindUniqueMock,
+      findMany: auditorFindManyMock,
       update: auditorUpdateMock,
     },
     zespoly_monterskie: {
-      findUnique: crewFindUniqueMock,
+      findMany: crewFindManyMock,
       update: crewUpdateMock,
     },
     availabilityDeclaration: {
@@ -98,9 +101,9 @@ const AUDITOR_EMAIL = 'audytor.jan@klikklima.pl';
 const CREW_EMAIL = 'ekipa.warszawa@klikklima.pl';
 
 beforeEach(() => {
-  auditorFindUniqueMock.mockReset();
+  auditorFindManyMock.mockReset();
   auditorUpdateMock.mockReset();
-  crewFindUniqueMock.mockReset();
+  crewFindManyMock.mockReset();
   crewUpdateMock.mockReset();
   availabilityUpsertMock.mockReset();
   availabilityDeleteMock.mockReset();
@@ -124,7 +127,7 @@ describe('setSelfAvailabilityAction — powrót do dostępności po przełączen
   it('AC5 — ustawienie dostępności, przełączenie na niedostępny, powrót: sekwencja payloadów wysłanych do upsert to [true, false, true]', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' }]);
     availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
 
     await setAuditorAvailability('aud-1', true);
@@ -145,7 +148,7 @@ describe('setSelfAvailabilityAction — powrót do dostępności po przełączen
   it('ustawienie niedostępności nie kasuje i nie tworzy nowego, niezależnego zapisu dostępności', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' }]);
     availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
 
     await setAuditorAvailability('aud-1', false);
@@ -169,7 +172,7 @@ describe('setSelfAvailabilityAction — powrót do dostępności po przełączen
   it('AC5 — to samo dla zespoly_monterskie: sekwencja payloadów wysłanych do upsert to [true, false, true]', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' }]);
     availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
 
     await setCrewAvailability('crew-1', true);
@@ -186,7 +189,7 @@ describe('setSelfAvailabilityAction — powrót do dostępności po przełączen
   it('ustawienie niedostępności ekipy nie kasuje istniejącego zapisu dostępności', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' }]);
     availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
 
     await setCrewAvailability('crew-1', false);

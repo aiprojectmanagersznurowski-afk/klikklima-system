@@ -3,3 +3,6 @@
 - [Rozmiar Work Ordera](feedback-workorder-sizing.md) — dziel WO po artefakcie i roli; jeden wielki WO zużywa limit iteracji GREEN
 - [Mapa faz Field App](project-fieldapp-roadmap.md) — fazy 0-6 to inna oś niż wersje v1/v2/v3; „to faza N" jest ważnym powodem odmowy rozszerzenia zakresu
 - [Rozstrzyganie decyzji w WO](feedback-scope-decisions-kartoteki.md) — dopisuj datowane sekcje zamiast przepisywać; create+edit idą razem, gdy dzielą mapowanie
+- [Ewidencja migracji jest niewiarygodna](migration-ledger-unreliable.md) — plik w `supabase/migrations/` nie dowodzi, że zmiana jest na bazie; sprawdzaj `pg_catalog`.
+- [Jak odpytać żywą bazę](db-probe-recipe.md) — skrypt musi leżeć w `packages/database`, `node -r dotenv/config`; grep na `.env` jest zablokowany.
+- [Tożsamość po wartości e-maila](identity-by-email-fragility.md) — źródło całej klasy podatności `:own`; ustalony wzorzec obrony `findMany take:2`.

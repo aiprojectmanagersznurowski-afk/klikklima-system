@@ -32,6 +32,8 @@ export async function getLeadDetail(id: string) {
     return { success: false as const, error: "Brak uprawnień do przeglądania leada." };
   }
 
+  const DENIED = { success: false as const, error: "Lead nie został znaleziony." };
+
   let ownId: string | undefined;
   if (access === "own") {
     const supabase = await createClient();
@@ -40,17 +42,19 @@ export async function getLeadDetail(id: string) {
       return { success: false as const, error: "Brak sesji użytkownika." };
     }
 
-    const own = await prisma.audytorzy.findUnique({
+    const matches = await prisma.audytorzy.findMany({
       where: { email: user.email },
       select: { id: true, is_active: true },
+      take: 2,
     });
-    if (!own || own.is_active === false) {
-      return { success: false as const, error: "Nie znaleziono powiązanego konta audytora." };
+    if (matches.length !== 1 || matches[0].is_active === false) {
+      // Nieodróżnialność (AC-A2/AC4 z SEC-RLS-AUDITOR-SCOPE): duplikat tożsamości
+      // musi dać dokładnie tę samą odmowę co lead nieistniejący — audytor nie może
+      // przez duplikat wywnioskować, że rekord w ogóle istnieje.
+      return DENIED;
     }
-    ownId = own.id;
+    ownId = matches[0].id;
   }
-
-  const DENIED = { success: false as const, error: "Lead nie został znaleziony." };
 
   const lead = await prisma.leady.findUnique({
     where: { id },

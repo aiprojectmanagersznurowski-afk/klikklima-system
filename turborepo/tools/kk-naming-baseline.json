@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-02T22:18:22.031Z",
+  "generatedAt": "2026-09-03T05:43:06.066Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 17,
@@ -116,6 +116,9 @@
     "apps/b2b-web/tests/read-pages-authz.test.ts::adr002-pl-columns": 1,
     "apps/b2b-web/tests/read-pages-authz.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/rls-deny-by-default-freeze.test.ts::adr002-pl-tables": 17,
+    "apps/b2b-web/tests/sec-email-unique-findunique-freeze.test.ts::adr002-pl-tables": 3,
+    "apps/b2b-web/tests/sec-email-unique-identity-gate.test.ts::adr002-pl-columns": 4,
+    "apps/b2b-web/tests/sec-email-unique-identity-gate.test.ts::adr002-pl-tables": 12,
     "apps/b2b-web/tests/services-authz-gates.test.ts::adr002-pl-columns": 2,
     "apps/b2b-web/tests/services-authz-gates.test.ts::adr002-pl-tables": 4,
     "apps/b2b-web/tests/services-read-scope.test.ts::adr002-pl-columns": 7,
@@ -173,5 +176,5 @@
     "supabase/migrations/20260902170500_perf_foreign_key_indexes.sql::adr002-pl-tables": 11,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2027
+  "total": 2046
 }

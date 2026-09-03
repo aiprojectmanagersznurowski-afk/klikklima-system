@@ -67,8 +67,10 @@ import { prisma } from '@repo/database';
 
 const {
   auditorFindUniqueMock,
+  auditorFindManyMock,
   auditorUpdateMock,
   crewFindUniqueMock,
+  crewFindManyMock,
   crewUpdateMock,
   availabilityUpsertMock,
   revalidatePathMock,
@@ -78,8 +80,10 @@ const {
   createClientMock,
 } = vi.hoisted(() => ({
   auditorFindUniqueMock: vi.fn(),
+  auditorFindManyMock: vi.fn(),
   auditorUpdateMock: vi.fn(),
   crewFindUniqueMock: vi.fn(),
+  crewFindManyMock: vi.fn(),
   crewUpdateMock: vi.fn(),
   availabilityUpsertMock: vi.fn(),
   revalidatePathMock: vi.fn(),
@@ -89,14 +93,21 @@ const {
   createClientMock: vi.fn(),
 }));
 
+// SEC-EMAIL-UNIQUE (Faza A, implementer-server): identyfikacja "czyj to rekord" po
+// e-mailu idzie dziś przez `findMany({ where: { email }, take: 2 })`, nie
+// `findUnique` — `email` przestał być unikalny w schemacie, więc bramka musi wprost
+// odrzucić duplikat tożsamości. `findUnique` zostaje w mocku tylko dlatego, że AC1
+// poniżej woła go BEZPOŚREDNIO (nie przez akcję) jako niezależny odczyt "przed/po".
 vi.mock('@repo/database', () => ({
   prisma: {
     audytorzy: {
       findUnique: auditorFindUniqueMock,
+      findMany: auditorFindManyMock,
       update: auditorUpdateMock,
     },
     zespoly_monterskie: {
       findUnique: crewFindUniqueMock,
+      findMany: crewFindManyMock,
       update: crewUpdateMock,
     },
     availabilityDeclaration: {
@@ -128,8 +139,10 @@ const CREW_EMAIL = 'ekipa.warszawa@klikklima.pl';
 
 beforeEach(() => {
   auditorFindUniqueMock.mockReset();
+  auditorFindManyMock.mockReset();
   auditorUpdateMock.mockReset();
   crewFindUniqueMock.mockReset();
+  crewFindManyMock.mockReset();
   crewUpdateMock.mockReset();
   availabilityUpsertMock.mockReset();
   revalidatePathMock.mockReset();
@@ -146,6 +159,7 @@ describe('setSelfAvailabilityAction (auditors/actions.ts) — audytor deklaruje 
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
     const row = { id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' };
     auditorFindUniqueMock.mockResolvedValue(row);
+    auditorFindManyMock.mockResolvedValue([row]);
     availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
 
     const before = await prisma.audytorzy.findUnique({ where: { id: 'aud-1' } });
@@ -164,7 +178,7 @@ describe('setSelfAvailabilityAction (auditors/actions.ts) — audytor deklaruje 
   it('AC3 — akcja nigdy nie wywołuje prisma.audytorzy.update (auditors.update pozostaje wyłącznie admin)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' }]);
     availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
 
     const result = await setAuditorAvailability('aud-1', false);
@@ -193,7 +207,7 @@ describe('setSelfAvailabilityAction (auditors/actions.ts) — audytor deklaruje 
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
     // Sesja rozwiązuje się do WŁASNEGO rekordu 'aud-own' po e-mailu — ale wywołujący
     // przekazuje wprost cudze id 'aud-other-guy'.
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-own', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-own', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' }]);
 
     const result = await setAuditorAvailability('aud-other-guy', false);
 
@@ -212,12 +226,12 @@ describe('setSelfAvailabilityAction (auditors/actions.ts) — audytor deklaruje 
   it('rola dyspozytor (brak wariantu :own na availability_declarations) jest odrzucona po stronie serwera', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' }]);
 
     const result = await setAuditorAvailability('aud-1', false);
 
     expect(result.success).toBe(false);
-    expect(auditorFindUniqueMock).not.toHaveBeenCalled();
+    expect(auditorFindManyMock).not.toHaveBeenCalled();
     expect(availabilityUpsertMock).not.toHaveBeenCalled();
   });
 
@@ -232,12 +246,12 @@ describe('setSelfAvailabilityAction (auditors/actions.ts) — audytor deklaruje 
   it('rola monter (obcy zasób — to nie jej własny audytor) jest odrzucona po stronie serwera', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' }]);
 
     const result = await setAuditorAvailability('aud-1', false);
 
     expect(result.success).toBe(false);
-    expect(auditorFindUniqueMock).not.toHaveBeenCalled();
+    expect(auditorFindManyMock).not.toHaveBeenCalled();
     expect(availabilityUpsertMock).not.toHaveBeenCalled();
   });
 
@@ -253,7 +267,7 @@ describe('setSelfAvailabilityAction (auditors/actions.ts) — audytor deklaruje 
   it('brak roli (null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' }]);
 
     const result = await setAuditorAvailability('aud-1', false);
 
@@ -315,12 +329,12 @@ describe('setSelfAvailabilityAction (auditors/actions.ts) — audytor deklaruje 
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
     availabilityUpsertMock.mockResolvedValue({ isAvailable: true });
 
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL, is_active: false, leave_status: 'ACTIVE' });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL, is_active: false, leave_status: 'ACTIVE' }]);
     await setAuditorAvailability('aud-1', true);
     const payloadWhenBlocked = availabilityUpsertMock.mock.calls[0][0];
 
     availabilityUpsertMock.mockClear();
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' }]);
     await setAuditorAvailability('aud-1', true);
     const payloadWhenActive = availabilityUpsertMock.mock.calls[0][0];
 
@@ -339,7 +353,7 @@ describe('setSelfAvailabilityAction (auditors/actions.ts) — audytor deklaruje 
   it('podwójne równoległe wywołanie tej samej deklaracji kieruje oba zapisy przez upsert po tym samym kluczu unikalnym', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
-    auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' }]);
     availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
 
     await Promise.all([
@@ -365,6 +379,7 @@ describe('setSelfAvailabilityAction (crews/actions.ts) — ekipa deklaruje włas
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
     const row = { id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' };
     crewFindUniqueMock.mockResolvedValue(row);
+    crewFindManyMock.mockResolvedValue([row]);
     availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
 
     const before = await prisma.zespoly_monterskie.findUnique({ where: { id: 'crew-1' } });
@@ -380,7 +395,7 @@ describe('setSelfAvailabilityAction (crews/actions.ts) — ekipa deklaruje włas
   it('AC3 — akcja nigdy nie wywołuje prisma.zespoly_monterskie.update (crews.update pozostaje wyłącznie admin)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' }]);
     availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
 
     const result = await setCrewAvailability('crew-1', false);
@@ -400,7 +415,7 @@ describe('setSelfAvailabilityAction (crews/actions.ts) — ekipa deklaruje włas
   it('próba zadeklarowania dostępności dla CUDZEGO rekordu ekipy jest odrzucona', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-own', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-own', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' }]);
 
     const result = await setCrewAvailability('crew-other-team', false);
 
@@ -419,12 +434,12 @@ describe('setSelfAvailabilityAction (crews/actions.ts) — ekipa deklaruje włas
   it('rola audytor (obcy zasób — to nie jej własna ekipa) jest odrzucona po stronie serwera', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' }]);
 
     const result = await setCrewAvailability('crew-1', false);
 
     expect(result.success).toBe(false);
-    expect(crewFindUniqueMock).not.toHaveBeenCalled();
+    expect(crewFindManyMock).not.toHaveBeenCalled();
     expect(availabilityUpsertMock).not.toHaveBeenCalled();
   });
 
@@ -438,7 +453,7 @@ describe('setSelfAvailabilityAction (crews/actions.ts) — ekipa deklaruje włas
   it('brak roli (null) jest odrzucony fail-closed dla ekipy', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
     getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
-    crewFindUniqueMock.mockResolvedValue({ id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' }]);
 
     const result = await setCrewAvailability('crew-1', false);
 
