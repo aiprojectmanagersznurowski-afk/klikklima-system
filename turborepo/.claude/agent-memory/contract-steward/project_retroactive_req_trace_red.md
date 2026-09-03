@@ -17,6 +17,10 @@ dopisanie siedmiu linii `// @REQ: <ID>` musi zrobić `test-author` w osobnej tur
 **Why:** SEC-AUTHZ-B2B-READS (2026-09-02) — `test-author` dostał instrukcję pisania testów bez
 `@REQ`, bo wymaganie miało powstać dopiero w Fazie 4 WO. Efekt: ~90 przechodzących testów,
 zerowe widoczne pokrycie i trzeci czerwony krok w bramce, którego przed moją zmianą nie było.
+Powtórzyło się identycznie przy SEC-EMAIL-UNIQUE (2026-09-03) — to nie był incydent, to jest
+domyślny skutek kolejności „testy przed rejestracją ID”. Uwaga praktyczna: `kk-trace --enforce`
+kończy się kodem 1, ale wypisuje naruszenie w środku długiej listy niepokrytych wymagań, więc
+`| tail` pokazuje `EXIT=0` z `tail`, nie z narzędzia. Sprawdzaj kod wyjścia bez potoku.
 
 **How to apply:** Przy planowaniu WO, w którym rejestracja ID idzie PO testach, uprzedź, że
 bramka zapali się na czerwono do czasu tagowania, i zaplanuj turę `test-author` jako ostatnią.
