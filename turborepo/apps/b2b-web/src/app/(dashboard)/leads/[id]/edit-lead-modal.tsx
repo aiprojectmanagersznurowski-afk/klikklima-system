@@ -105,7 +105,7 @@ export function EditLeadModal({ leadId, initialData, defaultOpen = false }: Edit
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Estymowana wycena (pln)</label>
+            <label className="text-sm font-medium">Estymowana wycena (PLN)</label>
             <input
               name="estimatedQuote"
               value={formData.estimatedQuote}

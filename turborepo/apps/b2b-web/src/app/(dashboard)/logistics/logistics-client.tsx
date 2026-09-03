@@ -157,13 +157,13 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
             )}
             <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
-                <tr className="bg-secondary/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider sticky top-0 z-10 shadow-xs">
+                <tr className="bg-secondary/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider sticky top-0 z-30 shadow-xs">
                   <th className="p-3.5 px-6">Numer LOG / Lead</th>
                   <th className="p-3.5 px-6">Klient & Adres montażu</th>
                   <th className="p-3.5 px-6">Sprzęt HVAC</th>
                   <th className="p-3.5 px-6">Termin & SLA</th>
                   <th className="p-3.5 px-6">Status Magazynu</th>
-                  <th className="p-3.5 px-6 text-right">Akcje</th>
+                  <th className="p-3.5 px-6 text-right sticky right-0 z-30 bg-secondary/50">Akcje</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -205,7 +205,7 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
                     return (
                       <tr
                         key={item.id}
-                        className={`hover:bg-secondary/30 transition-colors ${
+                        className={`group hover:bg-secondary/30 transition-colors ${
                           isUrgent ? "border-l-4 border-l-destructive bg-destructive/5" : isWarning ? "border-l-4 border-l-amber-500 bg-amber-500/5" : ""
                         }`}
                       >
@@ -252,7 +252,11 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <td
+                          className={`px-6 py-4 whitespace-nowrap text-right sticky right-0 z-20 group-hover:bg-secondary/30 ${
+                            isUrgent ? "bg-destructive/5" : isWarning ? "bg-amber-500/5" : "bg-card"
+                          }`}
+                        >
                           <div className="flex items-center justify-end gap-2">
                             {item.status === 'HARDWARE_IN_WAREHOUSE' && (
                               <Button

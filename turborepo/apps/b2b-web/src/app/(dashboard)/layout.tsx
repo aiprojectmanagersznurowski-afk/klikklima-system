@@ -10,13 +10,15 @@ import {
   ChevronDown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 
 type NavItem = {
   id: string;
   label: string;
   icon: any;
   href?: string;
-  subItems?: { id: string; label: string; href: string }[];
+  comingSoon?: boolean;
+  subItems?: { id: string; label: string; href: string; comingSoon?: boolean }[];
 };
 
 const navItems: NavItem[] = [
@@ -30,7 +32,7 @@ const navItems: NavItem[] = [
       { id: 'clients', label: 'Klienci', href: '/customers' },
       { id: 'installations', label: 'Instalacje', href: '/installations' },
       { id: 'services', label: 'Serwisy', href: '/services' },
-      { id: 'faults', label: 'Usterki', href: '/faults' },
+      { id: 'faults', label: 'Usterki', href: '/incidents' },
       { id: 'auditors', label: 'Audytorzy', href: '/auditors' },
       { id: 'crews', label: 'Zespoły', href: '/crews' },
       { id: 'cold_leads', label: 'Zimne leady', href: '/leads?bucket=cold' },
@@ -38,15 +40,15 @@ const navItems: NavItem[] = [
     ]
   },
   { id: 'logistics', label: 'Logistyka', icon: Box, href: '/logistics' },
-  { id: 'notifications', label: 'Centrum Powiadomień', icon: Bell, href: '/notifications' },
+  { id: 'notifications', label: 'Centrum Powiadomień', icon: Bell, href: '/notifications', comingSoon: true },
   {
     id: 'settings',
     label: 'Ustawienia',
     icon: Settings,
     subItems: [
       { id: 'exit_intent', label: 'Exit Intent', href: '/settings/exit-intent' },
-      { id: 'rbac', label: 'Użytkownicy i Uprawnienia', href: '/settings/rbac' },
-      { id: 'notifications_settings', label: 'Parametry powiadomień', href: '/settings/notifications' },
+      { id: 'rbac', label: 'Użytkownicy i Uprawnienia', href: '/settings/rbac', comingSoon: true },
+      { id: 'notifications_settings', label: 'Parametry powiadomień', href: '/settings/notifications', comingSoon: true },
     ]
   }
 ];
@@ -139,6 +141,23 @@ function SidebarNavigation({ collapsed, setCollapsed }: { collapsed: boolean, se
                   <ChevronDown className={cn("size-4 transition-transform duration-200 text-muted-foreground", isOpen && "rotate-180")} />
                 )}
               </button>
+            ) : item.comingSoon ? (
+              <div
+                aria-disabled="true"
+                title={collapsed ? `${item.label} (Wkrótce)` : undefined}
+                className={cn(
+                  "flex items-center gap-3 rounded-md text-sm font-medium w-full cursor-not-allowed text-muted-foreground/60",
+                  collapsed ? "justify-center py-2.5 px-0" : "justify-start py-2.5 px-3"
+                )}
+              >
+                <Icon className="size-4 shrink-0 text-muted-foreground/60" />
+                {!collapsed && (
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="truncate">{item.label}</span>
+                    <Badge variant="secondary" className="shrink-0">Wkrótce</Badge>
+                  </span>
+                )}
+              </div>
             ) : (
               <Link
                 href={item.href!}
@@ -161,14 +180,26 @@ function SidebarNavigation({ collapsed, setCollapsed }: { collapsed: boolean, se
               <div className="flex flex-col gap-1 pl-9 pr-2 mt-1 mb-2 animate-in slide-in-from-top-2 fade-in-50 duration-200">
                 {item.subItems!.map(sub => {
                   const isSubActive = isExactActive(sub.href);
+                  if (sub.comingSoon) {
+                    return (
+                      <div
+                        key={sub.id}
+                        aria-disabled="true"
+                        className="flex items-center justify-between gap-2 py-2 px-3 rounded-md text-[13px] font-medium text-muted-foreground/60 cursor-not-allowed"
+                      >
+                        <span className="truncate">{sub.label}</span>
+                        <Badge variant="secondary" className="shrink-0">Wkrótce</Badge>
+                      </div>
+                    );
+                  }
                   return (
                     <Link
                       key={sub.id}
                       href={sub.href}
                       className={cn(
                         "flex items-center py-2 px-3 rounded-md text-[13px] font-medium transition-colors",
-                        isSubActive 
-                          ? "bg-primary text-primary-foreground font-semibold shadow-sm" 
+                        isSubActive
+                          ? "bg-primary text-primary-foreground font-semibold shadow-sm"
                           : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                       )}
                     >
@@ -306,7 +337,7 @@ export default function DashboardLayout({
           <div className="ml-auto flex items-center gap-3">
             <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors rounded-md">
               <Bell className="size-5" />
-              <span className="absolute top-1.5 right-1.5 size-2 bg-destructive rounded-full ring-2 ring-card" />
+              {/* Odznaka nieprzeczytanych powiadomień usunięta — Centrum Powiadomień to placeholder, brak logiki liczenia. Przywrócić po zbudowaniu modułu. */}
             </button>
           </div>
         </header>

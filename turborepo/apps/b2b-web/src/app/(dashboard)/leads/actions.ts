@@ -478,6 +478,126 @@ export async function getLeads(options?: {
 }
 
 /**
+ * KPI-DASHBOARD: wersja `getLeads()` okrojona wyłącznie do `groupBy` po statusie —
+ * dashboard potrzebuje samych liczników lejka, nie pełnej strony wyników (leady,
+ * paginacja). Autoryzacja i zawężenie `audytor:own` identyczne jak w `getLeads()`
+ * (SEC-RLS-AUDITOR-SCOPE) — Prisma omija RLS, więc bramka musi żyć tutaj, nie tylko
+ * w funkcji-siostrze.
+ */
+export async function getLeadStageCounts(): Promise<Record<string, number>> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return {};
+  }
+
+  const access = actorRole ? can(actorRole, "leads", "read") : "no";
+  if (access !== "yes" && access !== "own") {
+    return {};
+  }
+
+  let scopeWhere: { audytor_id: string } | undefined;
+  if (access === "own") {
+    const { data: { user } } = await getCurrentUser();
+    if (!user?.email) {
+      return {};
+    }
+
+    const matches = await prisma.audytorzy.findMany({
+      where: { email: user.email },
+      select: { id: true, is_active: true },
+      take: 2,
+    });
+    if (matches.length !== 1 || matches[0].is_active === false) {
+      return {};
+    }
+    scopeWhere = { audytor_id: matches[0].id };
+  }
+
+  try {
+    const statusGroups = await prisma.leady.groupBy({
+      by: ['status'],
+      where: scopeWhere,
+      _count: {
+        id: true
+      }
+    });
+
+    const stageCounts = statusGroups.reduce((acc, curr) => {
+      if (curr.status) {
+        acc[curr.status] = curr._count.id;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    const allCount = Object.values(stageCounts).reduce((sum, c) => sum + c, 0);
+    stageCounts["ALL"] = allCount;
+
+    return stageCounts;
+  } catch (error) {
+    console.error("Failed to fetch lead stage counts:", error);
+    return {};
+  }
+}
+
+/**
+ * KPI-DASHBOARD: liczba leadów "opóźnionych" dla kafelka na dashboardzie. Odtwarza
+ * DOKŁADNIE warunek `isDelayed` z `leads-client.tsx` (status NEW_LEAD, ponad 24h od
+ * `created_at`) — nie jest to próg z `SLA` (kontrakt go nie definiuje), więc licznik
+ * musi pozostać spójny z JEDYNYM istniejącym miejscem tej definicji, zamiast tworzyć
+ * drugą, niezależną wersję progu "opóźniony" (dokładnie pułapka opisana w CLAUDE.md).
+ * Autoryzacja i zawężenie `audytor:own` identyczne jak w `getLeads()`/`getLeadStageCounts()`.
+ */
+export async function getDelayedNewLeadsCount(): Promise<number> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return 0;
+  }
+
+  const access = actorRole ? can(actorRole, "leads", "read") : "no";
+  if (access !== "yes" && access !== "own") {
+    return 0;
+  }
+
+  let scopeWhere: { audytor_id: string } | undefined;
+  if (access === "own") {
+    const { data: { user } } = await getCurrentUser();
+    if (!user?.email) {
+      return 0;
+    }
+
+    const matches = await prisma.audytorzy.findMany({
+      where: { email: user.email },
+      select: { id: true, is_active: true },
+      take: 2,
+    });
+    if (matches.length !== 1 || matches[0].is_active === false) {
+      return 0;
+    }
+    scopeWhere = { audytor_id: matches[0].id };
+  }
+
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return await prisma.leady.count({
+      where: {
+        status: "NEW_LEAD",
+        created_at: { lt: twentyFourHoursAgo },
+        ...scopeWhere,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to count delayed leads:", error);
+    return 0;
+  }
+}
+
+/**
  * Dozwolone przejścia statusów w lejku sprzedażowym.
  * Klucz = obecny status, wartość = lista dozwolonych statusów docelowych.
  */

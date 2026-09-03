@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Phone } from 'lucide-react';
 
 export function AuditorsTable({ auditors, onEdit, onDelete }: { auditors: any[], onEdit: (a: any) => void, onDelete: (id: string) => void }) {
   return (
@@ -50,9 +50,14 @@ export function AuditorsTable({ auditors, onEdit, onDelete }: { auditors: any[],
                   <div className="text-sm text-gray-900 font-medium">{auditor.nazwa_firmy || "-"}</div>
                   <div className="text-sm text-gray-500">NIP: {auditor.nip || "-"}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{auditor.email || "-"}</div>
-                  <div className="text-sm text-gray-500">{auditor.telefon || "-"}</div>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900 truncate max-w-[200px]" title={auditor.email || undefined}>
+                    {auditor.email || "-"}
+                  </div>
+                  <div className="text-sm text-gray-500 flex items-center gap-1">
+                    <Phone className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                    {auditor.telefon || "-"}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">

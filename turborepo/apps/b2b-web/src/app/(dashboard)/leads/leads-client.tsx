@@ -24,6 +24,7 @@ import { ArchiveLostDialog } from "./archive-lost-dialog";
 import { AssignCrewDialog } from "./assign-crew-dialog";
 import { can, type Role } from "@klikklima/contracts";
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog";
+import { getCompactPageNumbers, PAGE_ELLIPSIS } from "../customers/pagination-state";
 
 /**
  * SEC-LEADS-LIST-SCALARS: wyprowadzone bezpośrednio z rzeczywistego zwracanego typu
@@ -275,7 +276,7 @@ export function LeadsClient({
           )}
           <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
-                <tr className="bg-secondary/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider sticky top-0 z-10 shadow-xs">
+                <tr className="bg-secondary/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider sticky top-0 z-30 shadow-xs">
                   <th className="p-3 px-6">ID & Data wpłynięcia</th>
                   <th className="p-3 px-6">Klient & Adres</th>
                   {isShowingAll && <th className="p-3 px-6">Etap</th>}
@@ -283,7 +284,7 @@ export function LeadsClient({
                   <th className="p-3 px-6">Audytor</th>
                   <th className="p-3 px-6">Termin audytu</th>
                   <th className="p-3 px-6">Ekipa montażowa</th>
-                  <th className="p-3 px-6 text-right">Akcje</th>
+                  <th className="p-3 px-6 text-right sticky right-0 z-30 bg-secondary/50">Akcje</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -309,8 +310,22 @@ export function LeadsClient({
 
                     const actions = lead.status ? CONTEXT_ACTIONS[lead.status as LeadStatus] || [] : [];
 
+                    const rowBg = isDelayed
+                      ? "bg-destructive/10 group-hover:bg-destructive/15"
+                      : "bg-card group-hover:bg-secondary/30";
+
                     return (
-                      <tr key={lead.id} className={`hover:bg-secondary/30 transition-colors ${isDelayed ? "bg-destructive/10 hover:bg-destructive/15" : ""}`}>
+                      <tr
+                        key={lead.id}
+                        onClick={() => {
+                          // MAJOR fix (reviewer): jeżeli użytkownik ma zaznaczony tekst
+                          // (np. próbował przeciągnięciem myszki zaznaczyć e-mail/numer leada),
+                          // nie traktujemy tego jako intencji nawigacji do szczegółów.
+                          if (window.getSelection()?.toString()) return;
+                          router.push(`/leads/${lead.id}`);
+                        }}
+                        className={`group cursor-pointer hover:bg-secondary/30 transition-colors ${isDelayed ? "bg-destructive/10 hover:bg-destructive/15" : ""}`}
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold font-mono tracking-tight text-foreground">#{lead.id.substring(0, 8)}</span>
@@ -334,9 +349,9 @@ export function LeadsClient({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-sm font-semibold text-foreground">{estimatedQuote}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
-                            <DropdownMenuTrigger 
+                            <DropdownMenuTrigger
                               className={`h-8 px-2 flex items-center justify-center gap-2 rounded-md text-sm transition-colors focus:outline-none ${auditor ? "hover:bg-secondary text-foreground border border-transparent font-medium" : "text-primary border border-primary/20 bg-primary/5 hover:bg-primary/10 font-medium"}`}
                             >
                               {auditor ? (
@@ -409,14 +424,17 @@ export function LeadsClient({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-sm text-muted-foreground">{teamName}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <td
+                          className={`px-6 py-4 whitespace-nowrap text-right sticky right-0 z-20 transition-colors ${rowBg}`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="flex items-center justify-end gap-1">
-                            <Link href={`/leads/${lead.id}`} target="_blank" rel="noopener noreferrer">
-                              <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-primary" title="Otwórz szczegóły">
+                            <Link href={`/leads/${lead.id}`} onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" className="size-8 text-muted-foreground hover:text-primary" title="Otwórz szczegóły" aria-label="Otwórz szczegóły leada">
                                 <ExternalLink size={16} />
                               </Button>
                             </Link>
-                            
+
                             {(() => {
                               const isColdLead = lead.status === "QUOTE_REJECTED";
                               const showColdActions = isColdLead && canUpdateLeads;
@@ -529,15 +547,26 @@ export function LeadsClient({
             </button>
             
             <div className="flex gap-1">
-               {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                 <button
-                   key={p}
-                   onClick={() => startTransition(() => router.push(buildPageUrl(initialStatus, p)))}
-                   className={`w-8 h-8 flex items-center justify-center rounded-md text-sm transition-colors ${p === currentPage ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-secondary'}`}
-                 >
-                   {p}
-                 </button>
-               ))}
+               {getCompactPageNumbers(currentPage, totalPages).map((entry, idx) =>
+                 entry === PAGE_ELLIPSIS ? (
+                   <span
+                     key={`ellipsis-${idx}`}
+                     className="w-8 h-8 flex items-center justify-center text-sm text-muted-foreground select-none"
+                     aria-hidden="true"
+                   >
+                     …
+                   </span>
+                 ) : (
+                   <button
+                     key={entry}
+                     onClick={() => startTransition(() => router.push(buildPageUrl(initialStatus, entry)))}
+                     aria-current={entry === currentPage ? "page" : undefined}
+                     className={`w-8 h-8 flex items-center justify-center rounded-md text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${entry === currentPage ? 'bg-primary text-primary-foreground font-semibold shadow-xs' : 'text-muted-foreground hover:bg-secondary'}`}
+                   >
+                     {entry}
+                   </button>
+                 )
+               )}
             </div>
 
             <button

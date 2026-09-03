@@ -18,6 +18,18 @@ const optionalTrimmedString = z
   .optional()
   .transform((v) => (v === undefined || v === "" ? null : v))
 
+// Nie istnieje w repo ani w dokumentacji architektury jednoznacznie zdefiniowany
+// format numeru certyfikatu F-Gaz (różne formaty zależnie od okresu wydania
+// i instytucji certyfikującej) — patrz docs/architecture/b2b_crm_specifications.md
+// i database_model.md, które mówią wyłącznie o "numerze wpisu". Dlatego to NIE
+// jest próba dokładnej walidacji formatu, tylko odsianie oczywistego szumu
+// (np. "vdfg", "7a" widziane na produkcji): min. 3 znaki po trim i przynajmniej
+// jedna cyfra. Realny, poprawny numer certyfikatu zawsze ma część cyfrową.
+const optionalFgazCertificateString = optionalTrimmedString.refine(
+  (v) => v === null || (v.length >= 3 && /\d/.test(v)),
+  "Niepoprawny numer certyfikatu F-Gaz (min. 3 znaki, musi zawierać cyfrę).",
+)
+
 const emptyToNullInt = z
   .string()
   .optional()
@@ -65,7 +77,7 @@ export const auditorSchema = z
     adres: optionalTrimmedString,
     nazwa_firmy: optionalTrimmedString,
     nip: optionalTrimmedString,
-    certyfikat_fgaz: optionalTrimmedString,
+    certyfikat_fgaz: optionalFgazCertificateString,
     fgaz_valid_until: emptyToNullDate,
     sep_valid_until: emptyToNullDate,
     doswiadczenie_hvac_lata: emptyToNullInt,

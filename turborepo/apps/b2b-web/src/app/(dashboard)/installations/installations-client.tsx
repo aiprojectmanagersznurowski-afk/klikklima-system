@@ -95,13 +95,13 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
             )}
             <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
-                <tr className="bg-secondary/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider sticky top-0 z-10 shadow-xs">
+                <tr className="bg-secondary/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider sticky top-0 z-30 shadow-xs">
                   <th className="p-3.5 px-6">Klient & Adres</th>
                   <th className="p-3.5 px-6">Data Instalacji</th>
                   <th className="p-3.5 px-6">Przypisana Ekipa</th>
                   <th className="p-3.5 px-6">Sprzęt</th>
                   <th className="p-3.5 px-6">Status</th>
-                  <th className="p-3.5 px-6 text-right">Akcje</th>
+                  <th className="p-3.5 px-6 text-right sticky right-0 z-30 bg-secondary/50">Akcje</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -117,10 +117,10 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
                     const isLate = isTodayInstall && item.status !== "COMPLETED" && new Date().getHours() >= 16;
                     
                     return (
-                      <tr 
-                        key={item.id} 
-                        className={`hover:bg-secondary/30 transition-colors ${
-                          isLate ? "border-l-4 border-l-amber-500 bg-amber-500/5" : 
+                      <tr
+                        key={item.id}
+                        className={`group hover:bg-secondary/30 transition-colors ${
+                          isLate ? "border-l-4 border-l-amber-500 bg-amber-500/5" :
                           isTodayInstall ? "border-l-4 border-l-primary bg-primary/5" : ""
                         }`}
                       >
@@ -185,7 +185,11 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <td
+                          className={`px-6 py-4 whitespace-nowrap text-right sticky right-0 z-20 group-hover:bg-secondary/30 ${
+                            isLate ? "bg-amber-500/5" : isTodayInstall ? "bg-primary/5" : "bg-card"
+                          }`}
+                        >
                           <div className="flex items-center justify-end gap-2">
                             <DropdownMenu>
                               <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" disabled={isPending}>
