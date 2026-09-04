@@ -14,3 +14,4 @@
 - [Audyt spójności wizualnej b2b-web — kontekst](project_ui_consistency_audit_b2b.md) — wspólne prymitywy StatusPill/shortId/EMPTY_VALUE/--radius-control, gdzie zwykle chowa się dryf.
 - [Technika recenzji wielobatchowej](feedback_cross_batch_consistency_checks.md) — grep wspólnego wzorca przez wszystkie dotknięte pliki naraz, nie czytanie diffów osobno.
 - [SEC-AUDIT-LOG-MANUAL-STATUS Fala A — przeszła czysto](project_sec_audit_log_manual_status_wave_a.md) — dlaczego klasyfikator nieużywany w archiveLost/returnToFunnel jest OK; co inaczej sprawdzić w Fali B/C.
+- [Fałszywy test TOCTOU (mockResolvedValueOnce)](feedback_toctou_mock_sequencing.md) — testy współbieżności oparte na kolejności mocków przechodzą nawet bez FOR UPDATE w kodzie; zawsze sprawdź produkcyjny SELECT ... FOR UPDATE, nie ufaj deklaracji testu.

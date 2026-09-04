@@ -51,6 +51,7 @@ const {
   getCurrentActorRoleMock,
   getCurrentUserMock,
   deleteLeadActionMock,
+  auditLogCreateMock,
 } = vi.hoisted(() => ({
   leadUpdateMock: vi.fn(),
   leadFindUniqueMock: vi.fn(),
@@ -66,6 +67,7 @@ const {
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
   deleteLeadActionMock: vi.fn(),
+  auditLogCreateMock: vi.fn(),
 }));
 
 vi.mock('@repo/database', () => ({
@@ -88,6 +90,10 @@ vi.mock('@repo/database', () => ({
       findFirst: logisticsFindFirstMock,
       update: logisticsUpdateMock,
     },
+    // SEC-AUDIT-LOG-MANUAL-STATUS (Fala B): bypassLogisticsOrder/rollbackLogisticsOrder
+    // pisza wpis audytowy WEWNATRZ tej samej transakcji co zmiane statusu — mockowany
+    // tu i w `makeTxImplementation()`, zeby callback $transaction sie nie wywalil.
+    auditLog: { create: auditLogCreateMock },
     $queryRaw: queryRawMock,
     $transaction: transactionMock,
   },
@@ -136,6 +142,14 @@ const VALID_INPUT = {
   legalBasis: AUDIT_REQUIREMENTS.legalBases[0],
 };
 
+// Mechanicznie zaktualizowane pod SEC-AUDIT-LOG-MANUAL-STATUS (Fala B):
+// bypassLogisticsOrder/rollbackLogisticsOrder wymagaja odtad obowiazkowego
+// `reason: string` (>=10 znakow po trim, `deleteJustificationSchema.shape.justification`).
+// Ten plik dowodzi WYLACZNIE bramki roli tych funkcji (efekty audytu pokrywa
+// `sec-audit-log-manual-status-wave-b.test.ts`), wiec VALID_REASON jest tu
+// przekazywany bez wlasnej walidacji progu.
+const VALID_REASON = 'Uzasadnienie operatora na potrzeby testu bramki roli.';
+
 const LEADS_UPDATE_ALLOWED = ROLES.filter((r) => can(r, 'leads', 'update') === 'yes');
 const LEADS_UPDATE_DENIED = ROLES.filter((r) => can(r, 'leads', 'update') !== 'yes');
 
@@ -156,6 +170,7 @@ function makeTxImplementation() {
         update: instalacjeUpdateMock,
         findMany: instalacjeFindManyMock,
       },
+      auditLog: { create: auditLogCreateMock },
       $queryRaw: queryRawMock,
     });
 }
@@ -251,9 +266,23 @@ describe('shipLogisticsOrder — bramka roli, dwa zasoby w jednej transakcji (SE
 describe('bypassLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () => {
   beforeEach(() => {
     leadUpdateMock.mockReset();
+    leadFindUniqueMock.mockReset();
+    transactionMock.mockReset();
+    auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
+    getCurrentUserMock.mockReset();
     getCurrentActorRoleMock.mockResolvedValue('admin');
+    // Fail-closed domyślny: ten plik nie testuje ścieżek zależnych od e-maila
+    // poza jedną kontrolą pozytywną poniżej, która nadpisuje ten mock lokalnie.
+    getCurrentUserMock.mockResolvedValue({ data: { user: null } });
+    transactionMock.mockImplementation(makeTxImplementation());
+    // Wymagane wyłącznie przez kontrolę pozytywną (SEC-AUDIT-LOG-MANUAL-STATUS,
+    // Fala B): bypassLogisticsOrder odrzuca bypass dla statusu innego niż
+    // HARDWARE_IN_WAREHOUSE — testy odmowy roli kończą się przed tym sprawdzeniem,
+    // więc wartość domyślna jest tu neutralna (nieużywana) dla nich.
+    leadFindUniqueMock.mockResolvedValue({ id: 'lead-1', status: 'HARDWARE_IN_WAREHOUSE' });
+    auditLogCreateMock.mockResolvedValue({});
   });
 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
@@ -262,7 +291,7 @@ describe('bypassLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
     async (role) => {
       getCurrentActorRoleMock.mockResolvedValue(role);
 
-      const result = await bypassLogisticsOrder('lead-1');
+      const result = await bypassLogisticsOrder('lead-1', VALID_REASON);
 
       expect(leadUpdateMock).not.toHaveBeenCalled();
       expect(result?.success).toBe(false);
@@ -274,7 +303,7 @@ describe('bypassLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
-    const result = await bypassLogisticsOrder('lead-1');
+    const result = await bypassLogisticsOrder('lead-1', VALID_REASON);
 
     expect(leadUpdateMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
@@ -285,7 +314,7 @@ describe('bypassLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
   it('blad zapytania o role daje odmowe, nie nieobslugowany wyjatek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('blad zapytania o role'));
 
-    const result = await bypassLogisticsOrder('lead-1');
+    const result = await bypassLogisticsOrder('lead-1', VALID_REASON);
 
     expect(leadUpdateMock).not.toHaveBeenCalled();
     expect(result).toMatchObject({ success: false });
@@ -295,9 +324,10 @@ describe('bypassLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
   it.each(LEADS_UPDATE_ALLOWED)('rola %s jest dozwolona, leady.update faktycznie wywolane', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
+    getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'operator@klikklima.pl' } } });
     leadUpdateMock.mockResolvedValue({});
 
-    const result = await bypassLogisticsOrder('lead-1');
+    const result = await bypassLogisticsOrder('lead-1', VALID_REASON);
 
     expect(result).toEqual({ success: true });
     expect(leadUpdateMock).toHaveBeenCalled();
@@ -308,7 +338,7 @@ describe('bypassLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
   it('odmowa ma jawny, odroznialny ksztalt (obiekt z success:false), nie wyjatek ani void', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
 
-    const result = await bypassLogisticsOrder('lead-1');
+    const result = await bypassLogisticsOrder('lead-1', VALID_REASON);
 
     expect(result).toEqual(expect.objectContaining({ success: false }));
     expect(typeof result?.error).toBe('string');
@@ -401,9 +431,14 @@ describe('rollbackLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () 
     instalacjeFindManyMock.mockReset();
     queryRawMock.mockReset();
     transactionMock.mockReset();
+    auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
+    getCurrentUserMock.mockReset();
     getCurrentActorRoleMock.mockResolvedValue('admin');
+    // Fail-closed domyślny: nadpisywany lokalnie w kontroli pozytywnej poniżej.
+    getCurrentUserMock.mockResolvedValue({ data: { user: null } });
+    auditLogCreateMock.mockResolvedValue({});
     transactionMock.mockImplementation(makeTxImplementation());
     // Lead w stanie z zakresu T10-T13 (`funnel.contract.mjs`), zeby
     // findTransition(status, 'rollback') faktycznie znalazlo przejscie — ten plik
@@ -432,7 +467,7 @@ describe('rollbackLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () 
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
-    const result = await rollbackLogisticsOrder('lead-1');
+    const result = await rollbackLogisticsOrder('lead-1', VALID_REASON);
 
     expect(leadUpdateMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
@@ -443,7 +478,7 @@ describe('rollbackLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () 
   it('blad zapytania o role daje odmowe, nie nieobslugowany wyjatek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('blad zapytania o role'));
 
-    const result = await rollbackLogisticsOrder('lead-1');
+    const result = await rollbackLogisticsOrder('lead-1', VALID_REASON);
 
     expect(leadUpdateMock).not.toHaveBeenCalled();
     expect(result).toMatchObject({ success: false });
@@ -453,6 +488,7 @@ describe('rollbackLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () 
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
   it.each(LEADS_UPDATE_ALLOWED)('rola %s jest dozwolona, leady.update faktycznie wywolane', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
+    getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'operator@klikklima.pl' } } });
     leadUpdateMock.mockResolvedValue({});
 
     const result = await rollbackLogisticsOrder('lead-1', 'uszkodzona paczka');
@@ -466,7 +502,7 @@ describe('rollbackLogisticsOrder — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () 
   it('odmowa ma jawny, odroznialny ksztalt (obiekt z success:false), nie wyjatek ani void', async () => {
     getCurrentActorRoleMock.mockResolvedValue('audytor');
 
-    const result = await rollbackLogisticsOrder('lead-1');
+    const result = await rollbackLogisticsOrder('lead-1', VALID_REASON);
 
     expect(result).toEqual(expect.objectContaining({ success: false }));
     expect(typeof result?.error).toBe('string');
@@ -531,7 +567,7 @@ describe('shipLogisticsOrder/bypassLogisticsOrder/rollbackLogisticsOrder — kon
     vi.resetModules();
     const { bypassLogisticsOrder: patchedBypass } = await import('../src/app/(dashboard)/logistics/actions');
 
-    const result = await patchedBypass('lead-1');
+    const result = await patchedBypass('lead-1', VALID_REASON);
 
     expect(result?.success).toBe(false);
     expect(leadUpdateMock).not.toHaveBeenCalled();

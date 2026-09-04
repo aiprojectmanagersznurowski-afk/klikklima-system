@@ -45,3 +45,17 @@ blokadę za `findUnique` przechodził 633/633).
 
 Powiązane: [[reviewer-mutation-harness-scratchpad]] (pamięć roli `reviewer`, ten sam
 mechanizm), [[feedback_mutation_proof_required]].
+
+## Antywzorzec: fałszywa "współbieżność" przez `mockResolvedValueOnce`+`Promise.all`
+
+Test opisany jako "dwa równoległe wywołania kończą się jednym sukcesem", zbudowany przez
+`someMock.mockResolvedValueOnce(A).mockResolvedValueOnce(B)` + `Promise.all([fn(), fn()])`,
+NIE dowodzi niczego o blokadzie bazy (`FOR UPDATE`) — to tylko deterministyczna kolejność
+rozwiązywania mocków w silniku JS. Taki test przechodzi identycznie z i bez blokady wiersza
+(znaleziono przez `reviewer` 2026-09-04 w `sec-audit-log-manual-status-wave-b.test.ts`, AC8,
+`bypassLogisticsOrder`). Właściwy zamiennik: wzorzec `BLOKADA-LEADY`/`AC-A6` z
+`logistics-rollback-effects.test.ts` — assercja na TREŚĆ pierwszego wywołania
+`tx.$queryRaw` (regex `/FOR UPDATE/i` + nazwa tabeli) ORAZ `invocationCallOrder` pokazujący,
+że ta blokada poprzedza `findUnique`/`update`/`auditLog.create`. Potwierdzone mutacyjnie:
+mutant usuwający `FOR UPDATE` i mutant przenoszący blokadę ZA `tx.leady.update` oba zabijają
+WYŁĄCZNIE tę jedną asercję, reszta 39 testów zostaje zielona.

@@ -49,6 +49,7 @@ const {
   txInstalacjeUpdateManyMock,
   txQueryRawMock,
   txLeadFindUniqueMock,
+  txAuditLogCreateMock,
   transactionMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
@@ -68,6 +69,7 @@ const {
   txInstalacjeUpdateManyMock: vi.fn(),
   txQueryRawMock: vi.fn(),
   txLeadFindUniqueMock: vi.fn(),
+  txAuditLogCreateMock: vi.fn(),
   transactionMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
@@ -411,13 +413,17 @@ describe('rollbackLogisticsOrder — wpięcie releaseCrewSlot + suspendLogistics
   // do TEGO SAMEGO obiektu transakcyjnego, a nie na `prisma` bezpośrednio / po zamknięciu
   // transakcji. Znacznik `__txId` jest tylko czytelnym potwierdzeniem — realny dowód to
   // porównanie `mock.contexts` (this-binding wywołania) z `lastTx.leady`/`lastTx.instalacje`.
-  let lastTx: { __txId: string; leady: unknown; instalacje: unknown; $queryRaw: unknown } | null = null;
+  let lastTx: { __txId: string; leady: unknown; instalacje: unknown; auditLog: unknown; $queryRaw: unknown } | null = null;
 
   function makeTx() {
     lastTx = {
       __txId: 'the-one-transaction',
       leady: { findUnique: txLeadFindUniqueMock, update: txLeadUpdateMock },
       instalacje: { update: txInstalacjeUpdateMock, updateMany: txInstalacjeUpdateManyMock },
+      // SEC-AUDIT-LOG-MANUAL-STATUS (Fala B): rollbackLogisticsOrder pisze wpis
+      // audytowy WEWNĄTRZ tej samej transakcji co zmianę statusu — bez tego mocka
+      // callback $transaction wywala się na `tx.auditLog.create is not a function`.
+      auditLog: { create: txAuditLogCreateMock },
       $queryRaw: txQueryRawMock,
     };
     return lastTx;
@@ -436,11 +442,18 @@ describe('rollbackLogisticsOrder — wpięcie releaseCrewSlot + suspendLogistics
     txInstalacjeUpdateMock.mockReset();
     txInstalacjeUpdateManyMock.mockReset();
     txQueryRawMock.mockReset();
+    txAuditLogCreateMock.mockReset();
     transactionMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
+    getCurrentUserMock.mockReset();
 
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
+    // SEC-AUDIT-LOG-MANUAL-STATUS (Fala B): rollbackLogisticsOrder odrzuca
+    // fail-closed bez e-maila zresolwowanego przez getCurrentUser() — ten opis
+    // dowodzi efektów rollbacku (nie audytu), więc mail jest tu neutralnym stałym
+    // fixture'em, żeby dotrzeć do logiki, którą faktycznie testujemy.
+    getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'operator@klikklima.pl' } } });
     transactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) => cb(makeTx()));
     prismaLeadFindUniqueMock.mockResolvedValue({ id: 'lead-1', status: 'HARDWARE_IN_TRANSIT', data_rezerwacji: new Date(), logistics_sla_paused_at: null });
     txLeadUpdateMock.mockResolvedValue({});
@@ -448,6 +461,7 @@ describe('rollbackLogisticsOrder — wpięcie releaseCrewSlot + suspendLogistics
     txQueryRawMock.mockResolvedValue([{ id: 'inst-1' }]);
     txInstalacjeUpdateMock.mockResolvedValue({});
     txInstalacjeUpdateManyMock.mockResolvedValue({ count: 1 });
+    txAuditLogCreateMock.mockResolvedValue({});
   });
 
   // AC-A1: jedna transakcja obejmuje zmianę statusu leada i zwolnienie slotu, a

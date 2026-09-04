@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache"
 import { differenceInDays, startOfDay } from "date-fns"
 import { LeadStatus } from "@repo/database"
 import { can, findTransition } from "@klikklima/contracts"
-import { getCurrentActorRole } from "../../../utils/supabase/server"
+import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server"
 import { deleteLeadAction } from "../leads/actions"
-import type { DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
+import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
 import { releaseCrewSlot, suspendLogisticsSla } from "./rollback-effects"
 import type { TriageAnswers } from "@/lib/triage-answers"
 import { shortId } from "../../../lib/format-id"
@@ -141,7 +141,14 @@ export async function shipLogisticsOrder(leadId: string, trackingNumber?: string
   return { success: true };
 }
 
-export async function bypassLogisticsOrder(leadId: string): Promise<{ success: boolean; error?: string }> {
+/**
+ * SEC-AUDIT-LOG-MANUAL-STATUS (Fala B): T07 (deliverWithCrew, `override: true`) jest
+ * ręczne przez K4 — jedyne przejście STAGE->STAGE, którego nie łapią K1/K2/K3. Każde
+ * użycie wymaga uzasadnienia operatora i wpisu audytowego w TEJ SAMEJ transakcji co
+ * zmiana statusu; `legalBasis` nie jest wybierany przez operatora (D4 wariant (b)) —
+ * serwer ustawia stałą `'OTHER'`.
+ */
+export async function bypassLogisticsOrder(leadId: string, reason: string): Promise<{ success: boolean; error?: string }> {
   let actorRole;
   try {
     actorRole = await getCurrentActorRole();
@@ -153,13 +160,67 @@ export async function bypassLogisticsOrder(leadId: string): Promise<{ success: b
     return { success: false, error: "Brak uprawnień do zmiany statusu zamówienia." };
   }
 
-  // Przejście z Magazynu -> Oczekuje instalacji (z pominięciem kuriera)
-  await prisma.leady.update({
-    where: { id: leadId },
-    data: {
-      status: LeadStatus.AWAITING_INSTALLATION,
-    },
-  });
+  let actorEmail: string | undefined;
+  try {
+    const {
+      data: { user },
+    } = await getCurrentUser();
+    actorEmail = user?.email ?? undefined;
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error);
+    return { success: false, error: "Nie udało się zweryfikować uprawnień." };
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do zmiany statusu zamówienia." };
+  }
+
+  const parsedReason = deleteJustificationSchema.shape.justification.safeParse(reason);
+  if (!parsedReason.success) {
+    return { success: false, error: "Nieprawidłowe uzasadnienie." };
+  }
+  const justification = parsedReason.data;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Blokada wiersza leada (pułapka 4 z CLAUDE.md): pod domyślnym poziomem
+      // izolacji Postgresa (READ COMMITTED) sam `findUnique` wewnątrz transakcji
+      // NIE daje żadnej gwarancji — dwie równoległe transakcje mogą obie odczytać
+      // ten sam stary status, zanim którakolwiek zatwierdzi zapis. `SELECT ...
+      // FOR UPDATE` serializuje dostęp do TEGO wiersza między równoległymi
+      // wywołaniami bypassu (wzorzec identyczny z `rollbackLogisticsOrder`).
+      await tx.$queryRaw<{ id: string; status: string }[]>`
+        SELECT id, status FROM leady WHERE id = ${leadId}::uuid FOR UPDATE
+      `;
+
+      const lead = await tx.leady.findUnique({ where: { id: leadId } });
+      if (!lead || lead.status !== LeadStatus.HARDWARE_IN_WAREHOUSE) {
+        throw new Error("Bypass niedostępny dla bieżącego statusu leada.");
+      }
+
+      // Przejście z Magazynu -> Oczekuje instalacji (z pominięciem kuriera)
+      await tx.leady.update({
+        where: { id: leadId },
+        data: {
+          status: LeadStatus.AWAITING_INSTALLATION,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          operation: 'manual_status_change',
+          resource: 'leads',
+          recordId: leadId,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis: 'OTHER',
+        },
+      });
+    });
+  } catch (error) {
+    console.error("Failed to bypass logistics order:", error);
+    return { success: false, error: "Nie udało się zmienić statusu zamówienia." };
+  }
 
   revalidatePath('/logistics');
   revalidatePath('/leads');
@@ -214,7 +275,7 @@ export async function markAsDelivered(leadId: string): Promise<{ success: boolea
  */
 class RollbackDomainError extends Error {}
 
-export async function rollbackLogisticsOrder(leadId: string, reason?: string): Promise<{ success: boolean; error?: string }> {
+export async function rollbackLogisticsOrder(leadId: string, reason: string): Promise<{ success: boolean; error?: string }> {
   let actorRole;
   try {
     actorRole = await getCurrentActorRole();
@@ -225,6 +286,26 @@ export async function rollbackLogisticsOrder(leadId: string, reason?: string): P
   if (!actorRole || can(actorRole, "leads", "update") !== "yes" || can(actorRole, "shipments", "update") !== "yes") {
     return { success: false, error: "Brak uprawnień do rollbacku zamówienia." };
   }
+
+  let actorEmail: string | undefined;
+  try {
+    const {
+      data: { user },
+    } = await getCurrentUser();
+    actorEmail = user?.email ?? undefined;
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error);
+    return { success: false, error: "Nie udało się zweryfikować uprawnień." };
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do rollbacku zamówienia." };
+  }
+
+  const parsedReason = deleteJustificationSchema.shape.justification.safeParse(reason);
+  if (!parsedReason.success) {
+    return { success: false, error: "Nieprawidłowe uzasadnienie." };
+  }
+  const justification = parsedReason.data;
 
   // Sprawdzenie wstępne — szybka odmowa dla oczywistych przypadków (lead
   // nieistniejący, status poza zakresem T10-T13), zanim w ogóle otworzymy
@@ -286,7 +367,19 @@ export async function rollbackLogisticsOrder(leadId: string, reason?: string): P
         data: {
           status: transition.to,
           bucket_entered_at: new Date(),
-          notatki_wewnetrzne: reason ? `Rollback z logistyki: ${reason}` : undefined,
+          notatki_wewnetrzne: `Rollback z logistyki: ${justification}`,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          operation: 'manual_status_change',
+          resource: 'leads',
+          recordId: leadId,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis: 'OTHER',
         },
       });
 

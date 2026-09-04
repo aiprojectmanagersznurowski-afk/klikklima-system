@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
+import { ReasonJustificationDialog } from "@/components/reason-justification-dialog"
 import { EMPTY_VALUE } from "@/lib/empty-value"
 import { formatDate } from "@/lib/format-date"
 
@@ -22,6 +23,8 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
   const [statusFilter, setStatusFilter] = useState<string>("ALL")
   const [isPending, startTransition] = useTransition()
   const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
+  const [bypassDialogId, setBypassDialogId] = useState<string | null>(null)
+  const [rollbackDialogId, setRollbackDialogId] = useState<string | null>(null)
 
   const handleDelete = (id: string) => {
     setDeleteDialogId(id);
@@ -290,7 +293,7 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
                                 <DropdownMenuSeparator />
                                 
                                 {item.status === 'HARDWARE_IN_WAREHOUSE' && (
-                                  <DropdownMenuItem onClick={() => handleAction(item.leadId, "Dostawa z ekipą (Bypass)", () => bypassLogisticsOrder(item.leadId))}>
+                                  <DropdownMenuItem onClick={() => setBypassDialogId(item.leadId)}>
                                     <Truck className="mr-2 size-4 text-primary" />
                                     <span>Dostawa z ekipą (Bypass)</span>
                                   </DropdownMenuItem>
@@ -304,14 +307,9 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
                                 )}
 
                                 {item.status !== 'ROLLBACK_RESCHEDULING' && (
-                                  <DropdownMenuItem 
+                                  <DropdownMenuItem
                                     className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                    onClick={() => {
-                                      const reason = prompt("Podaj powód Rollbacku (awaria sprzętu, zwrot itp.):", "Problem magazynowy");
-                                      if (reason !== null) {
-                                        handleAction(item.leadId, "Rollback", () => rollbackLogisticsOrder(item.leadId, reason));
-                                      }
-                                    }}
+                                    onClick={() => setRollbackDialogId(item.leadId)}
                                   >
                                     <RotateCcw className="mr-2 size-4" />
                                     <span>Wycofaj / Rollback</span>
@@ -352,6 +350,38 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
           onClose={() => setDeleteDialogId(null)}
           onSuccess={() => {
             window.location.reload();
+          }}
+        />
+      )}
+
+      {bypassDialogId && (
+        <ReasonJustificationDialog
+          title="Dostawa z ekipą (Bypass)"
+          description="Pominięcie kuriera i przekazanie sprzętu bezpośrednio ekipie montażowej wymaga uzasadnienia — zdarzenie trafi do dziennika audytowego."
+          confirmLabel="Potwierdź bypass"
+          pendingLabel="Przetwarzanie..."
+          placeholder="Min. 10 znaków, np. pilny montaż, brak kuriera na trasie..."
+          onConfirm={(reason) => bypassLogisticsOrder(bypassDialogId, reason)}
+          onClose={() => setBypassDialogId(null)}
+          onSuccess={() => {
+            setBypassDialogId(null);
+            alert('Akcja "Dostawa z ekipą (Bypass)" wykonana pomyślnie');
+          }}
+        />
+      )}
+
+      {rollbackDialogId && (
+        <ReasonJustificationDialog
+          title="Wycofaj / Rollback"
+          description="Cofnięcie zamówienia (awaria sprzętu, zwrot itp.) wymaga uzasadnienia — zdarzenie trafi do dziennika audytowego."
+          confirmLabel="Potwierdź rollback"
+          pendingLabel="Przetwarzanie..."
+          placeholder="Min. 10 znaków, np. awaria sprzętu, problem magazynowy..."
+          onConfirm={(reason) => rollbackLogisticsOrder(rollbackDialogId, reason)}
+          onClose={() => setRollbackDialogId(null)}
+          onSuccess={() => {
+            setRollbackDialogId(null);
+            alert('Akcja "Rollback" wykonana pomyślnie');
           }}
         />
       )}
