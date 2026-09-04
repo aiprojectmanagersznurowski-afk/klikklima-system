@@ -16,5 +16,5 @@
 - [Weryfikacja premisy przed baseline](feedback_verify_premise_before_baseline.md) — „wszystko w testach" bywa nieścisłe; rozbijam deltę per plik przed --update-baseline.
 - [Retroaktywne ID zapala kk-trace](project_retroactive_req_trace_red.md) — rejestracja po testach = czerwona bramka, bo tagi @REQ może dopisać tylko test-author.
 - [Steward nie ma prawa zapisu do tests/](project_steward_cannot_write_tests.md) — statyczny test zamrażający migrację to zadanie test-author, mimo mylącego precedensu w historii.
-- [Sprzeczność T08: klasyfikator K1 vs decyzja D1](project_t08_classifier_vs_d1_tension.md) — markDelivered ma actor SYSTEM, więc K1 je łapie, a człowiek je wykluczył; wybuchnie w fali C.
+- [T08: K1 vs D1 — rozstrzygnięte polem manualEquivalent](project_t08_classifier_vs_d1_tension.md) — dwie flagi o przeciwnych znakach (override dodaje, manualEquivalent odejmuje K1); implementacja po stronie apps/.
 - [Ziarnistość ID wymagań](feedback_requirement_id_granularity.md) — jedno ID na encję obejmujące create i update, podział po encji, nie po operacji.

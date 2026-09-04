@@ -89,10 +89,17 @@ export interface LeadTransition {
    * contracts/funnel.contract.mjs. Nieobecne dla przejść normalnych.
    */
   override?: true;
+  /**
+   * Odwrotność override: pole actor opisuje tu wyłącznie ścieżkę typową (automat), a istnieje
+   * równoważna, w pełni legalna ścieżka ręczna operatora panelu. Anuluje kryterium K1
+   * klasyfikacji „ręczna zmiana statusu" — i tylko je; K2/K3/K4 działają dalej.
+   * Patrz contracts/funnel.contract.mjs. Nieobecne dla przejść normalnych.
+   */
+  manualEquivalent?: true;
 }
 
 export const TRANSITIONS: readonly LeadTransition[] = [
-${TRANSITIONS.map((t) => `  { id: ${q(t.id)}, from: ${q(t.from)}, to: ${q(t.to)}, action: ${q(t.action)}, actor: ${q(t.actor)}, trigger: ${q(t.trigger)}, guards: ${q(t.guards || [])}, effects: ${q(t.effects || [])}, req: ${q(t.req || [])}, status: ${q(t.status)}${t.override ? ', override: true' : ''} },`).join('\n')}
+${TRANSITIONS.map((t) => `  { id: ${q(t.id)}, from: ${q(t.from)}, to: ${q(t.to)}, action: ${q(t.action)}, actor: ${q(t.actor)}, trigger: ${q(t.trigger)}, guards: ${q(t.guards || [])}, effects: ${q(t.effects || [])}, req: ${q(t.req || [])}, status: ${q(t.status)}${t.override ? ', override: true' : ''}${t.manualEquivalent ? ', manualEquivalent: true' : ''} },`).join('\n')}
 ] as const;
 
 /** Jedyne dozwolone źródło prawdy o legalności przejścia. Nie duplikuj tej logiki w Server Action. */
@@ -336,9 +343,9 @@ const notifTable = [
 ].join('\n');
 
 const transTable = [
-  '| ID | Z | Do | Akcja | Aktor | Guardy | Efekty | Wymagania | Override |',
-  '|---|---|---|---|---|---|---|---|---|',
-  ...TRANSITIONS.map((t) => `| \`${t.id}\` | ${t.from} | ${t.to} | \`${t.action}\` | ${t.actor} | ${(t.guards || []).join(', ') || '—'} | ${(t.effects || []).join(', ') || '—'} | ${(t.req || []).join(', ')} | ${t.override ? 'TAK' : '—'} |`),
+  '| ID | Z | Do | Akcja | Aktor | Guardy | Efekty | Wymagania | Override | Równoważnik ręczny |',
+  '|---|---|---|---|---|---|---|---|---|---|',
+  ...TRANSITIONS.map((t) => `| \`${t.id}\` | ${t.from} | ${t.to} | \`${t.action}\` | ${t.actor} | ${(t.guards || []).join(', ') || '—'} | ${(t.effects || []).join(', ') || '—'} | ${(t.req || []).join(', ')} | ${t.override ? 'TAK' : '—'} | ${t.manualEquivalent ? 'TAK (K1 anulowane)' : '—'} |`),
 ].join('\n');
 
 const triageTable = [

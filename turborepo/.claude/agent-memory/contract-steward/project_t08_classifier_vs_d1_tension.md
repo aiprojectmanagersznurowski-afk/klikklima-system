@@ -1,16 +1,17 @@
 ---
 name: t08-classifier-vs-d1-tension
-description: Kryterium K1 klasyfikuje T08 (markDelivered) jako ręczną zmianę statusu, ale decyzja D1 człowieka wyklucza markAsDelivered z audytu — sprzeczność nierozstrzygnięta, wybuchnie w fali C
+description: ROZSTRZYGNIĘTE 2026-09-04 polem manualEquivalent na T08 — kontrakt ma teraz dwie flagi klasyfikacyjne o przeciwnych znakach (override dodaje, manualEquivalent odejmuje K1)
 metadata:
   type: project
 ---
 
-W wymaganiu `SEC-AUDIT-LOG-MANUAL-STATUS` (zarejestrowanym 2026-09-04) klasyfikator „ręcznej zmiany statusu" liczy cztery kryteria z `contracts/funnel.contract.mjs`: K1 (aktor spoza operatorów panelu), K2 (brak pary from-to), K3 (krawędź bucketu), K4 (`override: true`).
+Sprzeczność K1 vs D1 na T08 (`markDelivered`, `actor: 'SYSTEM'`, ale legalna ścieżka ręczna dyspozytora) została **rozstrzygnięta 2026-09-04** decyzją człowieka D4 (WO `SEC-AUDIT-LOG-MANUAL-STATUS-T08-FIX`): wąskie pole `manualEquivalent: true` TYLKO na T08, zamiast przebudowy `actor` na tablicę dla wszystkich 17 przejść.
 
-**Sprzeczność, której nie da się rozwiązać w kodzie klasyfikatora:** T08 `markDelivered` ma `actor: 'SYSTEM'`, więc **K1 klasyfikuje je jako ręczne**. Tymczasem decyzja D1 człowieka wprost **wyklucza** funkcję `markAsDelivered` z audytu (uzasadnienie: to potwierdzenie faktu fizycznego — paczka przyszła — a nie obejście reguły). WO samo to odnotowuje jako „sporne, wymaga świadomej zgody, bo łamie K1".
+**Why:** `actor` w tym kontrakcie opisuje „kto zwykle", nie „kto ma prawo". Zamiast naprawiać semantykę `actor` (17 przejść, złamanie kompatybilności), człowiek wybrał adnotację punktową.
 
-Pole `override` tego nie rozwiązuje: **dodaje** klasyfikację, nigdy nie odejmuje. Nie ma dziś pola odwrotnego.
+**How to apply:** kontrakt ma teraz **dwie flagi klasyfikacyjne o przeciwnych znakach** i łatwo je pomylić:
+- `override: true` — DODAJE klasyfikację (K4). Zabroniona tam, gdzie łapie K1/K3 (R29).
+- `manualEquivalent: true` — ODEJMUJE wyłącznie K1. Dozwolona WYŁĄCZNIE tam, gdzie K1 łapie (R30).
+Zbiory są rozłączne z konstrukcji, więc nigdy nie występują razem — jeśli kiedyś wystąpią, jedna z reguł została osłabiona.
 
-**Why:** `note` przy T08 mówi „Webhook kuriera LUB ręczna akcja dyspozytora (ten sam action)" — kontrakt sam sobie przeczy, bo `actor: 'SYSTEM'` opisuje tu „kto zwykle", a nie „kto ma prawo". To jest dokładnie ryzyko wypisane w sekcji „Ryzyka i nieznane" WO: jeżeli `actor` jest tylko poglądowe, K1 upada jako kryterium.
-
-**How to apply:** problem jest uśpiony w falach A i B (dotyczą archiveLost/returnToFunnel oraz logistyki). Wybuchnie w **fali C** (`advanceLeadStatus`), bo tam klasyfikator liczy K1 per przejście i przejście `HARDWARE_IN_TRANSIT → AWAITING_INSTALLATION` wykonane z panelu wygeneruje wpis, mimo że ta sama zmiana zrobiona przyciskiem „Paczka dostarczona" go nie wygeneruje — czyli audyt z obejściem w sąsiedniej zakładce (wprost sprzeczne z AC12). Przed falą C zażądaj decyzji człowieka: albo T08 dostaje właściwego aktora w kontrakcie, albo powstaje jawne pole wyłączające, albo `markAsDelivered` wraca do zakresu. Nie rozstrzygaj tego sam — to zmiana zakresu wymagania, nie detal implementacji. Powiązane: [[requirement-status-drift]].
+Pułapka do zapamiętania: pole w kontrakcie samo nie zmienia zachowania. `manualEquivalent` żyje w `contracts/funnel.contract.mjs` + `packages/contracts/src/generated/funnel.ts`, ale **anulowanie K1 musi zaimplementować `implementer-server`** w `apps/b2b-web/src/lib/audit/manual-status-classifier.ts` — `contract-steward` nie ma zakresu zapisu do `apps/` (`tools/kk.config.mjs`). Do czasu tej zmiany flaga jest deklaratywna, a T08 nadal generuje wpis audytowy. Powiązane: [[requirement-status-drift]], [[steward-cannot-write-tests]].

@@ -68,6 +68,13 @@ export interface LeadTransition {
    * contracts/funnel.contract.mjs. Nieobecne dla przejść normalnych.
    */
   override?: true;
+  /**
+   * Odwrotność override: pole actor opisuje tu wyłącznie ścieżkę typową (automat), a istnieje
+   * równoważna, w pełni legalna ścieżka ręczna operatora panelu. Anuluje kryterium K1
+   * klasyfikacji „ręczna zmiana statusu" — i tylko je; K2/K3/K4 działają dalej.
+   * Patrz contracts/funnel.contract.mjs. Nieobecne dla przejść normalnych.
+   */
+  manualEquivalent?: true;
 }
 
 export const TRANSITIONS: readonly LeadTransition[] = [
@@ -78,7 +85,7 @@ export const TRANSITIONS: readonly LeadTransition[] = [
   { id: "T05", from: "AWAITING_CREW_ASSIGNMENT", to: "HARDWARE_IN_WAREHOUSE", action: "assignCrew", actor: "ADMIN", trigger: "MANUAL", guards: ["crewCertsValid","crewCalendarFree"], effects: ["I3","do:createShipmentOrder"], req: ["FNL-E4-E5","CRM-ZESP-AC2"], status: "STABLE" },
   { id: "T06", from: "HARDWARE_IN_WAREHOUSE", to: "HARDWARE_IN_TRANSIT", action: "shipByCourier", actor: "DISPATCHER", trigger: "MANUAL", guards: ["trackingIdPresent"], effects: ["N5"], req: ["FNL-E5-E6"], status: "STABLE" },
   { id: "T07", from: "HARDWARE_IN_WAREHOUSE", to: "AWAITING_INSTALLATION", action: "deliverWithCrew", actor: "DISPATCHER", trigger: "MANUAL", guards: [], effects: [], req: ["FNL-E5-BYPASS"], status: "STABLE", override: true },
-  { id: "T08", from: "HARDWARE_IN_TRANSIT", to: "AWAITING_INSTALLATION", action: "markDelivered", actor: "SYSTEM", trigger: "WEBHOOK", guards: [], effects: [], req: ["FNL-E6-E7"], status: "STABLE" },
+  { id: "T08", from: "HARDWARE_IN_TRANSIT", to: "AWAITING_INSTALLATION", action: "markDelivered", actor: "SYSTEM", trigger: "WEBHOOK", guards: [], effects: [], req: ["FNL-E6-E7"], status: "STABLE", manualEquivalent: true },
   { id: "T09", from: "AWAITING_INSTALLATION", to: "INSTALLATION_COMPLETED", action: "completeInstallation", actor: "INSTALLER", trigger: "MANUAL", guards: ["allPhasesCompleted"], effects: ["N8","do:computeNextServiceDate","do:generateHandoverProtocol"], req: ["FNL-E7-E8","SRV-NEXT-DATE"], status: "STABLE" },
   { id: "T10", from: "AWAITING_CREW_ASSIGNMENT", to: "ROLLBACK_RESCHEDULING", action: "rollback", actor: "DISPATCHER", trigger: "MANUAL", guards: [], effects: ["N_ROLLBACK","I4","do:releaseCrewSlot","do:suspendLogisticsSla"], req: ["FNL-ROLLBACK"], status: "STABLE" },
   { id: "T11", from: "HARDWARE_IN_WAREHOUSE", to: "ROLLBACK_RESCHEDULING", action: "rollback", actor: "DISPATCHER", trigger: "MANUAL", guards: [], effects: ["N_ROLLBACK","I4","do:releaseCrewSlot","do:suspendLogisticsSla"], req: ["FNL-ROLLBACK"], status: "STABLE" },

@@ -76,6 +76,18 @@ export const GUARDS = [
  * dokładnie jedno przejście (T07). Nie oznaczaj nim przejścia złapanego już przez K1/K2/K3:
  * flaga byłaby wtedy martwa i przy zmianie aktora lub kind stanu nikt by nie zauważył, że została sama.
  * Wartością jest zawsze literał `true`; przejście normalne NIE MA tego pola (nie `override: false`).
+ *
+ * `manualEquivalent: true` — DOKŁADNA ODWROTNOŚĆ `override` (D4, 2026-09-04,
+ * WO SEC-AUDIT-LOG-MANUAL-STATUS-T08-FIX). `override` DODAJE klasyfikację przejściu, które
+ * wygląda na zwykły krok; `manualEquivalent` ODEJMUJE kryterium K1 przejściu, które przez
+ * samego aktora wygląda na obejście, a nim nie jest. Znaczy: „`actor` opisuje tu tylko ścieżkę
+ * typową (automat), a nie jedynego uprawnionego — istnieje w pełni legalna, równoważna ścieżka
+ * ręczna operatora panelu, więc wykonanie tego przejścia z panelu NIE jest obejściem reguły".
+ * Anuluje WYŁĄCZNIE K1. K2 (brak pary from-to), K3 (krawędź bucketu) i K4 (`override`) działają
+ * dalej niezależnie — przejście z `manualEquivalent`, które trafia w K3, nadal jest ręczne.
+ * Z `override` nie da się go połączyć: `override` jest zabroniony na przejściach łapanych przez K1
+ * (R29), a `manualEquivalent` jest dozwolony WYŁĄCZNIE na nich (R30) — zbiory są rozłączne.
+ * Wartością jest zawsze literał `true`; brak pola oznacza „K1 obowiązuje" (nie `manualEquivalent: false`).
  */
 export const TRANSITIONS = [
   {
@@ -133,7 +145,16 @@ export const TRANSITIONS = [
     action: 'markDelivered', actor: 'SYSTEM', trigger: 'WEBHOOK',
     guards: [],
     effects: [],
-    req: ['FNL-E6-E7'], status: 'STABLE', note: 'Webhook kuriera LUB ręczna akcja dyspozytora (ten sam action).',
+    req: ['FNL-E6-E7'], status: 'STABLE', manualEquivalent: true,
+    // D4 (2026-09-04, WO SEC-AUDIT-LOG-MANUAL-STATUS-T08-FIX). Jedyne przejście, w którym
+    // `actor: 'SYSTEM'` opisuje ścieżkę TYPOWĄ, a nie jedynego uprawnionego: ten sam `action`
+    // wywołuje webhook kuriera i przycisk „Paczka dostarczona" dyspozytora. Bez tej flagi K1
+    // klasyfikowałoby kliknięcie dyspozytora jako obejście reguły — wprost wbrew decyzji D1
+    // z WO SEC-AUDIT-LOG-MANUAL-STATUS, która wyklucza `markAsDelivered` z audytu
+    // (potwierdzenie faktu fizycznego: paczka dotarła, nie ominięcie etapu lejka).
+    // Skutek dla audytu: T08 nie generuje wpisu `manual_status_change` z żadnej z dwóch ścieżek
+    // — audyt jest symetryczny, czego wymaga AC12.
+    note: 'Webhook kuriera LUB ręczna akcja dyspozytora (ten sam action). `manualEquivalent: true` anuluje K1 — patrz D4 i komentarz powyżej.',
   },
   {
     id: 'T09', from: 'AWAITING_INSTALLATION', to: 'INSTALLATION_COMPLETED',

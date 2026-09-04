@@ -126,6 +126,23 @@ for (const t of TRANSITIONS) {
   }
 }
 
+// R30 — kształt flagi `manualEquivalent` (D4, WO SEC-AUDIT-LOG-MANUAL-STATUS-T08-FIX)
+// Flaga ANULUJE kryterium K1 (aktor spoza operatorów panelu) na przejściu, w którym `actor`
+// opisuje jedynie ścieżkę typową, a ręczna ścieżka operatora jest równoważna i legalna.
+// Dwa błędy nie do wychwycenia gołym okiem: `manualEquivalent: false` (klasyfikator czyta truthy —
+// pole udaje decyzję, której nie ma) oraz flaga na przejściu, którego K1 wcale nie łapie —
+// wtedy nie ma czego anulować, pole jest martwe i po zmianie aktora nikt nie zauważy, że zostało.
+for (const t of TRANSITIONS) {
+  if (!('manualEquivalent' in t)) continue;
+  if (t.manualEquivalent !== true) {
+    err('R30-manual-equivalent-shape', `${t.id}: manualEquivalent = ${JSON.stringify(t.manualEquivalent)}. Dopuszczalny jest wyłącznie literał true; przejście normalne nie ma tego pola.`);
+    continue;
+  }
+  if (!NON_OPERATOR_ACTORS.has(t.actor)) {
+    err('R30-manual-equivalent-shape', `${t.id}: manualEquivalent bezcelowy — aktor ${t.actor} jest operatorem panelu, więc K1 i tak nie klasyfikuje tego przejścia jako ręcznego. Flaga anulująca K1 nie ma czego anulować i przeżyje zmianę aktora niezauważona.`);
+  }
+}
+
 // R08 — guardy przejść istnieją w rejestrze
 for (const t of TRANSITIONS) {
   for (const g of t.guards || []) if (!guardIds.has(g)) err('R08-guard-exists', `${t.id}: guard "${g}" nie jest zarejestrowany w GUARDS.`);
