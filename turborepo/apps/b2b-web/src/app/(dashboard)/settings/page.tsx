@@ -22,5 +22,5 @@ export default async function SettingsScreen() {
     orderBy: { createdAt: 'desc' }
   });
 
-  return <SettingsClient users={users} />;
+  return <SettingsClient users={users} actorRole={actorRole} />;
 }

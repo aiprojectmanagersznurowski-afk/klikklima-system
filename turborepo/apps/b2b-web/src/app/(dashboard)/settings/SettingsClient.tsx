@@ -1,14 +1,30 @@
 "use client"
 import React, { useState } from "react"
-import { Plus, X, Trash2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Plus, X, Trash2, MoreHorizontal, UserCog } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { StatusPill } from "@/components/ui/status-pill"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/format-date"
-import { addAuthorizedUser, deleteAuthorizedUser } from "./actions"
+import { can, type Role } from "@klikklima/contracts"
+import {
+  addAuthorizedUser,
+  deleteAuthorizedUser,
+  updateAuthorizedUserRoleAction,
+  type UpdateAuthorizedUserRoleResult,
+} from "./actions"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
+import { RoleChangeDialog } from "./role-change-dialog"
 
 type User = {
   id: string
@@ -17,12 +33,18 @@ type User = {
   createdAt: Date
 }
 
-export function SettingsClient({ users }: { users: User[] }) {
+export function SettingsClient({ users, actorRole }: { users: User[]; actorRole?: Role | null }) {
+  const router = useRouter();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deleteDialogUserId, setDeleteDialogUserId] = useState<string | null>(null);
+  const [roleChangeUser, setRoleChangeUser] = useState<User | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // UX wyłącznie — bramka wiążąca jest po stronie serwera (updateAuthorizedUserRoleAction).
+  const canChangeRole = !!actorRole && can(actorRole, 'authorized_users', 'update') === 'yes';
 
   const handleAddUser = async () => {
     setError("");
@@ -48,6 +70,16 @@ export function SettingsClient({ users }: { users: User[] }) {
 
   const getInitials = (email: string) => email.substring(0, 2).toUpperCase();
 
+  const handleRoleChangeSuccess = (result: UpdateAuthorizedUserRoleResult) => {
+    setRoleChangeUser(null);
+    setSuccessMessage(
+      result.changed
+        ? "Rola konta została zmieniona."
+        : result.error || "Rola konta nie uległa zmianie."
+    );
+    router.refresh();
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto animate-in fade-in duration-300">
       <h1 className="text-2xl font-bold text-gray-900 mb-8">Ustawienia platformy</h1>
@@ -72,15 +104,29 @@ export function SettingsClient({ users }: { users: User[] }) {
             </div>
             <Button onClick={() => setShowInviteModal(true)} className="gap-2"><Plus size={16}/> Dodaj pracownika</Button>
           </div>
-          
-          <div className="overflow-x-auto">
+
+          {successMessage && (
+            <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-md border border-primary/20 bg-primary/10 px-4 py-2.5 text-sm text-primary" role="status">
+              <span>{successMessage}</span>
+              <button
+                type="button"
+                onClick={() => setSuccessMessage(null)}
+                className="rounded-full p-1 text-primary hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label="Zamknij komunikat"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          )}
+
+          <div className="w-full overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50/50 text-gray-500 border-b border-gray-100">
+              <thead className="text-xs uppercase font-semibold text-muted-foreground tracking-wider bg-secondary/50">
                 <tr>
-                  <th className="px-6 py-3 font-medium">Użytkownik</th>
-                  <th className="px-6 py-3 font-medium">Rola</th>
-                  <th className="px-6 py-3 font-medium">Data dodania</th>
-                  <th className="px-6 py-3 font-medium text-right">Akcje</th>
+                  <th className="p-3">Użytkownik</th>
+                  <th className="p-3">Rola</th>
+                  <th className="p-3">Data dodania</th>
+                  <th className="p-3 text-right">Akcje</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -96,17 +142,33 @@ export function SettingsClient({ users }: { users: User[] }) {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200" variant="outline">
-                        Administrator
-                      </Badge>
+                      <StatusPill tone="info" label={user.role} />
                     </td>
                     <td className="px-6 py-4 text-gray-500">
                       {formatDate(user.createdAt, "d MMMM yyyy")}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteUser(user.id)}>
-                        <Trash2 size={16} />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="size-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                          <MoreHorizontal size={16} />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuLabel>Zarządzanie</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {canChangeRole && (
+                            <DropdownMenuItem onClick={() => setRoleChangeUser(user)}>
+                              <UserCog className="size-4 mr-2" /> Zmień rolę
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            <Trash2 className="size-4 mr-2" /> Usuń dostęp pracownika
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}
@@ -174,6 +236,16 @@ export function SettingsClient({ users }: { users: User[] }) {
           onSuccess={() => {
             setDeleteDialogUserId(null);
           }}
+        />
+      )}
+
+      {roleChangeUser && (
+        <RoleChangeDialog
+          userEmail={roleChangeUser.email}
+          currentRole={roleChangeUser.role}
+          onConfirm={(values) => updateAuthorizedUserRoleAction(roleChangeUser.id, values)}
+          onClose={() => setRoleChangeUser(null)}
+          onSuccess={handleRoleChangeSuccess}
         />
       )}
     </div>

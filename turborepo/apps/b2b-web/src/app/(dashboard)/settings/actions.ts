@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 import { can, ROLES } from "@klikklima/contracts"
 import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server"
 import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
+import { roleChangeSchema } from "../../../lib/audit/role-change-schema"
 
 /**
  * SEC-AUTHZ-USER-MGMT: `role` tutaj to dana WEJŚCIOWA nowego konta (kogo dodajemy
@@ -259,5 +260,111 @@ export async function deleteAuthorizedUser(
   } catch (error) {
     console.error("Failed to delete user:", error)
     return { success: false, error: "Wystąpił błąd podczas usuwania konta." }
+  }
+}
+
+export type UpdateAuthorizedUserRoleResult = { success: boolean; error?: string; changed?: boolean }
+export type UpdateAuthorizedUserRoleInput = { role: string; justification: string; legalBasis: string }
+
+/**
+ * SEC-AUDIT-LOG-ROLE-CHANGE: sentinel odróżniający odmowę z powodu ochrony ostatniego
+ * konta `admin` (D3, ochrona WĄSKA) od innych błędów transakcji — złapany wyłącznie
+ * w zewnętrznym catch tej akcji, nigdy nie ucieka poza nią.
+ */
+class LastAdminError extends Error {}
+
+/**
+ * SEC-AUDIT-LOG-ROLE-CHANGE: zmiana roli istniejącego konta `authorized_users`.
+ * Kolejność: bramka RBAC (fail-closed) -> tożsamość wywołującego z sesji -> walidacja
+ * Zod (`roleChangeSchema`, rozszerzenie `deleteJustificationSchema`, AC15) -> jedna
+ * transakcja Serializable: odczyt konta docelowego PO ID (AC20), no-op bez zapisu gdy
+ * rola się nie zmienia (AC9/AC10), ochrona ostatniego admina liczona WEWNĄTRZ transakcji
+ * (AC7/AC8/AC17), update roli, wpis audytowy z prefiksem stara -> nowa rola doklejonym
+ * PRZED tekstem operatora (D2, AC19) bez naruszania progu 10 znaków liczonego od
+ * surowego tekstu operatora.
+ */
+export async function updateAuthorizedUserRoleAction(
+  id: string,
+  input: UpdateAuthorizedUserRoleInput
+): Promise<UpdateAuthorizedUserRoleResult> {
+  let actorRole
+  try {
+    actorRole = await getCurrentActorRole()
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error)
+    return { success: false, error: "Brak uprawnień do zmiany roli konta." }
+  }
+  if (!actorRole || can(actorRole, 'authorized_users', 'update') !== 'yes') {
+    return { success: false, error: "Brak uprawnień do zmiany roli konta." }
+  }
+
+  let actorEmail: string | undefined
+  try {
+    const {
+      data: { user },
+    } = await getCurrentUser()
+    actorEmail = user?.email
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error)
+    return { success: false, error: "Brak uprawnień do zmiany roli konta." }
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do zmiany roli konta." }
+  }
+
+  const parsed = roleChangeSchema.safeParse(input)
+  if (!parsed.success) {
+    return { success: false, error: "Nieprawidłowe dane zmiany roli." }
+  }
+  const { role: nextRole, justification, legalBasis } = parsed.data
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const target = await tx.authorizedUser.findUnique({ where: { id } })
+      if (!target) {
+        return { success: false, error: "Konto nie zostało znalezione." }
+      }
+
+      if (target.role === nextRole) {
+        return { success: true, changed: false, error: "Rola konta nie uległa zmianie." }
+      }
+
+      if (target.role === 'admin') {
+        const adminCount = await tx.authorizedUser.count({ where: { role: 'admin' } })
+        if (adminCount <= 1) {
+          throw new LastAdminError("Nie można odebrać roli jedynemu kontu administratora.")
+        }
+      }
+
+      await tx.authorizedUser.update({
+        where: { id },
+        data: { role: nextRole },
+      })
+
+      await tx.auditLog.create({
+        data: {
+          operation: 'role_change',
+          resource: 'authorized_users',
+          recordId: id,
+          actorEmail,
+          actorRole,
+          justification: `${target.role} → ${nextRole} | ${justification}`,
+          legalBasis,
+        },
+      })
+
+      return { success: true, changed: true }
+    }, { isolationLevel: 'Serializable' })
+
+    if (result.success) {
+      revalidatePath('/settings')
+    }
+    return result
+  } catch (error) {
+    if (error instanceof LastAdminError) {
+      return { success: false, error: "Nie można odebrać roli jedynemu kontu administratora." }
+    }
+    console.error("Failed to update user role:", error)
+    return { success: false, error: "Wystąpił błąd podczas zmiany roli konta." }
   }
 }
