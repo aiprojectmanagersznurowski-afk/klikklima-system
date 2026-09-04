@@ -1,0 +1,16 @@
+---
+name: project_sec_audit_log_manual_status_wave_a
+description: SEC-AUDIT-LOG-MANUAL-STATUS Fala A (archiveLost/returnToFunnel + isManualStatusChange) reviewed clean 2026-09-04; what to check in Fala B/C
+metadata:
+  type: project
+---
+
+Fala A of `SEC-AUDIT-LOG-MANUAL-STATUS` (contract window already committed as `15df270`) passed review 2026-09-04 with PRZEPUSZCZAM, no blockers.
+
+Key facts confirmed by reading code, not by the WO's claims:
+- `apps/b2b-web/src/lib/audit/manual-status-classifier.ts` (`isManualStatusChange`) reads K1/K3/K4 straight from `TRANSITIONS`/`STATE_META` in `@klikklima/contracts`, fail-loud on unknown transition ID (throws, never silent false). Verified against `sec-audit-log-manual-status-classifier.test.ts` which hand-computes expected classification for all 17 transitions independently (not mirroring the algorithm) — a real test, not a tautology.
+- `archiveLost` (T16) and `returnToFunnel` (T15) do **not call** `isManualStatusChange` at all — they write the audit row unconditionally. This is correct, not an oversight: both transitions originate from `QUOTE_REJECTED`, which is `STATE_META.kind === 'BUCKET'`, so K3 is always true for both. This is explicitly documented in `sec-audit-log-manual-status-wave-a.test.ts` header comment and is a legitimate design call for Wave A specifically (two functions where the classification is a always-true constant) — don't flag "classifier exists but unused" as a defect without checking this reasoning first.
+- Two new schema files (`archive-lost-schema.ts`, `return-to-funnel-schema.ts`) `.extend()` `deleteJustificationSchema` and are used only by the **client-side** dialogs (react-hook-form + zodResolver) for full-form validation including business fields (`reason`/`note`, `newPrice`). The **server actions** validate only `{ justification, legalBasis }` via `deleteJustificationSchema` directly (not the extended schemas) — business fields (`reason`, `resolution`, `newPrice`) are validated by separate, pre-existing logic in the action body. This split is intentional per WO and doesn't violate AC10 (still exactly one `z.string().trim().min(10)` file, confirmed by running `sec-audit-log-delete-static.test.ts`).
+- `getCurrentActorRole()` in `returnToFunnel`/`archiveLost` is called **without try/catch** (unlike `getCurrentUser()`, which is wrapped) — this is **pre-existing**, unchanged by this diff (confirmed via `git log -p`). If it throws, the Server Action rejects unhandled rather than returning a friendly `{success:false}` — not a fail-open security hole (no unauthorized DB access happens), just an ungracious pattern. Worth flagging as MINOR/carry-forward if Fala B/C touch the same call site, but not a blocker for Fala A since it's out of this diff's scope.
+
+**How to apply:** When reviewing Fala B (`bypassLogisticsOrder`, `rollbackLogisticsOrder`) or Fala C (`advanceLeadStatus`), check whether the classifier is actually *called conditionally* there (unlike Wave A) — those transitions are NOT all-bucket-edge, so a hardcoded unconditional audit write would be a real AC4 violation there, unlike in Wave A. Also check whether `getCurrentActorRole()` finally gets wrapped in try/catch when those functions are touched.

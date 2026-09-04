@@ -762,8 +762,9 @@ type ReturnToFunnelResolution = "acknowledgeStaleQuote" | "refreshQuote";
  */
 export async function returnToFunnel(
   leadId: string,
-  resolution?: ReturnToFunnelResolution,
-  newPrice?: number
+  resolution: ReturnToFunnelResolution | undefined,
+  newPrice: number | undefined,
+  input: DeleteJustificationInput
 ): Promise<{ success: boolean; error?: string }> {
   // BLOCKER (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #2): Prisma omija RLS — sprawdzenie
   // roli musi żyć jawnie w tej akcji, tak samo jak w assignCrewToLead/deleteLeadAction.
@@ -772,6 +773,30 @@ export async function returnToFunnel(
   if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
     return { success: false, error: "Brak uprawnień do zwrócenia leada do obiegu." };
   }
+
+  // SEC-AUDIT-LOG-MANUAL-STATUS (AC5): actorEmail wyłącznie z sesji, PRZED transakcją.
+  let actorEmail: string | undefined;
+  try {
+    const {
+      data: { user },
+    } = await getCurrentUser();
+    actorEmail = user?.email ?? undefined;
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error);
+    return { success: false, error: "Brak uprawnień do zwrócenia leada do obiegu." };
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do zwrócenia leada do obiegu." };
+  }
+
+  // SEC-AUDIT-LOG-MANUAL-STATUS (AC7): uzasadnienie i podstawa prawna walidowane
+  // tym samym schematem co delete (deleteJustificationSchema), bez zmiany statusu
+  // przy niepoprawnym wejściu.
+  const parsedInput = deleteJustificationSchema.safeParse(input);
+  if (!parsedInput.success) {
+    return { success: false, error: "Nieprawidłowe dane uzasadnienia lub podstawy prawnej." };
+  }
+  const { justification, legalBasis } = parsedInput.data;
 
   try {
     return await prisma.$transaction(async (tx) => {
@@ -796,6 +821,17 @@ export async function returnToFunnel(
         await tx.leady.update({
           where: { id: leadId },
           data: { status: transition.to as LeadStatus },
+        });
+        await tx.auditLog.create({
+          data: {
+            operation: "manual_status_change",
+            resource: "leads",
+            recordId: leadId,
+            actorEmail,
+            actorRole,
+            justification,
+            legalBasis,
+          },
         });
         revalidatePath("/leads");
         return { success: true };
@@ -823,6 +859,18 @@ export async function returnToFunnel(
         });
       }
 
+      await tx.auditLog.create({
+        data: {
+          operation: "manual_status_change",
+          resource: "leads",
+          recordId: leadId,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis,
+        },
+      });
+
       revalidatePath("/leads");
       return { success: true };
     });
@@ -841,7 +889,8 @@ export async function returnToFunnel(
 export async function archiveLost(
   leadId: string,
   reason: string,
-  note?: string
+  note: string | undefined,
+  input: DeleteJustificationInput
 ): Promise<{ success: boolean; error?: string }> {
   // BLOCKER (WO CRM-SAFE-RECORD-ACTIONS, REVIEW #2): Prisma omija RLS — sprawdzenie
   // roli musi żyć jawnie w tej akcji, tak samo jak w assignCrewToLead/deleteLeadAction.
@@ -850,6 +899,30 @@ export async function archiveLost(
   if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
     return { success: false, error: "Brak uprawnień do archiwizacji leada." };
   }
+
+  // SEC-AUDIT-LOG-MANUAL-STATUS (AC5): actorEmail wyłącznie z sesji, PRZED transakcją.
+  let actorEmail: string | undefined;
+  try {
+    const {
+      data: { user },
+    } = await getCurrentUser();
+    actorEmail = user?.email ?? undefined;
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error);
+    return { success: false, error: "Brak uprawnień do archiwizacji leada." };
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do archiwizacji leada." };
+  }
+
+  // SEC-AUDIT-LOG-MANUAL-STATUS (AC7): uzasadnienie i podstawa prawna walidowane
+  // tym samym schematem co delete (deleteJustificationSchema), bez zmiany statusu
+  // przy niepoprawnym wejściu.
+  const parsedInput = deleteJustificationSchema.safeParse(input);
+  if (!parsedInput.success) {
+    return { success: false, error: "Nieprawidłowe dane uzasadnienia lub podstawy prawnej." };
+  }
+  const { justification, legalBasis } = parsedInput.data;
 
   try {
     if (!reason) {
@@ -883,6 +956,18 @@ export async function archiveLost(
           status: transition.to as LeadStatus,
           lost_reason: reason,
           lost_reason_note: note ?? null,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          operation: "manual_status_change",
+          resource: "leads",
+          recordId: leadId,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis,
         },
       });
 
