@@ -83,10 +83,16 @@ export interface LeadTransition {
   effects: string[];
   req: string[];
   status: 'STABLE' | 'PROPOSED';
+  /**
+   * Przejście jest obejściem reguły procesu, którego nie wykrywa żadne kryterium wyliczalne
+   * (aktor / brak przejścia / krawędź bucketu). Klasyfikacja „ręczna zmiana statusu" — patrz
+   * contracts/funnel.contract.mjs. Nieobecne dla przejść normalnych.
+   */
+  override?: true;
 }
 
 export const TRANSITIONS: readonly LeadTransition[] = [
-${TRANSITIONS.map((t) => `  { id: ${q(t.id)}, from: ${q(t.from)}, to: ${q(t.to)}, action: ${q(t.action)}, actor: ${q(t.actor)}, trigger: ${q(t.trigger)}, guards: ${q(t.guards || [])}, effects: ${q(t.effects || [])}, req: ${q(t.req || [])}, status: ${q(t.status)} },`).join('\n')}
+${TRANSITIONS.map((t) => `  { id: ${q(t.id)}, from: ${q(t.from)}, to: ${q(t.to)}, action: ${q(t.action)}, actor: ${q(t.actor)}, trigger: ${q(t.trigger)}, guards: ${q(t.guards || [])}, effects: ${q(t.effects || [])}, req: ${q(t.req || [])}, status: ${q(t.status)}${t.override ? ', override: true' : ''} },`).join('\n')}
 ] as const;
 
 /** Jedyne dozwolone źródło prawdy o legalności przejścia. Nie duplikuj tej logiki w Server Action. */
@@ -330,9 +336,9 @@ const notifTable = [
 ].join('\n');
 
 const transTable = [
-  '| ID | Z | Do | Akcja | Aktor | Guardy | Efekty | Wymagania |',
-  '|---|---|---|---|---|---|---|---|',
-  ...TRANSITIONS.map((t) => `| \`${t.id}\` | ${t.from} | ${t.to} | \`${t.action}\` | ${t.actor} | ${(t.guards || []).join(', ') || '—'} | ${(t.effects || []).join(', ') || '—'} | ${(t.req || []).join(', ')} |`),
+  '| ID | Z | Do | Akcja | Aktor | Guardy | Efekty | Wymagania | Override |',
+  '|---|---|---|---|---|---|---|---|---|',
+  ...TRANSITIONS.map((t) => `| \`${t.id}\` | ${t.from} | ${t.to} | \`${t.action}\` | ${t.actor} | ${(t.guards || []).join(', ') || '—'} | ${(t.effects || []).join(', ') || '—'} | ${(t.req || []).join(', ')} | ${t.override ? 'TAK' : '—'} |`),
 ].join('\n');
 
 const triageTable = [

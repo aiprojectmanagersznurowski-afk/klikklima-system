@@ -42,25 +42,25 @@ stateDiagram-v2
 
 ## Tabela przejść
 
-| ID | Z | Do | Akcja | Aktor | Guardy | Efekty | Wymagania |
-|---|---|---|---|---|---|---|---|
-| `T01` | NEW_LEAD | AWAITING_AUDIT | `assignAuditor` | ADMIN | auditorIsActive, auditorCertsValid, auditorDailyCapNotExceeded | N1, I5 | FNL-E1-E2 |
-| `T02` | AWAITING_AUDIT | AUDIT_COMPLETED | `sendQuote` | AUDITOR | — | N4, do:createQuote, do:startQuoteValidityClock | FNL-E2-E3 |
-| `T03` | AUDIT_COMPLETED | AWAITING_CREW_ASSIGNMENT | `acceptQuoteAndBook` | CLIENT | quoteNotExpired, termsAccepted, slotAvailable | I2, do:reserveInstallationSlot | FNL-E3-E4 |
-| `T04` | AUDIT_COMPLETED | QUOTE_REJECTED | `expireQuote` | SYSTEM | — | N_REJECT, do:stampBucketEnteredAt | FNL-E3-BUCKET, SLA-QUOTE-14D |
-| `T05` | AWAITING_CREW_ASSIGNMENT | HARDWARE_IN_WAREHOUSE | `assignCrew` | ADMIN | crewCertsValid, crewCalendarFree | I3, do:createShipmentOrder | FNL-E4-E5, CRM-ZESP-AC2 |
-| `T06` | HARDWARE_IN_WAREHOUSE | HARDWARE_IN_TRANSIT | `shipByCourier` | DISPATCHER | trackingIdPresent | N5 | FNL-E5-E6 |
-| `T07` | HARDWARE_IN_WAREHOUSE | AWAITING_INSTALLATION | `deliverWithCrew` | DISPATCHER | — | — | FNL-E5-BYPASS |
-| `T08` | HARDWARE_IN_TRANSIT | AWAITING_INSTALLATION | `markDelivered` | SYSTEM | — | — | FNL-E6-E7 |
-| `T09` | AWAITING_INSTALLATION | INSTALLATION_COMPLETED | `completeInstallation` | INSTALLER | allPhasesCompleted | N8, do:computeNextServiceDate, do:generateHandoverProtocol | FNL-E7-E8, SRV-NEXT-DATE |
-| `T10` | AWAITING_CREW_ASSIGNMENT | ROLLBACK_RESCHEDULING | `rollback` | DISPATCHER | — | N_ROLLBACK, I4, do:releaseCrewSlot, do:suspendLogisticsSla | FNL-ROLLBACK |
-| `T11` | HARDWARE_IN_WAREHOUSE | ROLLBACK_RESCHEDULING | `rollback` | DISPATCHER | — | N_ROLLBACK, I4, do:releaseCrewSlot, do:suspendLogisticsSla | FNL-ROLLBACK |
-| `T12` | HARDWARE_IN_TRANSIT | ROLLBACK_RESCHEDULING | `rollback` | DISPATCHER | — | N_ROLLBACK, I4, do:releaseCrewSlot, do:suspendLogisticsSla | FNL-ROLLBACK |
-| `T13` | AWAITING_INSTALLATION | ROLLBACK_RESCHEDULING | `rollback` | CLIENT | — | N_ROLLBACK, I4, do:releaseCrewSlot, do:suspendLogisticsSla | FNL-ROLLBACK |
-| `T14` | ROLLBACK_RESCHEDULING | AWAITING_CREW_ASSIGNMENT | `rebookInstallation` | CLIENT | slotAvailable | do:reserveInstallationSlot | FNL-ROLLBACK-EXIT |
-| `T17` | AWAITING_INSTALLATION | AWAITING_INSTALLATION | `completePhaseOne` | INSTALLER | installationIsTwoPhase, phaseOneNotCompleted | N8a, do:issuePhaseOneInvoice, do:openPhaseTwoBooking | FNL-2PHASE |
-| `T15` | QUOTE_REJECTED | AUDIT_COMPLETED | `returnToFunnel` | DISPATCHER | quoteRefreshedIfStale | do:refreshQuoteValidity | CRM-ZIMNE-AC2 |
-| `T16` | QUOTE_REJECTED | ARCHIVED_LOST | `archiveLost` | DISPATCHER | lostReasonProvided | do:recordLostReasonForAnalytics | CRM-ZIMNE-AC3 |
+| ID | Z | Do | Akcja | Aktor | Guardy | Efekty | Wymagania | Override |
+|---|---|---|---|---|---|---|---|---|
+| `T01` | NEW_LEAD | AWAITING_AUDIT | `assignAuditor` | ADMIN | auditorIsActive, auditorCertsValid, auditorDailyCapNotExceeded | N1, I5 | FNL-E1-E2 | — |
+| `T02` | AWAITING_AUDIT | AUDIT_COMPLETED | `sendQuote` | AUDITOR | — | N4, do:createQuote, do:startQuoteValidityClock | FNL-E2-E3 | — |
+| `T03` | AUDIT_COMPLETED | AWAITING_CREW_ASSIGNMENT | `acceptQuoteAndBook` | CLIENT | quoteNotExpired, termsAccepted, slotAvailable | I2, do:reserveInstallationSlot | FNL-E3-E4 | — |
+| `T04` | AUDIT_COMPLETED | QUOTE_REJECTED | `expireQuote` | SYSTEM | — | N_REJECT, do:stampBucketEnteredAt | FNL-E3-BUCKET, SLA-QUOTE-14D | — |
+| `T05` | AWAITING_CREW_ASSIGNMENT | HARDWARE_IN_WAREHOUSE | `assignCrew` | ADMIN | crewCertsValid, crewCalendarFree | I3, do:createShipmentOrder | FNL-E4-E5, CRM-ZESP-AC2 | — |
+| `T06` | HARDWARE_IN_WAREHOUSE | HARDWARE_IN_TRANSIT | `shipByCourier` | DISPATCHER | trackingIdPresent | N5 | FNL-E5-E6 | — |
+| `T07` | HARDWARE_IN_WAREHOUSE | AWAITING_INSTALLATION | `deliverWithCrew` | DISPATCHER | — | — | FNL-E5-BYPASS | TAK |
+| `T08` | HARDWARE_IN_TRANSIT | AWAITING_INSTALLATION | `markDelivered` | SYSTEM | — | — | FNL-E6-E7 | — |
+| `T09` | AWAITING_INSTALLATION | INSTALLATION_COMPLETED | `completeInstallation` | INSTALLER | allPhasesCompleted | N8, do:computeNextServiceDate, do:generateHandoverProtocol | FNL-E7-E8, SRV-NEXT-DATE | — |
+| `T10` | AWAITING_CREW_ASSIGNMENT | ROLLBACK_RESCHEDULING | `rollback` | DISPATCHER | — | N_ROLLBACK, I4, do:releaseCrewSlot, do:suspendLogisticsSla | FNL-ROLLBACK | — |
+| `T11` | HARDWARE_IN_WAREHOUSE | ROLLBACK_RESCHEDULING | `rollback` | DISPATCHER | — | N_ROLLBACK, I4, do:releaseCrewSlot, do:suspendLogisticsSla | FNL-ROLLBACK | — |
+| `T12` | HARDWARE_IN_TRANSIT | ROLLBACK_RESCHEDULING | `rollback` | DISPATCHER | — | N_ROLLBACK, I4, do:releaseCrewSlot, do:suspendLogisticsSla | FNL-ROLLBACK | — |
+| `T13` | AWAITING_INSTALLATION | ROLLBACK_RESCHEDULING | `rollback` | CLIENT | — | N_ROLLBACK, I4, do:releaseCrewSlot, do:suspendLogisticsSla | FNL-ROLLBACK | — |
+| `T14` | ROLLBACK_RESCHEDULING | AWAITING_CREW_ASSIGNMENT | `rebookInstallation` | CLIENT | slotAvailable | do:reserveInstallationSlot | FNL-ROLLBACK-EXIT | — |
+| `T17` | AWAITING_INSTALLATION | AWAITING_INSTALLATION | `completePhaseOne` | INSTALLER | installationIsTwoPhase, phaseOneNotCompleted | N8a, do:issuePhaseOneInvoice, do:openPhaseTwoBooking | FNL-2PHASE | — |
+| `T15` | QUOTE_REJECTED | AUDIT_COMPLETED | `returnToFunnel` | DISPATCHER | quoteRefreshedIfStale | do:refreshQuoteValidity | CRM-ZIMNE-AC2 | — |
+| `T16` | QUOTE_REJECTED | ARCHIVED_LOST | `archiveLost` | DISPATCHER | lostReasonProvided | do:recordLostReasonForAnalytics | CRM-ZIMNE-AC3 | — |
 
 ## Katalog powiadomień
 

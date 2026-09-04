@@ -62,6 +62,12 @@ export interface LeadTransition {
   effects: string[];
   req: string[];
   status: 'STABLE' | 'PROPOSED';
+  /**
+   * Przejście jest obejściem reguły procesu, którego nie wykrywa żadne kryterium wyliczalne
+   * (aktor / brak przejścia / krawędź bucketu). Klasyfikacja „ręczna zmiana statusu" — patrz
+   * contracts/funnel.contract.mjs. Nieobecne dla przejść normalnych.
+   */
+  override?: true;
 }
 
 export const TRANSITIONS: readonly LeadTransition[] = [
@@ -71,7 +77,7 @@ export const TRANSITIONS: readonly LeadTransition[] = [
   { id: "T04", from: "AUDIT_COMPLETED", to: "QUOTE_REJECTED", action: "expireQuote", actor: "SYSTEM", trigger: "CRON", guards: [], effects: ["N_REJECT","do:stampBucketEnteredAt"], req: ["FNL-E3-BUCKET","SLA-QUOTE-14D"], status: "STABLE" },
   { id: "T05", from: "AWAITING_CREW_ASSIGNMENT", to: "HARDWARE_IN_WAREHOUSE", action: "assignCrew", actor: "ADMIN", trigger: "MANUAL", guards: ["crewCertsValid","crewCalendarFree"], effects: ["I3","do:createShipmentOrder"], req: ["FNL-E4-E5","CRM-ZESP-AC2"], status: "STABLE" },
   { id: "T06", from: "HARDWARE_IN_WAREHOUSE", to: "HARDWARE_IN_TRANSIT", action: "shipByCourier", actor: "DISPATCHER", trigger: "MANUAL", guards: ["trackingIdPresent"], effects: ["N5"], req: ["FNL-E5-E6"], status: "STABLE" },
-  { id: "T07", from: "HARDWARE_IN_WAREHOUSE", to: "AWAITING_INSTALLATION", action: "deliverWithCrew", actor: "DISPATCHER", trigger: "MANUAL", guards: [], effects: [], req: ["FNL-E5-BYPASS"], status: "STABLE" },
+  { id: "T07", from: "HARDWARE_IN_WAREHOUSE", to: "AWAITING_INSTALLATION", action: "deliverWithCrew", actor: "DISPATCHER", trigger: "MANUAL", guards: [], effects: [], req: ["FNL-E5-BYPASS"], status: "STABLE", override: true },
   { id: "T08", from: "HARDWARE_IN_TRANSIT", to: "AWAITING_INSTALLATION", action: "markDelivered", actor: "SYSTEM", trigger: "WEBHOOK", guards: [], effects: [], req: ["FNL-E6-E7"], status: "STABLE" },
   { id: "T09", from: "AWAITING_INSTALLATION", to: "INSTALLATION_COMPLETED", action: "completeInstallation", actor: "INSTALLER", trigger: "MANUAL", guards: ["allPhasesCompleted"], effects: ["N8","do:computeNextServiceDate","do:generateHandoverProtocol"], req: ["FNL-E7-E8","SRV-NEXT-DATE"], status: "STABLE" },
   { id: "T10", from: "AWAITING_CREW_ASSIGNMENT", to: "ROLLBACK_RESCHEDULING", action: "rollback", actor: "DISPATCHER", trigger: "MANUAL", guards: [], effects: ["N_ROLLBACK","I4","do:releaseCrewSlot","do:suspendLogisticsSla"], req: ["FNL-ROLLBACK"], status: "STABLE" },

@@ -106,6 +106,26 @@ for (const t of TRANSITIONS) {
   }
 }
 
+// R29 — kształt flagi `override` (D3, WO SEC-AUDIT-LOG-MANUAL-STATUS)
+// Flaga domyka klasyfikację „ręczna zmiana statusu" tam, gdzie nie sięgają kryteria wyliczalne
+// (K1 aktor, K2 brak przejścia, K3 krawędź bucketu). Dwa błędy, których nie widać gołym okiem:
+// `override: false` (klasyfikator czyta truthy — pole udaje decyzję, a jej nie ma) oraz flaga
+// na przejściu i tak łapanym przez K1/K3 (martwa adnotacja, która przeżyje zmianę aktora).
+const BUCKET_STATES = new Set(STATES.filter((s) => s.kind === 'BUCKET').map((s) => s.id));
+const NON_OPERATOR_ACTORS = new Set(['CLIENT', 'SYSTEM', 'INSTALLER', 'AUDITOR']);
+for (const t of TRANSITIONS) {
+  if (!('override' in t)) continue;
+  if (t.override !== true) {
+    err('R29-override-shape', `${t.id}: override = ${JSON.stringify(t.override)}. Dopuszczalny jest wyłącznie literał true; przejście normalne nie ma tego pola.`);
+    continue;
+  }
+  const k1 = NON_OPERATOR_ACTORS.has(t.actor);
+  const k3 = BUCKET_STATES.has(t.from) || BUCKET_STATES.has(t.to);
+  if (k1 || k3) {
+    err('R29-override-shape', `${t.id}: override zbędny — przejście jest już klasyfikowane jako ręczne przez ${[k1 && 'K1 (aktor ' + t.actor + ')', k3 && 'K3 (krawędź bucketu)'].filter(Boolean).join(' i ')}. Martwa flaga przeżyje zmianę aktora lub kind stanu i nikt nie zauważy, że została sama.`);
+  }
+}
+
 // R08 — guardy przejść istnieją w rejestrze
 for (const t of TRANSITIONS) {
   for (const g of t.guards || []) if (!guardIds.has(g)) err('R08-guard-exists', `${t.id}: guard "${g}" nie jest zarejestrowany w GUARDS.`);

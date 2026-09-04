@@ -63,6 +63,19 @@ export const GUARDS = [
 /**
  * `effects` to identyfikatory z notifications.contract.mjs ORAZ efekty domenowe (prefiks `do:`).
  * Efekt domenowy = obowiązkowa zmiana stanu poza tabelą leads; test kontraktowy sprawdza jego wystąpienie.
+ *
+ * `override: true` — DOMKNIĘCIE klasyfikacji „ręczna zmiana statusu" (D3, 2026-09-04,
+ * WO SEC-AUDIT-LOG-MANUAL-STATUS). Zmiana statusu podlega wpisowi `manual_status_change`
+ * w audit_log, jeżeli spełnia którekolwiek z czterech kryteriów:
+ *   K1 — aktor przejścia to CLIENT / SYSTEM / INSTALLER / AUDITOR, a wykonuje je operator panelu B2B,
+ *   K2 — para (from, to) nie ma odpowiednika w TRANSITIONS (ruch, którego maszyna stanów nie zna),
+ *   K3 — krawędź bucketu: STATE_META[from].kind === 'BUCKET' lub STATE_META[to].kind === 'BUCKET',
+ *   K4 — `override: true` na przejściu.
+ * K1–K3 są WYLICZALNE z tego pliku i nie wymagają adnotacji. `override` istnieje wyłącznie dla przejść,
+ * których żadne z nich nie łapie, a które mimo to są obejściem reguły procesu — dziś jest to
+ * dokładnie jedno przejście (T07). Nie oznaczaj nim przejścia złapanego już przez K1/K2/K3:
+ * flaga byłaby wtedy martwa i przy zmianie aktora lub kind stanu nikt by nie zauważył, że została sama.
+ * Wartością jest zawsze literał `true`; przejście normalne NIE MA tego pola (nie `override: false`).
  */
 export const TRANSITIONS = [
   {
@@ -112,7 +125,8 @@ export const TRANSITIONS = [
     action: 'deliverWithCrew', actor: 'DISPATCHER', trigger: 'MANUAL',
     guards: [],
     effects: [],
-    req: ['FNL-E5-BYPASS'], status: 'STABLE', note: 'State Bypass — pomija E6.',
+    req: ['FNL-E5-BYPASS'], status: 'STABLE', override: true,
+    note: 'State Bypass — pomija E6. `override: true`, bo jako jedyne przejście w tabeli wymyka się K1–K3: aktor DISPATCHER jest właściwy, przejście istnieje, STAGE→STAGE. Bez tej flagi „Dostawa z ekipą (Bypass)" byłaby jedynym pominięciem etapu lejka bez śladu w audit_log.',
   },
   {
     id: 'T08', from: 'HARDWARE_IN_TRANSIT', to: 'AWAITING_INSTALLATION',
