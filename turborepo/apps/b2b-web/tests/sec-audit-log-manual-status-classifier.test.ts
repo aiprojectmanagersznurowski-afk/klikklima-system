@@ -33,12 +33,17 @@ import { isManualStatusChange } from '../src/lib/audit/manual-status-classifier'
  * własnego lustra. Trzy przejścia są "normalną pracą dyspozytora/admina": T01
  * (assignAuditor, ADMIN, STAGE→STAGE), T05 (assignCrew, ADMIN, STAGE→STAGE),
  * T06 (shipByCourier, DISPATCHER, STAGE→STAGE) — żadne z K1/K3/K4 ich nie łapie.
- * Wszystkie pozostałe 14 są "ręczne" z co najmniej jednego powodu:
+ * Wszystkie pozostałe 13 są "ręczne" z co najmniej jednego powodu:
  *   T02 sendQuote — actor AUDITOR (K1)
  *   T03 acceptQuoteAndBook — actor CLIENT (K1)
  *   T04 expireQuote — actor SYSTEM (K1)
  *   T07 deliverWithCrew — override: true (K4), jako JEDYNE przejście złapane wyłącznie przez K4
- *   T08 markDelivered — actor SYSTEM (K1)
+ *   T08 markDelivered — actor SYSTEM formalnie spełnia K1, ale `manualEquivalent: true`
+ *       (D4, 2026-09-04, WO SEC-AUDIT-LOG-MANUAL-STATUS-T08-FIX) anuluje WYŁĄCZNIE K1 dla
+ *       TEGO przejścia — webhook kuriera i przycisk dyspozytora dzielą ten sam `action`,
+ *       więc `markAsDelivered` ma pozostać wykluczone z audytu (potwierdzenie faktu
+ *       fizycznego, nie obejście reguły). T08 nie łapie ani K3 (STAGE→STAGE), ani K4
+ *       (brak `override`) — klasyfikuje się jako `false`.
  *   T09 completeInstallation — actor INSTALLER (K1)
  *   T10-T12 rollback — actor DISPATCHER, ale `to` = ROLLBACK_RESCHEDULING (BUCKET) → K3
  *   T13 rollback (z AWAITING_INSTALLATION) — actor CLIENT (K1) I `to` BUCKET (K3)
@@ -55,7 +60,7 @@ const EXPECTED_CLASSIFICATION: Record<string, boolean> = {
   T05: false,
   T06: false,
   T07: true,
-  T08: true,
+  T08: false,
   T09: true,
   T10: true,
   T11: true,
@@ -100,10 +105,16 @@ describe('isManualStatusChange — mechanizm klasyfikujący (SEC-AUDIT-LOG-MANUA
 
   // K1 — dowód niezależny od tabeli powyżej: KAŻDE przejście, którego aktor nie
   // jest operatorem panelu ({ADMIN, DISPATCHER}), jest klasyfikowane jako ręczne,
-  // niezależnie od guardów, efektów czy pola `override`.
+  // niezależnie od guardów, efektów czy pola `override` — Z WYJĄTKIEM przejść
+  // oznaczonych `manualEquivalent: true` (D4, 2026-09-04), które są DOKŁADNIE
+  // zaprojektowanym wyłomem od tej reguły (dziś: wyłącznie T08). Wykluczenie ich
+  // z tego filtra nie jest obejściem testu — to jest granica samego kryterium K1,
+  // udokumentowana w kontrakcie (contracts/funnel.contract.mjs).
   // @REQ: SEC-AUDIT-LOG-MANUAL-STATUS
-  it('K1 — aktor spoza {ADMIN, DISPATCHER} zawsze klasyfikuje przejście jako ręczne', () => {
-    const nonOperatorTransitions = TRANSITIONS.filter((t) => t.actor !== 'ADMIN' && t.actor !== 'DISPATCHER');
+  it('K1 — aktor spoza {ADMIN, DISPATCHER} zawsze klasyfikuje przejście jako ręczne (poza manualEquivalent)', () => {
+    const nonOperatorTransitions = TRANSITIONS.filter(
+      (t) => t.actor !== 'ADMIN' && t.actor !== 'DISPATCHER' && t.manualEquivalent !== true,
+    );
     // Kontrola pozytywna kryterium: musi istnieć co najmniej jedno takie przejście
     // w dzisiejszym kontrakcie, inaczej K1 nie jest w ogóle ćwiczone.
     expect(nonOperatorTransitions.length).toBeGreaterThan(0);
@@ -138,6 +149,25 @@ describe('isManualStatusChange — mechanizm klasyfikujący (SEC-AUDIT-LOG-MANUA
     expect(STATE_META[t07.to].kind).toBe('STAGE'); // K3 NIE łapie (to)
 
     expect(isManualStatusChange('T07')).toBe(true);
+  });
+
+  // D4 (2026-09-04, WO SEC-AUDIT-LOG-MANUAL-STATUS-T08-FIX) — dowód niezależny: T08
+  // jest wyjęte spod K1 WYŁĄCZNIE przez `manualEquivalent: true`, a nie dlatego, że
+  // aktor formalnie spełnia K1 inaczej, ani dlatego, że K3/K4 akurat też go nie łapią
+  // z jakiegoś innego powodu. Ten test pilnuje, żeby flaga `manualEquivalent` nie
+  // zaczęła po cichu anulować czegoś więcej niż K1 — jeśli ktoś rozszerzy jej efekt
+  // na K3 lub K4, albo cofnie flagę bez uzasadnienia, ten test staje się czerwony
+  // pierwszy i wprost. Wzorowany na teście K4/T07 powyżej (linie 133-141).
+  // @REQ: SEC-AUDIT-LOG-MANUAL-STATUS
+  it('T08 (markDelivered) jest wyjęte z K1 WYŁĄCZNIE przez manualEquivalent — K3 i K4 go nie łapią', () => {
+    const t08 = TRANSITIONS.find((t) => t.id === 'T08')!;
+    expect(t08.manualEquivalent).toBe(true); // wyłom z K1, jedyny dziś w kontrakcie
+    expect(t08.actor).toBe('SYSTEM'); // formalnie SPEŁNIA K1 — bez flagi byłby ręczny
+    expect(STATE_META[t08.from].kind).toBe('STAGE'); // K3 NIE łapie (from)
+    expect(STATE_META[t08.to].kind).toBe('STAGE'); // K3 NIE łapie (to)
+    expect(t08.override).not.toBe(true); // K4 NIE łapie
+
+    expect(isManualStatusChange('T08')).toBe(false);
   });
 
   // Kontrola negatywna jawna: T01, T05, T06 są "zwykłą pracą" (AC3) — żadne z K1/K3/K4
