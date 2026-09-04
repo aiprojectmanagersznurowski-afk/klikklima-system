@@ -22,6 +22,11 @@ domyślny skutek kolejności „testy przed rejestracją ID”. Uwaga praktyczna
 kończy się kodem 1, ale wypisuje naruszenie w środku długiej listy niepokrytych wymagań, więc
 `| tail` pokazuje `EXIT=0` z `tail`, nie z narzędzia. Sprawdzaj kod wyjścia bez potoku.
 
+Kolejność odwrotna (rejestracja PRZED fazą RED) potwierdzona jako czysta: SEC-AUDIT-LOG-ROLE-CHANGE
+(2026-09-04) zarejestrowane jako `TODO`/HIGH bez ani jednego testu — `kk-trace --enforce` kończy się
+kodem 0, zostaje wyłącznie ostrzeżenie „HIGH RISK bez żadnego testu”, które gaśnie samo po turze
+`test-author`. To jest wzorzec do powielania, a nie wyjątek.
+
 **How to apply:** Przy planowaniu WO, w którym rejestracja ID idzie PO testach, uprzedź, że
 bramka zapali się na czerwono do czasu tagowania, i zaplanuj turę `test-author` jako ostatnią.
 Nie gaś tego przestawieniem statusu na `TODO` — to obejście reguły przez fałszywy status,

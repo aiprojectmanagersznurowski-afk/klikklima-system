@@ -11,6 +11,8 @@ Sonda na żywej bazie (2026-09-03) pokazała, że tabela `audit_log` **jest zast
 
 **How to apply:** Planując cokolwiek audytowego, nie ufaj polu `source` — odpal sondę wg [[db-probe-recipe]]. `AUDIT_REQUIREMENTS.legalBases` **już zawiera** neutralne `OPERATIONAL_ERROR` i `OTHER`, więc audyt operacji spoza RODO **nie wymaga** rozszerzania słownika ani migracji CHECK-a.
 
-Rozbicie `SEC-AUDIT-LOG` (rodzic zostaje TODO, wzorem `CRM-DELETE-ADMIN-ONLY`) na cztery WO: DELETE (napisane: `docs/workorders/SEC-AUDIT-LOG-DELETE.md`), ROLE-CHANGE, MANUAL-STATUS, UI-JUSTIFICATION.
+Rozbicie `SEC-AUDIT-LOG` (rodzic zostaje TODO, wzorem `CRM-DELETE-ADMIN-ONLY`) na cztery WO: DELETE (zaimplementowane i scommitowane, 2026-09-03), ROLE-CHANGE (WO napisane 2026-09-04, czeka na decyzje człowieka D1–D3), MANUAL-STATUS, NOTIFICATION-RESEND/CONTRACT-OVERRIDE.
+
+**Testy statyczne z DELETE ograniczają kolejne części rozbicia.** `apps/b2b-web/tests/sec-audit-log-delete-static.test.ts` wymusza, że w `apps/b2b-web/src` istnieje **co najwyżej jeden** plik z `z.string().trim().min(10)` (poza `anonymize-client-schema.ts`) i żaden plik nie powiela pełnego słownika `legalBases`. Kolejne operacje z `mustLog` muszą więc rozszerzać `lib/audit/delete-justification-schema.ts` przez `.extend()`, nigdy tworzyć własnego schematu — inaczej zielony test cudzego wymagania staje się czerwony.
 
 Pułapka mapowania: `deleteLogisticsOrderAction` **deleguje** do `deleteLeadAction`, a `RESOURCES` nie ma wartości `logistics` — logistyka loguje się jako `resource='leads'`. Osiem akcji `delete` to tylko **siedem** punktów zapisu.
