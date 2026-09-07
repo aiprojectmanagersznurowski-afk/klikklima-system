@@ -1,37 +1,22 @@
 ---
 name: project_sec_authz_default_role_registered
-description: SEC-AUTHZ-DEFAULT-ROLE domknięte 2026-09-07 — DROP DEFAULT + CHECK authorized_user_role_check, migracja NIE uruchomiona
+description: SEC-AUTHZ-DEFAULT-ROLE zamknięte 2026-09-07 — migracja uruchomiona i zweryfikowana na żywej bazie
 metadata:
   type: project
 ---
 
-`SEC-AUTHZ-DEFAULT-ROLE` (zarejestrowane 2026-09-07, commit `3217d4f`) zaimplementowane
-w tej samej sesji jako WO `docs/workorders/SEC-AUTHZ-DEFAULT-ROLE.md`:
+SEC-AUTHZ-DEFAULT-ROLE (AuthorizedUser.role bez `@default("admin")` fail-open) przeszło TODO → DONE 2026-09-07.
+Migracja `20260907173000_security_authorized_user_role_no_default.sql` (commit `02738c3`) URUCHOMIONA na żywej bazie
+produkcyjnej za jawną zgodą człowieka i zweryfikowana bezpośrednim zapytaniem (nie tylko treścią pliku):
+`information_schema.columns` → `is_nullable='NO'`, `column_default=NULL`; `pg_constraint` →
+`authorized_user_role_check` obecny z `CHECK (role IN ('admin','dyspozytor','audytor','monter'))`; 4 istniejące konta
+niezmienione.
 
-- `packages/database/prisma/schema.prisma`, `model AuthorizedUser.role` — usunięto
-  `@default("admin")`. Kolumna była już `NOT NULL` od baseline, samo usunięcie defaultu
-  wystarczyło (bez `SET NOT NULL`).
-- Nowa migracja `supabase/migrations/20260907173000_security_authorized_user_role_no_default.sql`:
-  `ALTER COLUMN role DROP DEFAULT` + `CONSTRAINT authorized_user_role_check CHECK (role IN
-  ('admin','dyspozytor','audytor','monter'))`. Decyzja o CHECK podjęta przez człowieka
-  (za, nie WO-analityka) — synchronizacja z `ROLES` w `rbac.contract.mjs` jest RĘCZNA,
-  nic nie wykrywa dryfu automatycznie (ten sam typ długu co `audit_log_operation_check`).
-- Migracja **NIE URUCHOMIONA** na żadnej bazie — plik ma standardową ramkę ostrzegawczą
-  (wzorzec z `20260901120000_security_revoke_authorized_user_writes.sql`). Wymaga osobnej
-  zgody człowieka przed `supabase db push`/`prisma migrate deploy`.
-- `kk-validate`/`kk-selftest`/`kk-codegen --check` zielone bez zmian (schema.prisma i
-  migracje nie są wejściem tych narzędzi). `npx prisma generate` + `tsc --noEmit` w
-  `apps/b2b-web` i `apps/b2c-web` przeszły bez błędów.
+**Why:** AC3 w rejestrze wymagań pozostawiało otwartą decyzję "CHECK w tej samej migracji czy osobne zadanie" —
+rozstrzygnięto: CHECK dodany w tej samej migracji, wzorem `audit_log_operation_check`/`audit_log_resource_check`.
+Banner ostrzegawczy w pliku migracji zmieniony z "NIE URUCHOMIONA" na potwierdzenie uruchomienia + wynik weryfikacji.
 
-Sąsiaduje z [[project_sec_last_admin_guard_registered]] (ten sam model `AuthorizedUser`,
-inny mechanizm awarii: fail-open default vs. usunięcie ostatniego admina) i z
-[[project_unapplied_security_migrations]] (kolejna migracja bezpieczeństwa czekająca
-na zgodę — trzeba pamiętać o przeliczeniu do listy niezaaplikowanych).
-
-**Why:** fail-open default na kolumnie decydującej o roli w całym panelu B2B = cicha
-eskalacja uprawnień przy jakimkolwiek pominięciu kolumny `role` poza jedyną dziś chronioną
-ścieżką `addAuthorizedUser`.
-
-**How to apply:** przy przyszłej zmianie `ROLES` w `rbac.contract.mjs` pamiętaj, że
-`authorized_user_role_check` (i `audit_log_resource_check`/`audit_log_operation_check`)
-wymaga osobnej migracji ALTER — kk-codegen nie zasygnalizuje tego dryfu.
+**How to apply:** Wzorzec analogiczny do [[project_unapplied_security_migrations]] — po realnym zastosowaniu migracji
+na produkcji ZAWSZE przepisz banner w pliku SQL (nie tylko `status` w kontrakcie), bo mylący banner szkodzi w obie
+strony (fałszywe bezpieczeństwo albo fałszywy alarm). Ryzyko manualnej synchronizacji CHECK z `rbac.contract.mjs`
+`ROLES` zaakceptowane świadomie i nie jest nowym typem długu (ten sam wzorzec co audit_log).

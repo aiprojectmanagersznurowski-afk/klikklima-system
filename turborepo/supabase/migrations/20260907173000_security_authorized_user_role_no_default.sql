@@ -3,12 +3,12 @@
 -- WORK ORDER: docs/workorders/SEC-AUTHZ-DEFAULT-ROLE.md
 --
 -- ╔══════════════════════════════════════════════════════════════════════════════════════╗
--- ║  UWAGA: TA MIGRACJA NIE ZOSTAŁA URUCHOMIONA NA ŻYWEJ BAZIE.                           ║
--- ║  Napisana 2026-09-07, zacommitowana jako plik, świadomie NIEZAAPLIKOWANA.             ║
--- ║  Uruchomienie wymaga OSOBNEJ, JAWNEJ zgody człowieka.                                 ║
--- ║  Dopóki jej nie ma, treść poniżej opisuje stan POSTULOWANY, a nie stan bazy.          ║
--- ║  Nie traktuj obecności tego pliku ani zielonego testu statycznego jako dowodu,        ║
--- ║  że produkcja jest zabezpieczona — test zamraża TREŚĆ pliku, nie stan serwera.        ║
+-- ║  URUCHOMIONA NA ŻYWEJ BAZIE 2026-09-07 (za jawną zgodą człowieka).                    ║
+-- ║  Weryfikacja bezpośrednim zapytaniem po uruchomieniu:                                ║
+-- ║  information_schema.columns → role: is_nullable='NO', column_default=NULL.           ║
+-- ║  pg_constraint → authorized_user_role_check obecny, definicja:                       ║
+-- ║  CHECK ((role = ANY (ARRAY['admin','dyspozytor','audytor','monter']))).              ║
+-- ║  Wszystkie 4 istniejące konta AuthorizedUser mają niezmienione, poprawne role.        ║
 -- ╚══════════════════════════════════════════════════════════════════════════════════════╝
 --
 -- POWÓD. `public."AuthorizedUser".role` miała `DEFAULT 'admin'` od `baseline.sql`. Jedyny
