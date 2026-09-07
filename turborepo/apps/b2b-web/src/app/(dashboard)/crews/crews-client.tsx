@@ -53,6 +53,7 @@ export function CrewsClient({
 
   const canCreateCrews = !!actorRole && can(actorRole, "crews", "create") === "yes";
   const canUpdateCrews = !!actorRole && can(actorRole, "crews", "update") === "yes";
+  const canDeleteCrews = !!actorRole && can(actorRole, "crews", "delete") === "yes";
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -253,19 +254,23 @@ export function CrewsClient({
                         {canUpdateCrews && (
                           <DropdownMenuItem onClick={() => handleOpenEdit(crew.id)}>Edytuj Zespół</DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => triggerFileUpload(crew.id)}>
-                          <Upload className="size-4 mr-2" /> Wgraj zdjęcie zespołu
-                        </DropdownMenuItem>
+                        {canUpdateCrews && (
+                          <DropdownMenuItem onClick={() => triggerFileUpload(crew.id)}>
+                            <Upload className="size-4 mr-2" /> Wgraj zdjęcie zespołu
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem className="text-destructive focus:text-destructive">Zawieś Zespół</DropdownMenuItem>
-                      
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
+
+                              {canDeleteCrews && <DropdownMenuSeparator />}
+                              {canDeleteCrews && (
+                              <DropdownMenuItem
                                 className="text-destructive focus:text-destructive focus:bg-destructive/10"
                                 onClick={() => handleDelete(crew.id)}
                               >
                                 <ShieldAlert className="mr-2 size-4" />
                                 <span>Usuń (Tylko Admin)</span>
                               </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                     </DropdownMenu>
                   </div>

@@ -111,9 +111,9 @@ describe('SEC-AUTHZ-DEFAULT-ROLE — pokrycie statyczne schema.prisma i migracji
   });
 
   // @REQ: SEC-AUTHZ-DEFAULT-ROLE
-  it('AC3: migracja jest jawnie oznaczona jako NIEZAAPLIKOWANA na żywej bazie', () => {
+  it('AC3: migracja jest jawnie oznaczona jako URUCHOMIONA i ZWERYFIKOWANA na żywej bazie', () => {
     const sql = readMigration();
 
-    expect(sql).toContain('TA MIGRACJA NIE ZOSTAŁA URUCHOMIONA NA ŻYWEJ BAZIE');
+    expect(sql).toContain('URUCHOMIONA NA ŻYWEJ BAZIE 2026-09-07 (za jawną zgodą człowieka).');
   });
 });
