@@ -1,6 +1,6 @@
 ---
 name: rls-disabled-incident
-description: Na żywej bazie RLS było FIZYCZNIE wyłączone na 16 z 18 tabel, a anon miał pełne prawa — migracja SEC-RLS-BASELINE napisana 2026-08-24, wymaga osobnej zgody na uruchomienie
+description: Na żywej bazie RLS było FIZYCZNIE wyłączone na 16 z 18 tabel, a anon miał pełne prawa — migracja SEC-RLS-BASELINE napisana 2026-08-24, uruchomiona i potwierdzona 2026-09-03; ZAMKNIĘTE, nie pisz jej drugi raz
 metadata:
   type: project
 ---
@@ -12,10 +12,25 @@ pełne `INSERT/SELECT/UPDATE/DELETE/TRUNCATE`. Dwie istniejące polityki (`Allow
 klienci`, `Allow anon insert on leady`) były MARTWE — przy wyłączonym RLS silnik ich nie wykonuje.
 Poprawnie zamknięte były tylko `soft_leady` i `system_config` (przypadkiem).
 
-Napisałem `supabase/migrations/20260824185845_security_enable_rls_baseline.sql`. Na dzień zapisu
-tej notatki **plik istnieje, ale NIE został uruchomiony na żywej bazie** — to osobny, jawny krok
-wymagający zgody Michala. Zanim cokolwiek na tym zbudujesz, sprawdź `pg_policies` / `relrowsecurity`
+Napisałem `supabase/migrations/20260824185845_security_enable_rls_baseline.sql` (commit `c9f8c9a`).
+Na dzień zapisu notatki plik NIE był jeszcze uruchomiony. **AKTUALIZACJA: uruchomiony i
+zweryfikowany odczytem `pg_class.relrowsecurity` — patrz [[unapplied-security-migrations]],
+stan na 2026-09-03.** Zanim cokolwiek na tym zbudujesz, sprawdź `pg_policies` / `relrowsecurity`
 albo zapytaj: stan repo i stan bazy mogą się tu rozjeżdżać dłużej niż zwykle.
+
+**PUŁAPKA POWTÓRZENIA (2026-09-07).** Otwarto okno `SEC-RLS-BASELINE` i zlecono mi napisanie
+„nowego" pliku `<timestamp>_security_enable_rls_baseline.sql` z inwentarzem identycznym co do
+tabeli i nazwy polityki z tym, co już leży w `20260824185845`. Nie napisałem — duplikat migracji
+o tej samej treści zostaje w repo na zawsze i przy `supabase db reset` wykonuje się dwa razy.
+Trzy sygnały, że zlecenie jest powtórką, a nie nową pracą: (1) plik o tej nazwie już jest w
+`supabase/migrations/`; (2) zlecenie mówiło „15 tabel", a jego własny inwentarz sumuje się do 16
+(8+2+3+3) — dokładnie tyle, co w istniejącym pliku; (3) zlecona sekcja 5 to gołe `REVOKE`/`GRANT`
+bez osłony `to_regclass`, czyli REGRES wobec tego, co w pliku już jest
+(patrz [[live-db-objects-outside-migrations]] — bez osłony `supabase db reset` wywala się na
+nieistniejącym widoku). **Właściwa reakcja na „RLS znowu wyłączone": nie nowy plik, tylko ponowne
+uruchomienie istniejącego — jest w pełni idempotentny (ENABLE, DROP+CREATE POLICY, REVOKE+GRANT
+opisują stan docelowy, nie deltę).** Nowy plik jest uzasadniony wyłącznie wtedy, gdy zmienia się
+INWENTARZ (nowa tabela, nowy konsument supabase-js), i wtedy dostaje własny ticket i własną nazwę.
 
 **Why:** decydujące dla oceny ryzyka było ustalenie, że Prisma łączy się jako `postgres`
 z `rolbypassrls = true`. Dlatego włączenie RLS nie dotyka praktycznie żadnej logiki biznesowej

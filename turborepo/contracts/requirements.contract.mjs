@@ -426,6 +426,38 @@ export const REQUIREMENTS = [
     ],
   }),
 
+  // ── Okno kontraktowe SEC-LAST-ADMIN-GUARD (2026-09-07, contract-steward) ──
+  // Kontynuacja długu odroczonego w SEC-AUDIT-LOG-ROLE-CHANGE (D3, :361-363 i AC7 powyżej):
+  // ochrona ostatniego konta admin istnieje DZIŚ wyłącznie na ścieżce zmiany roli
+  // (updateAuthorizedUserRoleAction, settings/actions.ts:286) — liczenie adminów WEWNĄTRZ
+  // transakcji Serializable, PRZED update'em, sentinel LastAdminError złapany tylko w
+  // zewnętrznym catch tej samej akcji. Ścieżka deleteAuthorizedUser (tamże, :205) NIE MA
+  // żadnej takiej ochrony: dziś da się usunąć jedyne konto admin, co blokuje zarządzanie
+  // rolami i ustawieniami dla całego systemu, bo nie zostaje nikt uprawniony do
+  // authorized_users.update/delete (rbac.contract.mjs — obie akcje tylko dla admin).
+  // WYMAGA DECYZJI (nie rozstrzygane w tym oknie, człowiek zdecyduje w Work Order):
+  // czy poza warstwą Server Action (transakcja Serializable + count-before-delete,
+  // analogicznie do update) potrzebna jest też twarda gwarancja bazodatowa — constraint
+  // albo trigger Postgres, który fizycznie odrzuca DELETE redukujący liczbę wierszy
+  // authorized_users z role='admin' do zera. Notatka z 2026-09-04 przy ROLE-CHANGE mówiła
+  // „wymaga migracji", ale nie jest jasne, czy to wciąż aktualne przy podwójnej warstwie
+  // ochrony w kodzie. Status TODO nie implikuje odpowiedzi na to pytanie.
+  R('SEC-LAST-ADMIN-GUARD', {
+    status: 'TODO',
+    domain: 'security',
+    risk: 'HIGH',
+    source: "Zapowiedziane, ale nie zarejestrowane, w oknie SEC-AUDIT-LOG-ROLE-CHANGE (2026-09-04) — patrz komentarz przy SEC-AUDIT-LOG-ROLE-CHANGE (:361-363) i AC7 tego wymagania: 'ochrona ostatniego admina jest tu WĄSKA — wyłącznie na ścieżce zmiany roli (decyzja D3). Ścieżka delete zostaje niezabezpieczona i czeka na osobne, jeszcze niezarejestrowane SEC-LAST-ADMIN-GUARD'. Jedyny punkt zapisu objęty tym wymaganiem: apps/b2b-web/src/app/(dashboard)/settings/actions.ts, deleteAuthorizedUser (:205) — dziś usuwa konto bez sprawdzenia, czy jest ono jedynym administratorem, w przeciwieństwie do sąsiedniej updateAuthorizedUserRoleAction (:286), która liczy adminów wewnątrz transakcji Serializable PRZED update'em i odrzuca degradację jedynego konta sentinel-em LastAdminError. To wymaganie przenosi ten wzorzec na ścieżkę delete. WYMAGA DECYZJI (jawnie odroczone, NIE rozstrzygane w tym oknie kontraktowym): czy poza warstwą Server Action potrzebna jest dodatkowo twarda gwarancja bazodanowa (constraint/trigger Postgres blokujący DELETE, który redukuje COUNT(*) WHERE role='admin' do zera) — notatka z 2026-09-04 mówiła 'wymaga migracji', decyzja o tym zapadnie w Work Order, nie tutaj. Sąsiaduje z SEC-AUDIT-LOG-ROLE-CHANGE (wzorzec LastAdminError i transakcji Serializable) oraz SEC-AUDIT-LOG-DELETE (wzorzec zapisu audit_log przy delete, punkt siódmy z siedmiu to właśnie ta akcja).",
+    statement: 'Usunięcie jedynego konta o roli admin w authorized_users jest odrzucone błędem domenowym — analogicznie do ochrony przy zmianie roli (SEC-AUDIT-LOG-ROLE-CHANGE, AC7), liczenie adminów odbywa się WEWNĄTRZ tej samej transakcji co delete, PRZED samym usunięciem, żeby uniknąć wyścigu między sprawdzeniem a zapisem (TOCTOU, pułapka nr 4 z CLAUDE.md). Przy co najmniej dwóch kontach admin usunięcie jednego z nich przebiega normalnie, z wpisem audytowym jak dziś (SEC-AUDIT-LOG-DELETE). WYMAGA DECYZJI: czy poza tą warstwą Server Action potrzebna jest twarda gwarancja bazodanowa (constraint/trigger) — nierozstrzygnięte w tym wpisie.',
+    acceptance: [
+      'AC1 — Ostatni admin nie może zostać usunięty: usunięcie jedynego konta o roli admin jest odrzucone błędem domenowym; konto NIE jest usuwane i wpis audytowy w audit_log NIE powstaje, bo operacja się nie wydarzyła (spójne z AC2/AC7-AC9 SEC-AUDIT-LOG-DELETE — brak wpisów o operacjach, które się nie wydarzyły)',
+      'AC2 — Przy ≥2 kontach admin przechodzi normalnie: usunięcie jednego z co najmniej dwóch kont admin kończy się sukcesem, kontem usuniętym i jednym wpisem audit_log jak dziś (bez regresji istniejącego zachowania SEC-AUDIT-LOG-DELETE)',
+      'AC3 — Liczenie w tej samej transakcji, przed delete: adminCount jest liczone wewnątrz $transaction obejmującej też sam DELETE i auditLog.create, PRZED wykonaniem DELETE — nie jako odczyt poprzedzający transakcję w JS. Wzorzec identyczny z updateAuthorizedUserRoleAction (:332-337): count wewnątrz transakcji z isolationLevel Serializable',
+      'AC4 — Współbieżność (test obowiązkowy, analogicznie do AC8 SEC-AUDIT-LOG-ROLE-CHANGE): dwa równoległe żądania usunięcia dwóch różnych (i jedynych) kont admin kończą się co najwyżej jednym sukcesem, a po obu operacjach w authorized_users zostaje co najmniej jedno konto admin. O wyniku rozstrzyga baza (Serializable), nie odczyt w JS poprzedzający zapis',
+      'AC5 — Sentinel błędu odróżnialny od innych awarii transakcji: błąd ochrony ostatniego admina jest rozpoznawalny (analogicznie do LastAdminError) i złapany wyłącznie w zewnętrznym catch tej samej akcji — nie ucieka jako generyczny błąd 500 ani nie jest mylony z awarią zapisu do audit_log',
+      'AC6 — Usunięcie konta nieistniejącego albo konta o innej roli niż admin nie jest tym kryterium dotknięte — zachowanie dla tych przypadków pozostaje jak dziś (poza zakresem tego ID)',
+    ],
+  }),
+
   // ───────────────────────── Powiadomienia ─────────────────────────
   R('NTF-QUEUE-WINDOW', { source: 'b2b_app_requirements.md#epic-4', domain: 'notifications', statement: 'SMS wysyłane wyłącznie w oknie 8:00–18:00; poza oknem kolejkowane na najbliższe okno.', acceptance: ['Strefa Europe/Warsaw', 'Przesunięcie nie gubi wiadomości'] }),
   R('NTF-POLY', { source: 'ADR-007', domain: 'notifications', statement: 'Kolejka obsługuje powiadomienia niezwiązane z leadem: serwisowe i usterkowe.', acceptance: ['Dokładnie jedno z lead_id/installation_id/service_id/incident_id jest niepuste — wymuszone przez CHECK w bazie', 'N10-N14 kolejkują się z service_id', 'N15-N18 kolejkują się z incident_id', 'Próba wstawienia rekordu z dwoma powiązaniami jest odrzucana przez bazę'], risk: 'HIGH' }),
