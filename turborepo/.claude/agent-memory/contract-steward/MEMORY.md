@@ -21,3 +21,4 @@
 - [SEC-LAST-ADMIN-GUARD zarejestrowane](project_sec_last_admin_guard_registered.md) — 2026-09-07; zamyka gap delete zapowiedziany w ROLE-CHANGE D3; migracja constraint/trigger otwarta.
 - [SEC-AUTHZ-DEFAULT-ROLE zamknięte](project_sec_authz_default_role_registered.md) — 2026-09-07; DROP DEFAULT + CHECK ról URUCHOMIONE i zweryfikowane na żywej bazie, status DONE.
 - [Crews admin gates zamknięte](project_crews_admin_gates_closed.md) — 2026-09-07; -CREWS to 3 warstwy (UI/SA/RLS), UPDATE-ADMIN-ONLY tylko 2 (bez RLS) — sprawdzaj AC literalnie, nie wg szablonu.
+- [FNL-ADVANCE-STATUS-CONTRACT-BOUND zarejestrowane](project_fnl_advance_status_contract_bound_registered.md) — 2026-09-07; advanceLeadStatus ma lokalną mapę przejść równoległą do kontraktu, guardy/effects pomijane; risk MEDIUM, split i sync-guard-w-tx odłożone do WO.
