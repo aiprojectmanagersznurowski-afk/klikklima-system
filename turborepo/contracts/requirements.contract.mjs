@@ -458,6 +458,39 @@ export const REQUIREMENTS = [
     ],
   }),
 
+  // ── Okno kontraktowe SEC-AUTHZ-DEFAULT-ROLE (2026-09-07, contract-steward) ──
+  // Znalezisko przy przeglądzie schematu (nie zapowiedziane w żadnym wcześniejszym
+  // oknie, w przeciwieństwie do SEC-LAST-ADMIN-GUARD powyżej): AuthorizedUser.role
+  // w schema.prisma:89 ma @default("admin"). Dziś jedyny punkt zapisu tego modelu,
+  // addAuthorizedUser (settings/actions.ts:19), przyjmuje role jako parametr
+  // obowiązkowy i zawsze przekazuje go explicite — więc przez UI panelu B2B nie da
+  // się dziś wykorzystać tego defaultu. Ale sam schemat jest fail-open: każdy
+  // przyszły punkt zapisu, który pominie pole role (nowa Server Action, migracja
+  // z seedem, ręczny INSERT, potencjalny trigger Supabase Auth przy rejestracji),
+  // tworzy konto z PEŁNYMI prawami admina bez żadnej decyzji — cichy privilege
+  // escalation na poziomie schematu, analogiczny do pułapki nr 1 z CLAUDE.md
+  // ("Brak sprawdzenia roli to podatność, nie niedopatrzenie"), tylko przesunięty
+  // z warstwy akcji na warstwę bazy. WYMAGA DECYZJI (nie rozstrzygane w tym oknie):
+  // czy migracja usuwająca default powinna też dodać CHECK (role IN (...))
+  // egzekwujący ROLES z rbac.contract.mjs na poziomie bazy — druga, bazodanowa
+  // linia obrony, analogicznie do CHECK-ów przy audit_log — czy to osobne,
+  // przyszłe zadanie. Implementacja (migracja + jednorazowa weryfikacja żywej
+  // bazy) jest osobnym krokiem, po akceptacji Work Ordera przez człowieka; ten
+  // wpis rejestruje tylko wymaganie.
+  R('SEC-AUTHZ-DEFAULT-ROLE', {
+    status: 'TODO',
+    domain: 'security',
+    risk: 'HIGH',
+    source: "Znalezisko przy przeglądzie packages/database/prisma/schema.prisma, model AuthorizedUser (linia 86-92): pole role (linia 89) ma wartość domyślną @default(\"admin\"). Dziś JEDYNY punkt zapisu tego modelu w kodzie aplikacji jest apps/b2b-web/src/app/(dashboard)/settings/actions.ts:19, addAuthorizedUser(email, role) — role jest parametrem obowiązkowym funkcji i jest zawsze przekazywane explicite (wołający musi je podać), więc przez istniejące UI panelu B2B nie da się dziś stworzyć konta bez wskazanej roli i nie da się skorzystać z tego defaultu. Problem jest w samym schemacie, nie w dzisiejszym zachowaniu: kolumna bez NOT NULL bez default jest fail-open dla KAŻDEGO przyszłego punktu zapisu, który pominie role — nowa Server Action, migracja z seedem, ręczny skrypt/INSERT administracyjny, potencjalny trigger Supabase Auth przy rejestracji konta. Każdy z nich dostałby konto z rolą 'admin', czyli pełnymi uprawnieniami z rbac.contract.mjs, bez jakiejkolwiek decyzji o tym w kodzie wołającym — cichy privilege escalation, sprzeczny z zasadą fail-closed z .claude/CLAUDE.md, pułapka nr 1: 'Prisma omija RLS. […] Brak sprawdzenia roli to podatność, nie niedopatrzenie' — to jest ten sam problem przesunięty z warstwy Server Action na warstwę schematu bazy. Sąsiaduje z SEC-LAST-ADMIN-GUARD i SEC-AUDIT-LOG-ROLE-CHANGE (ten sam model AuthorizedUser, te same akcje w settings/actions.ts), ale nie zależy od żadnego z nich i nie jest przez nie zamykane.",
+    statement: 'Kolumna AuthorizedUser.role w schema.prisma nie ma wartości domyślnej — jest wymagana (NOT NULL, bez @default) — tak, aby próba wstawienia wiersza w authorized_users bez explicite podanej roli była odrzucona przez samą bazę, a nie tylko przez warstwę aplikacji. Usunięcie defaultu wymaga migracji Postgres (ALTER COLUMN role DROP DEFAULT); czy migracja powinna dodatkowo dodać CHECK (role IN (...)) egzekwujący ROLES z rbac.contract.mjs jako drugą, bazodanową linię obrony, czy to osobne przyszłe zadanie — WYMAGA DECYZJI, nierozstrzygniętej w tym wpisie.',
+    acceptance: [
+      'AC1 — Brak defaultu w schemacie: AuthorizedUser.role w schema.prisma nie ma klauzuli @default — kolumna role w tabeli authorized_users jest NOT NULL bez DEFAULT, więc INSERT bez explicite podanej wartości role jest odrzucony przez bazę (naruszenie NOT NULL), niezależnie od tego, czy zapis pochodzi z Server Action, skryptu, seeda migracji czy triggera',
+      'AC2 — Nieregresja jedynego istniejącego punktu zapisu: addAuthorizedUser (settings/actions.ts:19) nie wymaga zmiany zachowania — już dziś przekazuje role jako parametr obowiązkowy i explicite, więc usunięcie defaultu nie jest dla niego zmianą łamiącą (breaking); test statyczny/integracyjny potwierdza, że tworzenie konta przez tę akcję działa identycznie przed i po migracji',
+      'AC3 — Decyzja o drugiej linii obrony pozostaje otwarta: migracja usuwająca default (ALTER COLUMN role DROP DEFAULT) jest wymagana; to, czy w tej samej lub osobnej migracji dodać CHECK (role IN (...)) egzekwujący ROLES z rbac.contract.mjs na poziomie bazy (analogicznie do CHECK-ów przy audit_log), czy odłożyć to jako osobne, przyszłe zadanie — nie jest tu rozstrzygane; Work Order musi zawierać to pytanie jako decyzję do podjęcia przez człowieka, nie przez implementera',
+      "AC4 — Weryfikacja istniejących wierszy przed migracją: przed uznaniem migracji za zastosowaną na żywej bazie należy sprawdzić zapytaniem SELECT * FROM \"AuthorizedUser\", czy każdy istniejący wiersz ma sensowną, zamierzoną rolę — usunięcie defaultu nie zmienia wartości już zapisanych (nie jest to ryzyko utraty danych), ale jest to jednorazowa weryfikacja poprzedzająca zamknięcie zadania, bo default mógł dotąd cicho wstawić 'admin' tam, gdzie nikt tego nie zamierzył",
+    ],
+  }),
+
   // ───────────────────────── Powiadomienia ─────────────────────────
   R('NTF-QUEUE-WINDOW', { source: 'b2b_app_requirements.md#epic-4', domain: 'notifications', statement: 'SMS wysyłane wyłącznie w oknie 8:00–18:00; poza oknem kolejkowane na najbliższe okno.', acceptance: ['Strefa Europe/Warsaw', 'Przesunięcie nie gubi wiadomości'] }),
   R('NTF-POLY', { source: 'ADR-007', domain: 'notifications', statement: 'Kolejka obsługuje powiadomienia niezwiązane z leadem: serwisowe i usterkowe.', acceptance: ['Dokładnie jedno z lead_id/installation_id/service_id/incident_id jest niepuste — wymuszone przez CHECK w bazie', 'N10-N14 kolejkują się z service_id', 'N15-N18 kolejkują się z incident_id', 'Próba wstawienia rekordu z dwoma powiązaniami jest odrzucana przez bazę'], risk: 'HIGH' }),
