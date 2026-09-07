@@ -41,12 +41,30 @@ const { leadFindUniqueMock, leadUpdateMock, revalidatePathMock, getCurrentActorR
     getCurrentUserMock: vi.fn(),
   }));
 
+// SEC-AUDIT-LOG-MANUAL-STATUS (Fala C): `advanceLeadStatus` opakowuje odczyt/zapis
+// w `prisma.$transaction`, wiec fake musi wywolac przekazany callback z obiektem
+// `tx` udajacym te sama powierzchnie ($queryRaw dla blokady wiersza, leady.findUnique/
+// update, auditLog.create dla przejsc recznych) — bez tego kazde wywolanie
+// `advanceLeadStatus` pada na `$transaction is not a function`, niezaleznie od bramki
+// roli, ktora ten plik ma dowodzic.
 vi.mock('@repo/database', () => ({
   prisma: {
     leady: {
       findUnique: leadFindUniqueMock,
       update: leadUpdateMock,
     },
+    $transaction: vi.fn(async (callback: (tx: unknown) => unknown) =>
+      callback({
+        $queryRaw: vi.fn().mockResolvedValue([]),
+        leady: {
+          findUnique: leadFindUniqueMock,
+          update: leadUpdateMock,
+        },
+        auditLog: {
+          create: vi.fn(),
+        },
+      }),
+    ),
   },
   LeadStatus: {},
 }));
@@ -118,12 +136,17 @@ describe('advanceLeadStatus — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () => {
 
   // Kontrola pozytywna dla kazdej dozwolonej roli osobno (AC3) — przejscie zgodne z
   // ALLOWED_TRANSITIONS (NEW_LEAD -> AWAITING_AUDIT wymaga tez audytor_id, wiec
-  // fixture ma go ustawiony).
+  // fixture ma go ustawiony). SEC-AUDIT-LOG-MANUAL-STATUS (Fala C): `advanceLeadStatus`
+  // wymaga teraz `actorEmail` z `getCurrentUser()` fail-closed PRZED transakcja, nawet
+  // na tym przejsciu normalnym (T01, brak `manualEquivalent` w kontrakcie) — bez
+  // nadpisania globalnego fallbacku `{ data: { user: null } }` z linii 59 ten test
+  // padalby na bramce e-maila, nie na dowodzie roli, ktory ma sprawdzac.
   // @REQ: SEC-AUTHZ-B2B-MUTATIONS
   it.each(ALLOWED_ROLES)(
     'rola %s jest dozwolona, dozwolone przejscie konczy sie zapisem',
     async (role) => {
       getCurrentActorRoleMock.mockResolvedValue(role);
+      getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'operator@klikklima.pl' } } });
       leadFindUniqueMock.mockResolvedValue({ status: 'NEW_LEAD', audytor_id: 'audytor-1' });
       leadUpdateMock.mockResolvedValue({});
 

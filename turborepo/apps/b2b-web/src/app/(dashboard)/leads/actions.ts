@@ -12,6 +12,8 @@ import {
 } from "@klikklima/contracts";
 import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server";
 import { deleteJustificationSchema, type DeleteJustificationInput, type DeleteActionResult } from "../../../lib/audit/delete-justification-schema";
+import { isManualStatusChange } from "../../../lib/audit/manual-status-classifier";
+import { findTransitionByFromTo } from "../../../lib/audit/find-transition-by-from-to";
 
 /**
  * D6 (WO CRM-SAFE-RECORD-ACTIONS): "ważny w dniu montażu" porównujemy po dacie
@@ -603,7 +605,11 @@ export async function getDelayedNewLeadsCount(): Promise<number> {
  */
 const ALLOWED_TRANSITIONS: Record<LeadStatus, LeadStatus[]> = {
   NEW_LEAD: ["AWAITING_AUDIT"],
-  AWAITING_AUDIT: ["AUDIT_COMPLETED", "NEW_LEAD"],
+  // SEC-AUDIT-LOG-MANUAL-STATUS (Fala C, K2, decyzja człowieka 2026-09-04):
+  // AWAITING_AUDIT -> NEW_LEAD USUNIĘTE z tej mapy. Kontrakt nie zna tego przejścia
+  // (brak w TRANSITIONS) — to nie jest legalny wyjątek do audytu, to dziura w
+  // regule, którą trzeba będzie dopisać do kontraktu świadomie, osobnym ID.
+  AWAITING_AUDIT: ["AUDIT_COMPLETED"],
   AUDIT_COMPLETED: ["AWAITING_CREW_ASSIGNMENT", "QUOTE_REJECTED"],
   AWAITING_CREW_ASSIGNMENT: ["HARDWARE_IN_WAREHOUSE", "ROLLBACK_RESCHEDULING"],
   HARDWARE_IN_WAREHOUSE: ["HARDWARE_IN_TRANSIT", "AWAITING_INSTALLATION", "ROLLBACK_RESCHEDULING"],
@@ -622,8 +628,28 @@ const ALLOWED_TRANSITIONS: Record<LeadStatus, LeadStatus[]> = {
 
 
 
-/** Przesuwa leada do nowego statusu z walidacją dozwolonych przejść */
-export async function advanceLeadStatus(leadId: string, targetStatus: LeadStatus): Promise<{ success: boolean; error?: string }> {
+/**
+ * Przesuwa leada do nowego statusu z walidacją dozwolonych przejść.
+ *
+ * SEC-AUDIT-LOG-MANUAL-STATUS (Fala C): `input` jest opcjonalny w TypeScript (żeby
+ * przejścia normalne kompilowały się bez niego), ale warunkowo wymagany w runtime —
+ * gdy znalezione przejście kontraktowe jest klasyfikowane jako ręczne
+ * (`isManualStatusChange`), `input` musi przejść `deleteJustificationSchema`, inaczej
+ * odmowa bez zapisu. Dla przejść normalnych `input`, jeśli podany, jest ignorowany.
+ *
+ * K2 (przejście, którego kontrakt nie zna, np. AWAITING_AUDIT -> NEW_LEAD): TWARDA
+ * ODMOWA, zero zapisu, zero wpisu audytowego — decyzja człowieka 2026-09-04, to nie
+ * jest legalny wyjątek do zaaudytowania, to dziura w kontrakcie.
+ *
+ * Naprawa `advanceLeadStatus` jako maszyny stanów (guardy, efekty, `canTransition`)
+ * jest POZA ZAKRESEM tego WO — dokumentujemy i audytujemy istniejące zachowanie,
+ * nie naprawiamy go (osobne ID: `FNL-ADVANCE-STATUS-CONTRACT-BOUND`).
+ */
+export async function advanceLeadStatus(
+  leadId: string,
+  targetStatus: LeadStatus,
+  input?: DeleteJustificationInput,
+): Promise<{ success: boolean; error?: string }> {
   let actorRole;
   try {
     actorRole = await getCurrentActorRole();
@@ -635,45 +661,99 @@ export async function advanceLeadStatus(leadId: string, targetStatus: LeadStatus
     return { success: false, error: "Brak uprawnień do zmiany statusu leada." };
   }
 
+  let actorEmail: string | undefined;
   try {
-    const lead = await prisma.leady.findUnique({
-      where: { id: leadId },
-      select: { status: true, audytor_id: true }
-    });
+    const {
+      data: { user },
+    } = await getCurrentUser();
+    actorEmail = user?.email ?? undefined;
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error);
+    return { success: false, error: "Nie udało się zmienić statusu leada." };
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do zmiany statusu leada." };
+  }
 
-    if (!lead || !lead.status) {
-      return { success: false, error: "Lead nie został znaleziony." };
-    }
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Blokada wiersza leada (pułapka 4 z CLAUDE.md), wzorzec identyczny z
+      // `bypassLogisticsOrder`/`rollbackLogisticsOrder`: serializuje dostęp do
+      // TEGO wiersza między równoległymi wywołaniami `advanceLeadStatus`.
+      await tx.$queryRaw<{ id: string; status: string }[]>`
+        SELECT id, status FROM leady WHERE id = ${leadId}::uuid FOR UPDATE
+      `;
 
-    const currentStatus = lead.status as LeadStatus;
-    const allowed = ALLOWED_TRANSITIONS[currentStatus] || [];
+      const lead = await tx.leady.findUnique({
+        where: { id: leadId },
+        select: { status: true, audytor_id: true },
+      });
 
-    if (!allowed.includes(targetStatus)) {
-      return { 
-        success: false, 
-        error: `Przejście z „${currentStatus}" do „${targetStatus}" nie jest dozwolone.` 
-      };
-    }
+      if (!lead || !lead.status) {
+        throw new Error("Lead nie został znaleziony.");
+      }
 
-    // Walidacja biznesowa: E1→E2 wymaga audytora
-    if (targetStatus === "AWAITING_AUDIT" && !lead.audytor_id) {
-      return { success: false, error: "Najpierw przypisz audytora do tego leada." };
-    }
+      const currentStatus = lead.status as LeadStatus;
+      const allowed = ALLOWED_TRANSITIONS[currentStatus] || [];
 
-    // Bucket timestamp
-    const isBucket = targetStatus === "QUOTE_REJECTED" || targetStatus === "ROLLBACK_RESCHEDULING";
+      if (!allowed.includes(targetStatus)) {
+        throw new Error(
+          `Przejście z „${currentStatus}" do „${targetStatus}" nie jest dozwolone.`,
+        );
+      }
 
-    await prisma.leady.update({
-      where: { id: leadId },
-      data: { 
-        status: targetStatus,
-        ...(isBucket ? { bucket_entered_at: new Date() } : {}),
-        // Wyjście z bucketu rollback → powrót do E4 → wyczyść bucket timestamp
-        ...(currentStatus === "ROLLBACK_RESCHEDULING" && targetStatus === "AWAITING_CREW_ASSIGNMENT" 
-          ? { bucket_entered_at: null } 
-          : {}
-        ),
-      },
+      // Walidacja biznesowa: E1→E2 wymaga audytora
+      if (targetStatus === "AWAITING_AUDIT" && !lead.audytor_id) {
+        throw new Error("Najpierw przypisz audytora do tego leada.");
+      }
+
+      // K2 — przejście, którego kontrakt nie zna: twarda odmowa, zero zapisu.
+      const transition = findTransitionByFromTo(currentStatus, targetStatus);
+      if (!transition) {
+        throw new Error(
+          `Przejście z „${currentStatus}" do „${targetStatus}" nie istnieje w kontrakcie.`,
+        );
+      }
+
+      const isManual = isManualStatusChange(transition.id);
+      let validatedInput: DeleteJustificationInput | undefined;
+      if (isManual) {
+        const parsed = deleteJustificationSchema.safeParse(input);
+        if (!parsed.success) {
+          throw new Error("Nieprawidłowe uzasadnienie.");
+        }
+        validatedInput = parsed.data;
+      }
+
+      // Bucket timestamp
+      const isBucket = targetStatus === "QUOTE_REJECTED" || targetStatus === "ROLLBACK_RESCHEDULING";
+
+      await tx.leady.update({
+        where: { id: leadId },
+        data: {
+          status: targetStatus,
+          ...(isBucket ? { bucket_entered_at: new Date() } : {}),
+          // Wyjście z bucketu rollback → powrót do E4 → wyczyść bucket timestamp
+          ...(currentStatus === "ROLLBACK_RESCHEDULING" && targetStatus === "AWAITING_CREW_ASSIGNMENT"
+            ? { bucket_entered_at: null }
+            : {}
+          ),
+        },
+      });
+
+      if (isManual && validatedInput) {
+        await tx.auditLog.create({
+          data: {
+            operation: "manual_status_change",
+            resource: "leads",
+            recordId: leadId,
+            actorEmail,
+            actorRole,
+            justification: validatedInput.justification,
+            legalBasis: validatedInput.legalBasis,
+          },
+        });
+      }
     });
 
     revalidatePath("/leads");
