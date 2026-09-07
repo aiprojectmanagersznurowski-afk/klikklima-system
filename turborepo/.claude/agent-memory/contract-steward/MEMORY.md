@@ -19,4 +19,4 @@
 - [T08: K1 vs D1 — rozstrzygnięte polem manualEquivalent](project_t08_classifier_vs_d1_tension.md) — dwie flagi o przeciwnych znakach (override dodaje, manualEquivalent odejmuje K1); implementacja po stronie apps/.
 - [Ziarnistość ID wymagań](feedback_requirement_id_granularity.md) — jedno ID na encję obejmujące create i update, podział po encji, nie po operacji.
 - [SEC-LAST-ADMIN-GUARD zarejestrowane](project_sec_last_admin_guard_registered.md) — 2026-09-07; zamyka gap delete zapowiedziany w ROLE-CHANGE D3; migracja constraint/trigger otwarta.
-- [SEC-AUTHZ-DEFAULT-ROLE zarejestrowane](project_sec_authz_default_role_registered.md) — 2026-09-07; role @default("admin") fail-open w schemacie, migracja+CHECK decyzja otwarta.
+- [SEC-AUTHZ-DEFAULT-ROLE zamknięte](project_sec_authz_default_role_registered.md) — 2026-09-07; DROP DEFAULT + CHECK ról w migracji, NIEURUCHOMIONA, zgoda człowieka na wdrożenie zaległa.

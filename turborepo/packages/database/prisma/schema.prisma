@@ -86,7 +86,7 @@ model adresy {
 model AuthorizedUser {
   id        String   @id @default(cuid())
   email     String   @unique
-  role      String   @default("admin")
+  role      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

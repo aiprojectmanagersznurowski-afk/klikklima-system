@@ -12,3 +12,4 @@
 - [Stan audit_log na żywej bazie](project_audit_log_live_state.md) — tabela/CHECK-i/trigger istnieją; rejestr wymagań był nieaktualny, już poprawiony
 - [SEC-AUDIT-LOG-MANUAL-STATUS Wave C audit](sec-audit-log-manual-status-wave-c.md) — advanceLeadStatus reviewed clean, K2/audit-atomicity/TOCTOU all hold, known rollback-slot debt confirmed non-security.
 - [Project conventions for this audit family](project-sec-audit-log-manual-status.md) — how contract-driven manual-status classification (K1-K4) works across advanceLeadStatus/bypassLogisticsOrder/rollbackLogisticsOrder.
+- [SEC-AUTHZ-DEFAULT-ROLE audit](project_sec_authz_default_role_audit.md) — werdykt NISKIE, DROP DEFAULT+CHECK poprawne, addAuthorizedUser waliduje niezależnie od stanu migracji, niezaaplikowanie na prod nie jest nowym ryzykiem.

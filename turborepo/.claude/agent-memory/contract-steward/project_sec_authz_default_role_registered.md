@@ -1,18 +1,37 @@
 ---
-name: project-sec-authz-default-role-registered
-description: SEC-AUTHZ-DEFAULT-ROLE zarejestrowane 2026-09-07 — schema-level fail-open default na AuthorizedUser.role, jeszcze nie zaimplementowane
+name: project_sec_authz_default_role_registered
+description: SEC-AUTHZ-DEFAULT-ROLE domknięte 2026-09-07 — DROP DEFAULT + CHECK authorized_user_role_check, migracja NIE uruchomiona
 metadata:
   type: project
 ---
 
-`SEC-AUTHZ-DEFAULT-ROLE` zarejestrowane w `contracts/requirements.contract.mjs` (status TODO, risk HIGH, domain security) na oknie kontraktowym `SEC-AUTHZ-DEFAULT-ROLE` (2026-09-07).
+`SEC-AUTHZ-DEFAULT-ROLE` (zarejestrowane 2026-09-07, commit `3217d4f`) zaimplementowane
+w tej samej sesji jako WO `docs/workorders/SEC-AUTHZ-DEFAULT-ROLE.md`:
 
-**Znalezisko:** `packages/database/prisma/schema.prisma:86-92`, model `AuthorizedUser`, pole `role String @default("admin")` (linia 89). Jedyny dzisiejszy punkt zapisu, `addAuthorizedUser` (`apps/b2b-web/src/app/(dashboard)/settings/actions.ts:19`), zawsze przekazuje `role` explicite jako parametr obowiązkowy — więc dziś default jest nieużywany w praktyce, ale schemat sam jest fail-open dla każdego przyszłego punktu zapisu, który go pominie (nowa Server Action, seed migracji, ręczny INSERT, trigger Supabase Auth).
+- `packages/database/prisma/schema.prisma`, `model AuthorizedUser.role` — usunięto
+  `@default("admin")`. Kolumna była już `NOT NULL` od baseline, samo usunięcie defaultu
+  wystarczyło (bez `SET NOT NULL`).
+- Nowa migracja `supabase/migrations/20260907173000_security_authorized_user_role_no_default.sql`:
+  `ALTER COLUMN role DROP DEFAULT` + `CONSTRAINT authorized_user_role_check CHECK (role IN
+  ('admin','dyspozytor','audytor','monter'))`. Decyzja o CHECK podjęta przez człowieka
+  (za, nie WO-analityka) — synchronizacja z `ROLES` w `rbac.contract.mjs` jest RĘCZNA,
+  nic nie wykrywa dryfu automatycznie (ten sam typ długu co `audit_log_operation_check`).
+- Migracja **NIE URUCHOMIONA** na żadnej bazie — plik ma standardową ramkę ostrzegawczą
+  (wzorzec z `20260901120000_security_revoke_authorized_user_writes.sql`). Wymaga osobnej
+  zgody człowieka przed `supabase db push`/`prisma migrate deploy`.
+- `kk-validate`/`kk-selftest`/`kk-codegen --check` zielone bez zmian (schema.prisma i
+  migracje nie są wejściem tych narzędzi). `npx prisma generate` + `tsc --noEmit` w
+  `apps/b2b-web` i `apps/b2c-web` przeszły bez błędów.
 
-**Why:** analogiczna pułapka do "brak sprawdzenia roli to podatność" z CLAUDE.md, tylko przesunięta z warstwy Server Action na warstwę bazy — nie została zapowiedziana w żadnym wcześniejszym oknie (w przeciwieństwie do [[project_sec_last_admin_guard_registered]], które kontynuowało zapowiedziany dług z SEC-AUDIT-LOG-ROLE-CHANGE).
+Sąsiaduje z [[project_sec_last_admin_guard_registered]] (ten sam model `AuthorizedUser`,
+inny mechanizm awarii: fail-open default vs. usunięcie ostatniego admina) i z
+[[project_unapplied_security_migrations]] (kolejna migracja bezpieczeństwa czekająca
+na zgodę — trzeba pamiętać o przeliczeniu do listy niezaaplikowanych).
 
-**Kryteria (AC1-AC4):** AC1 usunięcie `@default` w schemacie (NOT NULL bez default); AC2 nieregresja `addAuthorizedUser` (już dziś explicite, więc nie jest to breaking); AC3 pytanie otwarte, NIE rozstrzygnięte tutaj — czy migracja usuwająca default powinna też dodać `CHECK (role IN (...))` egzekwujący `ROLES` z `rbac.contract.mjs` jako drugą linię obrony bazodanową, czy to osobne zadanie; AC4 wymaga jednorazowego `SELECT * FROM "AuthorizedUser"` przed migracją, żeby sprawdzić czy istniejące wiersze mają zamierzoną rolę (nie ryzyko utraty danych, tylko weryfikacja).
+**Why:** fail-open default na kolumnie decydującej o roli w całym panelu B2B = cicha
+eskalacja uprawnień przy jakimkolwiek pominięciu kolumny `role` poza jedyną dziś chronioną
+ścieżką `addAuthorizedUser`.
 
-**How to apply:** implementacja (migracja `ALTER COLUMN role DROP DEFAULT` + ewentualny CHECK + weryfikacja żywej bazy) to osobny krok /kk-plan po akceptacji WO przez człowieka — decyzja o CHECK-u NIE jest do podjęcia przez implementera, tylko przez człowieka w Work Orderze. Schemat i migracje NIE zostały dotknięte w tym oknie — tylko rejestr wymagań i regenerowany kod.
-
-Codegen po dodaniu: `packages/contracts/src/generated/requirements.ts` zregenerowany, `kk-codegen.mjs --check` zielone, `kk-validate.mjs` i `kk-selftest.mjs` zielone (111 wymagań, te same 6 ostrzeżeń R16-proposed z [[project_blocked_status_semantics]] — niezmienione).
+**How to apply:** przy przyszłej zmianie `ROLES` w `rbac.contract.mjs` pamiętaj, że
+`authorized_user_role_check` (i `audit_log_resource_check`/`audit_log_operation_check`)
+wymaga osobnej migracji ALTER — kk-codegen nie zasygnalizuje tego dryfu.
