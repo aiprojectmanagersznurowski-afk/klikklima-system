@@ -418,17 +418,17 @@ export const REQUIREMENTS = [
   {
     "id": "CRM-DELETE-ADMIN-ONLY-CREWS",
     "domain": "security",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
-    "source": "b2b_crm_specifications.md#globalne (rozbicie CRM-DELETE-ADMIN-ONLY, WO BATCH-MEDIUM-LOW-CLEANUP punkt 22, 2026-09-01); ścieżka kodu: apps/b2b-web/src/app/(dashboard)/crews/actions.ts → tx.zespoly_monterskie.delete (wewnątrz transakcji); warstwa Server Action pokryta przez apps/b2b-web/tests/crews-admin-gates.test.ts",
+    "source": "b2b_crm_specifications.md#globalne (rozbicie CRM-DELETE-ADMIN-ONLY, WO BATCH-MEDIUM-LOW-CLEANUP punkt 22, 2026-09-01); ścieżka kodu: apps/b2b-web/src/app/(dashboard)/crews/actions.ts → tx.zespoly_monterskie.delete (wewnątrz transakcji); warstwa Server Action pokryta przez apps/b2b-web/tests/crews-admin-gates.test.ts. ZAMKNIĘTE 2026-09-07: UI (crews-client.tsx, przycisk „Usuń\" owinięty canDeleteCrews, commit adae428), Server Action (deleteCrewAction, pokryte wcześniej), RLS (test statyczny crews-rls-deny-by-default.test.ts, commit 11c4f83, zamraża ENABLE ROW LEVEL SECURITY + zero CREATE POLICY na zespoly_monterskie w migracji bazowej). Trzy warstwy, trzy osobne testy.",
     "statement": "Usunięcie ekipy montażowej (zasób crews) jest dostępne wyłącznie dla roli admin, egzekwowane niezależnie w interfejsie, w Server Action i w RLS."
   },
   {
     "id": "CRM-CREW-UPDATE-ADMIN-ONLY",
     "domain": "security",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "MEDIUM",
-    "source": "review 2026-08-25 (luka znaleziona przy przeglądzie apps/b2b-web/src/app/(dashboard)/crews/actions.ts) — brak źródła w dokumentach architektury; regułę niesie wyłącznie macierz w contracts/rbac.contract.mjs (crews.update = [admin]), która była poprawna, zanim powstało to wymaganie, bo kod akcji nigdy do niej nie zajrzał — ten sam wzorzec błędu co SEC-AUTHZ-USER-MGMT, inny zasób",
+    "source": "review 2026-08-25 (luka znaleziona przy przeglądzie apps/b2b-web/src/app/(dashboard)/crews/actions.ts) — brak źródła w dokumentach architektury; regułę niesie wyłącznie macierz w contracts/rbac.contract.mjs (crews.update = [admin]), która była poprawna, zanim powstało to wymaganie, bo kod akcji nigdy do niej nie zajrzał — ten sam wzorzec błędu co SEC-AUTHZ-USER-MGMT, inny zasób. ZAMKNIĘTE 2026-09-07: to wymaganie nie ma osobnej warstwy RLS w AC — tylko UI (crews-client.tsx, przycisk „Wgraj zdjęcie zespołu\" owinięty canUpdateCrews, commit adae428) i Server Action (updateCrewAvatar już sprawdzał can(actorRole,\"crews\",\"update\") !== \"yes\", pokryte przez crews-admin-gates.test.ts). Dwie warstwy, dwa osobne testy.",
     "statement": "Zmiana rekordu ekipy jest dostępna wyłącznie dla roli admin, egzekwowana po stronie serwera przed jakimkolwiek zapytaniem zapisującym do bazy. Dziś jedyną taką ścieżką jest ustawienie zdjęcia ekipy przez updateCrewAvatar, które nie ma ŻADNEGO sprawdzenia roli — dowolne zalogowane konto może podstawić dowolną ścieżkę Storage jako zdjęcie dowolnej ekipy. Reguła obowiązuje każdą kolejną Server Action zapisującą do tabeli ekip (crews.update = [admin]), nie tylko tę jedną."
   },
   {
