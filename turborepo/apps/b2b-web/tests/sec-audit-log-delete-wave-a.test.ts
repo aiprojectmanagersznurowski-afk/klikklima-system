@@ -55,6 +55,8 @@ const {
   txServiceDeleteMock,
   txServiceFindUniqueMock,
   txAuthorizedUserDeleteMock,
+  txAuthorizedUserFindUniqueMock,
+  txAuthorizedUserCountMock,
   txAuditLogCreateMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
@@ -69,6 +71,8 @@ const {
   txServiceDeleteMock: vi.fn(),
   txServiceFindUniqueMock: vi.fn(),
   txAuthorizedUserDeleteMock: vi.fn(),
+  txAuthorizedUserFindUniqueMock: vi.fn(),
+  txAuthorizedUserCountMock: vi.fn(),
   txAuditLogCreateMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
@@ -112,7 +116,11 @@ const tx = {
   instalacje: { delete: txInstalacjeDeleteMock },
   usterki_incidents: { delete: txIncidentDeleteMock },
   serwisy: { delete: txServiceDeleteMock, findUnique: txServiceFindUniqueMock },
-  authorizedUser: { delete: txAuthorizedUserDeleteMock },
+  authorizedUser: {
+    delete: txAuthorizedUserDeleteMock,
+    findUnique: txAuthorizedUserFindUniqueMock,
+    count: txAuthorizedUserCountMock,
+  },
   auditLog: { create: txAuditLogCreateMock },
 };
 
@@ -130,6 +138,8 @@ beforeEach(() => {
   txServiceDeleteMock.mockReset();
   txServiceFindUniqueMock.mockReset();
   txAuthorizedUserDeleteMock.mockReset();
+  txAuthorizedUserFindUniqueMock.mockReset();
+  txAuthorizedUserCountMock.mockReset();
   txAuditLogCreateMock.mockReset();
   revalidatePathMock.mockReset();
   getCurrentActorRoleMock.mockReset();
@@ -141,6 +151,15 @@ beforeEach(() => {
   getUserMock.mockResolvedValue({ data: { user: { email: ADMIN_EMAIL } } });
   createClientMock.mockResolvedValue({ auth: { getUser: getUserMock } });
   txServiceFindUniqueMock.mockResolvedValue({ id: SERVICE_UUID });
+  // `deleteAuthorizedUser` odczytuje konto docelowe PRZED usunięciem (SEC-LAST-ADMIN-GUARD).
+  // Domyślna rola konta usuwanego jest nie-adminem, żeby ochrona ostatniego admina
+  // (tx.authorizedUser.count) nie uruchamiała się przypadkiem w testach, które jej nie
+  // dotyczą — te testy dalej przechodzą przez zwykłą ścieżkę delete.
+  txAuthorizedUserFindUniqueMock.mockResolvedValue({
+    id: 'ckv8f9q7x0000qzrmn831i7a',
+    role: 'dyspozytor',
+  });
+  txAuthorizedUserCountMock.mockResolvedValue(2);
 });
 
 /**

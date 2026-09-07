@@ -77,6 +77,7 @@ const {
   authorizedUserCreateMock,
   authorizedUserDeleteMock,
   authorizedUserFindUniqueMock,
+  authorizedUserCountMock,
   transactionMock,
   auditLogCreateMock,
   revalidatePathMock,
@@ -86,6 +87,7 @@ const {
   authorizedUserCreateMock: vi.fn(),
   authorizedUserDeleteMock: vi.fn(),
   authorizedUserFindUniqueMock: vi.fn(),
+  authorizedUserCountMock: vi.fn(),
   transactionMock: vi.fn(),
   auditLogCreateMock: vi.fn(),
   revalidatePathMock: vi.fn(),
@@ -116,8 +118,17 @@ getCurrentUserMock.mockResolvedValue({ data: { user: null } });
 // leads-delete-admin-only.test.ts). Ten plik NADAL dowodzi wylacznie bramki roli
 // (SEC-AUTHZ-USER-MGMT) — wpis do `audit_log` pokrywa osobno
 // sec-audit-log-delete-wave-a.test.ts.
+// SEC-LAST-ADMIN-GUARD: `deleteAuthorizedUser` odczytuje konto docelowe wewnątrz
+// transakcji (`tx.authorizedUser.findUnique`) PRZED usunięciem, żeby ustalić jego rolę.
+// Reużywamy istniejący `authorizedUserFindUniqueMock` (dotąd tylko profilaktycznie
+// podpięty pod `prisma.authorizedUser`) — asercje "not.toHaveBeenCalled()" w ścieżkach
+// odmowy nadal są prawdziwe, bo te ścieżki kończą się przed otwarciem transakcji.
 const tx = {
-  authorizedUser: { delete: authorizedUserDeleteMock },
+  authorizedUser: {
+    delete: authorizedUserDeleteMock,
+    findUnique: authorizedUserFindUniqueMock,
+    count: authorizedUserCountMock,
+  },
   auditLog: { create: auditLogCreateMock },
 };
 
@@ -138,6 +149,7 @@ describe('addAuthorizedUser / deleteAuthorizedUser - bramka RBAC i walidacja rol
     authorizedUserCreateMock.mockReset();
     authorizedUserDeleteMock.mockReset();
     authorizedUserFindUniqueMock.mockReset();
+    authorizedUserCountMock.mockReset();
     transactionMock.mockReset();
     auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
@@ -145,6 +157,10 @@ describe('addAuthorizedUser / deleteAuthorizedUser - bramka RBAC i walidacja rol
     getCurrentActorRoleMock.mockResolvedValue('admin');
     getCurrentUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
     transactionMock.mockImplementation(async (callback: (tx: unknown) => unknown) => callback(tx));
+    // SEC-LAST-ADMIN-GUARD: konto docelowe domyślnie nie-admin, żeby ochrona ostatniego
+    // admina (count) nie uruchamiała się w testach bramki RBAC, które jej nie dotyczą.
+    authorizedUserFindUniqueMock.mockResolvedValue({ id: 'usr-1', role: 'dyspozytor' });
+    authorizedUserCountMock.mockResolvedValue(2);
   });
 
   // Kontrola pozytywna: macierz RBAC rzeczywiście przyznaje adminowi obie zdolności.

@@ -238,7 +238,19 @@ export async function deleteAuthorizedUser(
   const { justification, legalBasis } = parsed.data
 
   try {
-    await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
+      const target = await tx.authorizedUser.findUnique({ where: { id } })
+      if (!target) {
+        return { success: false, error: "Wystąpił błąd podczas usuwania konta." }
+      }
+
+      if (target.role === 'admin') {
+        const adminCount = await tx.authorizedUser.count({ where: { role: 'admin' } })
+        if (adminCount <= 1) {
+          throw new LastAdminError("Nie można usunąć jedynego konta administratora.")
+        }
+      }
+
       await tx.authorizedUser.delete({
         where: { id }
       })
@@ -253,11 +265,18 @@ export async function deleteAuthorizedUser(
           legalBasis,
         },
       })
-    })
 
-    revalidatePath("/settings")
-    return { success: true }
+      return { success: true }
+    }, { isolationLevel: 'Serializable' })
+
+    if (result.success) {
+      revalidatePath("/settings")
+    }
+    return result
   } catch (error) {
+    if (error instanceof LastAdminError) {
+      return { success: false, error: "Nie można usunąć jedynego konta administratora." }
+    }
     console.error("Failed to delete user:", error)
     return { success: false, error: "Wystąpił błąd podczas usuwania konta." }
   }
