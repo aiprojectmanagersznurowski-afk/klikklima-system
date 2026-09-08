@@ -22,11 +22,13 @@ import {
 import { updateLeadAuditor } from "./[id]/actions";
 import { advanceLeadStatus , deleteLeadAction } from "./actions";
 import type { getAuditors, GetLeadsResult } from "./actions";
+import { rollbackLogisticsOrder } from "../logistics/actions";
 import { ReturnToFunnelDialog } from "./return-to-funnel-dialog";
 import { ArchiveLostDialog } from "./archive-lost-dialog";
 import { AssignCrewDialog } from "./assign-crew-dialog";
 import { can, type Role } from "@klikklima/contracts";
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog";
+import { ReasonJustificationDialog } from "@/components/reason-justification-dialog";
 import { getCompactPageNumbers, PAGE_ELLIPSIS } from "../customers/pagination-state";
 
 /**
@@ -152,6 +154,7 @@ export function LeadsClient({
   const [archiveDialogLeadId, setArchiveDialogLeadId] = useState<string | null>(null);
   const [assignCrewDialogLeadId, setAssignCrewDialogLeadId] = useState<string | null>(null);
   const [deleteDialogLeadId, setDeleteDialogLeadId] = useState<string | null>(null);
+  const [rollbackDialogLeadId, setRollbackDialogLeadId] = useState<string | null>(null);
 
   const handleDelete = (id: string) => {
     setDeleteDialogLeadId(id);
@@ -479,7 +482,11 @@ export function LeadsClient({
                                         {actions.map((action) => (
                                           <DropdownMenuItem
                                             key={action.target}
-                                            onClick={() => handleAdvanceStatus(lead.id, action.target)}
+                                            onClick={() =>
+                                              action.target === "ROLLBACK_RESCHEDULING"
+                                                ? setRollbackDialogLeadId(lead.id)
+                                                : handleAdvanceStatus(lead.id, action.target)
+                                            }
                                             className={`cursor-pointer flex items-center gap-2 ${
                                               action.variant === "destructive"
                                                 ? "text-destructive focus:text-destructive focus:bg-destructive/10"
@@ -651,6 +658,28 @@ export function LeadsClient({
           }}
         />
       )}
+
+      {rollbackDialogLeadId && (() => {
+        const leadId = rollbackDialogLeadId;
+        return (
+          <ReasonJustificationDialog
+            title="Rollback (Problem)"
+            description={
+              <>
+                Lead zostanie cofnięty do etapu Rollback, slot ekipy zostanie zwolniony, a SLA logistyki wstrzymane. Podaj uzasadnienie.
+              </>
+            }
+            confirmLabel="Cofnij (Rollback)"
+            pendingLabel="Cofanie..."
+            onConfirm={(reason) => rollbackLogisticsOrder(leadId, reason)}
+            onClose={() => setRollbackDialogLeadId(null)}
+            onSuccess={() => {
+              setRollbackDialogLeadId(null);
+              startTransition(() => router.refresh());
+            }}
+          />
+        );
+      })()}
 
       {assignCrewDialogLeadId && (
         <AssignCrewDialog

@@ -14,3 +14,4 @@
 - [Kontrakt lejka nie zna „przejścia wyjątkowego"](funnel-contract-lacks-manual-flag.md) — trigger MANUAL to nie kryterium, bind.transition to ślepy zaułek, advanceLeadStatus to druga maszyna stanów
 - [role @default("admin") w schema.prisma](project_default_admin_role_risk.md) — brak jawnej roli przy INSERT daje pełne uprawnienia, nie odmowę; osobne ID, nie naprawiać przy okazji.
 - [Konwencje Work Orderów KlikKlima](project_klikklima_wo_conventions.md) — struktura WO, gdzie szukać wzorców CHECK/CONSTRAINT, kiedy implementacja wymaga contract-steward nie implementer-server.
+- [Dwie żywe ścieżki UI do T10-T13](funnel-advance-status-dual-rollback-path.md) — przycisk „Rollback (Problem)" w Kanbanie i panel logistyki wołają różne funkcje; jedna nie woła efektów

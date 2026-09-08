@@ -215,20 +215,24 @@ describe('advanceLeadStatus — AWAITING_AUDIT → NEW_LEAD (K2, decyzja człowi
 
 type CaseRow = { from: string; to: string };
 
+// T10-T13 (wszystkie pary -> ROLLBACK_RESCHEDULING) USUNIĘTE z tej listy:
+// FNL-ADVANCE-STATUS-CONTRACT-BOUND, Faza 1, Wariant B (decyzja człowieka
+// 2026-09-07) usunęła te cztery pary z lokalnej ALLOWED_TRANSITIONS w
+// advanceLeadStatus — przejście do ROLLBACK_RESCHEDULING istnieje odtąd
+// WYŁĄCZNIE przez rollbackLogisticsOrder (logistics/actions.ts). Odmowa tych
+// czterech par przez advanceLeadStatus jest dowiedziona w
+// fnl-advance-status-rollback-dedup.test.ts (K2 hard-deny) — NIE duplikujemy
+// tego dowodu tutaj.
 const CASES: CaseRow[] = [
   { from: 'NEW_LEAD', to: 'AWAITING_AUDIT' }, // T01
   { from: 'AWAITING_AUDIT', to: 'AUDIT_COMPLETED' }, // T02 (luka WO, patrz nagłówek)
   { from: 'AUDIT_COMPLETED', to: 'AWAITING_CREW_ASSIGNMENT' }, // T03
   { from: 'AUDIT_COMPLETED', to: 'QUOTE_REJECTED' }, // T04
   { from: 'AWAITING_CREW_ASSIGNMENT', to: 'HARDWARE_IN_WAREHOUSE' }, // T05
-  { from: 'AWAITING_CREW_ASSIGNMENT', to: 'ROLLBACK_RESCHEDULING' }, // T10
   { from: 'HARDWARE_IN_WAREHOUSE', to: 'HARDWARE_IN_TRANSIT' }, // T06
   { from: 'HARDWARE_IN_WAREHOUSE', to: 'AWAITING_INSTALLATION' }, // T07
-  { from: 'HARDWARE_IN_WAREHOUSE', to: 'ROLLBACK_RESCHEDULING' }, // T11
   { from: 'HARDWARE_IN_TRANSIT', to: 'AWAITING_INSTALLATION' }, // T08
-  { from: 'HARDWARE_IN_TRANSIT', to: 'ROLLBACK_RESCHEDULING' }, // T12
   { from: 'AWAITING_INSTALLATION', to: 'INSTALLATION_COMPLETED' }, // T09
-  { from: 'AWAITING_INSTALLATION', to: 'ROLLBACK_RESCHEDULING' }, // T13
   { from: 'ROLLBACK_RESCHEDULING', to: 'AWAITING_CREW_ASSIGNMENT' }, // T14
 ];
 
@@ -240,11 +244,11 @@ const classified = CASES.map(({ from, to }) => {
   return { from, to, id: transition.id, manual: isManualStatusChange(transition.id) };
 });
 
-// Kontrola pozytywna: dowód, że lista wyczerpuje ALLOWED_TRANSITIONS z WO (13 + T02 = 14,
-// minus AWAITING_AUDIT->NEW_LEAD testowane osobno wyżej).
+// Kontrola pozytywna: dowód, że lista wyczerpuje ALLOWED_TRANSITIONS aktualną po
+// FNL-ADVANCE-STATUS-CONTRACT-BOUND Fazie 1 (14 minus T10-T13 = 10).
 // @REQ: SEC-AUDIT-LOG-MANUAL-STATUS
-it('kontrola pozytywna — 14 par (from,to) z lokalnej mapy advanceLeadStatus mają odpowiednik w TRANSITIONS', () => {
-  expect(classified).toHaveLength(14);
+it('kontrola pozytywna — 10 par (from,to) z lokalnej mapy advanceLeadStatus mają odpowiednik w TRANSITIONS', () => {
+  expect(classified).toHaveLength(10);
   expect(classified.every((c) => c.id)).toBe(true);
 });
 
@@ -603,22 +607,15 @@ describe('advanceLeadStatus — AC12, ta sama zmiana statusu dwiema drogami', ()
     });
   });
 
-  // AC12 — rollback dwiema drogami: `advanceLeadStatus → ROLLBACK_RESCHEDULING` (dowolne
-  // z T10-T13, tu T10) NIE wykonuje efektów `releaseCrewSlot`/`suspendLogisticsSla` — to
-  // ZNANY dług udokumentowany w kodzie (`logistics/actions.ts:267-272`, "lead osierocony
-  // przez inną ścieżkę zmiany statusu"), POZA ZAKRESEM naprawy w tym WO ("Naprawa
-  // advanceLeadStatus jako maszyny stanów... to wymaganie go dokumentuje i audytuje, ale
-  // nie naprawia"). Ten test potwierdza, że wpis audytowy POWSTAJE MIMO braku tych
-  // efektów — nie naprawia długu, tylko go utrwala testem.
-  // @REQ: SEC-AUDIT-LOG-MANUAL-STATUS
-  it('advanceLeadStatus → ROLLBACK_RESCHEDULING tworzy wpis audytowy, ale NIE woła releaseCrewSlot/suspendLogisticsSla (dług udokumentowany, poza zakresem naprawy)', async () => {
-    txLeadFindUniqueMock.mockResolvedValue(leadFixture('AWAITING_CREW_ASSIGNMENT'));
-
-    const result = await advanceLeadStatus(LEAD_ID, 'ROLLBACK_RESCHEDULING', VALID_INPUT);
-
-    expect(result.success).toBe(true);
-    expect(txAuditLogCreateMock).toHaveBeenCalledTimes(1);
-    expect(releaseCrewSlotMock).not.toHaveBeenCalled();
-    expect(suspendLogisticsSlaMock).not.toHaveBeenCalled();
-  });
+  // DŁUG ZAMKNIĘTY (FNL-ADVANCE-STATUS-CONTRACT-BOUND, Faza 1, Wariant B, decyzja
+  // człowieka 2026-09-07): ten test dawniej dowodził, że `advanceLeadStatus →
+  // ROLLBACK_RESCHEDULING` (T10-T13) tworzy wpis audytowy BEZ wołania
+  // `releaseCrewSlot`/`suspendLogisticsSla` — czyli świadomie utrwalał dług
+  // "lead osierocony przez inną ścieżkę zmiany statusu" (`logistics/actions.ts:267-272`).
+  // Po Fazie 1 T10-T13 zostały usunięte z lokalnej `ALLOWED_TRANSITIONS` w
+  // `advanceLeadStatus` — droga, którą ten test dowodził, już nie istnieje (K2
+  // hard-deny). Dowód odrzucenia dla wszystkich czterech par źródłowych żyje w
+  // `fnl-advance-status-rollback-dedup.test.ts` (`describe`: "T10-T13 ODRZUCONE po
+  // usunięciu z lokalnej ALLOWED_TRANSITIONS"), więc nie duplikujemy go tutaj —
+  // usunięto zamiast zastępować, żeby uniknąć dwóch kopii tego samego dowodu.
 });
