@@ -95,7 +95,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
     transactionMock.mockImplementation(async (callback: (tx: unknown) => unknown) => callback(tx));
   });
 
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH, CRM-DELETE-ADMIN-ONLY-SERVICES
   it.each(DENIED_ROLES)(
     'AC11 - rola %s jest odrzucona, ani findUnique ani delete nie sa wywolane',
     async (role) => {
@@ -112,7 +112,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
   );
 
   // Fail-closed: brak roli.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH, CRM-DELETE-ADMIN-ONLY-SERVICES
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
@@ -124,7 +124,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
   });
 
   // Fail-closed: blad samego zapytania o role.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH, CRM-DELETE-ADMIN-ONLY-SERVICES
   it('blad zapytania o role daje odmowe, nie nieobslugowany wyjatek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('blad zapytania o role'));
 
@@ -136,7 +136,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
   });
 
   // Kontrola pozytywna dla kazdej dozwolonej roli osobno.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH, CRM-DELETE-ADMIN-ONLY-SERVICES
   it.each(ALLOWED_ROLES)('rola %s jest dozwolona, delete faktycznie wywolane na serwisy.id', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
 
@@ -150,7 +150,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
 
   // Kontrola pozytywna kontraktu — dyspozytor ma services.update, ale NIE delete,
   // wiec naprawa oparta przez pomylke na 'update' musi ten test oblac.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH, CRM-DELETE-ADMIN-ONLY-SERVICES
   it('kontrola pozytywna kontraktu — wylacznie admin ma delete na services w macierzy RBAC', () => {
     expect(PERMISSIONS.services.delete).toEqual(['admin']);
     expect(can('dyspozytor', 'services', 'update')).toBe('yes');
@@ -158,14 +158,14 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
   });
 
   // Wariant 'own' nie przepuszcza — monter ma services.update = 'own', nie 'yes'.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH, CRM-DELETE-ADMIN-ONLY-SERVICES
   it('kontrola pozytywna kontraktu — monter ma tylko wariant own na services.update, na delete brak', () => {
     expect(can('monter', 'services', 'update')).toBe('own');
     expect(can('monter', 'services', 'delete')).toBe('no');
   });
 
   // Odmowa ma jawny, odroznialny ksztalt.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH, CRM-DELETE-ADMIN-ONLY-SERVICES
   it('odmowa ma jawny, odroznialny ksztalt (obiekt z success:false), nie wyjatek ani void', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
 
@@ -177,7 +177,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
 
   // AC8 (WO): odmowa dla roli bez uprawnien zachodzi NIEZALEZNIE od tego, czy
   // rekord istnieje.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH, CRM-DELETE-ADMIN-ONLY-SERVICES
   it('AC8 - odmowa dla roli bez uprawnien zachodzi niezaleznie od istnienia rekordu', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
     serviceFindUniqueMock.mockResolvedValue(null);
@@ -190,7 +190,7 @@ describe('deleteServiceAction — bramka roli PRZED zapytaniami Prisma (SEC-AUTH
   });
 
   // AC8: komplet ról spoza `admin` (dyspozytor, monter, audytor) wraz z komunikatem.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH
+  // @REQ: SEC-AUTHZ-B2B-MUTATIONS, SRV-SOURCE-OF-TRUTH, CRM-DELETE-ADMIN-ONLY-SERVICES
   it.each(['dyspozytor', 'monter', 'audytor'] as const)(
     'AC8 - rola %s dostaje komunikat "Brak uprawnien..." i licznik serwisy sie nie zmienia',
     async (role) => {

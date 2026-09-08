@@ -7,3 +7,4 @@
 - [Three-layer coverage closure](feedback_three_layer_coverage_closure.md) — pattern for RLS+UI test closure on CRM-DELETE-ADMIN-ONLY-* reqs: grep true occurrence count first, block+global RLS scan, mutate scratch copy on every occurrence not just first.
 - [RLS-disable debt in crews/leads/installations](project_rls_disable_debt_family.md) — those 3 files still lack global DISABLE ROW LEVEL SECURITY scan (auditors got fixed 2026-09-08); add when next touched.
 - [Incidents/auditors parity closure](feedback_incidents_auditors_parity_closure.md) — 3-point checklist (RLS AC.4, loose signature assertion, transactionMock-not-called), mutant that injects tx call before role gate isolates the new assertion.
+- [Services UI gate: no signature change](feedback_services_ui_gate_no_signature_change.md) — when a helper already has a GREEN test under a different @REQ, add a second independent gate var in the client instead of widening the helper.

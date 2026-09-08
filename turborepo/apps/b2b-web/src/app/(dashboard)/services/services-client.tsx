@@ -2,6 +2,7 @@
 
 import React, { useTransition,  useState } from "react"
 import { Search, Wrench, MoreHorizontal, CalendarClock, Phone , ShieldAlert } from "lucide-react"
+import { can, type Role } from "@klikklima/contracts"
 import { Button } from "@/components/ui/button"
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill"
 import { ServiceSummary , deleteServiceAction } from "./actions"
@@ -18,10 +19,17 @@ import {
 import { formatDate } from "@/lib/format-date"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 
-export function ServicesClient({ initialServices }: { initialServices: ServiceSummary[] }) {
+export function ServicesClient({
+  initialServices,
+  actorRole,
+}: {
+  initialServices: ServiceSummary[]
+  actorRole: Role | null
+}) {
   const [services] = useState<ServiceSummary[]>(initialServices)
   const [searchQuery, setSearchQuery] = useState("")
   const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
+  const canDeleteServices = !!actorRole && can(actorRole, "services", "delete") === "yes";
 
   const filtered = services.filter(s => {
     if (searchQuery) {
@@ -147,7 +155,7 @@ export function ServicesClient({ initialServices }: { initialServices: ServiceSu
                               <DropdownMenuItem onClick={() => alert("Przydział w Fazie 2")}>Przydziel Brygadę</DropdownMenuItem>
                               <DropdownMenuItem>Oznacz jako Wykonany</DropdownMenuItem>
 
-                              {isDeleteMenuItemVisible(service) && (
+                              {isDeleteMenuItemVisible(service) && canDeleteServices && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem

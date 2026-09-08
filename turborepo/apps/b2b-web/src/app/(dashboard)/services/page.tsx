@@ -21,5 +21,5 @@ export default async function ServicesPage() {
   }
 
   const services = await getUpcomingServices();
-  return <ServicesClient initialServices={services} />;
+  return <ServicesClient initialServices={services} actorRole={actorRole} />;
 }

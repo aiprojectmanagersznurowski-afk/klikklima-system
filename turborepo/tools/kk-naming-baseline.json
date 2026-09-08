@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-08T17:14:08.909Z",
+  "generatedAt": "2026-09-08T17:44:31.039Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 17,
@@ -146,6 +146,7 @@
     "apps/b2b-web/tests/services-authz-gates.test.ts::adr002-pl-tables": 4,
     "apps/b2b-web/tests/services-read-scope.test.ts::adr002-pl-columns": 7,
     "apps/b2b-web/tests/services-read-scope.test.ts::adr002-pl-tables": 9,
+    "apps/b2b-web/tests/services-rls-deny-by-default.test.ts::adr002-pl-tables": 11,
     "apps/b2b-web/tests/services-source-of-truth.test.ts::adr002-pl-columns": 18,
     "apps/b2b-web/tests/services-source-of-truth.test.ts::adr002-pl-tables": 5,
     "apps/b2b-web/tests/storage-signed-urls.test.ts::adr002-pl-tables": 6,
@@ -200,5 +201,5 @@
     "supabase/migrations/20260903061000_security_employee_email_unique_reassert.sql::adr002-pl-tables": 11,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2180
+  "total": 2191
 }
