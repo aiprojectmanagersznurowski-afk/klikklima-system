@@ -13,3 +13,4 @@
 - [SEC-AUDIT-LOG-MANUAL-STATUS Wave C audit](sec-audit-log-manual-status-wave-c.md) — advanceLeadStatus reviewed clean, K2/audit-atomicity/TOCTOU all hold, known rollback-slot debt confirmed non-security.
 - [Project conventions for this audit family](project-sec-audit-log-manual-status.md) — how contract-driven manual-status classification (K1-K4) works across advanceLeadStatus/bypassLogisticsOrder/rollbackLogisticsOrder.
 - [SEC-AUTHZ-DEFAULT-ROLE audit](project_sec_authz_default_role_audit.md) — werdykt NISKIE, DROP DEFAULT+CHECK poprawne, addAuthorizedUser waliduje niezależnie od stanu migracji, niezaaplikowanie na prod nie jest nowym ryzykiem.
+- [notification_queue bez anonimizacji RODO](project_notification_queue_rodo_gap.md) — Faza C LOGISTICS-SHIPPING-EFFECTS musi zamknąć retencję PII w payload/recipient_address zanim popłynie tam realny e-mail/telefon klienta.
