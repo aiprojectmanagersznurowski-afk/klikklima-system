@@ -72,7 +72,7 @@ const { deleteIncidentAction } = await import('../src/app/(dashboard)/incidents/
 const ALLOWED_ROLES = ROLES.filter((r) => can(r, 'incidents', 'delete') === 'yes');
 const DENIED_ROLES = ROLES.filter((r) => can(r, 'incidents', 'delete') !== 'yes');
 
-describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () => {
+describe('deleteIncidentAction — bramka roli (CRM-DELETE-ADMIN-ONLY-INCIDENTS)', () => {
   beforeEach(() => {
     transactionMock.mockReset();
     incidentDeleteMock.mockReset();
@@ -84,7 +84,7 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
     transactionMock.mockImplementation(async (callback: (tx: unknown) => unknown) => callback(tx));
   });
 
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INCIDENTS
   it.each(DENIED_ROLES)(
     'rola %s jest odrzucona, mutacja usunięcia usterki nie jest wywołana',
     async (role) => {
@@ -95,34 +95,41 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
 
       expect(getCurrentActorRoleMock).toHaveBeenCalled();
       expect(incidentDeleteMock).not.toHaveBeenCalled();
+      // Odrzucenie musi zajsc PRZED otwarciem transakcji, nie tylko przed samym delete
+      // wewnatrz niej (wzorem AC1.4 w auditors-delete.test.ts) — sprawdzenie samego
+      // incidentDeleteMock nie odrozniloby "odrzucone przed transakcja" od "transakcja
+      // otwarta, ale delete wewnatrz niej pominiety".
+      expect(transactionMock).not.toHaveBeenCalled();
       expect(result?.success).toBe(false);
     },
   );
 
   // Fail-closed: brak roli.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INCIDENTS
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
     const result = await deleteIncidentAction('incident-1', VALID_INPUT);
 
     expect(incidentDeleteMock).not.toHaveBeenCalled();
+    expect(transactionMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
   });
 
   // Fail-closed: blad samego zapytania o role.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INCIDENTS
   it('blad zapytania o role daje odmowe, nie nieobslugowany wyjatek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('blad zapytania o role'));
 
     const result = await deleteIncidentAction('incident-1', VALID_INPUT);
 
     expect(incidentDeleteMock).not.toHaveBeenCalled();
+    expect(transactionMock).not.toHaveBeenCalled();
     expect(result).toMatchObject({ success: false });
   });
 
   // Kontrola pozytywna dla kazdej dozwolonej roli osobno (AC3).
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INCIDENTS
   it.each(ALLOWED_ROLES)('rola %s jest dozwolona, delete faktycznie wywolane', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
     incidentDeleteMock.mockResolvedValue({});
@@ -137,7 +144,7 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
 
   // Kontrola pozytywna kontraktu — dyspozytor ma incidents.update, ale NIE delete,
   // wiec naprawa oparta przez pomylke na 'update' musi ten test oblac (AC7).
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INCIDENTS
   it('kontrola pozytywna kontraktu — wylacznie admin ma delete na incidents w macierzy RBAC', () => {
     expect(PERMISSIONS.incidents.delete).toEqual(['admin']);
     expect(can('dyspozytor', 'incidents', 'update')).toBe('yes');
@@ -145,7 +152,7 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
   });
 
   // Odmowa ma jawny, odroznialny ksztalt.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INCIDENTS
   it('odmowa ma jawny, odroznialny ksztalt (obiekt z success:false), nie wyjatek ani void', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
 
@@ -158,13 +165,14 @@ describe('deleteIncidentAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () =>
   // Przypadek nieistniejacego rekordu: odmowa dla roli bez uprawnien zachodzi
   // NIEZALEZNIE od tego, czy rekord istnieje (WO, "Przypadki brzegowe", pkt
   // "Idempotencja / rekord nieistniejacy").
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INCIDENTS
   it('odmowa dla roli bez uprawnien zachodzi niezaleznie od istnienia rekordu', async () => {
     getCurrentActorRoleMock.mockResolvedValue('monter');
 
     const result = await deleteIncidentAction('incident-nieistniejacy', VALID_INPUT);
 
     expect(incidentDeleteMock).not.toHaveBeenCalled();
+    expect(transactionMock).not.toHaveBeenCalled();
     expect(result?.success).toBe(false);
   });
 });

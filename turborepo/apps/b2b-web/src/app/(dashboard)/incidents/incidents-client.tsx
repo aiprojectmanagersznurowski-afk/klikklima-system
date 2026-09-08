@@ -3,6 +3,7 @@
 import React, { useTransition,  useState } from "react"
 import { Search, AlertTriangle, MoreHorizontal, Clock, Wrench , ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { can, type Role } from "@klikklima/contracts"
 import { IncidentSummary , deleteIncidentAction } from "./actions"
 import {
   DropdownMenu,
@@ -16,10 +17,17 @@ import { formatDate } from "@/lib/format-date"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 import { shortId } from "@/lib/format-id"
 
-export function IncidentsClient({ initialIncidents }: { initialIncidents: IncidentSummary[] }) {
+export function IncidentsClient({
+  initialIncidents,
+  actorRole,
+}: {
+  initialIncidents: IncidentSummary[]
+  actorRole: Role | null
+}) {
   const [incidents] = useState<IncidentSummary[]>(initialIncidents)
   const [searchQuery, setSearchQuery] = useState("")
   const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
+  const canDeleteIncidents = !!actorRole && can(actorRole, "incidents", "delete") === "yes";
 
   const filtered = incidents.filter(i => {
     if (searchQuery) {
@@ -99,15 +107,19 @@ export function IncidentsClient({ initialIncidents }: { initialIncidents: Incide
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => alert("W Fazie 2")}>Zmień Status</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => alert("W Fazie 2")}>Przydziel Brygadę Serwisową</DropdownMenuItem>
-                        
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                onClick={() => handleDelete(incident.id)}
-                              >
-                                <ShieldAlert className="mr-2 size-4" />
-                                <span>Usuń (Tylko Admin)</span>
-                              </DropdownMenuItem>
+
+                              {canDeleteIncidents && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                    onClick={() => handleDelete(incident.id)}
+                                  >
+                                    <ShieldAlert className="mr-2 size-4" />
+                                    <span>Usuń (Tylko Admin)</span>
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
