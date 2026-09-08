@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/format-date"
-import { can, type Role } from "@klikklima/contracts"
+import { can, ROLES, type Role } from "@klikklima/contracts"
 import {
   addAuthorizedUser,
   deleteAuthorizedUser,
@@ -37,6 +37,7 @@ export function SettingsClient({ users, actorRole }: { users: User[]; actorRole?
   const router = useRouter();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<Role | "">("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deleteDialogUserId, setDeleteDialogUserId] = useState<string | null>(null);
@@ -52,13 +53,18 @@ export function SettingsClient({ users, actorRole }: { users: User[]; actorRole?
       setError("Podaj adres email.");
       return;
     }
+    if (!role) {
+      setError("Wybierz rolę.");
+      return;
+    }
     setLoading(true);
-    const result = await addAuthorizedUser(email, "admin");
+    const result = await addAuthorizedUser(email, role);
     setLoading(false);
-    
+
     if (result.success) {
       setShowInviteModal(false);
       setEmail("");
+      setRole("");
     } else {
       setError(result.error || "Wystąpił błąd");
     }
@@ -191,9 +197,9 @@ export function SettingsClient({ users, actorRole }: { users: User[]; actorRole?
             <CardHeader className="flex flex-row justify-between items-start border-b border-gray-100 pb-4">
               <div>
                 <CardTitle className="text-lg">Zaproś pracownika</CardTitle>
-                <p className="text-sm text-gray-500 mt-1">Dodaj nowy adres email z uprawnieniami administratora.</p>
+                <p className="text-sm text-gray-500 mt-1">Dodaj nowy adres email i wybierz jego rolę w systemie.</p>
               </div>
-              <button onClick={() => { setShowInviteModal(false); setError(""); setEmail(""); }} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
+              <button onClick={() => { setShowInviteModal(false); setError(""); setEmail(""); setRole(""); }} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               {error && (
@@ -202,26 +208,39 @@ export function SettingsClient({ users, actorRole }: { users: User[]; actorRole?
                 </div>
               )}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">Email pracownika</label>
-                <input 
-                  type="email" 
-                  placeholder="jan@klikklima.pl" 
+                <label htmlFor="invite-email" className="text-sm font-medium text-gray-700">Email pracownika</label>
+                <input
+                  id="invite-email"
+                  type="email"
+                  placeholder="jan@klikklima.pl"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" 
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">Rola w systemie</label>
-                <select disabled className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed">
-                  <option>Administrator</option>
+                <label htmlFor="invite-role" className="text-sm font-medium text-gray-700">Rola w systemie</label>
+                <select
+                  id="invite-role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as Role)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                >
+                  <option value="" disabled>
+                    Wybierz rolę...
+                  </option>
+                  {ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
                 </select>
-                <p className="text-xs text-gray-500">Obecnie wszystkie nowe konta otrzymują pełen dostęp administracyjny.</p>
+                <p className="text-xs text-gray-500">Wybierz poziom dostępu dla nowego konta.</p>
               </div>
             </CardContent>
             <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-              <Button variant="outline" onClick={() => { setShowInviteModal(false); setError(""); setEmail(""); }} disabled={loading}>Anuluj</Button>
-              <Button onClick={handleAddUser} disabled={loading}>{loading ? "Dodawanie..." : "Dodaj dostęp"}</Button>
+              <Button variant="outline" onClick={() => { setShowInviteModal(false); setError(""); setEmail(""); setRole(""); }} disabled={loading}>Anuluj</Button>
+              <Button onClick={handleAddUser} disabled={loading || !role}>{loading ? "Dodawanie..." : "Dodaj dostęp"}</Button>
             </div>
           </Card>
         </div>

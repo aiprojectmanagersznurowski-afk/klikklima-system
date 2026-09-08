@@ -30,4 +30,13 @@ sprawdzający, że komponent ją *woła* w warunku renderowania. Mutacje „funk
 i „warunek usunięty z komponentu" są łapane; pozostaje luka na `isDeleteMenuItemVisible(x) || true`
 (regex nadal pasuje). Uznaję to za MINOR, nie BLOCKER — do zamknięcia dopiero testem renderu.
 
+**Wariant „test dowodzi tylko USUNIĘCIA, nie OKABLOWANIA" (recenzja UI-SETTINGS-ADD-USER-ROLE-PICKER):**
+gdy zadaniem jest zamiana hardkodu na kontrolkę sterowaną stanem, testy statyczne naturalnie ciążą ku
+asercjom negatywnym (`not.toMatch(/addAuthorizedUser\(email, "admin"\)/)`, `not.toMatch(/<select disabled/)`,
+`not.toContain(<stary tekst>)`). Wszystkie przechodzą też dla komponentu, w którym select nie ma
+`onChange`/`value` — czyli feature jest w 100% martwy. Zawsze mutuj dodatkowo: (a) usunięcie `onChange`,
+(b) usunięcie `value={stan}`, (c) usunięcie resetów stanu w handlerach zamknięcia/sukcesu,
+(d) usunięcie warunku `disabled={... || !stan}` i walidacji w handlerze. Te cztery to standardowy zestaw
+dla każdej nowej kontrolki formularza.
+
 Powiązane: [[gate-blindspot-next-build]]
