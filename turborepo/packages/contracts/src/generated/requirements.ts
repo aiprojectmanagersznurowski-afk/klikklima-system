@@ -50,7 +50,7 @@ export const REQUIREMENTS = [
   {
     "id": "FNL-E5-E6",
     "domain": "logistics",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "MEDIUM",
     "source": "b2b_funnel_process.md#etap-5",
     "statement": "Akcja „Wysłano kurierem\" z Tracking ID przenosi leada do E6."
@@ -58,7 +58,7 @@ export const REQUIREMENTS = [
   {
     "id": "FNL-E5-BYPASS",
     "domain": "logistics",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "MEDIUM",
     "source": "b2b_funnel_process.md#etap-5",
     "statement": "Akcja „Dostawa z ekipą\" pomija E6 i przenosi leada bezpośrednio do E7."
@@ -82,7 +82,7 @@ export const REQUIREMENTS = [
   {
     "id": "FNL-ROLLBACK",
     "domain": "logistics",
-    "status": "IMPLEMENTING",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "b2b_funnel_process.md#rollback-engine",
     "statement": "Lead z etapów E4–E7 może trafić do bucketu ROLLBACK_RESCHEDULING."
@@ -650,7 +650,7 @@ export const REQUIREMENTS = [
   {
     "id": "NTF-QUEUE-TABLE",
     "domain": "notifications",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "docs/workorders/LOGISTICS-SHIPPING-EFFECTS.md#zmiana-kontraktu-schematu-wymagana, ADR-007 (contracts/notifications.contract.mjs QUEUE_POLICY)",
     "statement": "Tabela notification_queue istnieje w schemacie i pozwala zapisać wpis kolejki w tej samej transakcji Prisma co zmianę statusu leada/instalacji/serwisu/usterki, zanim istnieje jakikolwiek nadawca (SMS/e-mail/push)."

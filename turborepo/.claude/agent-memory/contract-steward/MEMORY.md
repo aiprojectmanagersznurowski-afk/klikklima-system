@@ -23,5 +23,6 @@
 - [Crews admin gates zamknięte](project_crews_admin_gates_closed.md) — 2026-09-07; -CREWS to 3 warstwy (UI/SA/RLS), UPDATE-ADMIN-ONLY tylko 2 (bez RLS) — sprawdzaj AC literalnie, nie wg szablonu.
 - [FNL-ADVANCE-STATUS-CONTRACT-BOUND zarejestrowane](project_fnl_advance_status_contract_bound_registered.md) — 2026-09-07; advanceLeadStatus ma lokalną mapę przejść równoległą do kontraktu, guardy/effects pomijane; risk MEDIUM, split i sync-guard-w-tx odłożone do WO.
 - [InstallationStatus ma CANCELLED](project_installation_status_enum_has_cancelled.md) — potwierdzone na żywej bazie 2026-09-08 dla WO LOGISTICS-SHIPPING-EFFECTS D1; releaseCrewSlot ma ustawiać CANCELLED, nie zostawiać PLANNED.
-- [FNL-ROLLBACK częściowo zamknięte](project_fnl_rollback_partial_close.md) — 2026-09-08 TODO→IMPLEMENTING (nie DONE); 2/3 AC pokryte, kolejkowanie N_ROLLBACK/I4 czeka na Fazę C.
-- [NTF-QUEUE-TABLE tylko schemat](project_ntf_queue_table_schema_only.md) — 2026-09-08 zarejestrowane TODO; model+migracja (nieuruchomiona) bez enqueueNotification, bez integracji.
+- [FNL-ROLLBACK częściowo zamknięte (HISTORYCZNE)](project_fnl_rollback_partial_close.md) — 2026-09-08 stan pośredni IMPLEMENTING; SUPERSEDED przez [[project_logistics_shipping_effects_all_four_done]] (Faza C domknęła AC3).
+- [NTF-QUEUE-TABLE tylko schemat (HISTORYCZNE)](project_ntf_queue_table_schema_only.md) — 2026-09-08 stan pośredni TODO/schema-only; SUPERSEDED przez [[project_logistics_shipping_effects_all_four_done]].
+- [LOGISTICS-SHIPPING-EFFECTS: wszystkie 4 wymagania DONE](project_logistics_shipping_effects_all_four_done.md) — 2026-09-08; FNL-ROLLBACK/E5-E6/E5-BYPASS/NTF-QUEUE-TABLE zamknięte, migracja notification_queue NIEZAAPLIKOWANA na produkcji.
