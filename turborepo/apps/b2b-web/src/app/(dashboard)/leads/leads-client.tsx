@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive, Wrench } from "lucide-react";
+import { Search, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { LeadStatus } from "@repo/database";
@@ -257,22 +257,6 @@ export function LeadsClient({
           <p className="text-sm text-muted-foreground mt-1">Zarządzaj zapytaniami ofertowymi i przypisuj audytorów.</p>
         </div>
         <div className="flex gap-4">
-          <div className="flex items-center gap-2">
-            <Filter size={16} className="text-muted-foreground" />
-            <span className="text-sm text-muted-foreground font-medium whitespace-nowrap">Etap lejka:</span>
-            <select
-              className="text-sm border border-border rounded-md px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer shadow-xs disabled:opacity-50"
-              value={initialStatus}
-              onChange={(e) => startTransition(() => router.push(buildPageUrl(e.target.value as StageFilter)))}
-              disabled={isPending}
-            >
-              {LEAD_STAGES.map(stage => (
-                <option key={stage.id} value={stage.id}>
-                  {stage.title} ({stageCounts[stage.id] || 0})
-                </option>
-              ))}
-            </select>
-          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
             <input 

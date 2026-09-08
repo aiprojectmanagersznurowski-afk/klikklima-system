@@ -23,7 +23,29 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Pulpit', icon: LayoutDashboard, href: '/dashboard' },
-  { id: 'leads', label: 'Leady', icon: Users, href: '/leads' },
+  {
+    id: 'leads',
+    label: 'Leady',
+    icon: Users,
+    // Pozycje odpowiadają 1:1 tablicy `LEAD_STAGES` z `leads/leads-client.tsx`
+    // (ta sama liczba etapów, ten sam tekst i ta sama kolejność). Zgodność
+    // pilnuje `apps/b2b-web/tests/leads-nav-submenu.test.ts`, który parsuje oba
+    // pliki źródłowo i porówna listy — jeśli ktoś doda/zmieni etap w
+    // `LEAD_STAGES`, a zapomni zaktualizować listę poniżej, test poczerwienieje.
+    subItems: [
+      { id: 'ALL', label: 'Wszystkie', href: '/leads?status=ALL' },
+      { id: 'NEW_LEAD', label: '1. Nowy lead', href: '/leads?status=NEW_LEAD' },
+      { id: 'AWAITING_AUDIT', label: '2. Oczekiwanie na audyt', href: '/leads?status=AWAITING_AUDIT' },
+      { id: 'AUDIT_COMPLETED', label: '3. Wykonany audyt', href: '/leads?status=AUDIT_COMPLETED' },
+      { id: 'AWAITING_CREW_ASSIGNMENT', label: '4. Oczekuje na ekipę', href: '/leads?status=AWAITING_CREW_ASSIGNMENT' },
+      { id: 'HARDWARE_IN_WAREHOUSE', label: '5. Wysyłka (Hurtownia)', href: '/leads?status=HARDWARE_IN_WAREHOUSE' },
+      { id: 'HARDWARE_IN_TRANSIT', label: '6. Wysyłka w drodze', href: '/leads?status=HARDWARE_IN_TRANSIT' },
+      { id: 'AWAITING_INSTALLATION', label: '7. Oczekuje instalacji', href: '/leads?status=AWAITING_INSTALLATION' },
+      { id: 'INSTALLATION_COMPLETED', label: '8. Instalacja zakończona', href: '/leads?status=INSTALLATION_COMPLETED' },
+      { id: 'QUOTE_REJECTED', label: '🧊 Zimne leady', href: '/leads?status=QUOTE_REJECTED' },
+      { id: 'ROLLBACK_RESCHEDULING', label: '🔄 Rollback', href: '/leads?status=ROLLBACK_RESCHEDULING' },
+    ],
+  },
   {
     id: 'crm',
     label: 'CRM',
