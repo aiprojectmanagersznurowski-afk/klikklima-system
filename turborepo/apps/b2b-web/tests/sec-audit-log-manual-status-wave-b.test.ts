@@ -79,6 +79,7 @@ const {
   getCurrentActorRoleMock,
   getCurrentUserMock,
   getUserMock,
+  notificationQueueCreateMock,
 } = vi.hoisted(() => ({
   transactionMock: vi.fn(),
   prismaLeadFindUniqueMock: vi.fn(),
@@ -92,11 +93,17 @@ const {
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
   getUserMock: vi.fn(),
+  notificationQueueCreateMock: vi.fn().mockResolvedValue({ id: 'nq-mock-id' }),
 }));
 
 vi.mock('@repo/database', () => ({
   prisma: {
     leady: { findUnique: prismaLeadFindUniqueMock, update: prismaLeadUpdateMock },
+    // LOGISTICS-SHIPPING-EFFECTS (Faza C): bypassLogisticsOrder/rollbackLogisticsOrder
+    // woloja odtad enqueueNotification(tx, {...}) wewnatrz $transaction, ktora uzywa
+    // tx.notificationQueue.create. Ten plik nie testuje efektow powiadomien, wiec
+    // mock jest neutralnym, zawsze-sukces fixture'em.
+    notificationQueue: { create: notificationQueueCreateMock },
     $transaction: transactionMock,
   },
   LeadStatus: {
@@ -129,6 +136,7 @@ const tx = {
   leady: { findUnique: txLeadFindUniqueMock, update: txLeadUpdateMock },
   auditLog: { create: txAuditLogCreateMock },
   instalacje: { update: txInstalacjeUpdateMock },
+  notificationQueue: { create: notificationQueueCreateMock },
   $queryRaw: txQueryRawMock,
 };
 

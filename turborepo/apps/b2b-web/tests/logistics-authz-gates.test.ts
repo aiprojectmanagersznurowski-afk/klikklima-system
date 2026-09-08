@@ -52,6 +52,7 @@ const {
   getCurrentUserMock,
   deleteLeadActionMock,
   auditLogCreateMock,
+  notificationQueueCreateMock,
 } = vi.hoisted(() => ({
   leadUpdateMock: vi.fn(),
   leadFindUniqueMock: vi.fn(),
@@ -68,6 +69,7 @@ const {
   getCurrentUserMock: vi.fn(),
   deleteLeadActionMock: vi.fn(),
   auditLogCreateMock: vi.fn(),
+  notificationQueueCreateMock: vi.fn().mockResolvedValue({ id: 'nq-mock-id' }),
 }));
 
 vi.mock('@repo/database', () => ({
@@ -94,6 +96,12 @@ vi.mock('@repo/database', () => ({
     // pisza wpis audytowy WEWNATRZ tej samej transakcji co zmiane statusu — mockowany
     // tu i w `makeTxImplementation()`, zeby callback $transaction sie nie wywalil.
     auditLog: { create: auditLogCreateMock },
+    // LOGISTICS-SHIPPING-EFFECTS (Faza C): shipLogisticsOrder/rollbackLogisticsOrder
+    // wolaja odtad enqueueNotification(tx, {...}) wewnatrz $transaction, ktora
+    // uzywa tx.notificationQueue.create. Ten plik nie testuje efektow powiadomien
+    // (patrz enqueue-notification.test.ts, logistics-notification-integration.test.ts),
+    // wiec mock jest neutralnym, zawsze-sukces fixture'em.
+    notificationQueue: { create: notificationQueueCreateMock },
     $queryRaw: queryRawMock,
     $transaction: transactionMock,
   },
@@ -171,6 +179,7 @@ function makeTxImplementation() {
         findMany: instalacjeFindManyMock,
       },
       auditLog: { create: auditLogCreateMock },
+      notificationQueue: { create: notificationQueueCreateMock },
       $queryRaw: queryRawMock,
     });
 }

@@ -27,3 +27,22 @@ anonimizacja klienta (`anonymizeClientAction`) nie skasuje/zanonimizuje tych wie
 `notification_queue`) PRZED tym, jak payload zacznie nosić prawdziwe dane. Jeśli go nie ma i Faza C już
 wypełnia `recipientOverride`/`payload` danymi klienta — to jest realna, nie hipotetyczna, luka RODO,
 warta HIGH.
+
+**Aktualizacja 2026-09-08 (audyt diffu working tree, `shipLogisticsOrder`/`rollbackLogisticsOrder`
+w `apps/b2b-web/src/app/(dashboard)/logistics/actions.ts`):** Faza C WPIĘŁA `enqueueNotification`
+do obu funkcji, ale WSZYSTKIE wywołania przekazują wyłącznie `{ notificationId, idempotencyKey, leadId }`
+— żadne nie ustawia `payload` ani `recipientOverride`. Skutek w `rollback-effects.ts:122-138`:
+`payload: params.payload ?? {}` → zawsze `{}`, `recipientAddress: params.recipientOverride ?? null`
+→ zawsze `null`. Czyli **luka RODO opisana wyżej NADAL się nie zmaterializowała** — wiersze
+`notification_queue` niosą tylko identyfikatory (`leadId`, `notificationId`, `templateKey`, `channel`,
+`idempotencyKey`), zero PII klienta/dyspozytora. `trackingNumber` (teraz obowiązkowy w
+`shipLogisticsOrder`) trafia WYŁĄCZNIE do `idempotencyKey` (`ship:${leadId}:${trackingNumber}`, kolumna
+wewnętrzna DB, nie treść powiadomienia) i do istniejącej kolumny `logistyka_zamowienia.tracking_id` —
+nie do `payload`. Katalog (`contracts/notifications.contract.mjs`) oczekuje dla tych zdarzeń zmiennych
+jak `first_name`, `tracking_id`, `order_number` (np. N5/N_ROLLBACK/I4) — puste `payload: {}` oznacza,
+że przyszły worker wysyłki (poza zakresem tej fazy) nie miałby z czego zbudować treści. To jest luka
+FUNKCJONALNA (workera jeszcze nie ma), nie RODO — odnotowana jako obserwacja, nie blokująca.
+Ryzyko strukturalne (brak retencji/TTL w `QUEUE_POLICY`, `notification_queue` poza zasięgiem
+`CRM-CLIENT-ANONYMIZE-RODO`) POZOSTAJE otwarte na przyszłość — as-is, gdy ktoś zacznie faktycznie
+wypełniać `payload`/`recipientOverride` prawdziwymi danymi klienta (np. w warstwie workera albo w
+kolejnej fazie), trzeba wtedy ponownie ocenić jako HIGH, jeśli nadal brak wymagania kontraktowego.

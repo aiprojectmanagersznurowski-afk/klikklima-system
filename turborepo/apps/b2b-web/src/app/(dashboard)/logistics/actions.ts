@@ -8,7 +8,8 @@ import { can, findTransition } from "@klikklima/contracts"
 import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server"
 import { deleteLeadAction } from "../leads/actions"
 import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
-import { releaseCrewSlot, suspendLogisticsSla } from "./rollback-effects"
+import { releaseCrewSlot, suspendLogisticsSla, enqueueNotification } from "./rollback-effects"
+import { findTransitionByFromTo } from "../../../lib/audit/find-transition-by-from-to"
 import type { TriageAnswers } from "@/lib/triage-answers"
 import { shortId } from "../../../lib/format-id"
 
@@ -102,6 +103,12 @@ export async function getLogisticsLeads(): Promise<LogisticsLead[] | { success: 
   })
 }
 
+/**
+ * D5 (WO LOGISTICS-SHIPPING-EFFECTS, naprawa defektu guardu): `trackingNumber` jest
+ * OBOWIĄZKOWY — bez numeru przesyłki nie ma czego wysłać kurierem, więc odmowa
+ * następuje PRZED otwarciem transakcji, zanim jakikolwiek zapis (status leada,
+ * rekord logistyki, kolejka powiadomień) mógłby powstać.
+ */
 export async function shipLogisticsOrder(leadId: string, trackingNumber?: string): Promise<{ success: boolean; error?: string }> {
   let actorRole;
   try {
@@ -114,17 +121,23 @@ export async function shipLogisticsOrder(leadId: string, trackingNumber?: string
     return { success: false, error: "Brak uprawnień do wysyłki zamówienia." };
   }
 
-  await prisma.$transaction(async (tx) => {
-    // 1. Zmiana statusu na IN_TRANSIT
-    await tx.leady.update({
-      where: { id: leadId },
-      data: {
-        status: LeadStatus.HARDWARE_IN_TRANSIT,
-      },
-    });
+  if (!trackingNumber) {
+    return { success: false, error: "Numer przesyłki jest wymagany do wysyłki zamówienia." };
+  }
 
-    // 2. Dodanie rekordu logistyki, jeśli podano tracking
-    if (trackingNumber) {
+  const transition = findTransitionByFromTo(LeadStatus.HARDWARE_IN_WAREHOUSE, LeadStatus.HARDWARE_IN_TRANSIT);
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1. Zmiana statusu na IN_TRANSIT
+      await tx.leady.update({
+        where: { id: leadId },
+        data: {
+          status: LeadStatus.HARDWARE_IN_TRANSIT,
+        },
+      });
+
+      // 2. Dodanie rekordu logistyki
       await tx.logistyka_zamowienia.create({
         data: {
           lead_id: leadId,
@@ -133,8 +146,22 @@ export async function shipLogisticsOrder(leadId: string, trackingNumber?: string
           data_wysylki: new Date(),
         },
       });
-    }
-  });
+
+      // 3. Kolejkowanie efektów przejścia z kontraktu (AC-C8: żadnych literałów ID
+      // powiadomień w kodzie — czytamy `effects` z definicji przejścia).
+      const notificationIds = (transition?.effects ?? []).filter((effect) => !effect.startsWith("do:"));
+      for (const notificationId of notificationIds) {
+        await enqueueNotification(tx, {
+          notificationId,
+          idempotencyKey: `ship:${leadId}:${trackingNumber}`,
+          leadId,
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Failed to ship logistics order:", error);
+    return { success: false, error: "Nie udało się wysłać zamówienia." };
+  }
 
   revalidatePath('/logistics');
   revalidatePath('/leads');
@@ -385,6 +412,18 @@ export async function rollbackLogisticsOrder(leadId: string, reason: string): Pr
 
       await releaseCrewSlot(tx, leadId);
       await suspendLogisticsSla(tx, leadId);
+
+      // Kolejkowanie efektów przejścia z kontraktu (AC-C6/AC-C8): żadnych
+      // literałów ID powiadomień w kodzie — czytamy `effects` z definicji
+      // przejścia (T10-T13, zależnie od statusu źródłowego).
+      const notificationIds = (transition.effects ?? []).filter((effect) => !effect.startsWith("do:"));
+      for (const notificationId of notificationIds) {
+        await enqueueNotification(tx, {
+          notificationId,
+          idempotencyKey: `rollback:${leadId}:${notificationId}`,
+          leadId,
+        });
+      }
     });
   } catch (error) {
     if (error instanceof RollbackDomainError) {

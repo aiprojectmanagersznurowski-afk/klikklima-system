@@ -54,6 +54,7 @@ const {
   revalidatePathMock,
   getCurrentActorRoleMock,
   getCurrentUserMock,
+  notificationQueueCreateMock,
 } = vi.hoisted(() => ({
   // Mocki "poza transakcją" — jeżeli którykolwiek z nich zostanie wywołany z
   // efektami D1/D2, dowodzi to, że kod ucieka poza `$transaction`.
@@ -74,12 +75,18 @@ const {
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
+  notificationQueueCreateMock: vi.fn().mockResolvedValue({ id: 'nq-mock-id' }),
 }));
 
 vi.mock('@repo/database', () => ({
   prisma: {
     leady: { findUnique: prismaLeadFindUniqueMock, update: prismaLeadUpdateMock, findMany: prismaLeadFindManyMock },
     instalacje: { update: prismaInstalacjeUpdateMock, updateMany: prismaInstalacjeUpdateManyMock },
+    // LOGISTICS-SHIPPING-EFFECTS (Faza C): rollbackLogisticsOrder wola odtad
+    // enqueueNotification(tx, {...}) wewnatrz $transaction, ktora uzywa
+    // tx.notificationQueue.create. Ten plik nie testuje efektow powiadomien,
+    // wiec mock jest neutralnym, zawsze-sukces fixture'em.
+    notificationQueue: { create: notificationQueueCreateMock },
     $queryRaw: prismaQueryRawMock,
     $transaction: transactionMock,
   },
@@ -413,7 +420,7 @@ describe('rollbackLogisticsOrder — wpięcie releaseCrewSlot + suspendLogistics
   // do TEGO SAMEGO obiektu transakcyjnego, a nie na `prisma` bezpośrednio / po zamknięciu
   // transakcji. Znacznik `__txId` jest tylko czytelnym potwierdzeniem — realny dowód to
   // porównanie `mock.contexts` (this-binding wywołania) z `lastTx.leady`/`lastTx.instalacje`.
-  let lastTx: { __txId: string; leady: unknown; instalacje: unknown; auditLog: unknown; $queryRaw: unknown } | null = null;
+  let lastTx: { __txId: string; leady: unknown; instalacje: unknown; auditLog: unknown; notificationQueue: unknown; $queryRaw: unknown } | null = null;
 
   function makeTx() {
     lastTx = {
@@ -424,6 +431,10 @@ describe('rollbackLogisticsOrder — wpięcie releaseCrewSlot + suspendLogistics
       // audytowy WEWNĄTRZ tej samej transakcji co zmianę statusu — bez tego mocka
       // callback $transaction wywala się na `tx.auditLog.create is not a function`.
       auditLog: { create: txAuditLogCreateMock },
+      // LOGISTICS-SHIPPING-EFFECTS (Faza C): enqueueNotification(tx, {...}) uzywa
+      // tx.notificationQueue.create — neutralny, zawsze-sukces mock (efekty
+      // powiadomien pokrywa inny plik).
+      notificationQueue: { create: notificationQueueCreateMock },
       $queryRaw: txQueryRawMock,
     };
     return lastTx;
