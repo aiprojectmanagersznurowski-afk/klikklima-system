@@ -1,5 +1,6 @@
 # Pamięć agenta: contract-steward
 
+- [Rodzina CRM-DELETE-ADMIN-ONLY-* domknięta](project_delete_admin_only_family_closed.md) — 2026-09-08 przez -INCIDENTS; zostaje tylko -SERVICES (martwy kod); security 26/30.
 - [CRM-DELETE-ADMIN-ONLY-AUDITORS zamknięte](project_delete_admin_only_auditors_closed.md) — 2026-09-08; jedyny wpis rodziny z ochroną przed DISABLE RLS; commit wisi na baseline nazewnictwa.
 - [CRM-DELETE-ADMIN-ONLY-INSTALLATIONS zamknięte](project_delete_admin_only_installations_closed.md) — 2026-09-08; UI była REALNĄ luką, nie brakiem testu — sprawdź kod rodzeństwa przed planowaniem.
 - [Blokada zapisu do contracts/](project_contract_write_blocker.md) — NAPRAWIONA 2026-08-19; zapis przyczyny i naprawy na wypadek regresji guard-paths.
