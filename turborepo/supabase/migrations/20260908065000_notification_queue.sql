@@ -6,9 +6,14 @@
 --                 contracts/notifications.contract.mjs QUEUE_POLICY (ADR-007).
 --
 -- ╔══════════════════════════════════════════════════════════════════════════════════════╗
--- ║  UWAGA: TA MIGRACJA NIE ZOSTAŁA URUCHOMIONA NA ŻYWEJ BAZIE.                           ║
--- ║  Napisana 2026-09-08, zacommitowana jako plik, świadomie NIEZAAPLIKOWANA.             ║
--- ║  Uruchomienie wymaga OSOBNEJ, JAWNEJ zgody człowieka.                                 ║
+-- ║  URUCHOMIONA NA ŻYWEJ BAZIE 2026-09-08 (za jawną zgodą człowieka).                    ║
+-- ║  Weryfikacja bezpośrednim zapytaniem po uruchomieniu:                                ║
+-- ║  information_schema.columns → wszystkie 18 kolumn obecne, poprawne typy/nullability. ║
+-- ║  pg_constraint → obecne: notification_queue_pkey, notification_queue_idempotency_    ║
+-- ║  key_key (UNIQUE), notification_queue_one_owner (CHECK num_nonnulls),                ║
+-- ║  notification_queue_status_check (CHECK status IN (...)).                            ║
+-- ║  pg_class.relrowsecurity = true, pg_policies → 0 wierszy (RLS włączone, zero          ║
+-- ║  polityk, deny-by-default zgodnie z zamiarem).                                        ║
 -- ╚══════════════════════════════════════════════════════════════════════════════════════╝
 --
 -- ZAKRES: tabela `notification_queue` istnieje w schemacie PRZED jakimkolwiek producentem
