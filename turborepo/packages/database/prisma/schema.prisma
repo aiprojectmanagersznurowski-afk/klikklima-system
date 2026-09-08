@@ -729,3 +729,51 @@ model AuditLog {
   @@index([createdAt], map: "audit_log_created_at_idx")
   @@map("audit_log")
 }
+
+/// NTF-QUEUE-TABLE (WO LOGISTICS-SHIPPING-EFFECTS Faza B). Tabela istnieje w schemacie
+/// PRZED jakimkolwiek producentem/konsumentem — `enqueueNotification()` i wpięcie w
+/// akcje logistyki to Faza C tego samego WO, poza zakresem tej migracji.
+/// `status` jako String + CHECK w bazie, nie enum Prisma — wzorem `AuditLog.operation`/
+/// `.resource`/`.legalBasis` (audit_log), nie `LeadStatus`/`InstallationStatus`: słownik
+/// PENDING|SENT|ERROR|DEAD_LETTER może rosnąć (por. uzasadnienie w migracji audit_log —
+/// ALTER TYPE ... ADD VALUE nie działa w tej samej transakcji, CHECK aktualizuje się jednym
+/// ALTER w transakcji).
+model NotificationQueue {
+  id String @id @default(cuid())
+
+  /// ID z katalogu powiadomień (contracts/notifications.contract.mjs NOTIFICATIONS), np. "N5".
+  notificationId String @map("notification_id")
+
+  templateKey String @map("template_key")
+  channel     String
+
+  recipientType    String  @map("recipient_type")
+  recipientAddress String? @map("recipient_address")
+
+  payload Json
+
+  /// CHECK notification_queue_status_check w bazie: PENDING|SENT|ERROR|DEAD_LETTER.
+  status String @default("PENDING")
+
+  attempts Int @default(0)
+
+  lastError      String?   @map("last_error")
+  nextAttemptAt  DateTime? @map("next_attempt_at") @db.Timestamptz(6)
+  deadLetteredAt DateTime? @map("dead_lettered_at") @db.Timestamptz(6)
+
+  /// `requiresIdempotencyKey: true` (QUEUE_POLICY, ADR-007). Kolizja przy retry jest
+  /// łapana (Prisma P2002) i traktowana jako sukces — nie jako błąd.
+  idempotencyKey String @unique @map("idempotency_key")
+
+  /// NTF-POLY: dokładnie jedno z czterech poniżej jest niepuste — wymuszone CHECK-iem
+  /// notification_queue_one_owner w bazie, nie tylko w kodzie.
+  leadId         String? @map("lead_id") @db.Uuid
+  installationId String? @map("installation_id") @db.Uuid
+  serviceId      String? @map("service_id") @db.Uuid
+  incidentId     String? @map("incident_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([status], map: "notification_queue_status_idx")
+  @@map("notification_queue")
+}

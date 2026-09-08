@@ -26,7 +26,18 @@ export const REQUIREMENTS = [
   R('FNL-E5-BYPASS', { source: 'b2b_funnel_process.md#etap-5', domain: 'logistics', statement: 'Akcja „Dostawa z ekipą" pomija E6 i przenosi leada bezpośrednio do E7.', acceptance: ['E6 zostaje pominięte', 'Nie powstaje rekord przesyłki kurierskiej', 'Nie wysyła się N5'] }),
   R('FNL-E6-E7', { source: 'b2b_funnel_process.md#etap-6', domain: 'logistics', statement: 'Webhook kuriera „Doręczono" lub ręczna akcja dyspozytora przenosi leada do E7.', acceptance: ['Webhook jest idempotentny po tracking_id', 'Nieznany tracking_id trafia do dead-letter, nie rzuca 500', 'Ręczna akcja daje identyczny efekt jak webhook'], risk: 'HIGH' }),
   R('FNL-E7-E8', { source: 'b2b_funnel_process.md#etap-7', domain: 'funnel', statement: 'Monter zamyka montaż w Field App, lead przechodzi do E8.', acceptance: ['Wyliczane jest next_service_date = data_zakonczenia + 1 rok', 'Kolejkowane jest N8 z 3 załącznikami', 'Widok Instalacji w B2B odświeża status'], risk: 'HIGH' }),
-  R('FNL-ROLLBACK', { source: 'b2b_funnel_process.md#rollback-engine', domain: 'logistics', statement: 'Lead z etapów E4–E7 może trafić do bucketu ROLLBACK_RESCHEDULING.', acceptance: ['Slot kalendarza ekipy zostaje zwolniony', 'SLA logistyczne zostaje wstrzymane', 'Kolejkowane są N_ROLLBACK (klient) i I4 (dyspozytor)'], risk: 'HIGH' }),
+  R('FNL-ROLLBACK', {
+    source: 'b2b_funnel_process.md#rollback-engine',
+    domain: 'logistics',
+    statement: 'Lead z etapów E4–E7 może trafić do bucketu ROLLBACK_RESCHEDULING.',
+    acceptance: [
+      'POKRYTE 2026-09-08 (WO LOGISTICS-SHIPPING-EFFECTS Faza A): Slot kalendarza ekipy zostaje zwolniony — releaseCrewSlot(tx, leadId), test apps/b2b-web/tests/logistics-rollback-effects.test.ts (AC-A1, AC-A2, BLOCKER-1, idempotencja, lead bez instalacje, FOR UPDATE przed mutacją)',
+      'POKRYTE 2026-09-08 (WO LOGISTICS-SHIPPING-EFFECTS Faza A): SLA logistyczne zostaje wstrzymane — suspendLogisticsSla(tx, leadId) ustawia logistics_sla_paused_at i zeruje data_rezerwacji, test j.w. (AC-A5, strefa czasowa, kontrast pasma SLA AC-A4)',
+      'NIEPOKRYTE — wyniesione do Faza C tego samego WO (dosłownie ten sam wymóg, nie inna warstwa): Kolejkowane są N_ROLLBACK (klient) i I4 (dyspozytor). Infrastruktura kolejki (notification_queue) dopiero powstaje w tej turze jako NTF-QUEUE-TABLE (schemat, bez integracji); enqueueNotification() i wpięcie go w rollbackLogisticsOrder to Faza C WO LOGISTICS-SHIPPING-EFFECTS (AC-C6), jeszcze nie rozpoczęte. Status pozostaje IMPLEMENTING, nie DONE, dopóki to kryterium nie ma testu — inaczej `DONE` przy braku dowodu na wysyłkę powiadomienia rollbacku byłoby sprzecznością w samym kontrakcie.',
+    ],
+    risk: 'HIGH',
+    status: 'IMPLEMENTING',
+  }),
   R('FNL-ROLLBACK-EXIT', { source: 'b2b_funnel_process.md#rollback-engine', domain: 'logistics', statement: 'Wybór nowego terminu przez klienta zwraca leada do E4.', acceptance: ['Nowy slot jest rezerwowany atomowo', 'Lead wraca dokładnie do AWAITING_CREW_ASSIGNMENT, nie do etapu źródłowego'] }),
   R('FNL-NO-ILLEGAL-TRANSITIONS', { source: 'contracts/funnel.contract.mjs', domain: 'funnel', statement: 'Każde przejście stanu nieujęte w kontrakcie musi zostać odrzucone przez warstwę serwerową ORAZ przez bazę.', acceptance: ['Test model-based przechodzi całą macierz stan × akcja', 'Nielegalne przejście zwraca błąd domenowy, nie wyjątek 500', 'Bezpośredni UPDATE w bazie omijający Server Action jest blokowany triggerem'], risk: 'HIGH' }),
 
@@ -492,6 +503,21 @@ export const REQUIREMENTS = [
   }),
 
   // ───────────────────────── Powiadomienia ─────────────────────────
+  R('NTF-QUEUE-TABLE', {
+    source: 'docs/workorders/LOGISTICS-SHIPPING-EFFECTS.md#zmiana-kontraktu-schematu-wymagana, ADR-007 (contracts/notifications.contract.mjs QUEUE_POLICY)',
+    domain: 'notifications',
+    statement: 'Tabela notification_queue istnieje w schemacie i pozwala zapisać wpis kolejki w tej samej transakcji Prisma co zmianę statusu leada/instalacji/serwisu/usterki, zanim istnieje jakikolwiek nadawca (SMS/e-mail/push).',
+    acceptance: [
+      'AC-B1: enqueueNotification wywołane dwa razy z tym samym idempotency_key skutkuje jednym wierszem; drugie wywołanie nie rzuca (P2002 łapane i traktowane jako sukces)',
+      'AC-B2: wiersz powstały poza transakcją-rodzicem nie istnieje — rollback transakcji rodzica usuwa wpis w kolejce',
+      'AC-B3: wpis ma dokładnie jedno niepuste z lead_id/installation_id/service_id/incident_id (NTF-POLY, wymuszone CHECK-iem w bazie)',
+      'AC-B4: channel, template_key i recipient pochodzą z NOTIFICATIONS w kontrakcie — podmiana wpisu w kontrakcie zmienia wynik bez zmiany kodu akcji',
+      'AC-B5: wpis startuje ze status = PENDING, attempts = 0',
+    ],
+    risk: 'HIGH',
+    status: 'TODO',
+    note: 'Faza B WO LOGISTICS-SHIPPING-EFFECTS. Ta rejestracja obejmuje CAŁĄ Fazę B (tabela + helper enqueueNotification), ale w tej turze (contract-steward, 2026-09-08) powstaje WYŁĄCZNIE model Prisma NotificationQueue i migracja SQL notification_queue — bez helpera enqueueNotification, bez integracji z żadną Server Action. Status zostaje TODO, nie IMPLEMENTING, dopóki test-author/notification-architect nie dostarczą testów i helpera pokrywających AC-B1..AC-B5. Migracja NIE jest uruchamiana na żywej bazie w tej turze.',
+  }),
   R('NTF-QUEUE-WINDOW', { source: 'b2b_app_requirements.md#epic-4', domain: 'notifications', statement: 'SMS wysyłane wyłącznie w oknie 8:00–18:00; poza oknem kolejkowane na najbliższe okno.', acceptance: ['Strefa Europe/Warsaw', 'Przesunięcie nie gubi wiadomości'] }),
   R('NTF-POLY', { source: 'ADR-007', domain: 'notifications', statement: 'Kolejka obsługuje powiadomienia niezwiązane z leadem: serwisowe i usterkowe.', acceptance: ['Dokładnie jedno z lead_id/installation_id/service_id/incident_id jest niepuste — wymuszone przez CHECK w bazie', 'N10-N14 kolejkują się z service_id', 'N15-N18 kolejkują się z incident_id', 'Próba wstawienia rekordu z dwoma powiązaniami jest odrzucana przez bazę'], risk: 'HIGH' }),
   R('NTF-HISTORY', { source: 'b2b_app_requirements.md#epic-0', domain: 'notifications', statement: 'Karta 360 pokazuje pełną historię komunikacji z klientem.', acceptance: ['recipient_address zapisuje adres z chwili wysyłki i nie zmienia się po edycji danych klienta', 'Historia obejmuje wszystkie cztery typy powiązań', 'Powiadomienia wewnętrzne (I1-I7) nie pojawiają się w historii klienta'], risk: 'MEDIUM' }),
