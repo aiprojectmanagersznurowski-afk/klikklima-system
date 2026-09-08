@@ -4,3 +4,4 @@
 - [Concurrency test transition premise](feedback_concurrency_test_transition_premise.md) — for N-parallel-calls-exactly-one-success tests, pick a pair where the second try target is truly absent from ALLOWED_TRANSITIONS post-first-call (safest: same op twice).
 - [Select open-tag arrow pitfall](feedback_select_open_tag_arrow_pitfall.md) — naive `indexOf('>')` truncates JSX opening tags at `=>` inside attributes; scan for `>` not preceded by `=`.
 - [Ternary gate no-brace wrap](feedback_ternary_gate_no_brace_wrap.md) — same `canX &&` gate may lack a leading `{` inside a ternary's else-branch; check every occurrence, tolerate optional `{` in regex.
+- [Three-layer coverage closure](feedback_three_layer_coverage_closure.md) — pattern for RLS+UI test closure on CRM-DELETE-ADMIN-ONLY-* reqs: grep true occurrence count first, block+global RLS scan, mutate scratch copy on every occurrence not just first.

@@ -18,3 +18,4 @@
 - [SEC-AUDIT-LOG-MANUAL-STATUS Fala C — przeszła czysto](project_sec_audit_log_manual_status_wave_c.md) — advanceLeadStatus, FOR UPDATE dowiedziony invocationCallOrder, K2 twarda odmowa, T02 bez specjalnego traktowania, ALLOWED_TRANSITIONS wciąż duplikuje canTransition (pre-existing MAJOR).
 - [SEC-LAST-ADMIN-GUARD — przeszła czysto](project_sec_last_admin_guard_clean_pass.md) — deleteAuthorizedUser, wzorzec 1:1 z updateAuthorizedUserRoleAction, trigger DB świadomie odłożony do decyzji człowieka.
 - [NTF-QUEUE-TABLE Faza B reverify — przeszła czysto](project_ntf_queue_table_wave_b_reverify.md) — enqueueNotification per-kanał wiersze, P2002-only swallow potwierdzony mutacyjnie, R3 świadomie odłożone do NTF-RETRY.
+- [Testy zamrożenia RLS wymagają whitelist, nie blacklist](feedback_rls_freeze_test_whitelist.md) — blacklist na FOR DELETE/FOR ALL nie łapie braku klauzuli FOR (domyślne FOR ALL) ani braku kwalifikatora public.

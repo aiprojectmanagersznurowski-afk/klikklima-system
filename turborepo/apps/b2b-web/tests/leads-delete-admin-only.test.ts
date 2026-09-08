@@ -88,7 +88,7 @@ const { deleteLeadAction } = await import('../src/app/(dashboard)/leads/actions'
 // leads.update (CRM-LEAD-UPDATE-ADMIN-DISPATCHER).
 const UNAUTHORIZED_DELETE_ROLES = ['dyspozytor', 'audytor', 'monter'] as const;
 
-describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY)', () => {
+describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY-LEADS)', () => {
   beforeEach(() => {
     transactionMock.mockReset();
     leadDeleteMock.mockReset();
@@ -106,7 +106,7 @@ describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY
 
   // Server Action odrzuca zadanie roli nie-admin, PRZED jakimkolwiek zapytaniem do
   // Prismy — dyspozytor wlaczony celowo, bo ma leads.update, ale NIE leads.delete.
-  // @REQ: CRM-DELETE-ADMIN-ONLY
+  // @REQ: CRM-DELETE-ADMIN-ONLY-LEADS
   it.each(UNAUTHORIZED_DELETE_ROLES)(
     'rola %s jest odrzucona przed jakimkolwiek zapytaniem do Prismy',
     async (role) => {
@@ -122,7 +122,7 @@ describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY
   );
 
   // Fail-closed: brak roli.
-  // @REQ: CRM-DELETE-ADMIN-ONLY
+  // @REQ: CRM-DELETE-ADMIN-ONLY-LEADS
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
@@ -134,7 +134,7 @@ describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY
   });
 
   // Fail-closed: blad samego zapytania o role.
-  // @REQ: CRM-DELETE-ADMIN-ONLY
+  // @REQ: CRM-DELETE-ADMIN-ONLY-LEADS
   it('blad zapytania o role daje odmowe, nie nieobslugowany wyjatek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('blad zapytania o role'));
 
@@ -147,7 +147,7 @@ describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY
 
   // Kontrola pozytywna: admin -> sukces, delete faktycznie wywolane (wewnatrz $transaction,
   // razem z wpisem audytowym pokrywanym w sec-audit-log-delete-wave-a.test.ts).
-  // @REQ: CRM-DELETE-ADMIN-ONLY
+  // @REQ: CRM-DELETE-ADMIN-ONLY-LEADS
   it('admin - dozwolony, wywolanie konczy sie usunieciem leada', async () => {
     leadDeleteMock.mockResolvedValue({});
     auditLogCreateMock.mockResolvedValue({ id: 'audit-1' });
@@ -160,7 +160,7 @@ describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY
 
   // Kontrola pozytywna kontraktu — dowod, ze macierz RBAC faktycznie zawezona do
   // samego admina dla delete, w odroznieniu od update (['admin','dyspozytor']).
-  // @REQ: CRM-DELETE-ADMIN-ONLY
+  // @REQ: CRM-DELETE-ADMIN-ONLY-LEADS
   it('kontrola pozytywna kontraktu - wylacznie admin ma delete na leads w macierzy RBAC', () => {
     expect(can('admin', 'leads', 'delete')).toBe('yes');
     expect(can('dyspozytor', 'leads', 'delete')).toBe('no');
@@ -168,7 +168,7 @@ describe('deleteLeadAction - bramka roli, wylacznie admin (CRM-DELETE-ADMIN-ONLY
   });
 
   // Odmowa ma jawny, odroznialny ksztalt — nie wyjatek, nie cichy sukces.
-  // @REQ: CRM-DELETE-ADMIN-ONLY
+  // @REQ: CRM-DELETE-ADMIN-ONLY-LEADS
   it('odmowa ma jawny, odroznialny ksztalt (obiekt z success:false), nie wyjatek', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
 
