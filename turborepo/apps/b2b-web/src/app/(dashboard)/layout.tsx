@@ -69,7 +69,7 @@ const navItems: NavItem[] = [
     icon: Settings,
     subItems: [
       { id: 'exit_intent', label: 'Exit Intent', href: '/settings/exit-intent' },
-      { id: 'rbac', label: 'Użytkownicy i Uprawnienia', href: '/settings/rbac', comingSoon: true },
+      { id: 'rbac', label: 'Użytkownicy i Uprawnienia', href: '/settings' },
       { id: 'notifications_settings', label: 'Parametry powiadomień', href: '/settings/notifications', comingSoon: true },
     ]
   }
