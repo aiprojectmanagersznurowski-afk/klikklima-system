@@ -21,6 +21,14 @@ oczekiwaną (np. `FOR INSERT TO anon`). Asercja typu „zero wystąpień `FOR DE
 Wariant dla `zespoly_monterskie` tej dziury nie ma, bo asertuje zero polityk w ogóle —
 to działa tylko dla tabel bez żadnej legalnej polityki.
 
+**Trzeci mutant, odkryty 2026-09-08 na `auditors-rls-deny-by-default.test.ts`:** whitelist
+na `CREATE POLICY` przeszukująca CAŁY katalog migracji nadal przepuszcza
+`ALTER TABLE public.<tabela> DISABLE ROW LEVEL SECURITY;` wstrzyknięte w dowolnej
+późniejszej migracji — polityki się nie zmieniają, a tabela jest całkowicie otwarta.
+Asercja `ENABLE ROW LEVEL SECURITY` czytająca wyłącznie plik bazowy tego nie widzi.
+Żądaj drugiej połowy skanu katalogowego: zero wystąpień
+`/ALTER TABLE\s+(public\.)?<tabela>\s+DISABLE ROW LEVEL SECURITY/i` we WSZYSTKICH `.sql`.
+
 **How to apply:** dotyczy pozostałych `CRM-DELETE-ADMIN-ONLY-*` (installations,
 services, incidents, auditors). Jeśli tabela ma jakąkolwiek legalną politykę, żądaj
 formy: zbierz wszystkie chunki `CREATE POLICY` wskazujące tabelę (regex tolerujący brak

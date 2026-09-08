@@ -139,7 +139,11 @@ describe('deleteAuditorAction - blokada usuniecia audytora z wiszacymi leadami (
     expect(auditorDeleteMock).not.toHaveBeenCalled();
   });
 
-  // @REQ: CRM-AUDYT-AC1
+  // AC1.4 dowodzi jednocześnie D1 (rola nieadmin odrzucona przed logika wiszacych
+  // leadow) ORAZ warstwy Server Action wymagania CRM-DELETE-ADMIN-ONLY-AUDITORS
+  // ("wywolanie z pominieciem interfejsu przez role nie-admin jest odrzucone ZANIM
+  // otworzy sie transakcja") - stad podwojny tag, zeby zaden wpis nie stracil pokrycia.
+  // @REQ: CRM-AUDYT-AC1, CRM-DELETE-ADMIN-ONLY-AUDITORS
   it('AC1.4 - rola inna niz admin jest odrzucona po stronie serwera, nawet z pominieciem UI', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
     auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', leady: [] });
@@ -147,15 +151,24 @@ describe('deleteAuditorAction - blokada usuniecia audytora z wiszacymi leadami (
     const result = await deleteAuditorAction('aud-1', VALID_INPUT);
 
     expect(result.success).toBe(false);
+    // AC2 wymaga odrzucenia PRZED otwarciem transakcji, nie tylko przed samym DELETE:
+    // sprawdzenie samego auditorDeleteMock nie odrozniłoby "odrzucone przed transakcja"
+    // od "transakcja otwarta, ale delete wewnatrz niej pominiety".
+    expect(transactionMock).not.toHaveBeenCalled();
     expect(auditorDeleteMock).not.toHaveBeenCalled();
     expect(can('dyspozytor', 'auditors', 'delete')).toBe('no');
-    expect(PERMISSIONS.auditors.delete).not.toContain('dyspozytor');
+    // Whitelist calej macierzy, nie blacklista jednej roli: mutant rozszerzajacy
+    // PERMISSIONS.auditors.delete o np. 'monter' przechodzilby obok samej blacklisty na
+    // 'dyspozytor', mimo ze otwiera dodatkowa, nieautoryzowana role.
+    expect(PERMISSIONS.auditors.delete).toEqual(['admin']);
   });
 
   // Fail-closed: brak roli (sesja bez wpisu w AuthorizedUser albo brak zalogowania)
   // MUSI byc traktowany jak brak uprawnien, nie jak przejscie. getCurrentActorRole()
   // zwraca `null` dokladnie w tym przypadku (utils/supabase/server.ts).
-  // @REQ: CRM-AUDYT-AC1
+  // Fail-closed dotyczy jednoczesnie D1 (blokady wiszacych leadow) i warstwy Server
+  // Action CRM-DELETE-ADMIN-ONLY-AUDITORS - stad podwojny tag.
+  // @REQ: CRM-AUDYT-AC1, CRM-DELETE-ADMIN-ONLY-AUDITORS
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed, nie przepuszczony', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
     auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', leady: [] });
@@ -170,7 +183,9 @@ describe('deleteAuditorAction - blokada usuniecia audytora z wiszacymi leadami (
   // konta, nie usuniecia; test na toggleAuditorActiveAction zyje w
   // auditors-toggle-active.test.ts): rola admin z macierzy uprawnien przechodzi
   // sprawdzenie roli w deleteAuditorAction.
-  // @REQ: CRM-AUDYT-AC1
+  // Kontrola pozytywna dla obu wymagan naraz: bez niej zestaw przechodzi takze dla
+  // akcji zepsutej tak, ze odrzuca wszystkich, w tym admina.
+  // @REQ: CRM-AUDYT-AC1, CRM-DELETE-ADMIN-ONLY-AUDITORS
   it('kontrola pozytywna - rola admin przechodzi sprawdzenie roli w deleteAuditorAction', async () => {
     auditorFindUniqueMock.mockResolvedValue({ id: 'aud-1', leady: [] });
     expect(can('admin', 'auditors', 'delete')).toBe('yes');

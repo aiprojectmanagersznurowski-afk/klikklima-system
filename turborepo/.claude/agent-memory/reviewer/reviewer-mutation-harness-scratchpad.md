@@ -39,4 +39,17 @@ alias w osobnej konfiguracji vitest.
 5. Ta sama konfiguracja z `include` na plik-sondę w scratchpadzie pozwala napisać własny test
    diagnostyczny (np. „czy funkcja rusza wiersze, których nie powinna").
 
+**NIGDY `git checkout -- .` ani `git stash` do sprzątania po mutancie.** Przywracaj wyłącznie
+konkretną ścieżkę: `git checkout -- <plik>`, a pliki wstrzyknięte usuwaj przez `rm <plik>`.
+
+**Why:** w tym repo równolegle pracują inne agenty i katalog roboczy zawiera cudze
+niezacommitowane zmiany (2026-09-08: `git checkout -- .` skasowało recenzowany właśnie diff
+w `auditors-delete.test.ts` oraz `apps/b2c-web/playwright-report/index.html`). Diff dało się
+odtworzyć tylko dlatego, że był wcześniej wypisany w transkrypcie.
+
+**How to apply:** przed mutacją zapisz `git diff > $S/pre-review.diff` i kopie mutowanych
+plików do scratchpadu. Mutuj przez `python3` z `assert old in s` (mutacja, która się nie
+zaaplikowała, daje fałszywą zieleń). Po każdej rundzie sprawdź `git status --short` i
+porównaj z listą sprzed recenzji.
+
 Powiązane: [[feedback_mutation_proof_required]], [[review-mutation-testing-checklist]].

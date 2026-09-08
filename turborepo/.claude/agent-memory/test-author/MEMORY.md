@@ -5,3 +5,5 @@
 - [Select open-tag arrow pitfall](feedback_select_open_tag_arrow_pitfall.md) — naive `indexOf('>')` truncates JSX opening tags at `=>` inside attributes; scan for `>` not preceded by `=`.
 - [Ternary gate no-brace wrap](feedback_ternary_gate_no_brace_wrap.md) — same `canX &&` gate may lack a leading `{` inside a ternary's else-branch; check every occurrence, tolerate optional `{` in regex.
 - [Three-layer coverage closure](feedback_three_layer_coverage_closure.md) — pattern for RLS+UI test closure on CRM-DELETE-ADMIN-ONLY-* reqs: grep true occurrence count first, block+global RLS scan, mutate scratch copy on every occurrence not just first.
+- [RLS-disable debt in crews/leads/installations](project_rls_disable_debt_family.md) — those 3 files still lack global DISABLE ROW LEVEL SECURITY scan (auditors got fixed 2026-09-08); add when next touched.
+- [Incidents/auditors parity closure](feedback_incidents_auditors_parity_closure.md) — 3-point checklist (RLS AC.4, loose signature assertion, transactionMock-not-called), mutant that injects tx call before role gate isolates the new assertion.

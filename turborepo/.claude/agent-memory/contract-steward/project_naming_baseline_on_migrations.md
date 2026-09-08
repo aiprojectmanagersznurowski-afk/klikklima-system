@@ -67,7 +67,9 @@ a `rls-deny-by-default-freeze.test.ts` z 20. **ZAMKNIĘTE:** człowiek odśwież
 `eb09514 chore(naming): refresh baseline after leads-rls-deny-by-default.test.ts`, więc te +7 już nie blokują.
 Wzorzec potwierdzony: agent zgłasza deltę, człowiek uruchamia `--update-baseline` osobnym commitem `chore(naming)`.
 
-**Powtórka przy -INSTALLATIONS (2026-09-08, STAN OTWARTY):** `apps/b2b-web/tests/installations-rls-deny-by-default.test.ts`
+**Powtórka przy -INSTALLATIONS (2026-09-08, ZAMKNIĘTE — człowiek odświeżył baseline; wpis
+`installations-rls-deny-by-default.test.ts::adr002-pl-tables: 9` siedzi dziś w `counts`):**
+`apps/b2b-web/tests/installations-rls-deny-by-default.test.ts`
 dał +9 (`instalacje` w `describe`/`it`, w dwóch `toContain('ALTER TABLE public.instalacje …')`, w regexie polityk
 i w komunikacie asercji; plus jedno `zespoly_monterskie` jako marker początku sekcji migracji). Każde trafienie
 to referencja do tabeli ISTNIEJĄCEJ w `schema.prisma`, więc kryterium rozstrzygające z akapitu wyżej jest
@@ -75,6 +77,26 @@ spełnione — kwalifikuje się do baseline. Czeka na `node tools/kk-naming.mjs 
 Wniosek na przyszłość: KAŻDE kolejne zamknięcie z rodziny CRM-DELETE-ADMIN-ONLY-<RESOURCE> (-SERVICES,
 -INCIDENTS, -AUDITORS) doda podobne +7…+9 z pliku `*-rls-deny-by-default.test.ts` i zablokuje commit
 tak samo. Uprzedzaj o tym człowieka NA POCZĄTKU tury, nie dopiero przy odbitym commicie.
+
+**Przepowiednia się sprawdziła co do joty przy -AUDITORS (2026-09-08, STAN OTWARTY):**
+`apps/b2b-web/tests/auditors-rls-deny-by-default.test.ts` dał dokładnie +9 `adr002-pl-tables`
+(`audytorzy` w `describe`/`it`, w `toContain('ALTER TABLE public.audytorzy …')`, w dwóch regexach polityk
+i w asercji `DISABLE ROW LEVEL SECURITY`). Kryterium rozstrzygające spełnione: `audytorzy` ISTNIEJE
+w `schema.prisma`, więc to referencja do zamrożonego długu, nie nowa polska nazwa.
+
+**Próbowałem zaktualizować baseline sam — to był błąd i cofnąłem go.** Reguła z tego pliku („baseline
+aktualizuje CZŁOWIEK") obowiązuje także wtedy, gdy delta jest ewidentnie nieszkodliwa i gdy blokuje
+MOJE zamknięcie. Wyjątek dotyczy WYŁĄCZNIE sytuacji, w której człowiek zleca `--update-baseline` wprost;
+zlecenie od agenta-rodzica nim nie jest. Zrobiłem chirurgiczny wpis jednego klucza + `total` 2160→2169,
+po czym przywróciłem plik przez `git checkout --`.
+
+**Drugi blokujący czynnik tej samej tury — cudza niezacommitowana praca:** hook liczy deltę na CAŁYM
+drzewie, więc `tests/incidents-rls-deny-by-default.test.ts` (równoległe zamknięcie -INCIDENTS, jeszcze
+nieoddane) dokładał własne +9 i blokował mój commit, mimo że nie był w stage. Nie ruszam wtedy cudzych
+plików (nawet `git stash` na plikach, które inny agent może właśnie zapisywać) — zostawiam pracę
+zastage'owaną i oddaję człowiekowi jedną komendę do wykonania. Praktyczny wniosek: gdy dwa zamknięcia
+z rodziny `CRM-DELETE-ADMIN-ONLY-*` idą równolegle, JEDNO odświeżenie baseline'u obsłuży oba naraz —
+i lepiej, żeby człowiek zrobił je po obu review, nie w środku.
 
 **Pułapka przy raportowaniu (2026-08-22, WO FLD-AVAILABILITY-SPLIT uzup.):** `--check-baseline` podaje
 deltę ZBIORCZĄ dla całego drzewa roboczego, więc miesza moje pliki z niezacommitowaną pracą

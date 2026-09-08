@@ -9,7 +9,7 @@
 - [Mutacyjna weryfikacja testów](review-mutation-testing-checklist.md) — co mutować, żeby wykryć false-green; testy statyczne na treści .tsx są typową dziurą.
 - [kk-authz-gate nie widzi helperów z `tx`](gate-blindspot-authz-tx-helpers.md) — AUTHZ-EXEMPT to martwy tekst; dowód „to endpoint" daje server-reference-manifest.json, nie grep w chunku.
 - [FOR UPDATE na leady bez testu](project-rollback-read-committed-race.md) — blokada w rollbackLogisticsOrder jest w kodzie, ale mutanty M1/M4 przeżywają wszystkie 633 testy.
-- [Harness mutacyjny w scratchpadzie](reviewer-mutation-harness-scratchpad.md) — jak mutować kod bez prawa zapisu do repo: vitest .mjs config + alias na kopię modułu.
+- [Harness mutacyjny w scratchpadzie](reviewer-mutation-harness-scratchpad.md) — jak mutować kod bez prawa zapisu do repo; NIGDY `git checkout -- .` przy sprzątaniu.
 - [Sticky z-index ties i nietestowane czyste funkcje](review-ui-batch-sticky-and-untested-pure-fn.md) — jak realnie ocenić konflikt z-index nagłówek/ciało tabeli i kiedy brak testu obok testowanego bliźniaka to MAJOR.
 - [Audyt spójności wizualnej b2b-web — kontekst](project_ui_consistency_audit_b2b.md) — wspólne prymitywy StatusPill/shortId/EMPTY_VALUE/--radius-control, gdzie zwykle chowa się dryf.
 - [Technika recenzji wielobatchowej](feedback_cross_batch_consistency_checks.md) — grep wspólnego wzorca przez wszystkie dotknięte pliki naraz, nie czytanie diffów osobno.
