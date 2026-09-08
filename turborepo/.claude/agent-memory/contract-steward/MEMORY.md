@@ -25,4 +25,5 @@
 - [InstallationStatus ma CANCELLED](project_installation_status_enum_has_cancelled.md) — potwierdzone na żywej bazie 2026-09-08 dla WO LOGISTICS-SHIPPING-EFFECTS D1; releaseCrewSlot ma ustawiać CANCELLED, nie zostawiać PLANNED.
 - [FNL-ROLLBACK częściowo zamknięte (HISTORYCZNE)](project_fnl_rollback_partial_close.md) — 2026-09-08 stan pośredni IMPLEMENTING; SUPERSEDED przez [[project_logistics_shipping_effects_all_four_done]] (Faza C domknęła AC3).
 - [NTF-QUEUE-TABLE tylko schemat (HISTORYCZNE)](project_ntf_queue_table_schema_only.md) — 2026-09-08 stan pośredni TODO/schema-only; SUPERSEDED przez [[project_logistics_shipping_effects_all_four_done]].
+- [CRM-LEAD-UPDATE-ADMIN-DISPATCHER zamknięte](project_crm_lead_update_admin_dispatcher_closed.md) — DONE 2026-09-08; zielone testy nie dowodzą kryterium — asercja na kształt vs na treść komunikatu.
 - [LOGISTICS-SHIPPING-EFFECTS: wszystkie 4 wymagania DONE, w pełni live](project_logistics_shipping_effects_all_four_done.md) — 2026-09-08; Fazy A+B+C, obie migracje zaaplikowane i zweryfikowane na produkcji.

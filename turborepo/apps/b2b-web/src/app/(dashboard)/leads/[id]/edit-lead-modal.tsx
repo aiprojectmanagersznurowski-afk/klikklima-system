@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Edit, Loader2 } from "lucide-react";
 import { updateLeadData } from "./actions";
+import { can, type Role } from "@klikklima/contracts";
 
 interface EditLeadModalProps {
   leadId: string;
@@ -23,13 +24,20 @@ interface EditLeadModalProps {
     estimatedQuote: string;
   };
   defaultOpen?: boolean;
+  actorRole: Role | null;
 }
 
-export function EditLeadModal({ leadId, initialData, defaultOpen = false }: EditLeadModalProps) {
+export function EditLeadModal({ leadId, initialData, defaultOpen = false, actorRole }: EditLeadModalProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [formData, setFormData] = useState(initialData);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
+
+  const canUpdateLead = !!actorRole && can(actorRole, "leads", "update") === "yes";
+
+  if (!canUpdateLead) {
+    return null;
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -49,12 +57,15 @@ export function EditLeadModal({ leadId, initialData, defaultOpen = false }: Edit
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {/* @ts-ignore */}
-      <DialogTrigger asChild>
-        <Button variant="default" size="sm" className="gap-2">
-          <Edit size={14} /> Edytuj dane
-        </Button>
-      </DialogTrigger>
+      {canUpdateLead && (
+        <DialogTrigger
+          render={
+            <Button variant="default" size="sm" className="gap-2">
+              <Edit size={14} /> Edytuj dane
+            </Button>
+          }
+        />
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edytuj dane Leada</DialogTitle>

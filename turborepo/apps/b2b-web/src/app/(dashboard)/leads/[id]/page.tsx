@@ -9,6 +9,7 @@ import { EditLeadModal } from "./edit-lead-modal";
 import { DeleteLeadButton } from "./delete-lead-button";
 import { getAuditors } from "../actions";
 import { getLeadDetail } from "./actions";
+import { getCurrentActorRole } from "../../../../utils/supabase/server";
 import { LEAD_STATUS_TONE } from "../leads-client";
 import { signStoragePaths } from "@/lib/storage/signed-urls";
 import type { TriageAnswers } from "@/lib/triage-answers";
@@ -37,6 +38,16 @@ export default async function LeadDetailsPage({
   }
 
   const { lead } = detailResult;
+
+  // Osobne zapytanie od getLeadDetail() (celowo — getLeadDetail() już gate'uje
+  // leads.read wariantem 'own'). actorRole tu służy wyłącznie warstwie UI, żeby
+  // ukryć kontrolki edycji (leads.update) dla ról, którym serwer i tak odrzuci zapis.
+  let actorRole: Awaited<ReturnType<typeof getCurrentActorRole>> = null;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch {
+    actorRole = null;
+  }
 
   const triage: TriageAnswers = (lead.odpowiedzi_triage as TriageAnswers | null) || {};
 
@@ -105,8 +116,8 @@ export default async function LeadDetailsPage({
                 />
               </h1>
               <div className="flex items-center gap-2">
-                <EditLeadModal 
-                  leadId={lead.id} 
+                <EditLeadModal
+                  leadId={lead.id}
                   defaultOpen={isEditMode}
                   initialData={{
                     name,
@@ -114,7 +125,8 @@ export default async function LeadDetailsPage({
                     email,
                     address,
                     estimatedQuote,
-                  }} 
+                  }}
+                  actorRole={actorRole}
                 />
                 <DeleteLeadButton leadId={lead.id} />
               </div>
@@ -236,7 +248,12 @@ export default async function LeadDetailsPage({
 
         {/* Sidebar - Prawa kolumna */}
         <div className="lg:col-span-1 space-y-6">
-          <AssignAuditor leadId={lead.id} currentAuditorId={lead.audytor_id} auditors={auditorsWithAvatars} />
+          <AssignAuditor
+            leadId={lead.id}
+            currentAuditorId={lead.audytor_id}
+            auditors={auditorsWithAvatars}
+            actorRole={actorRole}
+          />
         </div>
       </div>
     </div>

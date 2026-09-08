@@ -5,6 +5,7 @@ import { updateLeadAuditor } from "./actions";
 import type { getAuditors } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Check, Loader2, UserPlus } from "lucide-react";
+import { can, type Role } from "@klikklima/contracts";
 
 // SEC-ASSIGNMENT-POOL-MINIMIZE (AC6): id/imie_i_nazwisko wyprowadzone z prawdziwego
 // zwracanego typu getAuditors() (leads/actions.ts), zamiast ręcznie skopiowane —
@@ -15,10 +16,22 @@ type AssignableAuditor = Omit<Awaited<ReturnType<typeof getAuditors>>[number], "
   avatarUrl: string | null;
 };
 
-export function AssignAuditor({ leadId, currentAuditorId, auditors }: { leadId: string; currentAuditorId: string | null; auditors: AssignableAuditor[] }) {
+export function AssignAuditor({
+  leadId,
+  currentAuditorId,
+  auditors,
+  actorRole,
+}: {
+  leadId: string;
+  currentAuditorId: string | null;
+  auditors: AssignableAuditor[];
+  actorRole: Role | null;
+}) {
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
   const [optimisticAuditor, setOptimisticAuditor] = useState(currentAuditorId);
+
+  const canUpdateLead = !!actorRole && can(actorRole, "leads", "update") === "yes";
 
   const handleSelect = (auditorId: string | null) => {
     setOptimisticAuditor(auditorId);
@@ -93,26 +106,30 @@ export function AssignAuditor({ leadId, currentAuditorId, auditors }: { leadId: 
                   )}
                 </div>
                 <span className="font-medium text-gray-900">{currentAuditorName}</span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setIsEditing(true)}
-                  disabled={isPending}
-                  className="ml-2 h-8 text-xs"
-                >
-                  {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Zmień"}
-                </Button>
+                {canUpdateLead && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                    disabled={isPending}
+                    className="ml-2 h-8 text-xs"
+                  >
+                    {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Zmień"}
+                  </Button>
+                )}
               </div>
             ) : (
-              <Button 
-                variant="outline" 
-                onClick={() => setIsEditing(true)}
-                disabled={isPending}
-                className="gap-2 text-blue-700 border-blue-200 hover:bg-blue-50 bg-blue-50/50"
-              >
-                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus size={16} />}
-                Przypisz audytora
-              </Button>
+              canUpdateLead && (
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditing(true)}
+                  disabled={isPending}
+                  className="gap-2 text-blue-700 border-blue-200 hover:bg-blue-50 bg-blue-50/50"
+                >
+                  {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus size={16} />}
+                  Przypisz audytora
+                </Button>
+              )
             )}
           </div>
         )}

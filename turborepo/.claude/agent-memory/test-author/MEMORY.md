@@ -3,3 +3,4 @@
 - [Mock infra update for new required param](feedback_mock_infra_update_for_new_required_param.md) — when a wave adds mandatory `reason`+`getCurrentUser`+`tx.auditLog.create`, only positive-path tests need mock updates (email override, `auditLog` on fake `tx`); denial-path tests just need the extra call arg.
 - [Concurrency test transition premise](feedback_concurrency_test_transition_premise.md) — for N-parallel-calls-exactly-one-success tests, pick a pair where the second try target is truly absent from ALLOWED_TRANSITIONS post-first-call (safest: same op twice).
 - [Select open-tag arrow pitfall](feedback_select_open_tag_arrow_pitfall.md) — naive `indexOf('>')` truncates JSX opening tags at `=>` inside attributes; scan for `>` not preceded by `=`.
+- [Ternary gate no-brace wrap](feedback_ternary_gate_no_brace_wrap.md) — same `canX &&` gate may lack a leading `{` inside a ternary's else-branch; check every occurrence, tolerate optional `{` in regex.

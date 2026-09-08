@@ -270,4 +270,26 @@ describe('updateLeadAuditor - bramka roli (CRM-LEAD-UPDATE-ADMIN-DISPATCHER)', (
     expect(result).toEqual(expect.objectContaining({ success: false }));
     expect(typeof result?.error).toBe('string');
   });
+
+  // Luka 1 (weryfikacja contract-stewarda wobec pelnej listy acceptance
+  // CRM-LEAD-UPDATE-ADMIN-DISPATCHER, 2026-09-08): `getCurrentActorRole()` jest
+  // dzis wolane WEWNATRZ `try` calego ciala funkcji, bez wlasnego `catch` —
+  // wyjatek z odczytu roli trafia do wspolnego `catch` na koncu funkcji i
+  // zwraca komunikat bledu ZAPISU ("Nie udalo sie przypisac audytora."), a nie
+  // jawna odmowe uprawnien ("Brak uprawnien do edycji leada."), jak przy
+  // zwyklym `access !== 'yes'`. Test wyzej ("blad zapytania o role daje
+  // odmowe...") sprawdza tylko KSZTALT (`success: false`) i JUZ przechodzi —
+  // nie lapie tej luki. Ten test sprawdza dokladna TRESC komunikatu, wzorem
+  // poprawnego wzorca w `getLeadDetail` (osobny try/catch WYLACZNIE wokol
+  // odczytu roli, w TYM SAMYM pliku produkcyjnym).
+  // @REQ: CRM-LEAD-UPDATE-ADMIN-DISPATCHER
+  it('Luka 1 — blad zapytania o role daje TEN SAM komunikat odmowy co brak uprawnien, nie komunikat bledu zapisu', async () => {
+    getCurrentActorRoleMock.mockRejectedValue(new Error('blad sesji/bazy'));
+
+    const result = await updateLeadAuditor('lead-1', 'aud-active');
+
+    expect(result).toEqual({ success: false, error: 'Brak uprawnień do edycji leada.' });
+    expect(leadFindUniqueMock).not.toHaveBeenCalled();
+    expect(leadUpdateMock).not.toHaveBeenCalled();
+  });
 });

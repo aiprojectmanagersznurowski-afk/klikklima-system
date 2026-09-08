@@ -79,12 +79,18 @@ export async function getLeadDetail(id: string) {
  * ['admin', 'dyspozytor'].
  */
 export async function updateLeadAuditor(leadId: string, audytorId: string | null) {
+  let actorRole;
   try {
-    const actorRole = await getCurrentActorRole();
-    if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
-      return { success: false, error: "Brak uprawnień do edycji leada." };
-    }
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do edycji leada." };
+  }
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do edycji leada." };
+  }
 
+  try {
     const lead = await prisma.leady.findUnique({ where: { id: leadId } });
     if (!lead) return { success: false, error: "Lead not found" };
 
@@ -131,12 +137,18 @@ export async function updateLeadData(
     estimatedQuote: string; 
   }
 ) {
+  let actorRole;
   try {
-    const actorRole = await getCurrentActorRole();
-    if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
-      return { success: false, error: "Brak uprawnień do edycji leada." };
-    }
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak uprawnień do edycji leada." };
+  }
+  if (!actorRole || can(actorRole, "leads", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do edycji leada." };
+  }
 
+  try {
     const lead = await prisma.leady.findUnique({
       where: { id: leadId },
       include: { klient: true, adres: true }
