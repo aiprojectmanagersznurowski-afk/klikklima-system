@@ -22,5 +22,5 @@ export default async function InstallationsPage() {
 
   const installations = await getInstallations();
 
-  return <InstallationsClient initialInstallations={installations} />;
+  return <InstallationsClient initialInstallations={installations} actorRole={actorRole} />;
 }

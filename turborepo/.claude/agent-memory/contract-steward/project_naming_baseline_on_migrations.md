@@ -63,10 +63,18 @@ i wynik (0 naruszeń) wpisuję do treści commitu razem z powodem pominięcia ho
 plik `apps/b2b-web/tests/leads-rls-deny-by-default.test.ts` dał +7 (`leady` w nazwach `describe`/`it`, w
 asercji `toContain('ALTER TABLE public.leady …')` i w regexie polityk) — komentarze nad kodem nie kosztują,
 ale tytuł testu już tak. Precedens: bliźniaczy `crews-rls-deny-by-default.test.ts` siedzi w baseline z 8,
-a `rls-deny-by-default-freeze.test.ts` z 20. **STAN OTWARTY:** te +7 NIE są w baseline — commit poszedł
-z `--no-verify`, powód i delta wpisane w treść commitu (b6fc5fd). Dopóki człowiek nie uruchomi
-`node tools/kk-naming.mjs --update-baseline`, KAŻDY następny commit w tym drzewie jest blokowany tą samą
-siódemką, także cudzy i całkowicie czysty.
+a `rls-deny-by-default-freeze.test.ts` z 20. **ZAMKNIĘTE:** człowiek odświeżył baseline commitem
+`eb09514 chore(naming): refresh baseline after leads-rls-deny-by-default.test.ts`, więc te +7 już nie blokują.
+Wzorzec potwierdzony: agent zgłasza deltę, człowiek uruchamia `--update-baseline` osobnym commitem `chore(naming)`.
+
+**Powtórka przy -INSTALLATIONS (2026-09-08, STAN OTWARTY):** `apps/b2b-web/tests/installations-rls-deny-by-default.test.ts`
+dał +9 (`instalacje` w `describe`/`it`, w dwóch `toContain('ALTER TABLE public.instalacje …')`, w regexie polityk
+i w komunikacie asercji; plus jedno `zespoly_monterskie` jako marker początku sekcji migracji). Każde trafienie
+to referencja do tabeli ISTNIEJĄCEJ w `schema.prisma`, więc kryterium rozstrzygające z akapitu wyżej jest
+spełnione — kwalifikuje się do baseline. Czeka na `node tools/kk-naming.mjs --update-baseline` od człowieka.
+Wniosek na przyszłość: KAŻDE kolejne zamknięcie z rodziny CRM-DELETE-ADMIN-ONLY-<RESOURCE> (-SERVICES,
+-INCIDENTS, -AUDITORS) doda podobne +7…+9 z pliku `*-rls-deny-by-default.test.ts` i zablokuje commit
+tak samo. Uprzedzaj o tym człowieka NA POCZĄTKU tury, nie dopiero przy odbitym commicie.
 
 **Pułapka przy raportowaniu (2026-08-22, WO FLD-AVAILABILITY-SPLIT uzup.):** `--check-baseline` podaje
 deltę ZBIORCZĄ dla całego drzewa roboczego, więc miesza moje pliki z niezacommitowaną pracą

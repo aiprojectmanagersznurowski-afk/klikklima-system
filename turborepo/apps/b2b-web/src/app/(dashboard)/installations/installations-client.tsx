@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition } from "react"
 import { Search, MapPin, Calendar, Wrench, MoreHorizontal, CheckCircle2, XCircle, ArrowRight , ShieldAlert } from "lucide-react"
+import { can, SLA, type Role } from "@klikklima/contracts"
 import { Button } from "@/components/ui/button"
 import { InstallationSummary, updateInstallationStatus , deleteInstallationAction } from "./actions"
 import {
@@ -20,12 +21,20 @@ import { DeleteJustificationDialog } from "@/components/delete-justification-dia
 import { StatusPill } from "@/components/ui/status-pill"
 import { EMPTY_VALUE } from "@/lib/empty-value"
 
-export function InstallationsClient({ initialInstallations }: { initialInstallations: InstallationSummary[] }) {
+export function InstallationsClient({
+  initialInstallations,
+  actorRole,
+}: {
+  initialInstallations: InstallationSummary[]
+  actorRole: Role | null
+}) {
   const router = useRouter()
   const [installations, setInstallations] = useState<InstallationSummary[]>(initialInstallations)
   const [searchQuery, setSearchQuery] = useState("")
   const [isPending, startTransition] = useTransition()
   const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
+
+  const canDeleteInstallations = !!actorRole && can(actorRole, "installations", "delete") === "yes";
 
   const handleDelete = (id: string) => {
     setDeleteDialogId(id);
@@ -118,7 +127,7 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
                 ) : (
                   filtered.map(item => {
                     const isTodayInstall = item.plannedDate ? isToday(new Date(item.plannedDate)) : false;
-                    const isLate = isTodayInstall && item.status !== "COMPLETED" && new Date().getHours() >= 16;
+                    const isLate = isTodayInstall && item.status !== "COMPLETED" && new Date().getHours() >= SLA.INSTALL_DAY_ALERT.hourOfDay;
                     
                     return (
                       <tr
@@ -233,14 +242,18 @@ export function InstallationsClient({ initialInstallations }: { initialInstallat
                                   </DropdownMenuItem>
                                 )}
                               
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                onClick={() => handleDelete(item.id)}
-                              >
-                                <ShieldAlert className="mr-2 size-4" />
-                                <span>Usuń (Tylko Admin)</span>
-                              </DropdownMenuItem>
+                              {canDeleteInstallations && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                    onClick={() => handleDelete(item.id)}
+                                  >
+                                    <ShieldAlert className="mr-2 size-4" />
+                                    <span>Usuń (Tylko Admin)</span>
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                             </DropdownMenu>
                           </div>

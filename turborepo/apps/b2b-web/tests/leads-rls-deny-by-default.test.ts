@@ -99,7 +99,7 @@ describe('RLS deny-by-default zamrożone na leady (CRM-DELETE-ADMIN-ONLY-LEADS)'
     const sql = readMigration();
     // Regex tolerancyjny na brak kwalifikatora `public.` — mutant `ON leady FOR DELETE ...`
     // (bez `public.`) musi też zostać złapany, nie tylko `ON public.leady`.
-    const leadyPolicyPattern = /CREATE POLICY[^;]*?\bON\s+(public\.)?leady\b[^;]*;/gs;
+    const leadyPolicyPattern = /CREATE POLICY[^;]*?\bON\s+(public\.)?leady\b[^;]*;/g;
     const policiesOnLeady = sql.match(leadyPolicyPattern) ?? [];
 
     // Dokładnie jedna legalna polityka — każdy dodatkowy mutant (z klauzulą `FOR` lub bez,

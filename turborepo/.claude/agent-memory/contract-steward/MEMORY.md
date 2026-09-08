@@ -1,5 +1,6 @@
 # Pamięć agenta: contract-steward
 
+- [CRM-DELETE-ADMIN-ONLY-INSTALLATIONS zamknięte](project_delete_admin_only_installations_closed.md) — 2026-09-08; UI była REALNĄ luką, nie brakiem testu — sprawdź kod rodzeństwa przed planowaniem.
 - [Blokada zapisu do contracts/](project_contract_write_blocker.md) — NAPRAWIONA 2026-08-19; zapis przyczyny i naprawy na wypadek regresji guard-paths.
 - [Dług na regułach absolutnych w pre-commit](project_precommit_absolute_debt.md) — po naprawie baseline zostały as-any i green-sla; jedyny powód --no-verify.
 - [Semantyka statusu SUPERSEDED](project_superseded_status_semantics.md) — forma wpisu zastąpionego i dwie pułapki: kk-trace zielony, ale ostrzeżenie HIGH RISK zostaje na stałe.

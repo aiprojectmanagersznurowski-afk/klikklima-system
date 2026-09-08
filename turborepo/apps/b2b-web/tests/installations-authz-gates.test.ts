@@ -219,7 +219,7 @@ describe('updateInstallationStatus — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
   });
 });
 
-describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', () => {
+describe('deleteInstallationAction — bramka roli (CRM-DELETE-ADMIN-ONLY-INSTALLATIONS)', () => {
   beforeEach(() => {
     installationUpdateMock.mockReset();
     installationDeleteMock.mockReset();
@@ -233,7 +233,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
     transactionMock.mockImplementation(async (callback: (tx: unknown) => unknown) => callback(deleteTx));
   });
 
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INSTALLATIONS
   it.each(DELETE_DENIED_ROLES)(
     'rola %s jest odrzucona, mutacja usunięcia montażu nie jest wywołana',
     async (role) => {
@@ -250,7 +250,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
 
   // Pulapka AC4 rowniez tutaj: monter (installations.update = 'own') NIE ma
   // installations.delete w ogole ('no'), wiec musi byc odrzucony niezaleznie.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INSTALLATIONS
   it('monter nie ma installations.delete, jest odrzucony', async () => {
     expect(can('monter', 'installations', 'delete')).toBe('no');
     getCurrentActorRoleMock.mockResolvedValue('monter');
@@ -262,7 +262,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
   });
 
   // Fail-closed: brak roli.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INSTALLATIONS
   it('brak roli (getCurrentActorRole zwraca null) jest odrzucony fail-closed', async () => {
     getCurrentActorRoleMock.mockResolvedValue(null);
 
@@ -273,7 +273,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
   });
 
   // Fail-closed: blad samego zapytania o role.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INSTALLATIONS
   it('blad zapytania o role daje odmowe, nie nieobslugowany wyjatek', async () => {
     getCurrentActorRoleMock.mockRejectedValue(new Error('blad zapytania o role'));
 
@@ -284,7 +284,7 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
   });
 
   // Kontrola pozytywna dla kazdej dozwolonej roli osobno.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INSTALLATIONS
   it.each(DELETE_ALLOWED_ROLES)('rola %s jest dozwolona, delete faktycznie wywolane', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
     installationDeleteMock.mockResolvedValue({});
@@ -298,13 +298,13 @@ describe('deleteInstallationAction — bramka roli (SEC-AUTHZ-B2B-MUTATIONS)', (
   });
 
   // Kontrola pozytywna kontraktu.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INSTALLATIONS
   it('kontrola pozytywna kontraktu — wylacznie admin ma delete na installations w macierzy RBAC', () => {
     expect(PERMISSIONS.installations.delete).toEqual(['admin']);
   });
 
   // Odmowa ma jawny, odroznialny ksztalt.
-  // @REQ: SEC-AUTHZ-B2B-MUTATIONS
+  // @REQ: CRM-DELETE-ADMIN-ONLY-INSTALLATIONS
   it('odmowa ma jawny, odroznialny ksztalt (obiekt z success:false), nie wyjatek ani void', async () => {
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
 
