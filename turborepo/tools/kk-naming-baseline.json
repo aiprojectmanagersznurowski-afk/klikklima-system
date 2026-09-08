@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-08T11:40:01.996Z",
+  "generatedAt": "2026-09-08T13:30:56.126Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 17,
@@ -113,6 +113,7 @@
     "apps/b2b-web/tests/leads-pool-minimize.test.ts::adr002-pl-tables": 7,
     "apps/b2b-web/tests/leads-return-to-funnel.test.ts::adr002-pl-columns": 2,
     "apps/b2b-web/tests/leads-return-to-funnel.test.ts::adr002-pl-tables": 1,
+    "apps/b2b-web/tests/leads-rls-deny-by-default.test.ts::adr002-pl-tables": 7,
     "apps/b2b-web/tests/leads-status-gates.test.ts::adr002-pl-columns": 2,
     "apps/b2b-web/tests/leads-status-gates.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/leads-update-data-gate.test.ts::adr002-pl-columns": 4,
@@ -196,5 +197,5 @@
     "supabase/migrations/20260903061000_security_employee_email_unique_reassert.sql::adr002-pl-tables": 11,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2144
+  "total": 2151
 }

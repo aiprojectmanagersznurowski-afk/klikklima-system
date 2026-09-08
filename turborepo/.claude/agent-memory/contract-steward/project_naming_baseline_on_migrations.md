@@ -59,6 +59,15 @@ własne pliki są czyste — jedyne wyjście to `--no-verify`. Żeby nie straci�
 `node tools/kk-precommit-scan.mjs $(git diff --cached --name-only --diff-filter=ACM | sed 's|^turborepo/||')`
 i wynik (0 naruszeń) wpisuję do treści commitu razem z powodem pominięcia hooka.
 
+**Nie tylko migracje — także testy statyczne nad migracją (2026-09-08, CRM-DELETE-ADMIN-ONLY-LEADS):**
+plik `apps/b2b-web/tests/leads-rls-deny-by-default.test.ts` dał +7 (`leady` w nazwach `describe`/`it`, w
+asercji `toContain('ALTER TABLE public.leady …')` i w regexie polityk) — komentarze nad kodem nie kosztują,
+ale tytuł testu już tak. Precedens: bliźniaczy `crews-rls-deny-by-default.test.ts` siedzi w baseline z 8,
+a `rls-deny-by-default-freeze.test.ts` z 20. **STAN OTWARTY:** te +7 NIE są w baseline — commit poszedł
+z `--no-verify`, powód i delta wpisane w treść commitu (b6fc5fd). Dopóki człowiek nie uruchomi
+`node tools/kk-naming.mjs --update-baseline`, KAŻDY następny commit w tym drzewie jest blokowany tą samą
+siódemką, także cudzy i całkowicie czysty.
+
 **Pułapka przy raportowaniu (2026-08-22, WO FLD-AVAILABILITY-SPLIT uzup.):** `--check-baseline` podaje
 deltę ZBIORCZĄ dla całego drzewa roboczego, więc miesza moje pliki z niezacommitowaną pracą
 `implementer-server` i `test-author`. Przykład: łączna delta +26, z czego moja migracja to +2 — reszta

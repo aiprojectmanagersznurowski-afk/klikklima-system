@@ -5,7 +5,8 @@
 - [Semantyka statusu SUPERSEDED](project_superseded_status_semantics.md) — forma wpisu zastąpionego i dwie pułapki: kk-trace zielony, ale ostrzeżenie HIGH RISK zostaje na stałe.
 - [Semantyka statusu BLOCKED](project_blocked_status_semantics.md) — co znaczy BLOCKED w rejestrze wymagań i dlaczego walidator ma stałe ostrzeżenia R16 (dziś 5).
 - [Żywotność reguł bramki](feedback_gate_rule_liveness.md) — nowa reguła walidatora zawsze ze stałą mutacją w kk-selftest, zakres szeroki, dowodem jest komunikat.
-- [Baseline nazewnictwa przy migracjach](project_naming_baseline_on_migrations.md) — każda migracja na polskich tabelach blokuje pre-commit; baseline aktualizuje człowiek.
+- [Baseline nazewnictwa przy migracjach](project_naming_baseline_on_migrations.md) — także testy statyczne nad migracją; +7 z 2026-09-08 OTWARTE, blokuje każdy następny commit.
+- [CRM-DELETE-ADMIN-ONLY-LEADS zamknięte](project_leads_delete_admin_only_closed.md) — 2026-09-08; kod był poprawny, brakowało testów; test RLS jako whitelist, nie blacklist.
 - [Incydent: RLS wyłączone na żywej bazie](project_rls_disabled_incident.md) — 16/18 tabel bez RLS; migracja uruchomiona 2026-09-03, ZAMKNIĘTE. Nie pisz jej drugi raz.
 - [Luka w pokryciu bramki uprawnień](project_authz_gate_coverage_gap.md) — poprawna macierz RBAC przy kodzie, który jej nie czyta; luka wchodzi tam, gdzie kończy się definicja skanera.
 - [Dryf pola status w rejestrze wymagań](project_requirement_status_drift.md) — żadna bramka nie pilnuje `status`; obecność testu przy ID nie dowodzi każdego kryterium acceptance.
