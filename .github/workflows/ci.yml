@@ -12,6 +12,11 @@ jobs:
     defaults:
       run:
         working-directory: ./turborepo
+    env:
+      # Wystarcza do `prisma generate` (postinstall) — nie łączy się z żywą bazą.
+      # Realne połączenie (migracje/testy integracyjne) to osobny krok, jeszcze nieistniejący.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/klikklima_ci_placeholder
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/klikklima_ci_placeholder
 
     steps:
       - name: Pobranie kodu
