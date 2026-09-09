@@ -1,4 +1,17 @@
-name: Bramka KlikKlima
+name: Bramka kontraktowa KlikKlima
+
+# Przeniesione z turborepo/.github/workflows/kk-gate.yml (2026-09-09) — GitHub Actions
+# czyta wyłącznie .github/workflows/ w KORZENIU repozytorium. Plik leżący jeden poziom
+# niżej nigdy się nie uruchamiał; kontrakt, kk-selftest i pełny pakiet testów jednostkowych
+# istniały tylko jako hook przed commitem na maszynie deweloperskiej, nie jako bramka
+# serwerowa. Przy tej samej okazji: pnpm → npm (repo stoi na npm, nie na pnpm — oryginalny
+# plik nigdy nie mógłby przejść kroku instalacji), i usunięty serwis Postgres z joba
+# `aplikacja` — pakiet testów mockuje Prismę w każdym pliku (zero testów łączy się z żywą
+# bazą), a `packages/database/prisma` nie ma katalogu migracji (schemat trzymany w
+# `supabase/migrations/`, aplikowany ręcznie na środowisko), więc `prisma migrate deploy`
+# nie miałby czego wdrożyć. Prawdziwy Postgres (i realnie: lokalny stack Supabase CLI,
+# bo migracje używają auth.email() i ról anon/authenticated) jest osobnym zadaniem —
+# potrzebnym dla testów RLS i atomowości rezerwacji, nieistniejących jeszcze w tym repo.
 
 on:
   pull_request:
@@ -9,6 +22,10 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: ./turborepo
 
 jobs:
   # Etap 1 — kontrakt. Uruchamiany osobno i jako pierwszy, bo jeśli źródło prawdy
@@ -33,50 +50,26 @@ jobs:
   aplikacja:
     needs: kontrakt
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: klikklima_test
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/klikklima_test
+      # Wystarcza do `prisma generate` (postinstall) — pakiet testów mockuje Prismę,
+      # żaden test nie otwiera prawdziwego połączenia.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/klikklima_ci_placeholder
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/klikklima_ci_placeholder
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'pnpm' }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm prisma migrate deploy
-      - run: pnpm test -- --run --reporter=json --outputFile=test-results.json
+        with: { node-version: '22', cache: 'npm', cache-dependency-path: turborepo/package-lock.json }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --reporter=json --outputFile=test-results.json
       - name: Macierz identyfikowalności z wynikami testów
         run: node tools/kk-trace.mjs --results test-results.json --enforce
       - name: Tabela pokrycia do podsumowania PR
         if: always()
         run: node tools/kk-trace.mjs --markdown >> $GITHUB_STEP_SUMMARY
 
-  # Etap 3 — E2E. Osobno, bo najdłuższy i najbardziej podatny na flaky.
-  e2e:
-    needs: aplikacja
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'pnpm' }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with: { name: playwright-report, path: playwright-report/, retention-days: 7 }
-
-  # Etap 4 — recenzja agentowa w trybie headless. Nieblokująca:
+  # Etap 3 — recenzja agentowa w trybie headless. Nieblokująca:
   # komentarz recenzenta ma pomagać człowiekowi, a nie zastępować jego decyzji.
   recenzja-agentowa:
     needs: kontrakt
@@ -92,8 +85,8 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          # Wymaga zainstalowanego Claude Code w runnerze.
-          # Tryb nieinteraktywny: -p przekazuje prompt i kończy po odpowiedzi.
+          # Wymaga zainstalowanego Claude Code w runnerze i skonfigurowanego sekretu
+          # ANTHROPIC_API_KEY. Brak sekretu = krok kończy się cicho, joba to nie blokuje.
           npx --yes @anthropic-ai/claude-code -p \
             "Użyj subagenta reviewer do recenzji diffu wobec origin/main. Zwróć wyłącznie werdykt w ustalonym formacie." \
             > review.md || echo "Recenzja niedostępna" > review.md
