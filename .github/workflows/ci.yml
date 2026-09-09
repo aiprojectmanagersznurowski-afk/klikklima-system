@@ -32,9 +32,44 @@ jobs:
 
       - name: Linter (Turborepo)
         run: npm run lint
-        
+
       - name: Budowanie projektu (Turborepo)
         run: npm run build
+
+      # Krok 3a planu Field App (2026-09-10): realny Postgres + PostgREST + Auth,
+      # nie goły kontener bazy — migracje w supabase/migrations/ używają auth.email()
+      # i ról anon/authenticated, których zwykły `postgres:16` nie ma. `supabase start`
+      # aplikuje wszystkie 17 migracji automatycznie przy starcie.
+      #
+      # ZNANA LUKA (do zamknięcia osobno, przez contract-steward w oknie kontraktowym):
+      # widok zmaterializowany `available_combinations`, którego odpytuje
+      # getRecommendation.ts, nie ma śledzonej definicji w żadnej migracji — powstał
+      # na produkcji poza repozytorium. Testy dotykające katalogu/rekomendacji
+      # (catalog.spec.ts, triage.spec.ts i inne) będą padać, dopóki ta definicja nie
+      # zostanie odtworzona jako migracja. To nie jest awaria tego kroku.
+      #
+      # ZNANA LUKA (decyzja biznesowa, nie techniczna): booking-validation.spec.ts
+      # klika w prawdziwy kalendarz, czyli woła Google Calendar przez konto serwisowe.
+      # Bez sekretów Google w tym repo ten test nie przejdzie — do rozstrzygnięcia:
+      # dedykowane konto testowe Google czy świadome pominięcie.
+      - name: Instalacja Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start lokalnego stacku Supabase (migracje aplikują się automatycznie)
+        run: supabase start
+
+      - name: Eksport zmiennych środowiskowych lokalnego stacku
+        run: |
+          supabase status -o json > /tmp/supabase-status.json
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$(node -pe 'require("/tmp/supabase-status.json").API_URL')"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(node -pe 'require("/tmp/supabase-status.json").ANON_KEY')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(node -pe 'require("/tmp/supabase-status.json").SERVICE_ROLE_KEY')"
+            echo "DATABASE_URL=$(node -pe 'require("/tmp/supabase-status.json").DB_URL')"
+            echo "DIRECT_URL=$(node -pe 'require("/tmp/supabase-status.json").DB_URL')"
+          } >> "$GITHUB_ENV"
 
       - name: Instalacja przeglądarek dla Playwright
         run: npx playwright install --with-deps
@@ -43,6 +78,10 @@ jobs:
       - name: Testy E2E (Playwright)
         run: npx playwright test
         working-directory: ./turborepo/apps/b2c-web
+
+      - name: Zatrzymanie lokalnego stacku Supabase
+        if: always()
+        run: supabase stop
 
       - uses: actions/upload-artifact@v4
         if: always()
