@@ -1,5 +1,7 @@
 # Pamięć agenta: contract-steward
 
+- [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, a audytorzy MAJĄ promień pod nazwą `max_promien_dojazdu_km`.
+
 - [Rodzina CRM-DELETE-ADMIN-ONLY-* domknięta w całości](project_delete_admin_only_family_closed.md) — 2026-09-08, 7/7 wpisów; security 27/30; podział wg tego, CO było zepsute.
 - [CRM-DELETE-ADMIN-ONLY-SERVICES zamknięte](project_delete_admin_only_services_closed.md) — 2026-09-08; gate istniał, ale sprawdzał pochodzenie wiersza, nie rolę.
 - [Weryfikuj notatki `source` przed blokowaniem](feedback_verify_source_notes_before_blocking.md) — notatka w rejestrze to stan z dnia napisania, nie fakt; przy zamknięciu usuń nieprawdę.
