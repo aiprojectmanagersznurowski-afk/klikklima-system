@@ -26,6 +26,20 @@ Nie zakładaj też, że RLS da się włączyć na takim obiekcie: Postgres nie w
 na widokach zmaterializowanych, jedyną bramką są uprawnienia obiektowe.
 Powiązane: [[rls-disabled-incident]].
 
+**POŁOWA DŁUGU ZAMKNIĘTA 2026-09-10** (okno `B2C-CATALOG-VIEW-UNTRACKED`, wymaganie
+`B2C-CATALOG-VIEW-TRACKED`): `supabase/migrations/20260910090000_b2c_catalog_view_tracked.sql`
+odtwarza w repo widok, obie funkcje (`get_codes_hash`, `get_multi_indoor_price`), trzy indeksy,
+GRANT-y ORAZ — czego nikt wcześniej nie odnotował — **cztery triggery `FOR EACH STATEMENT`
+odświeżające widok** (`refresh_combinations_on_single/_multi/_indoor/_outdoor` →
+`refresh_available_combinations()` → pełny `REFRESH MATERIALIZED VIEW`). Osłona `to_regclass`
+w `20260824185845` ZOSTAJE (ma wcześniejszy timestamp, więc przy odtwarzaniu od zera i tak trafia
+na nieistniejący obiekt) — dlatego nowa migracja powtarza `REVOKE ALL` + `GRANT SELECT`.
+Lekcja ogólniejsza: **odczyt „czy obiekt jest w repo" to za mało — sprawdź też `pg_trigger`,
+`pg_proc` i `pg_indexes`**. Obiekt spoza migracji zwykle ciągnie za sobą satelity, o których
+nikt nie pamięta; premisa zadania brzmiała „nie ma żadnego odświeżania", a produkcja miała
+cztery triggery. Zostają dwa nierozwiązane zastrzeżenia zapisane w nagłówku migracji: brak
+`REFRESH CONCURRENTLY` (nie ma indeksu unikalnego) i ramię MULTI łączące jednostki po samej marce.
+
 **Ta sama klasa: buckety Storage.** Ustalone 2026-08-28 przy `CRM-KARTOTEKI-CREATE-AND-CREW-ASSIGN`.
 Buckety `audytorzy` i `zespoly` **istnieją** (potwierdzone `SELECT * FROM storage.buckets`), ale
 zakłada je człowiek ręcznie w panelu Supabase — żadna migracja nie tworzy bucketu (`grep` po

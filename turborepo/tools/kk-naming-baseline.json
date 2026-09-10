@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-08T17:44:31.039Z",
+  "generatedAt": "2026-09-10T07:22:44.883Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 17,
@@ -199,7 +199,8 @@
     "supabase/migrations/20260902170500_perf_foreign_key_indexes.sql::adr002-pl-columns": 9,
     "supabase/migrations/20260902170500_perf_foreign_key_indexes.sql::adr002-pl-tables": 11,
     "supabase/migrations/20260903061000_security_employee_email_unique_reassert.sql::adr002-pl-tables": 11,
+    "supabase/migrations/20260910090000_b2c_catalog_view_tracked.sql::adr002-pl-columns": 6,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2191
+  "total": 2197
 }

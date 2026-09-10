@@ -98,6 +98,16 @@ zastage'owaną i oddaję człowiekowi jedną komendę do wykonania. Praktyczny w
 z rodziny `CRM-DELETE-ADMIN-ONLY-*` idą równolegle, JEDNO odświeżenie baseline'u obsłuży oba naraz —
 i lepiej, żeby człowiek zrobił je po obu review, nie w środku.
 
+**Nowa odmiana: migracja ODTWÓRCZA (2026-09-10, B2C-CATALOG-VIEW-TRACKED, STAN OTWARTY):**
+`supabase/migrations/20260910090000_b2c_catalog_view_tracked.sql` dał +6 `adr002-pl-columns`
+(`price_netto` ×3, `set_price_netto` ×3 w treści widoku i funkcji). Tu argument jest jeszcze mocniejszy
+niż zwykle: to transkrypcja 1:1 obiektu istniejącego na produkcji, więc użycie nazwy DOCELOWEJ
+(`net_price`) dałoby migrację, która się nie wykona — taka kolumna nie istnieje. Kryterium
+rozstrzygające spełnione: obie nazwy są w `schema.prisma` (linie 27, 158, 173, 186).
+Komentarze nagłówka wymieniające `price_netto` w uzasadnieniu NIE kosztowały ani jednego trafienia —
+potwierdza „cennik trafień" wyżej. Czeka na `node tools/kk-naming.mjs --update-baseline` od człowieka;
+praca zostawiona w stage, `--no-verify` nieużyte.
+
 **Pułapka przy raportowaniu (2026-08-22, WO FLD-AVAILABILITY-SPLIT uzup.):** `--check-baseline` podaje
 deltę ZBIORCZĄ dla całego drzewa roboczego, więc miesza moje pliki z niezacommitowaną pracą
 `implementer-server` i `test-author`. Przykład: łączna delta +26, z czego moja migracja to +2 — reszta
