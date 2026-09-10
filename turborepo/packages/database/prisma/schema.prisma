@@ -810,12 +810,22 @@ model NotificationQueue {
 ///   1. Kolumna GENEROWANA `resource_id` = COALESCE(auditor_id, crew_id) w availability_rules,
 ///      absences i bookings. Prisma nie wyraża kolumn generowanych, a wpisanie jej jako
 ///      zwykłego pola zmusiłoby kod do jej podawania — czyli do rozjechania się z bazą.
+///   1b. Kolumna GENEROWANA `subject_id` = COALESCE(lead_id, service_id, incident_id)
+///      w bookings (migracja 20260910110000, FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT) — ten sam
+///      wzorzec i ten sam powód nieobecności w modelu co `resource_id`.
 ///   2. CHECK-i: *_one_owner (num_nonnulls = 1), zakresy czasu, słowniki wartości.
 ///   3. EXCLUDE USING gist `bookings_no_overlap_per_resource` — JĄDRO atomowości rezerwacji
 ///      (FNL-E3-E4, B2C-BOOKING-SLOT). Naruszenie: SQLSTATE 23P01, do zamiany na błąd
 ///      domenowy „slot zajęty", nie na 500.
 ///   4. Trigger `bookings_pool_matches_basket_trg` — audyt obsługuje audytor, reszta ekipa.
 ///   5. Unikalny indeks `availability_rules_resource_weekday_key` (jeden przedział na dzień).
+///   6. CZĘŚCIOWY indeks unikalny `bookings_one_active_per_subject` na (subject_id)
+///      WHERE status IN ('RESERVED','CONFIRMED') — jeden podmiot ma najwyżej JEDNĄ aktywną
+///      rezerwację (FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT). Naruszenie: SQLSTATE 23505, czyli
+///      INNY kod niż 23P01 z bookings_no_overlap_per_resource i inna reakcja: przy 23P01
+///      ponawia się na kolejnym kandydacie z puli, przy 23505 ponawianie nie ma sensu.
+///      Indeks NIE jest odroczony — przełożenie terminu (CRM-BOOK-HISTORY) musi ustawić
+///      stary wiersz na RELEASED przed wstawieniem nowego.
 /// ════════════════════════════════════════════════════════════════════════════════════
 
 /// CAL-VISIT-DURATION-BASKETS: słownik koszyków czasu trwania wizyty. Audytor WYBIERA
