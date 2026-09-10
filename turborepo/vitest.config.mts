@@ -3,7 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 /**
  * Rozdział odpowiedzialności testów w monorepo KlikKlima:
- *   *.test.ts  → vitest   (jednostkowe i kontraktowe, warstwa 3 bramki)
+ *   *.test.ts  → vitest   (jednostkowe i kontraktowe, warstwa 3 bramki, Prisma zamockowana)
+ *   *.itest.ts → vitest.integration.config.mts (żywy Postgres — D-2, FLD-BOOKING-ATOMIC-ASSIGN)
  *   *.spec.ts  → Playwright (E2E, osobny runner: npm run test:e2e)
  *
  * Bez tego rozdziału vitest wciąga specyfikacje Playwrighta i wywala się na
@@ -35,6 +36,10 @@ export default defineConfig({
       // examples/ to WZORCE do skopiowania, nie testy — importują celowo
       // nieistniejące moduły domenowe (np. @/server/leads/state-machine).
       'examples/**',
+      // *.itest.ts nie kolidowałyby z `**/*.test.ts` (inny suffiks), ale wyłączenie
+      // jest jawne: te testy potrzebują żywego Postgresa (DATABASE_URL) i mają własną
+      // konfigurację (vitest.integration.config.mts) — nigdy nie powinny trafić tutaj.
+      '**/*.itest.ts',
     ],
     // Bramka nie ma jeszcze własnych testów jednostkowych. Dopóki ich nie ma,
     // ten etap jest ZIELONY PUSTY — realnym miernikiem pokrycia jest kk-trace.

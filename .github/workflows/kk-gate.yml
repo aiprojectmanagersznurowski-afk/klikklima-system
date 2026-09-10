@@ -12,6 +12,13 @@ name: Bramka kontraktowa KlikKlima
 # nie miałby czego wdrożyć. Prawdziwy Postgres (i realnie: lokalny stack Supabase CLI,
 # bo migracje używają auth.email() i ról anon/authenticated) jest osobnym zadaniem —
 # potrzebnym dla testów RLS i atomowości rezerwacji, nieistniejących jeszcze w tym repo.
+#
+# UZUPEŁNIONE 2026-09-10 (D-2, docs/workorders/FLD-BOOKING-ATOMIC-ASSIGN.md): powyższy opis
+# "osobne zadanie" jest teraz job `integracja` niżej. Konwencja *.itest.ts / *.test.ts
+# (vitest.integration.config.mts vs vitest.config.mts) rozdziela testy potrzebujące żywego
+# Postgresa od tych na atrapie Prismy — atrapa nie dowodzi niczego o zachowaniu
+# `EXCLUDE USING gist` pod dwoma równoległymi żądaniami, bo dowodzi wyłącznie tego, jak
+# sama została zaprogramowana.
 
 on:
   pull_request:
@@ -68,6 +75,40 @@ jobs:
       - name: Tabela pokrycia do podsumowania PR
         if: always()
         run: node tools/kk-trace.mjs --markdown >> $GITHUB_STEP_SUMMARY
+
+  # Etap 2b — testy integracyjne na żywym Postgresie (D-2, FLD-BOOKING-ATOMIC-ASSIGN).
+  # Równoległy do `aplikacja` (obie tylko `needs: kontrakt`) — różne konfiguracje vitest,
+  # różne pliki (*.itest.ts vs *.test.ts), zero współdzielonego stanu między nimi.
+  # `supabase start` reużywa to samo, już działające w tym repo podejście co job
+  # `build-and-test` w głównym ci.yml (Postgres + PostgREST + Auth, nie goły kontener —
+  # migracje używają auth.email() i ról anon/authenticated), więc migracje z
+  # `supabase/migrations/` aplikują się automatycznie przy starcie stacku.
+  integracja:
+    needs: kontrakt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm', cache-dependency-path: turborepo/package-lock.json }
+      - run: npm ci
+      - name: Instalacja Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start lokalnego stacku Supabase (migracje aplikują się automatycznie)
+        run: supabase start
+      - name: Eksport zmiennych środowiskowych lokalnego stacku
+        run: |
+          supabase status -o json > /tmp/supabase-status.json
+          {
+            echo "DATABASE_URL=$(node -pe 'require("/tmp/supabase-status.json").DB_URL')"
+            echo "DIRECT_URL=$(node -pe 'require("/tmp/supabase-status.json").DB_URL')"
+          } >> "$GITHUB_ENV"
+      - name: Testy integracyjne (*.itest.ts, żywy Postgres)
+        run: npm run test:integration
+      - name: Zatrzymanie lokalnego stacku Supabase
+        if: always()
+        run: supabase stop
 
   # Etap 3 — recenzja agentowa w trybie headless. Nieblokująca:
   # komentarz recenzenta ma pomagać człowiekowi, a nie zastępować jego decyzji.
