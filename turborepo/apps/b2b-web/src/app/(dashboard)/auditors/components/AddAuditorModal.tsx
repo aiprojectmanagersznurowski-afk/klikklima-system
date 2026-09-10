@@ -42,7 +42,7 @@ const EMPTY_VALUES: AuditorFormValues = {
   uprawnienia_sep: false,
   preferowane_marki: '[]',
   kod_pocztowy_bazowy: '',
-  max_promien_dojazdu_km: '',
+  promien_dzialania_km: '',
   iban: '',
 };
 
@@ -65,7 +65,7 @@ function toDefaultValues(initialData?: AuditorEditRecord | null): AuditorFormVal
     uprawnienia_sep: initialData.uprawnienia_sep || false,
     preferowane_marki: JSON.stringify(initialData.preferowane_marki || []),
     kod_pocztowy_bazowy: initialData.kod_pocztowy_bazowy || '',
-    max_promien_dojazdu_km: initialData.max_promien_dojazdu_km?.toString() || '',
+    promien_dzialania_km: initialData.promien_dzialania_km?.toString() || '',
     iban: initialData.iban || '',
   };
 }
@@ -394,13 +394,13 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="max_promien_dojazdu_km" className="text-sm font-medium text-gray-700">Max promień dojazdu (km)</label>
+              <label htmlFor="promien_dzialania_km" className="text-sm font-medium text-gray-700">Max promień dojazdu (km)</label>
               <input
-                id="max_promien_dojazdu_km"
+                id="promien_dzialania_km"
                 type="number"
                 min="10"
                 className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow"
-                {...register('max_promien_dojazdu_km')}
+                {...register('promien_dzialania_km')}
               />
             </div>
           </div>

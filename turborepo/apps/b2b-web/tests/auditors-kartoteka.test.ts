@@ -19,7 +19,7 @@ import { can, ROLES } from '@klikklima/contracts';
  * ZALOZENIE WYMAGAJACE POTWIERDZENIA PRZY REVIEW (nie zgaduje po cichu):
  * Kontrakt (requirements.contract.mjs, CRM-AUDYT-KARTOTEKA) i WO uzywaja w prozie NAZW
  * KOLUMN Prisma wprost przy opisie zachowania FormData ("dotyczy doswiadczenie_hvac_lata
- * i max_promien_dojazdu_km", "odznaczone uprawnienia_sep zapisuje wartosc logiczna false",
+ * i promien_dzialania_km", "odznaczone uprawnienia_sep zapisuje wartosc logiczna false",
  * "preferowane_marki jedzie z formularza jako JSON") — to jest kontrakt, zrodlo prawdy
  * (CLAUDE.md, "Zasada zerowa"). Dzisiejszy DEAD-CODE modal (AddAuditorModal.tsx) uzywa
  * za to skroconych angielskich kluczy stanu (name/phone/hvacExperience/sep/radius/zipCode/
@@ -117,7 +117,7 @@ function buildFullFormData(overrides: Record<string, string> = {}): FormData {
     uprawnienia_sep: 'true',
     preferowane_marki: JSON.stringify(['Daikin', 'Mitsubishi']),
     kod_pocztowy_bazowy: '00-001',
-    max_promien_dojazdu_km: '50',
+    promien_dzialania_km: '50',
     iban: 'PL61109010140000071219812874',
     zdjecie_url: 'audytorzy/aud-1-123456.jpg',
     // ERRATA A-2 (2026-08-31): fgaz_valid_until / sep_valid_until — daty ważności
@@ -154,7 +154,7 @@ const EXISTING_AUDITOR_RECORD = {
   uprawnienia_sep: true,
   preferowane_marki: ['Daikin', 'Mitsubishi'],
   kod_pocztowy_bazowy: '00-001',
-  max_promien_dojazdu_km: 50,
+  promien_dzialania_km: 50,
   iban: 'PL61109010140000071219812874',
   zdjecie_url: 'audytorzy/aud-1-123456.jpg',
   is_active: true,
@@ -251,7 +251,7 @@ describe('createAuditorAction / updateAuditorAction / getAuditorForEdit — kart
             uprawnienia_sep: true,
             preferowane_marki: ['Daikin', 'Mitsubishi'],
             kod_pocztowy_bazowy: '00-001',
-            max_promien_dojazdu_km: 50,
+            promien_dzialania_km: 50,
             iban: 'PL61109010140000071219812874',
           }),
         }),
@@ -356,14 +356,14 @@ describe('createAuditorAction / updateAuditorAction / getAuditorForEdit — kart
     it.each([
       ['', null],
       ['50', 50],
-    ])('max_promien_dojazdu_km=%j z FormData mapuje sie na %j (nigdy NaN, nigdy 0)', async (input, expected) => {
+    ])('promien_dzialania_km=%j z FormData mapuje sie na %j (nigdy NaN, nigdy 0)', async (input, expected) => {
       auditorCreateMock.mockResolvedValue({ ...EXISTING_AUDITOR_RECORD, id: 'aud-new' });
-      const fd = buildFullFormData({ max_promien_dojazdu_km: input });
+      const fd = buildFullFormData({ promien_dzialania_km: input });
 
       await createAuditorAction(fd);
 
       expect(auditorCreateMock).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ max_promien_dojazdu_km: expected }) }),
+        expect.objectContaining({ data: expect.objectContaining({ promien_dzialania_km: expected }) }),
       );
     });
 
@@ -766,14 +766,14 @@ describe('createAuditorAction / updateAuditorAction / getAuditorForEdit — kart
     it.each([
       ['', null],
       ['50', 50],
-    ])('max_promien_dojazdu_km=%j w edycji mapuje sie na %j (nigdy NaN, nigdy 0)', async (input, expected) => {
+    ])('promien_dzialania_km=%j w edycji mapuje sie na %j (nigdy NaN, nigdy 0)', async (input, expected) => {
       auditorFindUniqueMock.mockResolvedValue(EXISTING_AUDITOR_RECORD);
       auditorUpdateMock.mockResolvedValue(EXISTING_AUDITOR_RECORD);
 
-      await updateAuditorAction('aud-1', buildFullFormData({ max_promien_dojazdu_km: input }));
+      await updateAuditorAction('aud-1', buildFullFormData({ promien_dzialania_km: input }));
 
       expect(auditorUpdateMock).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ max_promien_dojazdu_km: expected }) }),
+        expect.objectContaining({ data: expect.objectContaining({ promien_dzialania_km: expected }) }),
       );
     });
 

@@ -282,7 +282,7 @@ export function AuditorsClient({
                       </div>
                       <div className="flex items-center gap-2">
                         <MapPin className="size-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Obszar: <span className="text-foreground font-medium">{auditor.max_promien_dojazdu_km ? `do ${auditor.max_promien_dojazdu_km} km` : EMPTY_VALUE}</span></span>
+                        <span className="text-sm text-muted-foreground">Obszar: <span className="text-foreground font-medium">{auditor.promien_dzialania_km ? `do ${auditor.promien_dzialania_km} km` : EMPTY_VALUE}</span></span>
                       </div>
                     </div>
                   </div>

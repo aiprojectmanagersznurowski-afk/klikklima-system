@@ -101,7 +101,7 @@ const RAW_FORM_DEFAULTS = {
   uprawnienia_sep: false,
   preferowane_marki: '[]',
   kod_pocztowy_bazowy: '',
-  max_promien_dojazdu_km: '',
+  promien_dzialania_km: '',
   iban: '',
 };
 

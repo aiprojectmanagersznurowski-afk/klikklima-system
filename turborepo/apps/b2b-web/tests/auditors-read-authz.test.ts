@@ -84,7 +84,7 @@ describe('getAuditors() (auditors/actions.ts) - bramka roli PRZED zapytaniem (au
   it.each(ALLOWED_ROLES)('rola %s - dozwolona, findMany jest wołane i wynik przechodzi', async (role) => {
     getCurrentActorRoleMock.mockResolvedValue(role);
     auditorFindManyMock.mockResolvedValue([
-      { id: 'aud-1', imie_i_nazwisko: 'Jan Aktywny', telefon: null, email: null, certyfikat_fgaz: null, fgaz_valid_until: null, uprawnienia_sep: false, max_promien_dojazdu_km: null, preferowane_marki: [], leady: [], is_active: true },
+      { id: 'aud-1', imie_i_nazwisko: 'Jan Aktywny', telefon: null, email: null, certyfikat_fgaz: null, fgaz_valid_until: null, uprawnienia_sep: false, promien_dzialania_km: null, preferowane_marki: [], leady: [], is_active: true },
     ]);
 
     const result = await getAuditors();
@@ -99,7 +99,7 @@ describe('getAuditors() (auditors/actions.ts) - bramka roli PRZED zapytaniem (au
   it('admin - audytor zablokowany (is_active: false) NADAL widoczny w wyniku (celowa różnica wobec puli wyboru)', async () => {
     getCurrentActorRoleMock.mockResolvedValue('admin');
     auditorFindManyMock.mockResolvedValue([
-      { id: 'aud-blocked', imie_i_nazwisko: 'Zablokowany', telefon: null, email: null, certyfikat_fgaz: null, fgaz_valid_until: null, uprawnienia_sep: false, max_promien_dojazdu_km: null, preferowane_marki: [], leady: [], is_active: false },
+      { id: 'aud-blocked', imie_i_nazwisko: 'Zablokowany', telefon: null, email: null, certyfikat_fgaz: null, fgaz_valid_until: null, uprawnienia_sep: false, promien_dzialania_km: null, preferowane_marki: [], leady: [], is_active: false },
     ]);
 
     const result = await getAuditors();

@@ -41,7 +41,7 @@ function buildFullFormData(overrides: Record<string, string> = {}): FormData {
     uprawnienia_sep: 'true',
     preferowane_marki: JSON.stringify(['Daikin', 'Mitsubishi']),
     kod_pocztowy_bazowy: '00-001',
-    max_promien_dojazdu_km: '50',
+    promien_dzialania_km: '50',
     iban: 'PL61109010140000071219812874',
     fgaz_valid_until: '2027-06-15',
     sep_valid_until: '2028-01-01',

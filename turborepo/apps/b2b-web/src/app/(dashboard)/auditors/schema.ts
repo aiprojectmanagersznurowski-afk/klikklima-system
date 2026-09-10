@@ -86,7 +86,7 @@ export const auditorSchema = z
       .transform((v) => (typeof v === "boolean" ? v : v === "true")),
     preferowane_marki: preferowaneMarkiField,
     kod_pocztowy_bazowy: optionalTrimmedString,
-    max_promien_dojazdu_km: emptyToNullInt,
+    promien_dzialania_km: emptyToNullInt,
     iban: optionalTrimmedString,
     zdjecie_url: optionalTrimmedString,
   })

@@ -132,7 +132,7 @@ const fullAuditorRecord = (overrides: Record<string, unknown> = {}) => ({
   uprawnienia_sep: true,
   preferowane_marki: ['Daikin', 'Mitsubishi'],
   kod_pocztowy_bazowy: '00-950',
-  max_promien_dojazdu_km: 40,
+  promien_dzialania_km: 40,
   fgaz_valid_until: new Date('2027-01-01'),
   sep_valid_until: new Date('2027-01-01'),
   iban: 'PL61109010140000071219812874',

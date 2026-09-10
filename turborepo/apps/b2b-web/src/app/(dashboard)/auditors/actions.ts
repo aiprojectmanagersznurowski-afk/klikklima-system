@@ -40,7 +40,7 @@ export type AuditorSummary = {
   certyfikat_fgaz: string | null;
   fgaz_valid_until: Date | null;
   uprawnienia_sep: boolean;
-  max_promien_dojazdu_km: number | null;
+  promien_dzialania_km: number | null;
   preferowane_marki: string[];
   leadsCount: number;
   is_active: boolean;
@@ -81,7 +81,7 @@ export async function getAuditors(): Promise<AuditorSummary[]> {
     certyfikat_fgaz: a.certyfikat_fgaz,
     fgaz_valid_until: a.fgaz_valid_until,
     uprawnienia_sep: a.uprawnienia_sep,
-    max_promien_dojazdu_km: a.max_promien_dojazdu_km,
+    promien_dzialania_km: a.promien_dzialania_km,
     preferowane_marki: a.preferowane_marki,
     leadsCount: a.leady.length,
     is_active: a.is_active
@@ -258,7 +258,7 @@ export async function createAuditorAction(formData: FormData): Promise<CreateAud
       uprawnienia_sep: values.uprawnienia_sep,
       preferowane_marki: values.preferowane_marki,
       kod_pocztowy_bazowy: values.kod_pocztowy_bazowy,
-      max_promien_dojazdu_km: values.max_promien_dojazdu_km,
+      promien_dzialania_km: values.promien_dzialania_km,
       iban: values.iban,
       zdjecie_url: values.zdjecie_url,
     };
@@ -289,7 +289,7 @@ export type AuditorEditRecord = {
   uprawnienia_sep: boolean;
   preferowane_marki: string[];
   kod_pocztowy_bazowy: string | null;
-  max_promien_dojazdu_km: number | null;
+  promien_dzialania_km: number | null;
   iban: string | null;
   zdjecie_url: string | null;
 };
@@ -332,7 +332,7 @@ export async function getAuditorForEdit(id: string): Promise<AuditorEditRecord |
     uprawnienia_sep: auditor.uprawnienia_sep,
     preferowane_marki: auditor.preferowane_marki,
     kod_pocztowy_bazowy: auditor.kod_pocztowy_bazowy,
-    max_promien_dojazdu_km: auditor.max_promien_dojazdu_km,
+    promien_dzialania_km: auditor.promien_dzialania_km,
     iban: auditor.iban,
     zdjecie_url,
   };
@@ -375,7 +375,7 @@ export async function updateAuditorAction(id: string, formData: FormData): Promi
     doswiadczenie_hvac_lata: values.doswiadczenie_hvac_lata,
     uprawnienia_sep: values.uprawnienia_sep,
     kod_pocztowy_bazowy: values.kod_pocztowy_bazowy,
-    max_promien_dojazdu_km: values.max_promien_dojazdu_km,
+    promien_dzialania_km: values.promien_dzialania_km,
     iban: values.iban,
   };
 

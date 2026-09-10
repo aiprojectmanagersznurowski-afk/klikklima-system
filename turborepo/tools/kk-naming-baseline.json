@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-10T09:42:28.883Z",
+  "generatedAt": "2026-09-10T10:37:06.979Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 17,
@@ -86,6 +86,8 @@
     "apps/b2b-web/tests/customers-get-customers-count-pagination.test.ts::adr002-pl-columns": 4,
     "apps/b2b-web/tests/customers-get-customers-count-pagination.test.ts::adr002-pl-tables": 11,
     "apps/b2b-web/tests/customers-read-authz.test.ts::adr002-pl-tables": 3,
+    "apps/b2b-web/tests/fld-base-location-edit-audit-log.test.ts::adr002-pl-columns": 9,
+    "apps/b2b-web/tests/fld-base-location-edit-audit-log.test.ts::adr002-pl-tables": 4,
     "apps/b2b-web/tests/fnl-advance-status-rollback-dedup.test.ts::adr002-pl-columns": 1,
     "apps/b2b-web/tests/fnl-advance-status-rollback-dedup.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/incidents-authz-gates.test.ts::adr002-pl-tables": 1,
@@ -206,5 +208,5 @@
     "supabase/migrations/20260910101000_fld_auditor_radius_rename.sql::adr002-pl-tables": 4,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2233
+  "total": 2246
 }
