@@ -40,6 +40,13 @@ const {
   crewUpdateMock,
   availabilityUpsertMock,
   availabilityDeleteMock,
+  availabilityRuleCreateMock,
+  availabilityRuleUpdateMock,
+  availabilityRuleUpsertMock,
+  availabilityRuleDeleteMock,
+  availabilityRuleDeleteManyMock,
+  queryRawMock,
+  executeRawMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
   getCurrentUserMock,
@@ -52,6 +59,18 @@ const {
   crewUpdateMock: vi.fn(),
   availabilityUpsertMock: vi.fn(),
   availabilityDeleteMock: vi.fn(),
+  // FLD-AVAIL-WEEKLY-RULES AC (kryterium wyniesione z FLD-AVAIL-RESTORE): przełącznik
+  // is_available (ten plik) nie może ruszać availability_rules — dowód poniżej wymaga
+  // mocków na WSZYSTKIE mutujące metody modelu i na obie ścieżki raw SQL, bo tabela
+  // istnieje fizycznie tylko przez `prisma.$queryRaw`/`$executeRaw` (kolumna generowana
+  // `resource_id`, patrz availability-rules-weekly.test.ts).
+  availabilityRuleCreateMock: vi.fn(),
+  availabilityRuleUpdateMock: vi.fn(),
+  availabilityRuleUpsertMock: vi.fn(),
+  availabilityRuleDeleteMock: vi.fn(),
+  availabilityRuleDeleteManyMock: vi.fn(),
+  queryRawMock: vi.fn(),
+  executeRawMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
@@ -76,6 +95,15 @@ vi.mock('@repo/database', () => ({
       upsert: availabilityUpsertMock,
       delete: availabilityDeleteMock,
     },
+    availabilityRule: {
+      create: availabilityRuleCreateMock,
+      update: availabilityRuleUpdateMock,
+      upsert: availabilityRuleUpsertMock,
+      delete: availabilityRuleDeleteMock,
+      deleteMany: availabilityRuleDeleteManyMock,
+    },
+    $queryRaw: queryRawMock,
+    $executeRaw: executeRawMock,
   },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
@@ -107,6 +135,13 @@ beforeEach(() => {
   crewUpdateMock.mockReset();
   availabilityUpsertMock.mockReset();
   availabilityDeleteMock.mockReset();
+  availabilityRuleCreateMock.mockReset();
+  availabilityRuleUpdateMock.mockReset();
+  availabilityRuleUpsertMock.mockReset();
+  availabilityRuleDeleteMock.mockReset();
+  availabilityRuleDeleteManyMock.mockReset();
+  queryRawMock.mockReset();
+  executeRawMock.mockReset();
   revalidatePathMock.mockReset();
   getCurrentActorRoleMock.mockReset();
   getUserMock.mockReset();
@@ -201,5 +236,58 @@ describe('setSelfAvailabilityAction — powrót do dostępności po przełączen
       create: { crewId: 'crew-1', isAvailable: false },
       update: { isAvailable: false },
     });
+  });
+});
+
+describe('setSelfAvailabilityAction — przełącznik nie modyfikuje availability_rules (FLD-AVAIL-WEEKLY-RULES / FLD-AVAIL-RESTORE)', () => {
+  // Kierunek ODWROTNY do AC-A11 w availability-rules-weekly.test.ts (tamten dowodzi, że
+  // zapis GRAFIKU nie rusza availability_declarations; ten dowodzi symetrii: zapis
+  // PRZEŁĄCZNIKA nie rusza availability_rules). Kontrakt (FLD-AVAIL-WEEKLY-RULES, AC
+  // dopisane 2026-09-10): "Reguły są danymi ŹRÓDŁOWYMI: przełącznik «jestem teraz
+  // niedostępny» (FLD-AVAIL-RESTORE) ich nie modyfikuje, tylko przesłania." Doprecyzowanie
+  // w samym FLD-AVAIL-RESTORE (2026-09-10) każe sprawdzić WSZYSTKIE mutujące metody
+  // modelu availabilityRule oraz obie ścieżki raw SQL, bo tabela żyje fizycznie tylko
+  // przez $queryRaw/$executeRaw (resource_id jest kolumną generowaną — patrz
+  // availability-rules-weekly.test.ts, komentarz nad writeAvailabilityRuleRaw).
+  // @REQ: FLD-AVAIL-WEEKLY-RULES
+  // @REQ: FLD-AVAIL-RESTORE
+  it('audytor: przełączenie niedostępny -> dostępny -> niedostępny nie wywołuje ani jednej mutacji na availabilityRule ani raw SQL na availability_rules', async () => {
+    getCurrentActorRoleMock.mockResolvedValue('audytor');
+    getUserMock.mockResolvedValue({ data: { user: { email: AUDITOR_EMAIL } } });
+    auditorFindManyMock.mockResolvedValue([{ id: 'aud-1', email: AUDITOR_EMAIL, is_active: true, leave_status: 'ACTIVE' }]);
+    availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
+
+    await setAuditorAvailability('aud-1', false);
+    await setAuditorAvailability('aud-1', true);
+    await setAuditorAvailability('aud-1', false);
+
+    expect(availabilityRuleCreateMock).not.toHaveBeenCalled();
+    expect(availabilityRuleUpdateMock).not.toHaveBeenCalled();
+    expect(availabilityRuleUpsertMock).not.toHaveBeenCalled();
+    expect(availabilityRuleDeleteMock).not.toHaveBeenCalled();
+    expect(availabilityRuleDeleteManyMock).not.toHaveBeenCalled();
+    expect(queryRawMock).not.toHaveBeenCalled();
+    expect(executeRawMock).not.toHaveBeenCalled();
+  });
+
+  // @REQ: FLD-AVAIL-WEEKLY-RULES
+  // @REQ: FLD-AVAIL-RESTORE
+  it('ekipa (zespoly_monterskie): przełączenie niedostępny -> dostępny -> niedostępny nie wywołuje ani jednej mutacji na availabilityRule ani raw SQL na availability_rules', async () => {
+    getCurrentActorRoleMock.mockResolvedValue('monter');
+    getUserMock.mockResolvedValue({ data: { user: { email: CREW_EMAIL } } });
+    crewFindManyMock.mockResolvedValue([{ id: 'crew-1', email: CREW_EMAIL, aktywny: true, leave_status: 'ACTIVE' }]);
+    availabilityUpsertMock.mockResolvedValue({ isAvailable: false });
+
+    await setCrewAvailability('crew-1', false);
+    await setCrewAvailability('crew-1', true);
+    await setCrewAvailability('crew-1', false);
+
+    expect(availabilityRuleCreateMock).not.toHaveBeenCalled();
+    expect(availabilityRuleUpdateMock).not.toHaveBeenCalled();
+    expect(availabilityRuleUpsertMock).not.toHaveBeenCalled();
+    expect(availabilityRuleDeleteMock).not.toHaveBeenCalled();
+    expect(availabilityRuleDeleteManyMock).not.toHaveBeenCalled();
+    expect(queryRawMock).not.toHaveBeenCalled();
+    expect(executeRawMock).not.toHaveBeenCalled();
   });
 });
