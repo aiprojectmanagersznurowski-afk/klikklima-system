@@ -26,6 +26,34 @@ function formatZodError(error: ZodError): string {
 }
 
 /**
+ * FLD-BASE-LOCATION-EDIT (contracts/requirements.contract.mjs): justification jest
+ * GENEROWANE PRZEZ SERWER z wartości przed/po — nigdy z parametru wywołania. Format
+ * "<Etykieta pola>: <przed> → <po>", puste/null jako "(brak)".
+ */
+function formatFieldChange(label: string, before: unknown, after: unknown): string {
+  const fmt = (v: unknown) => (v === null || v === undefined || v === "" ? "(brak)" : String(v));
+  return `${label}: ${fmt(before)} → ${fmt(after)}`;
+}
+
+/**
+ * Zmiana obu pól w jednym żądaniu daje JEDEN wpis z obiema zmianami rozdzielonymi "; ".
+ * Zwraca null, gdy żadne z dwóch pól się nie zmieniło (brak wpisu audytowego).
+ */
+function buildBaseLocationJustification(
+  existing: { kod_pocztowy_bazowy: string | null; promien_dzialania_km: number | null },
+  values: { kod_pocztowy_bazowy: string | null; promien_dzialania_km: number | null },
+): string | null {
+  const parts: string[] = [];
+  if (existing.kod_pocztowy_bazowy !== values.kod_pocztowy_bazowy) {
+    parts.push(formatFieldChange("Zmiana kodu pocztowego bazowego", existing.kod_pocztowy_bazowy, values.kod_pocztowy_bazowy));
+  }
+  if (existing.promien_dzialania_km !== values.promien_dzialania_km) {
+    parts.push(formatFieldChange("Zmiana promienia działania", existing.promien_dzialania_km, values.promien_dzialania_km));
+  }
+  return parts.length > 0 ? parts.join("; ") : null;
+}
+
+/**
  * D1 (WO CRM-SAFE-RECORD-ACTIONS): leady "wiszące" przy audytorze to WYŁĄCZNIE te
  * w statusach AWAITING_AUDIT / AUDIT_COMPLETED. Zimne (QUOTE_REJECTED) i zarchiwizowane
  * (ARCHIVED_LOST) NIE blokują usunięcia — relacja audytor_id ma dla nich zostać SetNull.
@@ -397,8 +425,45 @@ export async function updateAuditorAction(id: string, formData: FormData): Promi
     data.sep_valid_until = values.sep_valid_until;
   }
 
+  // FLD-BASE-LOCATION-EDIT: kod_pocztowy_bazowy/promien_dzialania_km wymagają wpisu
+  // audytowego w TEJ SAMEJ transakcji co zapis rekordu — rekord zmieniony bez wpisu
+  // znosi warunek, pod którym edycja tych pól została w ogóle dopuszczona.
+  const baseLocationJustification = buildBaseLocationJustification(existing, values);
+
+  let actorEmail: string | undefined;
+  if (baseLocationJustification) {
+    try {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      actorEmail = user?.email;
+    } catch (error) {
+      console.error("Failed to resolve actor email:", error);
+      return { success: false, error: "Nie udało się zapisać zmian audytora." };
+    }
+    if (!actorEmail) {
+      return { success: false, error: "Nie udało się zapisać zmian audytora." };
+    }
+  }
+
   try {
-    await prisma.audytorzy.update({ where: { id }, data });
+    if (baseLocationJustification && actorEmail) {
+      await prisma.$transaction(async (tx) => {
+        await tx.audytorzy.update({ where: { id }, data });
+        await tx.auditLog.create({
+          data: {
+            operation: 'field_update',
+            resource: 'auditors',
+            recordId: id,
+            actorEmail,
+            actorRole,
+            justification: baseLocationJustification,
+            legalBasis: 'OTHER',
+          },
+        });
+      });
+    } else {
+      await prisma.audytorzy.update({ where: { id }, data });
+    }
     revalidatePath('/auditors');
     return { success: true };
   } catch (error) {

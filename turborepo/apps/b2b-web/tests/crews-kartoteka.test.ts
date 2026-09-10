@@ -58,36 +58,65 @@ const {
   crewCreateMock,
   crewUpdateMock,
   crewFindUniqueMock,
+  auditLogCreateMock,
+  transactionMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
   getCurrentUserMock,
+  getUserMock,
+  createClientMock,
   signStoragePathsMock,
 } = vi.hoisted(() => ({
   crewCreateMock: vi.fn(),
   crewUpdateMock: vi.fn(),
   crewFindUniqueMock: vi.fn(),
+  auditLogCreateMock: vi.fn(),
+  transactionMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
+  getUserMock: vi.fn(),
+  createClientMock: vi.fn(),
   signStoragePathsMock: vi.fn(),
 }));
 
-vi.mock('@repo/database', () => ({
-  prisma: {
-    zespoly_monterskie: {
-      create: crewCreateMock,
-      update: crewUpdateMock,
-      findUnique: crewFindUniqueMock,
-    },
+// FLD-AUDITOR-RADIUS-RENAME (TEST-DEFECT fix): updateCrewAction opakowuje update+
+// auditLog.create w prisma.$transaction WYŁĄCZNIE, gdy zmienia się kod_pocztowy_bazowy
+// lub promien_dzialania_km (patrz buildBaseLocationJustification w actions.ts). `tx`
+// przekazane do $transaction musi widzieć TE SAME mocki co `prisma.zespoly_monterskie`
+// wołane poza transakcją, inaczej asercje na crewUpdateMock nie widziałyby wywołań ze
+// ścieżki audytowej — wzorem sharedPrisma w fld-base-location-edit-audit-log.test.ts.
+const sharedCrewPrisma = {
+  zespoly_monterskie: {
+    create: crewCreateMock,
+    update: crewUpdateMock,
+    findUnique: crewFindUniqueMock,
   },
+  auditLog: { create: auditLogCreateMock },
+  $transaction: transactionMock,
+};
+
+vi.mock('@repo/database', () => ({
+  prisma: sharedCrewPrisma,
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
   getCurrentUser: getCurrentUserMock,
+  createClient: createClientMock,
 }));
 // P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
 getCurrentUserMock.mockResolvedValue({ data: { user: null } });
+// FLD-AUDITOR-RADIUS-RENAME: domyślna tożsamość i zachowanie transakcji dla ścieżki
+// audytowej updateCrewAction — żaden test w tym pliku nie dowodzi TREŚCI wpisu
+// audytowego (to robi fld-base-location-edit-audit-log.test.ts), więc wystarczy
+// stabilny, sensowny default zamiast per-testowego resetu.
+getUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
+createClientMock.mockResolvedValue({ auth: { getUser: getUserMock } });
+auditLogCreateMock.mockResolvedValue({ id: 'audit-1' });
+transactionMock.mockImplementation(async (cb: (tx: typeof sharedCrewPrisma) => unknown) =>
+  cb(sharedCrewPrisma),
+);
 // MINOR 7 (rls-security-auditor, review post-GREEN CRM-ZESP-KARTOTEKA): bucket
 // `zespoly` jest prywatny — getCrewForEdit musi podpisac sciezke Storage przed
 // zwroceniem, dokladnie jak getAuditorForEdit w auditors-kartoteka.test.ts i jak
@@ -592,11 +621,20 @@ describe('updateCrewAction — bramka roli (CRM-ZESP-KARTOTEKA)', () => {
 });
 
 describe('updateCrewAction — mapowanie, kolizje i zdjęcie (CRM-ZESP-KARTOTEKA)', () => {
+  // FLD-AUDITOR-RADIUS-RENAME (TEST-DEFECT fix): kod_pocztowy_bazowy/promien_dzialania_km
+  // muszą być OBECNE i IDENTYCZNE z domyślnymi wartościami buildFullFormData() ('02-100'/50),
+  // inaczej updateCrewAction rozpoznaje każdy zapis w tym bloku jako zmianę lokalizacji
+  // bazowej (buildBaseLocationJustification porównuje existing vs values) i przechodzi
+  // przez ścieżkę audytową ($transaction) zamiast prostego prisma.zespoly_monterskie.update
+  // — ten blok testuje mapowanie pól i kolizje, nie audyt lokalizacji (ten ma własny plik:
+  // fld-base-location-edit-audit-log.test.ts).
   const EXISTING_RECORD = {
     id: 'crew-1',
     nazwa: 'Ekipa Warszawa Południe',
     email: 'ekipa.waw@example.com',
     zdjecie_url: 'zespoly/crew-1-100.jpg',
+    kod_pocztowy_bazowy: '02-100',
+    promien_dzialania_km: 50,
   };
 
   beforeEach(() => {
@@ -825,11 +863,16 @@ describe('updateCrewAction — mapowanie, kolizje i zdjęcie (CRM-ZESP-KARTOTEKA
 });
 
 describe('updateCrewAction — daty ważności certyfikatów (ERRATA A-2, CRM-ZESP-KARTOTEKA)', () => {
+  // FLD-AUDITOR-RADIUS-RENAME (TEST-DEFECT fix): sam wymóg co przy EXISTING_RECORD
+  // powyżej — kod_pocztowy_bazowy/promien_dzialania_km identyczne z buildFullFormData(),
+  // ten blok testuje daty ważności certyfikatów, nie audyt lokalizacji bazowej.
   const EXISTING_RECORD_WITH_DATES = {
     id: 'crew-1',
     nazwa: 'Ekipa Warszawa Południe',
     email: 'ekipa.waw@example.com',
     zdjecie_url: 'zespoly/crew-1-100.jpg',
+    kod_pocztowy_bazowy: '02-100',
+    promien_dzialania_km: 50,
     fgaz_valid_until: new Date('2026-01-01T00:00:00.000Z'),
     sep_valid_until: new Date('2026-01-01T00:00:00.000Z'),
   };

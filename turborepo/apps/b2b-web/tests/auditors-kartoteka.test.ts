@@ -60,36 +60,64 @@ const {
   auditorCreateMock,
   auditorUpdateMock,
   auditorFindUniqueMock,
+  auditLogCreateMock,
+  transactionMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
   getCurrentUserMock,
+  getUserMock,
+  createClientMock,
   signStoragePathsMock,
 } = vi.hoisted(() => ({
   auditorCreateMock: vi.fn(),
   auditorUpdateMock: vi.fn(),
   auditorFindUniqueMock: vi.fn(),
+  auditLogCreateMock: vi.fn(),
+  transactionMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
+  getUserMock: vi.fn(),
+  createClientMock: vi.fn(),
   signStoragePathsMock: vi.fn(),
 }));
 
-vi.mock('@repo/database', () => ({
-  prisma: {
-    audytorzy: {
-      create: auditorCreateMock,
-      update: auditorUpdateMock,
-      findUnique: auditorFindUniqueMock,
-    },
+// FLD-AUDITOR-RADIUS-RENAME (TEST-DEFECT fix): updateAuditorAction opakowuje update+
+// auditLog.create w prisma.$transaction WYŁĄCZNIE, gdy zmienia się kod_pocztowy_bazowy
+// lub promien_dzialania_km (buildBaseLocationJustification w actions.ts). `tx` przekazane
+// do $transaction musi widzieć TE SAME mocki co `prisma.audytorzy` wołane poza transakcją
+// — wzorem sharedPrisma w fld-base-location-edit-audit-log.test.ts.
+const sharedAuditorPrisma = {
+  audytorzy: {
+    create: auditorCreateMock,
+    update: auditorUpdateMock,
+    findUnique: auditorFindUniqueMock,
   },
+  auditLog: { create: auditLogCreateMock },
+  $transaction: transactionMock,
+};
+
+vi.mock('@repo/database', () => ({
+  prisma: sharedAuditorPrisma,
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
   getCurrentUser: getCurrentUserMock,
+  createClient: createClientMock,
 }));
 // P0-1 (przygotowanie pod przyszłą turę): domyślny brak sesji — ten plik nie testuje ścieżek zależnych od tożsamości poprzez createClient(), więc `getCurrentUser` dostaje bezpieczny, jawny fallback zamiast pozostać niezdefiniowanym mockiem.
 getCurrentUserMock.mockResolvedValue({ data: { user: null } });
+// FLD-AUDITOR-RADIUS-RENAME: domyślna tożsamość i zachowanie transakcji dla ścieżki
+// audytowej updateAuditorAction — żaden test w tym pliku nie dowodzi TREŚCI wpisu
+// audytowego (to robi fld-base-location-edit-audit-log.test.ts), więc wystarczy stabilny
+// default zamiast per-testowego resetu.
+getUserMock.mockResolvedValue({ data: { user: { email: 'admin@klikklima.pl' } } });
+createClientMock.mockResolvedValue({ auth: { getUser: getUserMock } });
+auditLogCreateMock.mockResolvedValue({ id: 'audit-1' });
+transactionMock.mockImplementation(async (cb: (tx: typeof sharedAuditorPrisma) => unknown) =>
+  cb(sharedAuditorPrisma),
+);
 // Bucket `audytorzy` jest prywatny — getAuditorForEdit musi podpisac sciezke Storage
 // przed zwroceniem, identycznie jak signStoragePaths("zespoly", ...) w crews/page.tsx.
 // Wzorzec mocka identyczny jak lead-detail-page-pool-spread.test.ts.
