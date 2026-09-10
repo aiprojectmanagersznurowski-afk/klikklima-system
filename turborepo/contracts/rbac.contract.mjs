@@ -22,6 +22,15 @@ export const RESOURCES = [
   // `create` przyznane audytorowi i monterowi, więc rozszerzenie zlałoby „tworzę dokument"
   // z „akceptuję dokument" w jednym zasobie, a macierz nie rozróżnia rodzajów w obrębie zasobu.
   'legal_document_versions', 'employee_consents',
+  // ── FLD-CALENDAR-FOUNDATION (2026-09-10) ──
+  // Odpowiadają tabelom public.availability_rules i public.visit_duration_baskets
+  // (migracja 20260910100000). `bookings` i `absences` już są wyżej (ADR-012) — powstały
+  // dziś jako tabele, ale jako ZASOBY istniały od 2026-08-18 i nie wymagają wpisu.
+  //
+  // MODEL PROMIENIOWY (decyzja Michała 2026-09-10) zastąpił regionowy, ale zasób 'regions'
+  // ZOSTAJE: jego usunięcie jest zmianą łamiącą kompatybilność i wymaga osobnego ADR.
+  // Tabela `regions` nie powstanie — to zasób bez nośnika, świadomie, do czasu tamtej decyzji.
+  'availability_rules', 'visit_duration_baskets',
 ];
 
 /** capability: read | create | update | delete | assign */
@@ -96,6 +105,27 @@ export const MATRIX = [
   // To jedyny wiersz w tej macierzy, w którym admina nie ma w `create`, i to jest sedno — akceptacja
   // wpisana przez kogoś innego niż pracownik nie jest akceptacją.
   { resource: 'employee_consents', read: ['admin', 'audytor:own', 'monter:own'], create: ['audytor', 'monter'], update: [], delete: [] },
+  // ── FLD-CALENDAR-FOUNDATION: zasoby dodane 2026-09-10 ──
+  //
+  // availability_rules — reguły cykliczne dostępności („poniedziałki 8–16"). Profil ten sam
+  // co availability_declarations i z tego samego powodu: to dane WŁASNE pracownika, a nie dane
+  // kadrowe o nim. Prawo zapisu do własnego grafiku nie może nieść prawa zapisu do is_active
+  // ani leave_status — dlatego to osobna tabela i osobny wiersz, a `auditors.update` / `crews.update`
+  // zostają ['admin'].
+  // `create` z wariantem :own jest konieczne, nie ozdobne: pracownik nie ma żadnej reguły do czasu,
+  // aż pierwszy raz ustawi grafik, więc pierwsza zmiana jest wstawieniem, a nie aktualizacją.
+  // `delete` wyłącznie admin (R13) — i dlatego tabela MUSI mieć is_active. Bez tej flagi „zwolnij
+  // mi środy" byłoby operacją, do której pracownik nie ma prawa, czyli funkcją niewykonalną
+  // dla jej właściciela. To ten sam układ co przy deklaracji: przełączamy, nie kasujemy.
+  { resource: 'availability_rules', read: ['admin', 'dyspozytor', 'audytor:own', 'monter:own'], create: ['admin', 'audytor:own', 'monter:own'], update: ['admin', 'audytor:own', 'monter:own'], delete: ['admin'] },
+  //
+  // visit_duration_baskets — słownik koszyków czasu trwania wizyty.
+  // `read` bez wariantu :own i dla ról terenowych: audytor WYBIERA koszyk przy wycenie, więc musi
+  // widzieć cały słownik. Koszyk nie jest „czyjś".
+  // `create`/`update` wyłącznie admin: czas trwania wizyty jest parametrem operacyjnym firmy,
+  // ustawianym w panelu B2B. Gdyby audytor mógł edytować słownik, „wybór z koszyka" zamieniłby się
+  // z powrotem we wpisywanie godzin z palca — czyli w to, co ta konstrukcja miała wykluczyć.
+  { resource: 'visit_duration_baskets', read: ['admin', 'dyspozytor', 'audytor', 'monter'], create: ['admin'], update: ['admin'], delete: ['admin'] },
 ];
 
 /** Polityki kluczy obcych przy usuwaniu — database_model.md §4.2 */

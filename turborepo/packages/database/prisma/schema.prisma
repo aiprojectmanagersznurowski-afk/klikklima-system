@@ -126,11 +126,20 @@ model leady {
   // Stempel ustawia się TYLKO gdy było null — powtórny rollback go nie przesuwa (AC-A5).
   // Wznowienie (powrót do null) należy do FNL-ROLLBACK-EXIT — poza zakresem tej fazy.
   logistics_sla_paused_at   DateTime?   @db.Timestamptz(6)
+
+  // CRM-PROJECT-NUMBER (2026-09-10): czytelny numer projektu obok UUID, format L-000123.
+  // NIE jest kluczem głównym i nie występuje w żadnym kluczu obcym — `id` (UUID) zostaje PK.
+  // Nazwa angielska mimo polskiej nazwy tabeli: dług KK-NAMING-BASELINE jest ZAMROŻONY,
+  // czyli obejmuje nazwy istniejące, a nie zwalnia z ADR-002 nowych kolumn.
+  // Wartość nadaje baza z sekwencji leads_project_number_seq — Prisma jej NIE wylicza.
+  project_number            String      @unique @default(dbgenerated("('L-'::text || lpad((nextval('leads_project_number_seq'::regclass))::text, 6, '0'::text))"))
+
   created_at                DateTime    @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
   updated_at                DateTime    @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
   instalacje           instalacje[]
   logistyka_zamowienia logistyka_zamowienia[]
+  bookings             Booking[]
 
   @@index([status])
   @@index([created_at])
@@ -258,6 +267,11 @@ model zespoly_monterskie {
   instalacje        instalacje[]
   serwisy           serwisy[]
   usterki_incidents usterki_incidents[]
+
+  // FLD-CALENDAR-FOUNDATION (2026-09-10): trzy warstwy kalendarza.
+  availability_rules AvailabilityRule[]
+  absences           Absence[]
+  bookings           Booking[]
 }
 
 model instalacje {
@@ -297,6 +311,8 @@ model serwisy {
   data_zgloszenia DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
   data_realizacji DateTime?           @db.Timestamptz(6)
   status          ServiceStatus       @default(PLANNED)
+
+  bookings Booking[]
 
   /// PERF-B2B-AUDIT: instalacja_id — instalacje.delete() → SetNull na serwisach.
   /// zespol_id — zespoly_monterskie.delete() → SetNull.
@@ -509,6 +525,11 @@ model audytorzy {
   created_at DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
   leady leady[]
+
+  // FLD-CALENDAR-FOUNDATION (2026-09-10): trzy warstwy kalendarza.
+  availability_rules AvailabilityRule[]
+  absences           Absence[]
+  bookings           Booking[]
 }
 
 model usterki_incidents {
@@ -525,6 +546,8 @@ model usterki_incidents {
   opis_usterki     String?
   zdjecia_url      Json?
   created_at       DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+
+  bookings Booking[]
 
   /// PERF-B2B-AUDIT: instalacja_id — instalacje.delete() → SetNull.
   /// zespol_id — zespoly_monterskie.delete() → SetNull.
@@ -776,4 +799,226 @@ model NotificationQueue {
 
   @@index([status], map: "notification_queue_status_idx")
   @@map("notification_queue")
+}
+
+/// ════════════════════════════════════════════════════════════════════════════════════
+/// FLD-CALENDAR-FOUNDATION (2026-09-10) — fundament kalendarza, migracja
+/// supabase/migrations/20260910100000_fld_calendar_foundation.sql.
+///
+/// CZEGO PRISMA TU NIE WIDZI, A BAZA MA — i czego NIE WOLNO zgubić przy ewentualnym
+/// `prisma migrate diff`, dokładnie tak samo jak CHECK-ów przy availability_declarations:
+///   1. Kolumna GENEROWANA `resource_id` = COALESCE(auditor_id, crew_id) w availability_rules,
+///      absences i bookings. Prisma nie wyraża kolumn generowanych, a wpisanie jej jako
+///      zwykłego pola zmusiłoby kod do jej podawania — czyli do rozjechania się z bazą.
+///   2. CHECK-i: *_one_owner (num_nonnulls = 1), zakresy czasu, słowniki wartości.
+///   3. EXCLUDE USING gist `bookings_no_overlap_per_resource` — JĄDRO atomowości rezerwacji
+///      (FNL-E3-E4, B2C-BOOKING-SLOT). Naruszenie: SQLSTATE 23P01, do zamiany na błąd
+///      domenowy „slot zajęty", nie na 500.
+///   4. Trigger `bookings_pool_matches_basket_trg` — audyt obsługuje audytor, reszta ekipa.
+///   5. Unikalny indeks `availability_rules_resource_weekday_key` (jeden przedział na dzień).
+/// ════════════════════════════════════════════════════════════════════════════════════
+
+/// CAL-VISIT-DURATION-BASKETS: słownik koszyków czasu trwania wizyty. Audytor WYBIERA
+/// koszyk przy wycenie, a nie wpisuje godziny z palca; ten sam słownik zasila Triage jako
+/// wstępne oszacowanie. Wartości są konfigurowalne w panelu B2B — literał czasu trwania
+/// w kodzie jest naruszeniem. To NIE są progi SLA (te są niezmienne z definicji kontraktu),
+/// tylko parametr operacyjny firmy, dlatego mieszkają w bazie, a nie w contracts/sla.
+///
+/// Dedykowana tabela, a nie JSONB w system_config, bo `bookings.visit_basket_id` musi być
+/// kluczem obcym: koszyk dopasowywany stringiem rozjeżdża się przy pierwszej zmianie kodu.
+///
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model VisitDurationBasket {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// Stabilny identyfikator koszyka (AUDIT, SERVICE, INCIDENT, INSTALL_SMALL,
+  /// INSTALL_STANDARD, INSTALL_PHASE_1, INSTALL_PHASE_2). Etykieta PL bywa zmieniana, kod nie.
+  code String @unique
+
+  /// Treść dla użytkownika, po polsku (ADR-002: polski wyłącznie w treściach).
+  labelPl String @map("label_pl")
+
+  /// MINUTY, nie godziny: 1,5 h nie jest liczbą całkowitą godzin, a liczba zmiennoprzecinkowa
+  /// w harmonogramie to zaproszenie do błędu zaokrąglenia. Pół dnia = 240, cały dzień = 480.
+  durationMinutes Int @map("duration_minutes")
+
+  /// AUDITOR | CREW — dwie rozłączne pule. CHECK w bazie; trigger pilnuje zgodności
+  /// z przypisaniem na rezerwacji.
+  pool String
+
+  /// Wycofanie koszyka ze słownika bez kasowania wiersza — rezerwacje historyczne muszą
+  /// dalej wskazywać koszyk, którym zostały wycenione.
+  isActive Boolean @default(true) @map("is_active")
+
+  /// Kolejność na liście wyboru. Bez niej kolejność zależy od planu zapytania.
+  sortOrder Int @default(0) @map("sort_order")
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  bookings Booking[]
+
+  @@map("visit_duration_baskets")
+}
+
+/// FLD-AVAIL-WEEKLY-RULES: warstwa 1 dostępności (FIELD-APP-PLAN 6.2) — reguły cykliczne
+/// „poniedziałki 8–16". WŁAŚCICIEL: PRACOWNIK, jak przy AvailabilityDeclaration i z tego
+/// samego powodu: RBAC i RLS operują na tabelach, nie na kolumnach.
+///
+/// BRAK WIERSZY ZNACZY „domyślne okno pracy z system_config.scheduling_config", a nie
+/// „niedostępny" — inaczej pracownik dodany po migracji nigdy nie trafiłby do puli
+/// (ta sama pułapka, którą AvailabilityDeclaration rozwiązuje regułą „brak wiersza = dostępny").
+///
+/// JEDEN PRZEDZIAŁ NA DZIEŃ TYGODNIA (unikalny indeks w SQL). Wiele przedziałów obsłużyłoby
+/// przerwę w środku dnia, ale zdjęcie unikalności później jest rozszerzeniem, a nałożenie jej
+/// później wymagałoby kasowania danych — zaczynamy od wariantu, z którego da się wyjść.
+///
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model AvailabilityRule {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  auditorId String?    @map("auditor_id") @db.Uuid
+  auditor   audytorzy? @relation(fields: [auditorId], references: [id], onDelete: Cascade)
+
+  crewId String?             @map("crew_id") @db.Uuid
+  crew   zespoly_monterskie? @relation(fields: [crewId], references: [id], onDelete: Cascade)
+
+  /// ISO-8601: 1 = poniedziałek … 7 = niedziela, zgodnie z EXTRACT(ISODOW). Zakres
+  /// pilnowany CHECK-iem w bazie.
+  weekday Int @db.SmallInt
+
+  /// Czas LOKALNY (Europe/Warsaw), BEZ strefy — celowo. „8–16" ma znaczyć 8–16 również
+  /// w dniu zmiany czasu (R6). Materializacja na konkretną datę i zamiana na UTC należy
+  /// do silnika i musi jawnie wskazać strefę; dzień zmiany czasu ma 23 albo 25 godzin.
+  startTime DateTime @map("start_time") @db.Time(6)
+  endTime   DateTime @map("end_time") @db.Time(6)
+
+  /// Wyłączenie reguły bez kasowania wiersza. KONIECZNE: `delete` ma wyłącznie admin
+  /// (reguła globalna R13-rbac), więc bez tej flagi pracownik nie miałby jak zwolnić sobie
+  /// środy inaczej niż prosząc administratora o skasowanie wiersza.
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([auditorId])
+  @@index([crewId])
+  @@map("availability_rules")
+}
+
+/// CRM-ZESP-AC3 / ADR-012: warstwa 2 dostępności — datowane wyjątki (urlop, chorobowe,
+/// awaria auta). Wpis nakładający się na slot usuwa go z widoku klienta; istniejące
+/// rezerwacje w oknie absencji są RAPORTOWANE dyspozytorowi, nie kasowane po cichu.
+///
+/// ŚWIADOMIE BEZ ograniczenia wykluczającego: dwie nakładające się nieobecności tej samej
+/// osoby (urlop, a w jego trakcie zwolnienie) to sytuacja prawdziwa, nie błąd danych.
+///
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Absence {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  auditorId String?    @map("auditor_id") @db.Uuid
+  auditor   audytorzy? @relation(fields: [auditorId], references: [id], onDelete: Cascade)
+
+  crewId String?             @map("crew_id") @db.Uuid
+  crew   zespoly_monterskie? @relation(fields: [crewId], references: [id], onDelete: Cascade)
+
+  startsAt DateTime @map("starts_at") @db.Timestamptz(6)
+  endsAt   DateTime @map("ends_at") @db.Timestamptz(6)
+
+  /// VACATION | SICK_LEAVE | VEHICLE_FAILURE | OTHER. String + CHECK, nie enum Prisma —
+  /// ten sam wybór co przy AuditLog.operation i NotificationQueue.status: słownik powodów
+  /// będzie rósł, a ALTER TYPE ... ADD VALUE nie działa w jednej transakcji z migracją.
+  reason String
+
+  /// Wolny tekst („awaria auta, warsztat do piątku"). Nie zastępuje reason.
+  note String?
+
+  /// „Kto wpisał" — adres e-mail, TEXT bez klucza obcego do AuthorizedUser. Ta sama decyzja
+  /// co przy AuditLog.actorEmail: usunięcie konta nie może osierocić ani skasować śladu,
+  /// kto zablokował komuś kalendarz. ADR-012 przewidywał FK; odstępstwo świadome.
+  createdBy String? @map("created_by")
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+
+  @@index([auditorId])
+  @@index([crewId])
+  @@map("absences")
+}
+
+/// FLD-BOOKING-ATOMIC-ASSIGN / ADR-012: warstwa 3 — konkretne rezerwacje i docelowo JEDYNE
+/// źródło prawdy o terminach. `leady.data_rezerwacji` NIE zostało usunięte tą migracją:
+/// przeniesienie danych i DROP COLUMN to osobna zmiana, po powstaniu konsumenta.
+///
+/// PRZYPISANIE NATYCHMIASTOWE (R3): klient widzi pulę, ale rezerwacja od razu wiąże
+/// konkretną osobę. To nie jest szczegół UX — przy puli bezosobowej unikalność dotyczyłaby
+/// POJEMNOŚCI puli, czyli czegoś, czego nie da się wyrazić ograniczeniem w bazie, a FNL-E3-E4
+/// wymaga gwarancji w bazie, nie sprawdzenia w kodzie.
+///
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Booking {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// CZEGO DOTYCZY WIZYTA — dokładnie jedno z trzech (CHECK bookings_one_subject, wzorzec
+  /// NTF-POLY). Montaż NIE MA własnej kolumny: rezerwacja montażu wisi na leadzie, a ADR-012
+  /// wiąże etapy montażu z rezerwacją od drugiej strony (installation_phases.booking_id).
+  /// Dodanie tu installation_id utworzyłoby drugą, konkurencyjną drogę tego samego powiązania.
+  leadId String? @map("lead_id") @db.Uuid
+  lead   leady?  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  serviceId String?  @map("service_id") @db.Uuid
+  service   serwisy? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  incidentId String?            @map("incident_id") @db.Uuid
+  incident   usterki_incidents? @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  /// KTO WYKONA — dokładnie jedno z dwóch (CHECK bookings_one_assignee).
+  /// onDelete: Restrict, nie SetNull: rezerwacja bez wykonawcy jest obietnicą bez pokrycia.
+  auditorId String?    @map("auditor_id") @db.Uuid
+  auditor   audytorzy? @relation(fields: [auditorId], references: [id], onDelete: Restrict)
+
+  crewId String?             @map("crew_id") @db.Uuid
+  crew   zespoly_monterskie? @relation(fields: [crewId], references: [id], onDelete: Restrict)
+
+  /// AUDITOR | CREW. Wartość wynika z tego, który klucz obcy jest niepusty — zostaje, bo
+  /// przewiduje ją ADR-012, ale CHECK bookings_resource_kind_check wiąże ją z kolumnami
+  /// źródłowymi, żeby redundancja nie mogła się rozjechać.
+  resourceKind String @map("resource_kind")
+
+  visitBasketId String              @map("visit_basket_id") @db.Uuid
+  visitBasket   VisitDurationBasket @relation(fields: [visitBasketId], references: [id], onDelete: Restrict)
+
+  /// UTC. `scheduledEnd` jest WYLICZONE z koszyka w chwili rezerwacji i UTRWALONE — nie liczy
+  /// się go w locie, bo administrator może jutro zmienić czas trwania koszyka, a rezerwacja
+  /// z wczoraj ma pozostać tym, co obiecano klientowi.
+  scheduledStart DateTime @map("scheduled_start") @db.Timestamptz(6)
+  scheduledEnd   DateTime @map("scheduled_end") @db.Timestamptz(6)
+
+  /// RESERVED | CONFIRMED | RELEASED | COMPLETED (CHECK w bazie). RELEASED zwalnia slot bez
+  /// kasowania śladu — wynik rollbacku T10–T13 oraz przełożenia terminu (CRM-BOOK-HISTORY).
+  status String @default("RESERVED")
+
+  /// CLIENT | DISPATCHER — kto zarezerwował. To NIE to samo co przypisanie wykonawcy.
+  bookedBy String @default("CLIENT") @map("booked_by")
+
+  /// AUTO | MANUAL — czy wykonawcę wskazał automat, czy nadpisał go dyspozytor (T01).
+  /// Bez tej kolumny pytanie „dlaczego akurat ta ekipa" nie ma odpowiedzi po fakcie.
+  assignmentMode String @default("AUTO") @map("assignment_mode")
+
+  /// CRM-BOOK-HISTORY: przełożenie tworzy NOWY wiersz wskazujący poprzedni, a poprzedni
+  /// dostaje status RELEASED. Historia jest łańcuchem, nie nadpisaniem.
+  rescheduleOf   String?   @map("reschedule_of") @db.Uuid
+  rescheduledTo  Booking?  @relation("BookingReschedule", fields: [rescheduleOf], references: [id], onDelete: SetNull)
+  rescheduleFrom Booking[] @relation("BookingReschedule")
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([leadId])
+  @@index([serviceId])
+  @@index([incidentId])
+  @@index([rescheduleOf])
+  @@index([auditorId])
+  @@index([crewId])
+  @@map("bookings")
 }

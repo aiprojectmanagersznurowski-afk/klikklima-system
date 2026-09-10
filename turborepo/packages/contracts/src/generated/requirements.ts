@@ -3,7 +3,7 @@
 // Regeneracja: node tools/kk-codegen.mjs
 // Każda ręczna zmiana zostanie wykryta przez `kk-codegen --check` i odrzucona w CI.
 
-export const REQUIREMENT_IDS = ["FNL-E1-E2", "FNL-E2-E3", "FNL-E3-E4", "FNL-E3-BUCKET", "FNL-E4-E5", "FNL-E5-E6", "FNL-E5-BYPASS", "FNL-E6-E7", "FNL-E7-E8", "FNL-ROLLBACK", "FNL-ROLLBACK-EXIT", "FNL-NO-ILLEGAL-TRANSITIONS", "CRM-KLI-AC1", "CRM-KLI-AC2", "CRM-KLI-AC3", "CRM-INST-AC1", "CRM-INST-AC2", "CRM-SRV-TRIGGER", "CRM-UST-AC1", "CRM-UST-AC2", "CRM-UST-AC3", "CRM-AUDYT-AC1", "CRM-AUDYT-AC2", "CRM-AUDYT-AC3", "CRM-AUDYT-KARTOTEKA", "CRM-ZESP-KARTOTEKA", "CRM-ZESP-AC1", "CRM-ZESP-AC2", "CRM-ZESP-AC3", "CRM-ZIMNE-AC1", "CRM-ZIMNE-AC2", "CRM-ZIMNE-AC3", "CRM-BOOK-HISTORY", "CRM-REGION-AUTO", "FNL-2PHASE", "FNL-2PHASE-BOOKING", "FNL-2PHASE-INVOICE", "NTF-PUSH-TOKEN", "NTF-I7-SLA", "SRV-SOURCE-OF-TRUTH", "SRV-REMINDER-ONCE", "CRM-ZESP-REP", "CRM-DELETE-ADMIN-ONLY", "CRM-DELETE-ADMIN-ONLY-CLIENTS", "CRM-CLIENT-ANONYMIZE-RODO", "SEC-AUDIT-LOG-APPEND-ONLY", "CRM-DELETE-ADMIN-ONLY-LEADS", "CRM-DELETE-ADMIN-ONLY-INSTALLATIONS", "CRM-DELETE-ADMIN-ONLY-SERVICES", "CRM-DELETE-ADMIN-ONLY-INCIDENTS", "CRM-DELETE-ADMIN-ONLY-AUDITORS", "CRM-DELETE-ADMIN-ONLY-CREWS", "CRM-CREW-UPDATE-ADMIN-ONLY", "CRM-CONTEXT-MENU", "SLA-QUOTE-14D", "SLA-LOG-COLORS", "UI-SLA-NO-GREEN", "UI-NO-HARDCODED-COLORS", "UI-ICONS-LUCIDE-ONLY", "UI-FORMS-RHF-ZOD", "SRV-NEXT-DATE", "SEC-SSO-GUARD", "SEC-AUTHZ-USER-MGMT", "SEC-RLS-AUDITOR-SCOPE", "SEC-ASSIGNMENT-POOL-MINIMIZE", "SEC-LEADS-LIST-MINIMIZE", "SEC-LEADS-LIST-SCALARS", "CRM-LEAD-UPDATE-ADMIN-DISPATCHER", "SEC-AUTHZ-B2B-MUTATIONS", "SEC-AUTHZ-B2B-READS", "SEC-EMAIL-UNIQUE", "SEC-EMAIL-CASE-NORMALIZE", "SEC-SERVICE-KEY-SERVER-ONLY", "SEC-RODO-DELETE", "SEC-AUDIT-LOG", "SEC-AUDIT-LOG-DELETE", "SEC-AUDIT-LOG-ROLE-CHANGE", "SEC-AUDIT-LOG-MANUAL-STATUS", "SEC-LAST-ADMIN-GUARD", "SEC-AUTHZ-DEFAULT-ROLE", "NTF-QUEUE-TABLE", "NTF-QUEUE-WINDOW", "NTF-POLY", "NTF-HISTORY", "NTF-RETRY", "NTF-CATALOG-PARITY", "B2C-LEAD-ENTRY", "B2C-LEAD-ATOMIC", "B2C-BOOKING-SLOT", "B2C-CONSENT-RODO", "B2C-RLS-PUBLIC", "B2C-TRIAGE-STEPS", "B2C-TRIAGE-DISQUALIFY", "B2C-TRIAGE-CONDITIONAL", "B2C-SOFT-LEAD", "B2C-BOOKING-VALIDATION", "B2C-PRICE-FROM", "B2C-CATALOG-LIST", "B2C-DEVICE-MODAL", "B2C-CATALOG-VIEW-TRACKED", "B2C-CONTENT-PAGES", "B2C-NAV-STATE", "FLD-GEO-COORDS", "FLD-GEO-UNLOCK", "FLD-GEO-EN-ROUTE", "FLD-GPS-RODO", "FLD-AUTH-BLOCKED", "FLD-CONSENT-TRIGGERS-INTEGRATION", "FLD-CONSENT-ACCEPT", "FLD-LEGAL-DOC-VERSION", "FLD-AVAIL-SELF", "FLD-AVAIL-RESTORE", "FLD-PHOTO-SET", "FNL-ADVANCE-STATUS-CONTRACT-BOUND"] as const;
+export const REQUIREMENT_IDS = ["FNL-E1-E2", "FNL-E2-E3", "FNL-E3-E4", "FNL-E3-BUCKET", "FNL-E4-E5", "FNL-E5-E6", "FNL-E5-BYPASS", "FNL-E6-E7", "FNL-E7-E8", "FNL-ROLLBACK", "FNL-ROLLBACK-EXIT", "FNL-NO-ILLEGAL-TRANSITIONS", "CRM-KLI-AC1", "CRM-KLI-AC2", "CRM-KLI-AC3", "CRM-INST-AC1", "CRM-INST-AC2", "CRM-SRV-TRIGGER", "CRM-UST-AC1", "CRM-UST-AC2", "CRM-UST-AC3", "CRM-AUDYT-AC1", "CRM-AUDYT-AC2", "CRM-AUDYT-AC3", "CRM-AUDYT-KARTOTEKA", "CRM-ZESP-KARTOTEKA", "CRM-ZESP-AC1", "CRM-ZESP-AC2", "CRM-ZESP-AC3", "CRM-ZIMNE-AC1", "CRM-ZIMNE-AC2", "CRM-ZIMNE-AC3", "CRM-BOOK-HISTORY", "CRM-REGION-AUTO", "FNL-2PHASE", "FNL-2PHASE-BOOKING", "FNL-2PHASE-INVOICE", "NTF-PUSH-TOKEN", "NTF-I7-SLA", "SRV-SOURCE-OF-TRUTH", "SRV-REMINDER-ONCE", "CRM-ZESP-REP", "CRM-DELETE-ADMIN-ONLY", "CRM-DELETE-ADMIN-ONLY-CLIENTS", "CRM-CLIENT-ANONYMIZE-RODO", "SEC-AUDIT-LOG-APPEND-ONLY", "CRM-DELETE-ADMIN-ONLY-LEADS", "CRM-DELETE-ADMIN-ONLY-INSTALLATIONS", "CRM-DELETE-ADMIN-ONLY-SERVICES", "CRM-DELETE-ADMIN-ONLY-INCIDENTS", "CRM-DELETE-ADMIN-ONLY-AUDITORS", "CRM-DELETE-ADMIN-ONLY-CREWS", "CRM-CREW-UPDATE-ADMIN-ONLY", "CRM-CONTEXT-MENU", "SLA-QUOTE-14D", "SLA-LOG-COLORS", "UI-SLA-NO-GREEN", "UI-NO-HARDCODED-COLORS", "UI-ICONS-LUCIDE-ONLY", "UI-FORMS-RHF-ZOD", "SRV-NEXT-DATE", "SEC-SSO-GUARD", "SEC-AUTHZ-USER-MGMT", "SEC-RLS-AUDITOR-SCOPE", "SEC-ASSIGNMENT-POOL-MINIMIZE", "SEC-LEADS-LIST-MINIMIZE", "SEC-LEADS-LIST-SCALARS", "CRM-LEAD-UPDATE-ADMIN-DISPATCHER", "SEC-AUTHZ-B2B-MUTATIONS", "SEC-AUTHZ-B2B-READS", "SEC-EMAIL-UNIQUE", "SEC-EMAIL-CASE-NORMALIZE", "SEC-SERVICE-KEY-SERVER-ONLY", "SEC-RODO-DELETE", "SEC-AUDIT-LOG", "SEC-AUDIT-LOG-DELETE", "SEC-AUDIT-LOG-ROLE-CHANGE", "SEC-AUDIT-LOG-MANUAL-STATUS", "SEC-LAST-ADMIN-GUARD", "SEC-AUTHZ-DEFAULT-ROLE", "NTF-QUEUE-TABLE", "NTF-QUEUE-WINDOW", "NTF-POLY", "NTF-HISTORY", "NTF-RETRY", "NTF-CATALOG-PARITY", "B2C-LEAD-ENTRY", "B2C-LEAD-ATOMIC", "B2C-BOOKING-SLOT", "B2C-CONSENT-RODO", "B2C-RLS-PUBLIC", "B2C-TRIAGE-STEPS", "B2C-TRIAGE-DISQUALIFY", "B2C-TRIAGE-CONDITIONAL", "B2C-SOFT-LEAD", "B2C-BOOKING-VALIDATION", "B2C-PRICE-FROM", "B2C-CATALOG-LIST", "B2C-DEVICE-MODAL", "B2C-CATALOG-VIEW-TRACKED", "B2C-CONTENT-PAGES", "B2C-NAV-STATE", "FLD-GEO-COORDS", "FLD-GEO-UNLOCK", "FLD-GEO-EN-ROUTE", "FLD-GPS-RODO", "FLD-AUTH-BLOCKED", "FLD-CONSENT-TRIGGERS-INTEGRATION", "FLD-CONSENT-ACCEPT", "FLD-LEGAL-DOC-VERSION", "FLD-AVAIL-SELF", "FLD-AVAIL-RESTORE", "FLD-AVAIL-WEEKLY-RULES", "FLD-BOOKING-ATOMIC-ASSIGN", "CAL-VISIT-DURATION-BASKETS", "CAL-TRAVEL-BUFFER", "FLD-BASE-LOCATION-EDIT", "CRM-PROJECT-NUMBER", "FLD-PHOTO-SET", "FNL-ADVANCE-STATUS-CONTRACT-BOUND"] as const;
 export type RequirementId = (typeof REQUIREMENT_IDS)[number];
 
 export const REQUIREMENTS = [
@@ -276,8 +276,8 @@ export const REQUIREMENTS = [
     "domain": "crm",
     "status": "TODO",
     "risk": "MEDIUM",
-    "source": "b2b_crm_specifications.md#5",
-    "statement": "Audytor jest auto-przypisywany na podstawie kodu pocztowego adresu."
+    "source": "b2b_crm_specifications.md#5; ADR-012 (model regionowy, 2026-08-18); ZMIANA MODELU 2026-09-10 — decyzja Michała w oknie FLD-CALENDAR-FOUNDATION, uzasadnienie w docs/architecture/FIELD-APP-PLAN.md 6.4b: model regionowy zastąpiony PROMIENIOWYM, bo pola promienia i kodu pocztowego bazy JUŻ ISTNIEJĄ w schemacie dla obu ról, a `regions`/`region_postal_codes` nie istnieją i wymagałyby utrzymywania słownika tysięcy polskich kodów pocztowych; nakładające się promienie dodatkowo wspierają cel sprawiedliwego rozdziału zleceń, bo przy remisie jest z czego wybierać",
+    "statement": "Audytor jest auto-przypisywany na podstawie ODLEGŁOŚCI adresu zlecenia od bazy audytora: obsługuje go ten, w czyim promieniu działania adres się mieści."
   },
   {
     "id": "FNL-2PHASE",
@@ -902,6 +902,54 @@ export const REQUIREMENTS = [
     "risk": "MEDIUM",
     "source": "field_app_requirements.md#4.2",
     "statement": "Powrót pracownika do statusu dostępnego przywraca wcześniej wprowadzoną dostępność bez ponownego jej wprowadzania (D3)."
+  },
+  {
+    "id": "FLD-AVAIL-WEEKLY-RULES",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "field_app_requirements.md#4.2 (D3); docs/architecture/FIELD-APP-PLAN.md 6.2 i 6.4 (R5, R6); decyzja Michała 2026-09-10 w oknie FLD-CALENDAR-FOUNDATION",
+    "statement": "Pracownik terenowy definiuje własną dostępność cykliczną — godziny od–do dla każdego dnia tygodnia — a wyliczanie wolnych terminów odejmuje od niej nieobecności, istniejące rezerwacje i bufor dojazdu."
+  },
+  {
+    "id": "FLD-BOOKING-ATOMIC-ASSIGN",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "docs/architecture/FIELD-APP-PLAN.md 6.4 R3 (rozstrzygnięcie „z przypisaniem\", decyzja Michała 2026-09-09/2026-09-10); ADR-012; nośnik atomowości dla FNL-E3-E4 i B2C-BOOKING-SLOT",
+    "statement": "Rezerwacja terminu jest atomowa i od razu wiąże konkretnego wykonawcę: system wybiera wolną osobę z puli i zapisuje rezerwację na nią w jednej operacji, a dyspozytor może to przypisanie nadpisać."
+  },
+  {
+    "id": "CAL-VISIT-DURATION-BASKETS",
+    "domain": "crm",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "docs/architecture/FIELD-APP-PLAN.md 6.4 R1 i tabela koszyków; decyzja Michała 2026-09-09, korekta montażu dużego 2026-09-10",
+    "statement": "Czas trwania wizyty pochodzi ze słownika koszyków konfigurowalnego w panelu B2B: audytor przy wycenie WYBIERA koszyk, a nie wpisuje godziny z palca, i ten sam słownik zasila Triage jako wstępne oszacowanie."
+  },
+  {
+    "id": "CAL-TRAVEL-BUFFER",
+    "domain": "crm",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "docs/architecture/FIELD-APP-PLAN.md 6.4 R2; decyzja Michała 2026-09-09 (1 h, konfigurowalny w panelu B2B)",
+    "statement": "Między dwiema wizytami tego samego pracownika silnik dostępności rezerwuje bufor dojazdu, którego długość administrator ustawia w panelu B2B."
+  },
+  {
+    "id": "FLD-BASE-LOCATION-EDIT",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "docs/architecture/FIELD-APP-PLAN.md 6.4b (w tym uwaga o gamifikacji); decyzja Michała 2026-09-10: pola edytowalne w Field App ORAZ w panelu B2B, zmiana widoczna w audit_log",
+    "statement": "Kod pocztowy bazowy i promień działania są edytowalne przez samego pracownika w Field App oraz przez administratora w panelu B2B, a każda taka zmiana zostawia ślad w rejestrze audytowym."
+  },
+  {
+    "id": "CRM-PROJECT-NUMBER",
+    "domain": "crm",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "decyzja Michała 2026-09-10 (okno FLD-CALENDAR-FOUNDATION, punkt 7): czytelny numer sekwencyjny obok UUID, BEZ zmiany klucza głównego",
+    "statement": "Każdy lead ma czytelny, sekwencyjny numer projektu, którym posługują się ludzie — obok technicznego identyfikatora UUID, a nie zamiast niego."
   },
   {
     "id": "FLD-PHOTO-SET",
