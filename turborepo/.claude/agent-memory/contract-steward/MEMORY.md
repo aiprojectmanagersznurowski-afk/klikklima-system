@@ -1,6 +1,7 @@
 # Pamięć agenta: contract-steward
 
-- [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, a audytorzy MAJĄ promień pod nazwą `max_promien_dojazdu_km`.
+- [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, a audytorzy MAJĄ promień działania.
+- [Rename promienia audytora](project_auditor_radius_rename.md) — 2026-09-10; migracja nieuruchomiona, kod i testy do zrobienia; `tsc` łapie 4 z 13 miejsc, reszta psuje się w runtime.
 
 - [Rodzina CRM-DELETE-ADMIN-ONLY-* domknięta w całości](project_delete_admin_only_family_closed.md) — 2026-09-08, 7/7 wpisów; security 27/30; podział wg tego, CO było zepsute.
 - [CRM-DELETE-ADMIN-ONLY-SERVICES zamknięte](project_delete_admin_only_services_closed.md) — 2026-09-08; gate istniał, ale sprawdzał pochodzenie wiersza, nie rolę.

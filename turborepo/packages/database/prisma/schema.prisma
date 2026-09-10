@@ -480,8 +480,8 @@ model audytorzy {
   preferowane_marki       String[]
 
   // Nowe pola - Logistyka
-  kod_pocztowy_bazowy    String?
-  max_promien_dojazdu_km Int?
+  kod_pocztowy_bazowy  String?
+  promien_dzialania_km Int?
 
   fgaz_valid_until DateTime? @db.Date
   sep_valid_until  DateTime? @db.Date

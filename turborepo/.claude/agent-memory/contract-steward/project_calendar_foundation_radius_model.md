@@ -17,13 +17,12 @@ na żywej bazie — to osobny krok za zgodą człowieka.
    `CRM-REGION-AUTO` zachowało ID, ale ma przepisane `statement` i `acceptance`.
    Zasób `'regions'` **zostaje** w RESOURCES/MATRIX — usunięcie to zmiana łamiąca
    kompatybilność i wymaga osobnego ADR. Zasób bez nośnika jest tu stanem zamierzonym.
-2. **`audytorzy` MA promień działania — nazywa się `max_promien_dojazdu_km`.** Work Order
-   twierdził, że audytorzy tego pola nie mają i kazał dodać `promien_dzialania_km`
-   symetrycznie do ekip. Nieprawda: kolumna istnieje od `baseline.sql:292`, czytają ją
-   Server Actions i pięć plików testowych. Nowej kolumny NIE dodano (dwa źródła prawdy),
-   zmiany nazwy NIE zrobiono (zmiana łamiąca + testów nie wolno mi ruszać). Asymetria
-   `audytorzy.max_promien_dojazdu_km` / `zespoly_monterskie.promien_dzialania_km` jest
-   zamrożona, jak `is_active` / `aktywny`.
+2. **`audytorzy` MA promień działania.** Work Order twierdził, że audytorzy tego pola
+   nie mają i kazał dodać `promien_dzialania_km` symetrycznie do ekip. Nieprawda: kolumna
+   istniała od `baseline.sql:292` pod nazwą `max_promien_dojazdu_km`. Nowej kolumny NIE
+   dodano (byłyby dwa źródła prawdy). **NIEAKTUALNE od 2026-09-10:** asymetria nazw NIE
+   jest już zamrożona — okno `FLD-AUDITOR-RADIUS-RENAME` zrobiło RENAME na
+   `promien_dzialania_km`, patrz [[project_auditor_radius_rename]].
 
 **How to apply:** przy każdym następnym zadaniu dotyczącym przydzielania zleceń albo
 geografii pracownika — nie twórz `regions` i nie dodawaj drugiej kolumny promienia.

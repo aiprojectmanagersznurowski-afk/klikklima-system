@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-10T09:02:34.518Z",
+  "generatedAt": "2026-09-10T09:42:28.883Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 17,
@@ -203,7 +203,8 @@
     "supabase/migrations/20260910100000_fld_calendar_foundation.sql::adr002-pl-columns": 1,
     "supabase/migrations/20260910100000_fld_calendar_foundation.sql::adr002-pl-tables": 15,
     "supabase/migrations/20260910100100_crm_lead_project_number.sql::adr002-pl-tables": 7,
+    "supabase/migrations/20260910101000_fld_auditor_radius_rename.sql::adr002-pl-tables": 4,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2229
+  "total": 2233
 }
