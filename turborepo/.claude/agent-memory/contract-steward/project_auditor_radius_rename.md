@@ -1,6 +1,6 @@
 ---
 name: auditor-radius-rename
-description: FLD-AUDITOR-RADIUS-RENAME (2026-09-10) — audytorzy.max_promien_dojazdu_km → promien_dzialania_km; migracja NIE uruchomiona, kod prod i testy NIE zaktualizowane
+description: FLD-AUDITOR-RADIUS-RENAME (2026-09-10) — audytorzy.max_promien_dojazdu_km → promien_dzialania_km; ZAMKNIĘTE: migracja uruchomiona na żywej bazie, kod i testy zaktualizowane
 metadata:
   type: project
 ---
@@ -11,11 +11,18 @@ Migracja `supabase/migrations/20260910101000_fld_auditor_radius_rename.sql` robi
 (w bloku `DO $$` z testem na `information_schema`, więc jest idempotentna) i nadpisuje
 `COMMENT ON COLUMN`, bo RENAME przenosi stary komentarz o „zamrożonej asymetrii" na nową nazwę.
 
-**Why:** ten commit jest z definicji NIEKOMPLETNY i zostawia system w stanie pośrednim, co
-przy następnym czytaniu wygląda jak regresja:
+**STAN NA 2026-09-10 (domknięte):** trzy tury przeszły w kolejności. Migracja renamu ORAZ
+`20260910103000_audit_log_field_update_operation.sql` zostały uruchomione na żywej bazie
+za jawną zgodą Michała — statement-po-statement przez Prisma `$executeRawUnsafe`, nie
+`supabase db push` — i zweryfikowane read-only (`information_schema` dla kolumny,
+`pg_get_constraintdef` dla CHECK-a, 7 wartości). Nagłówki obu plików przepisane, bo
+twierdziły coś przeciwnego → [[unapplied-security-migrations]].
 
-1. **Migracja NIE została uruchomiona na żywej bazie.** Osobny krok za zgodą człowieka.
-2. **Kod produkcyjny i testy NIE zostały zaktualizowane** — `guard-paths` nie daje
+**Why (stan historyczny, przy commicie kontraktowym):** commit był z definicji NIEKOMPLETNY
+i zostawiał system w stanie pośrednim, co przy następnym czytaniu wygląda jak regresja:
+
+1. **Migracja nie była uruchomiona na żywej bazie.** Osobny krok za zgodą człowieka.
+2. **Kod produkcyjny i testy nie były zaktualizowane** — `guard-paths` nie daje
    `contract-steward` zapisu do `apps/`. Zadanie zlecało tę zmianę „bo to mechaniczny
    rename", ale hook jest twardy i to była właściwa granica: 4 pliki w
    `apps/b2b-web/src/app/(dashboard)/auditors/` (13 wystąpień) idą do implementera,

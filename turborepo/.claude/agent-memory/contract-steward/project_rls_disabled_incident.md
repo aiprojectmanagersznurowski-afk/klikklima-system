@@ -1,6 +1,6 @@
 ---
 name: rls-disabled-incident
-description: Na żywej bazie RLS było FIZYCZNIE wyłączone na 16 z 18 tabel, a anon miał pełne prawa — migracja SEC-RLS-BASELINE napisana 2026-08-24, uruchomiona i potwierdzona 2026-09-03; ZAMKNIĘTE, nie pisz jej drugi raz
+description: Na żywej bazie RLS było FIZYCZNIE wyłączone na 16 z 18 tabel — migracja SEC-RLS-BASELINE napisana 2026-08-24, uruchomiona 2026-09-03, stan potwierdzony ponownie 2026-09-10 (23/23 tabele RLS ON, 8 polityk); ZAMKNIĘTE, zlecenie napisania jej wracało już dwa razy, nie pisz duplikatu
 metadata:
   type: project
 ---
@@ -18,13 +18,27 @@ zweryfikowany odczytem `pg_class.relrowsecurity` — patrz [[unapplied-security-
 stan na 2026-09-03.** Zanim cokolwiek na tym zbudujesz, sprawdź `pg_policies` / `relrowsecurity`
 albo zapytaj: stan repo i stan bazy mogą się tu rozjeżdżać dłużej niż zwykle.
 
-**PUŁAPKA POWTÓRZENIA (2026-09-07).** Otwarto okno `SEC-RLS-BASELINE` i zlecono mi napisanie
+**STAN ZWERYFIKOWANY 2026-09-10** (odczyt `pg_class` na bazie z `DATABASE_URL`): 23 tabele bazowe,
+**zero z `relrowsecurity=false`**, dokładnie 8 polityk — komplet z tego pliku, co do nazwy.
+`available_combinations` (relkind `m`): anon SELECT=true, INSERT=false. Cel migracji osiągnięty
+i utrzymany. Tabele dodane później (`notification_queue`, `audit_log`, `visit_duration_baskets`,
+`availability_rules`, `absences`, `bookings`) mają `ENABLE` we własnych migracjach — inwentarz
+NIE urósł o nic nieobsłużonego.
+
+**ŻYWA BROŃ W REPO:** `packages/database/disable-rls.js` — 4 linijki, `DISABLE ROW LEVEL SECURITY`
+na `klienci`, `adresy`, `leady`, bez żadnego zabezpieczenia, uruchamialne jednym `node`. To
+najbardziej prawdopodobne wytłumaczenie, gdyby RLS kiedykolwiek „samo się" wyłączyło. Poza
+zakresem zapisu contract-steward (guard-paths blokuje `packages/database/` poza `prisma/`) —
+do usunięcia przez człowieka albo agenta z tym zakresem.
+
+**PUŁAPKA POWTÓRZENIA (2026-09-07, powtórzona 2026-09-10).** Otwarto okno `SEC-RLS-BASELINE` i zlecono mi napisanie
 „nowego" pliku `<timestamp>_security_enable_rls_baseline.sql` z inwentarzem identycznym co do
 tabeli i nazwy polityki z tym, co już leży w `20260824185845`. Nie napisałem — duplikat migracji
 o tej samej treści zostaje w repo na zawsze i przy `supabase db reset` wykonuje się dwa razy.
 Trzy sygnały, że zlecenie jest powtórką, a nie nową pracą: (1) plik o tej nazwie już jest w
-`supabase/migrations/`; (2) zlecenie mówiło „15 tabel", a jego własny inwentarz sumuje się do 16
-(8+2+3+3) — dokładnie tyle, co w istniejącym pliku; (3) zlecona sekcja 5 to gołe `REVOKE`/`GRANT`
+`supabase/migrations/`; (2) zlecenie podaje nieaktualną diagnozę („16 z 18", w powtórce z
+2026-09-10 „15 z 18") — na bazie jest 23/23 z RLS ON, a inwentarz zlecenia jest identyczny
+z istniejącym plikiem; (3) zlecona sekcja 5 to gołe `REVOKE`/`GRANT`
 bez osłony `to_regclass`, czyli REGRES wobec tego, co w pliku już jest
 (patrz [[live-db-objects-outside-migrations]] — bez osłony `supabase db reset` wywala się na
 nieistniejącym widoku). **Właściwa reakcja na „RLS znowu wyłączone": nie nowy plik, tylko ponowne
