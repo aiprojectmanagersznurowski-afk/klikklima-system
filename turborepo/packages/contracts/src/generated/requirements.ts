@@ -906,7 +906,7 @@ export const REQUIREMENTS = [
   {
     "id": "FLD-AVAIL-WEEKLY-RULES",
     "domain": "field",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "MEDIUM",
     "source": "field_app_requirements.md#4.2 (D3); docs/architecture/FIELD-APP-PLAN.md 6.2 i 6.4 (R5, R6); decyzja Michała 2026-09-10 w oknie FLD-CALENDAR-FOUNDATION; kryteria silnika odjęć i sumy puli wyniesione 2026-09-10 do CAL-SLOT-ENGINE i CAL-POOL-AGGREGATE",
     "statement": "Pracownik terenowy definiuje własną dostępność cykliczną — godziny od–do dla każdego dnia tygodnia — a system odczytuje z nich efektywne okno pracy na konkretną datę. Odejmowanie nieobecności, rezerwacji, bufora dojazdu i dziennego limitu należy do CAL-SLOT-ENGINE, dla którego te reguły są wejściem."
