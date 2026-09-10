@@ -4,14 +4,14 @@
 -- Źródło decyzji: decyzja Michała 2026-09-10 (okno kontraktowe AUDIT-LOG-FIELD-UPDATE-OP)
 --
 -- ╔══════════════════════════════════════════════════════════════════════════════════════╗
--- ║  UWAGA: TA MIGRACJA NIE ZOSTAŁA URUCHOMIONA NA ŻYWEJ BAZIE.                           ║
--- ║  Napisana 2026-09-10, zacommitowana jako plik, świadomie NIEZAAPLIKOWANA.             ║
--- ║  Uruchomienie wymaga OSOBNEJ, JAWNEJ zgody człowieka.                                 ║
--- ║  Dopóki jej nie ma, treść poniżej opisuje stan POSTULOWANY, a nie stan bazy.          ║
--- ║  Dopóki nie zostanie uruchomiona, KAŻDY zapis z operation = 'field_update' zostanie   ║
--- ║  odrzucony przez audit_log_operation_check — a ponieważ wpis audytowy i zmiana pól    ║
--- ║  dzielą jedną transakcję, odrzucenie cofnie także samą edycję. Implementacja          ║
--- ║  FLD-BASE-LOCATION-EDIT jest więc zablokowana na tej migracji, nie tylko zależna.     ║
+-- ║  STAN: TA MIGRACJA ZOSTAŁA URUCHOMIONA NA ŻYWEJ BAZIE 2026-09-10.                     ║
+-- ║  Napisana 2026-09-10, zacommitowana najpierw jako plik świadomie NIEZAAPLIKOWANY.     ║
+-- ║  Uruchomiona po osobnej, jawnej zgodzie Michała ("tak, uruchom te dwie oczekujące     ║
+-- ║  migracje"), statement-po-statement przez Prisma $executeRawUnsafe (nie db push).     ║
+-- ║  Weryfikacja po fakcie, read-only: pg_get_constraintdef dla                           ║
+-- ║  audit_log_operation_check zwraca 7 wartości, w tym 'field_update'.                   ║
+-- ║  Treść poniżej opisuje więc stan FAKTYCZNY bazy, a nie stan postulowany.              ║
+-- ║  Blokada implementacji FLD-BASE-LOCATION-EDIT na tej migracji jest tym samym zdjęta.  ║
 -- ╚══════════════════════════════════════════════════════════════════════════════════════╝
 --
 -- CO SIĘ ZMIENIA
