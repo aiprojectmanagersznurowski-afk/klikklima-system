@@ -7,8 +7,11 @@ metadata:
 
 Okno `FLD-CALENDAR-FOUNDATION` zamknięte 2026-09-10, commit `3c41430` na gałęzi
 `contract/FLD-CALENDAR-FOUNDATION`. Powstały `availability_rules`, `bookings`, `absences`,
-`visit_duration_baskets` oraz `leady.project_number`. Migracje **nie zostały uruchomione**
-na żywej bazie — to osobny krok za zgodą człowieka.
+`visit_duration_baskets` oraz `leady.project_number`. **Migracje URUCHOMIONE na żywej bazie
+2026-09-10** (za zgodą Michała, po naprawie `CAL-FOUNDATION-STALE-COLREF-FIX`), statement-po-
+statement przez Prisma `$executeRawUnsafe`. Zweryfikowane: 4/4 tabele istnieją, 7 koszyków
+czasu trwania zasiane, 8014/8014 leadów ma unikalny `project_number` (backfill zadziałał),
+`scheduling_config` obecny, `bookings_no_overlap_per_resource` (EXCLUDE USING gist) żywy.
 
 **Why:** dwie rzeczy z tego okna nie wynikają z kodu i będą myliły przy następnym czytaniu:
 
@@ -23,6 +26,11 @@ na żywej bazie — to osobny krok za zgodą człowieka.
    dodano (byłyby dwa źródła prawdy). **NIEAKTUALNE od 2026-09-10:** asymetria nazw NIE
    jest już zamrożona — okno `FLD-AUDITOR-RADIUS-RENAME` zrobiło RENAME na
    `promien_dzialania_km`, patrz [[project_auditor_radius_rename]].
+3. **Kolejność timestampów ≠ kolejność uruchomienia.** `20260910101000` (rename) poszedł
+   na żywą bazę PRZED `20260910100000` (fundament), mimo późniejszego timestampu. Fundament
+   odwoływał się przez `COMMENT ON COLUMN` do `max_promien_dojazdu_km` — kolumny, która
+   w chwili jego uruchomienia już nie istniała; uruchomienie wywaliłoby się na błędzie.
+   Naprawione 2026-09-10 w oknie `CAL-FOUNDATION-STALE-COLREF-FIX` (commit `5f540fb`).
 
 **How to apply:** przy każdym następnym zadaniu dotyczącym przydzielania zleceń albo
 geografii pracownika — nie twórz `regions` i nie dodawaj drugiej kolumny promienia.
