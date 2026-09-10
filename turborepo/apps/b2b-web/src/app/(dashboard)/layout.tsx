@@ -4,13 +4,16 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import type { User } from '@supabase/supabase-js'
+import type { Role } from '@klikklima/contracts'
 import {
   LayoutDashboard, Users, UserCheck, Wrench, Bell, Search, LogOut,
   ChevronLeft, ChevronRight, Thermometer, X, FolderKanban, Box, Settings,
-  ChevronDown
+  ChevronDown, CalendarDays
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { isScheduleNavItemVisible } from '../../lib/schedule/nav-visibility'
+import { getActorRoleForNavAction } from './nav-role.actions'
 
 type NavItem = {
   id: string;
@@ -75,7 +78,7 @@ const navItems: NavItem[] = [
   }
 ];
 
-function SidebarNavigation({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed: (val: boolean) => void }) {
+function SidebarNavigation({ collapsed, setCollapsed, items }: { collapsed: boolean, setCollapsed: (val: boolean) => void, items: NavItem[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -104,11 +107,11 @@ function SidebarNavigation({ collapsed, setCollapsed }: { collapsed: boolean, se
   useEffect(() => {
     if (collapsed) return;
     const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
-    
+
     const newOpenGroups = { ...openGroups };
     let changed = false;
-    
-    navItems.forEach(item => {
+
+    items.forEach(item => {
       if (item.subItems) {
         const hasActiveChild = item.subItems.some(sub => currentUrl.startsWith(sub.href));
         if (hasActiveChild && !newOpenGroups[item.id]) {
@@ -117,7 +120,7 @@ function SidebarNavigation({ collapsed, setCollapsed }: { collapsed: boolean, se
         }
       }
     });
-    
+
     if (changed) {
       setOpenGroups(newOpenGroups);
     }
@@ -125,11 +128,11 @@ function SidebarNavigation({ collapsed, setCollapsed }: { collapsed: boolean, se
 
   return (
     <nav className="flex-1 px-2 py-4 flex flex-col gap-1 overflow-y-auto">
-      {navItems.map((item) => {
+      {items.map((item) => {
         const Icon = item.icon;
         const hasSubItems = !!item.subItems;
         const isOpen = !!openGroups[item.id];
-        
+
         // Determine active state
         let isGroupActive = false;
         if (hasSubItems) {
@@ -246,6 +249,7 @@ export default function DashboardLayout({
   const [user, setUser] = useState<User | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+  const [actorRole, setActorRole] = useState<Role | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -253,6 +257,26 @@ export default function DashboardLayout({
       if (data.user) setUser(data.user);
     });
   }, []);
+
+  // FLD-AVAIL-WEEKLY-RULES (WO, blok C, AC-C5): rola aktora jest znana wyłącznie po
+  // stronie serwera (Prisma omija RLS) — `layout.tsx` jest client component (potrzebuje
+  // `useState`/`usePathname` dla stanu sidebaru), więc rolę pobieramy przez cienki
+  // Server Action (`getActorRoleForNavAction`), tak samo jak e-mail użytkownika wyżej
+  // jest pobierany przez `supabase.auth.getUser()`.
+  useEffect(() => {
+    getActorRoleForNavAction().then((role) => setActorRole(role));
+  }, []);
+
+  // Brak elementu w UI nie zastępuje bramki serwerowej w `setAvailabilityRuleAction`
+  // (AC-A2/AC-A3/AC-A4 z FLD-AVAIL-WEEKLY-RULES) — jest jej wymaganym uzupełnieniem.
+  const showScheduleNavItem = isScheduleNavItemVisible(actorRole);
+  const scheduleNavItem: NavItem | null = showScheduleNavItem
+    ? { id: 'my-schedule', label: 'Mój grafik', icon: CalendarDays, href: '/me/schedule' }
+    : null;
+
+  const items: NavItem[] = scheduleNavItem
+    ? [navItems[0], scheduleNavItem, ...navItems.slice(1)]
+    : navItems;
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -293,7 +317,7 @@ export default function DashboardLayout({
 
         {/* Navigation wrapped in Suspense for useSearchParams */}
         <Suspense fallback={<div className="flex-1" />}>
-          <SidebarNavigation collapsed={collapsed} setCollapsed={setCollapsed} />
+          <SidebarNavigation collapsed={collapsed} setCollapsed={setCollapsed} items={items} />
         </Suspense>
 
         {/* Collapse toggle */}
