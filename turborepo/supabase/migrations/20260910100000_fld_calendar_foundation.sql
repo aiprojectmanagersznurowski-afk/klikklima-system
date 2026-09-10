@@ -33,15 +33,19 @@
 --   * `CRM-REGION-AUTO` przepisane z regionu na promień (to samo ID, dopisana historia).
 --
 -- ── CZEGO TU NIE MA I DLACZEGO ────────────────────────────────────────────────────────
---   * `audytorzy.promien_dzialania_km` — NIE DODANE. Pojęcie już istnieje w schemacie pod
---     nazwą `audytorzy.max_promien_dojazdu_km` (baseline.sql:292). Dodanie drugiej kolumny
---     o tym samym znaczeniu utworzyłoby dwa źródła prawdy o promieniu audytora, a zmiana
---     nazwy istniejącej kolumny jest zmianą łamiącą kompatybilność (czytają ją Server
---     Actions i pięć plików testowych) i wymaga osobnej zgody oraz ADR. Asymetria nazw
---     `audytorzy.max_promien_dojazdu_km` / `zespoly_monterskie.promien_dzialania_km` jest
---     tego samego rodzaju co udokumentowana już asymetria `audytorzy.is_active` /
---     `zespoly_monterskie.aktywny` — realna i na dziś zamierzona. Udokumentowana niżej
---     przez COMMENT ON COLUMN, żeby silnik przydzielania wiedział, gdzie szukać.
+--   * `audytorzy.promien_dzialania_km` — NIE DODANE. Pojęcie już istnieje w schemacie
+--     (baseline.sql:292, pierwotnie pod nazwą `max_promien_dojazdu_km`). Dodanie drugiej
+--     kolumny o tym samym znaczeniu utworzyłoby dwa źródła prawdy o promieniu audytora.
+--     Ta migracja jedynie DOKUMENTUJE istniejącą kolumnę (sekcja 6), nie tworzy jej.
+--
+--     KOLEJNOŚĆ URUCHOMIENIA, WAŻNE PRZY CZYTANIU HISTORII: mimo wcześniejszego timestampu
+--     ten plik trafia na żywą bazę PO migracji 20260910101000_fld_auditor_radius_rename.sql,
+--     która 2026-09-10 przemianowała `audytorzy.max_promien_dojazdu_km` na
+--     `audytorzy.promien_dzialania_km`. Rename został uruchomiony pierwszy, ten plik zastaje
+--     już NOWĄ nazwę i taką nazwą się posługuje. Wcześniejsza wersja tego nagłówka opisywała
+--     asymetrię nazw `audytorzy` / `zespoly_monterskie` jako stan zamrożony (KK-NAMING-BASELINE)
+--     — po rename asymetrii nie ma i to uzasadnienie jest nieaktualne. Obie tabele mają dziś
+--     kolumnę o identycznej nazwie `promien_dzialania_km`.
 --   * `leady.project_number` — osobny plik 20260910100100 (dotyka istniejącej tabeli).
 --   * Zmiany w katalogu powiadomień (N8a: `handover_protocol`, `amount`, rozdzielenie
 --     `link` na `booking_link` i `payment_link`) — poza zakresem tego okna, osobne okno.
@@ -487,11 +491,11 @@ ON CONFLICT (typ_konfiguracji) DO NOTHING;
 -- Model promieniowy (decyzja Michała, 2026-09-10, zamiast regionowego z ADR-012) czyta
 -- z kolumn, które JUŻ ISTNIEJĄ. Ta sekcja niczego nie dodaje i niczego nie zmienia —
 -- ustawia wyłącznie komentarze, żeby przy następnym „przecież audytor nie ma promienia"
--- odpowiedź była w bazie, a nie w czyjejś pamięci. Nazwy różnią się między tabelami
--- i pozostają różne: zmiana nazwy kolumny czytanej przez kod i testy jest zmianą łamiącą
--- kompatybilność i wymaga osobnej zgody oraz ADR (patrz nagłówek pliku).
-COMMENT ON COLUMN public.audytorzy.max_promien_dojazdu_km IS
-  'Promień działania audytora w km (CRM-REGION-AUTO, model promieniowy). ODPOWIEDNIK zespoly_monterskie.promien_dzialania_km — inna nazwa, to samo pojęcie. Asymetria nazw jest zamrożonym długiem (KK-NAMING-BASELINE), jak audytorzy.is_active / zespoly_monterskie.aktywny. NULL = promień nieustalony, co znaczy „brak danych", NIE „0 km".';
+-- odpowiedź była w bazie, a nie w czyjejś pamięci. Nazwa kolumny promienia jest w obu
+-- tabelach TA SAMA (`promien_dzialania_km`) od migracji 20260910101000, uruchomionej na
+-- żywej bazie przed tym plikiem — patrz nota o kolejności w nagłówku.
+COMMENT ON COLUMN public.audytorzy.promien_dzialania_km IS
+  'Promień działania audytora w km (CRM-REGION-AUTO, model promieniowy). Nazwa ujednolicona z zespoly_monterskie.promien_dzialania_km w oknie FLD-AUDITOR-RADIUS-RENAME (2026-09-10) — wcześniej max_promien_dojazdu_km. Jedno pojęcie, jedna nazwa, dwa miejsca odczytu dla silnika przydzielania. NULL = promień nieustalony, co znaczy „brak danych", NIE „0 km" i NIE „nieograniczony".';
 COMMENT ON COLUMN public.audytorzy.kod_pocztowy_bazowy IS
   'Kod pocztowy bazy audytora — punkt, od którego liczony jest promień (CRM-REGION-AUTO). Edytowalny przez pracownika w Field App i przez administratora w panelu B2B; każda zmiana idzie do audit_log (FLD-BASE-LOCATION-EDIT).';
 COMMENT ON COLUMN public.zespoly_monterskie.promien_dzialania_km IS
