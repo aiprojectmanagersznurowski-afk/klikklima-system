@@ -106,19 +106,28 @@ function parseSchedulingConfig(konfiguracja: unknown): SchedulingConfig | null {
  *
  * AC-B10: jedno zapytanie `findMany`/`findUnique` na cały zakres dat, materializacja
  * w pamięci — brak N+1.
+ *
+ * CAL-SLOT-ENGINE (Ryzyka #1): opcjonalny czwarty parametr pozwala wywołującemu (silnikowi
+ * slotów, iterującemu po całej puli pracowników) podać JUŻ ODCZYTANY wiersz `scheduling_config`
+ * i uniknąć wielokrotnego zapytania — parametr jest zachowawczy: gdy nie podany (`undefined`),
+ * zachowanie jest identyczne jak wcześniej (własne zapytanie `system_config.findUnique`).
  */
 export async function getEffectiveAvailability(
   resourceId: string,
   resourceKind: 'AUDITOR' | 'CREW',
   dateRange: { from: Date; to: Date },
+  preloadedSchedulingConfigRow?: { konfiguracja: unknown } | null,
 ): Promise<EffectiveAvailabilityResult> {
   const rules = await prisma.availabilityRule.findMany({
     where: resourceKind === 'AUDITOR' ? { auditorId: resourceId } : { crewId: resourceId },
   })
 
-  const configRow = await prisma.system_config.findUnique({
-    where: { typ_konfiguracji: 'scheduling_config' },
-  })
+  const configRow =
+    preloadedSchedulingConfigRow !== undefined
+      ? preloadedSchedulingConfigRow
+      : await prisma.system_config.findUnique({
+          where: { typ_konfiguracji: 'scheduling_config' },
+        })
 
   const hasAnyRule = rules.length > 0
   const rulesByWeekday = new Map<number, (typeof rules)[number]>()
