@@ -9,6 +9,7 @@ import type { ZodError } from "zod"
 import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
 import { availabilityRuleSchema } from "../../../lib/schedule/availability-rule-schema"
 import { writeAvailabilityRuleRaw } from "../../../lib/schedule/availability-rule"
+import { getEffectiveAvailability, type EffectiveAvailabilityDay } from "../../../lib/schedule/effective-availability"
 
 class CrewBlockedError extends Error {
   result: DeleteCrewResult
@@ -252,6 +253,51 @@ export async function setAvailabilityRuleAction(
     console.error("Failed to write crew availability rule:", error);
     return { success: false, error: "Nie udało się zapisać grafiku." };
   }
+}
+
+export type GetAvailabilityResult = {
+  success: boolean;
+  error?: string;
+  days?: EffectiveAvailabilityDay[];
+};
+
+/**
+ * FLD-AVAIL-WEEKLY-RULES (WO FLD-AVAIL-WEEKLY-RULES, blok B): odczyt efektywnej
+ * dostępności ekipy — symetrycznie do auditors/actions.ts getAvailabilityAction.
+ * Zasób RBAC to `availability_rules`, capability `read` (`admin`/`dyspozytor` →
+ * 'yes', czyta dowolny zasób; `monter:own` → 'own', czyta WYŁĄCZNIE własny).
+ * Wiązanie roli z encją żyje tu, nie w `can()` — `audytor:own` nie może czytać
+ * przez ten plik, mimo że capability wychodzi 'own'.
+ */
+export async function getAvailabilityAction(
+  id: string,
+  from: Date,
+  to: Date
+): Promise<GetAvailabilityResult> {
+  const actorRole = await getCurrentActorRole();
+  const capability = actorRole ? can(actorRole, 'availability_rules', 'read') : 'no';
+
+  if (capability === 'own') {
+    if (actorRole !== 'monter') {
+      return { success: false, error: "Brak uprawnień do odczytu grafiku." };
+    }
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) {
+      return { success: false, error: "Brak sesji użytkownika." };
+    }
+
+    const matches = await prisma.zespoly_monterskie.findMany({ where: { email: user.email }, take: 2 });
+    if (matches.length !== 1 || matches[0].id !== id) {
+      return { success: false, error: "Nie można odczytać grafiku innej ekipy." };
+    }
+  } else if (capability !== 'yes') {
+    return { success: false, error: "Brak uprawnień do odczytu grafiku." };
+  }
+
+  const result = await getEffectiveAvailability(id, 'CREW', { from, to });
+  return { success: true, days: result.days, error: result.error ?? undefined };
 }
 
 export type AcceptLegalDocumentVersionResult = {
