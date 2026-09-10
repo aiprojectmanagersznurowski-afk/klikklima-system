@@ -589,7 +589,11 @@ describe('AC-A9 (statyczny) — żadna ścieżka dostępna pracownikowi nie usuw
       }
       if (stat.isDirectory()) {
         listSourceFiles(full, acc);
-      } else if (/\.(ts|tsx)$/.test(entry) && !entry.endsWith('.test.ts')) {
+      } else if (
+        /\.(ts|tsx)$/.test(entry) &&
+        !entry.endsWith('.test.ts') &&
+        !entry.endsWith('.itest.ts')
+      ) {
         acc.push(full);
       }
     }

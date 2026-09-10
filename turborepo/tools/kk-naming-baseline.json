@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-10T17:35:56.100Z",
+  "generatedAt": "2026-09-10T18:38:12.769Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 20,
@@ -74,6 +74,9 @@
     "apps/b2b-web/tests/availability-self-declaration.test.ts::adr002-pl-tables": 10,
     "apps/b2b-web/tests/available-slots-engine-a-b-t-c-s-e.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/available-slots-engine-p-d.test.ts::adr002-pl-tables": 5,
+    "apps/b2b-web/tests/create-booking-concurrency.itest.ts::adr002-pl-columns": 1,
+    "apps/b2b-web/tests/create-booking-concurrency.itest.ts::adr002-pl-tables": 4,
+    "apps/b2b-web/tests/create-booking.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/crews-admin-gates.test.ts::adr002-pl-columns": 2,
     "apps/b2b-web/tests/crews-admin-gates.test.ts::adr002-pl-tables": 10,
     "apps/b2b-web/tests/crews-cert-availability.test.ts::adr002-pl-columns": 2,
@@ -214,5 +217,5 @@
     "supabase/migrations/20260910101000_fld_auditor_radius_rename.sql::adr002-pl-tables": 4,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2268
+  "total": 2275
 }

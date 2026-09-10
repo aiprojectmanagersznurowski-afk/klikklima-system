@@ -1,0 +1,54 @@
+"use server"
+
+import { z } from "zod"
+import { can } from "@klikklima/contracts"
+import { getCurrentActorRole } from "../../../utils/supabase/server"
+import {
+  createBooking,
+  type CreateBookingResult,
+  type CreateBookingErrorCode,
+} from "../../../lib/schedule/create-booking"
+
+/**
+ * FLD-BOOKING-ATOMIC-ASSIGN (docs/workorders/FLD-BOOKING-ATOMIC-ASSIGN.md), Faza A.
+ * Cienka Server Action z bramką — cała logika domenowa żyje w `create-booking.ts`
+ * (WO, "Proponowana sygnatura"). Kolejność: rola z sesji -> `can()` -> Zod -> warstwa
+ * domenowa. Odmowa PRZED jakimkolwiek zapytaniem do bazy (AC-A12).
+ *
+ * Prisma omija RLS — to jedyne miejsce, gdzie autoryzacja jest jawnie sprawdzona.
+ */
+
+const bookingSubjectSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("LEAD"), leadId: z.string().min(1) }),
+  z.object({ kind: z.literal("SERVICE"), serviceId: z.string().min(1) }),
+  z.object({ kind: z.literal("INCIDENT"), incidentId: z.string().min(1) }),
+])
+
+const createBookingInputSchema = z.object({
+  visitBasketId: z.string().min(1),
+  startAt: z.coerce.date(),
+  subject: bookingSubjectSchema,
+  bookedBy: z.enum(["CLIENT", "DISPATCHER"]),
+  alternativesRange: z
+    .object({ from: z.coerce.date(), to: z.coerce.date() })
+    .optional(),
+})
+
+function denied(code: CreateBookingErrorCode | "FORBIDDEN" | "VALIDATION_ERROR", message: string): CreateBookingResult {
+  return { ok: false, booking: null, error: { code: code as CreateBookingErrorCode, message, alternatives: [] } }
+}
+
+export async function createBookingAction(input: unknown): Promise<CreateBookingResult> {
+  const actorRole = await getCurrentActorRole()
+
+  if (!actorRole || can(actorRole, "bookings", "create") === "no") {
+    return denied("FORBIDDEN", "Brak uprawnień do utworzenia rezerwacji.")
+  }
+
+  const parsed = createBookingInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return denied("VALIDATION_ERROR", "Niepoprawne dane wejściowe rezerwacji.")
+  }
+
+  return createBooking(parsed.data)
+}
