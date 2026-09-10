@@ -1,6 +1,7 @@
 # Pamięć agenta: contract-steward
 
 - [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, audytorzy MAJĄ promień, timestamp ≠ kolejność uruchomienia, migracje LIVE.
+- [FLD-AVAIL-WEEKLY-RULES: AC szersze niż WO](project_fld_avail_weekly_rules_ac_wider_than_wo.md) — 2026-09-10 AC7/AC8 wyniesione do CAL-SLOT-ENGINE i CAL-POOL-AGGREGATE; wpis nadal TODO do domknięcia AC9.
 - [Rename promienia audytora](project_auditor_radius_rename.md) — 2026-09-10 DOMKNIĘTE (migracja live, kod i testy); `tsc` łapał 4 z 13 miejsc, reszta psuła się w runtime.
 
 - [Rodzina CRM-DELETE-ADMIN-ONLY-* domknięta w całości](project_delete_admin_only_family_closed.md) — 2026-09-08, 7/7 wpisów; security 27/30; podział wg tego, CO było zepsute.
