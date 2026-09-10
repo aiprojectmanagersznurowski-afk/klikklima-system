@@ -7,6 +7,8 @@ import { getCurrentActorRole, createClient } from "../../../utils/supabase/serve
 import { auditorSchema } from "./schema"
 import type { ZodError } from "zod"
 import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
+import { availabilityRuleSchema } from "../../../lib/schedule/availability-rule-schema"
+import { writeAvailabilityRuleRaw } from "../../../lib/schedule/availability-rule"
 
 class AuditorBlockedError extends Error {
   result: DeleteAuditorResult
@@ -199,6 +201,73 @@ export async function setSelfAvailabilityAction(
 
   revalidatePath('/auditors');
   return { success: true, isAvailable: declaration.isAvailable };
+}
+
+export type SetAvailabilityRuleResult = {
+  success: boolean;
+  error?: string;
+  rule?: { weekday: number; start_time: string; end_time: string; is_active: boolean };
+};
+
+/**
+ * FLD-AVAIL-WEEKLY-RULES (WO FLD-AVAIL-WEEKLY-RULES, blok A): audytor zapisuje WŁASNĄ
+ * regułę cykliczną dostępności ("poniedziałki 8-16"). Zasób RBAC to `availability_rules`
+ * (rbac.contract.mjs) — jeden zasób dla DWÓCH encji (audytorzy + zespoly_monterskie),
+ * wiązanie roli z encją więc żyje tu, nie w `can()`. Wzorem `setSelfAvailabilityAction`:
+ * właścicielstwo idzie przez e-mail z sesji, znalezione WŁASNE `id` (nie argument
+ * `id`) trafia do zapisu.
+ *
+ * Walidacja Zod (weekday 1-7, end_time > start_time) biegnie PRZED jakimkolwiek
+ * zapytaniem do bazy. Zapis fizyczny idzie przez `writeAvailabilityRuleRaw`
+ * (`ON CONFLICT ... DO UPDATE`, jedno zapytanie atomowe) — `resource_id` jest kolumną
+ * generowaną, niewidoczną dla `prisma.availabilityRule.upsert`. Nigdy nie dotyka
+ * `audytorzy.is_active`/`leave_status` ani `availabilityDeclaration` (mechanizmy
+ * rozłączne, patrz komentarz nad `setSelfAvailabilityAction`).
+ */
+export async function setAvailabilityRuleAction(
+  id: string,
+  values: { weekday: number; start_time: string; end_time: string; is_active?: boolean }
+): Promise<SetAvailabilityRuleResult> {
+  const actorRole = await getCurrentActorRole();
+  if (actorRole !== 'audytor' || can(actorRole, 'availability_rules', 'update') !== 'own') {
+    return { success: false, error: "Brak uprawnień do zmiany własnego grafiku." };
+  }
+
+  const parsed = availabilityRuleSchema.safeParse(values);
+  if (!parsed.success) {
+    return { success: false, error: formatZodError(parsed.error) };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) {
+    return { success: false, error: "Brak sesji użytkownika." };
+  }
+
+  const matches = await prisma.audytorzy.findMany({ where: { email: user.email }, take: 2 });
+  if (matches.length !== 1) {
+    return { success: false, error: "Nie można zmienić grafiku innego audytora." };
+  }
+  const own = matches[0];
+  if (own.id !== id) {
+    return { success: false, error: "Nie można zmienić grafiku innego audytora." };
+  }
+
+  try {
+    const rule = await writeAvailabilityRuleRaw({
+      auditorId: own.id,
+      crewId: null,
+      weekday: parsed.data.weekday,
+      startTime: parsed.data.start_time,
+      endTime: parsed.data.end_time,
+      isActive: parsed.data.is_active,
+    });
+    revalidatePath('/auditors');
+    return { success: true, rule };
+  } catch (error) {
+    console.error("Failed to write auditor availability rule:", error);
+    return { success: false, error: "Nie udało się zapisać grafiku." };
+  }
 }
 
 export type AcceptLegalDocumentVersionResult = {

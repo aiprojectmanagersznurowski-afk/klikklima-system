@@ -7,6 +7,8 @@ import { getCurrentActorRole, createClient } from "../../../utils/supabase/serve
 import { crewSchema } from "./schema"
 import type { ZodError } from "zod"
 import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
+import { availabilityRuleSchema } from "../../../lib/schedule/availability-rule-schema"
+import { writeAvailabilityRuleRaw } from "../../../lib/schedule/availability-rule"
 
 class CrewBlockedError extends Error {
   result: DeleteCrewResult
@@ -188,6 +190,68 @@ export async function setSelfAvailabilityAction(
 
   revalidatePath('/crews');
   return { success: true, isAvailable: declaration.isAvailable };
+}
+
+export type SetAvailabilityRuleResult = {
+  success: boolean;
+  error?: string;
+  rule?: { weekday: number; start_time: string; end_time: string; is_active: boolean };
+};
+
+/**
+ * FLD-AVAIL-WEEKLY-RULES (WO FLD-AVAIL-WEEKLY-RULES, blok A): ekipa zapisuje WŁASNĄ
+ * regułę cykliczną dostępności — symetrycznie do auditors/actions.ts
+ * setAvailabilityRuleAction. Zasób RBAC to `availability_rules`; wiązanie roli z encją
+ * żyje tu, nie w `can()`. Właścicielstwo idzie przez e-mail z sesji, znalezione WŁASNE
+ * `id` (nie argument `id`) trafia do zapisu. Walidacja Zod biegnie PRZED jakimkolwiek
+ * zapytaniem do bazy; zapis fizyczny idzie przez `writeAvailabilityRuleRaw`
+ * (`ON CONFLICT ... DO UPDATE`). Nigdy nie dotyka `zespoly_monterskie.aktywny`/
+ * `leave_status` ani `availabilityDeclaration`.
+ */
+export async function setAvailabilityRuleAction(
+  id: string,
+  values: { weekday: number; start_time: string; end_time: string; is_active?: boolean }
+): Promise<SetAvailabilityRuleResult> {
+  const actorRole = await getCurrentActorRole();
+  if (actorRole !== 'monter' || can(actorRole, 'availability_rules', 'update') !== 'own') {
+    return { success: false, error: "Brak uprawnień do zmiany własnego grafiku." };
+  }
+
+  const parsed = availabilityRuleSchema.safeParse(values);
+  if (!parsed.success) {
+    return { success: false, error: formatZodError(parsed.error) };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) {
+    return { success: false, error: "Brak sesji użytkownika." };
+  }
+
+  const matches = await prisma.zespoly_monterskie.findMany({ where: { email: user.email }, take: 2 });
+  if (matches.length !== 1) {
+    return { success: false, error: "Nie można zmienić grafiku innej ekipy." };
+  }
+  const own = matches[0];
+  if (own.id !== id) {
+    return { success: false, error: "Nie można zmienić grafiku innej ekipy." };
+  }
+
+  try {
+    const rule = await writeAvailabilityRuleRaw({
+      auditorId: null,
+      crewId: own.id,
+      weekday: parsed.data.weekday,
+      startTime: parsed.data.start_time,
+      endTime: parsed.data.end_time,
+      isActive: parsed.data.is_active,
+    });
+    revalidatePath('/crews');
+    return { success: true, rule };
+  } catch (error) {
+    console.error("Failed to write crew availability rule:", error);
+    return { success: false, error: "Nie udało się zapisać grafiku." };
+  }
 }
 
 export type AcceptLegalDocumentVersionResult = {
