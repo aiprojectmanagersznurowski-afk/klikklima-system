@@ -80,7 +80,8 @@ export const AUDIT_REQUIREMENTS = {
     "role_change",
     "contract_override",
     "manual_status_change",
-    "notification_resend"
+    "notification_resend",
+    "field_update"
   ],
   "legalBases": [
     "RODO_ERASURE_REQUEST",

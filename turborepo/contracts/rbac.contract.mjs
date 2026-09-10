@@ -143,7 +143,17 @@ export const DELETE_POLICIES = [
  */
 export const AUDIT_REQUIREMENTS = {
   appendOnly: true,
-  mustLog: ['delete', 'anonymize', 'role_change', 'contract_override', 'manual_status_change', 'notification_resend'],
+  // `field_update` (dodane 2026-09-10, okno AUDIT-LOG-FIELD-UPDATE-OP, decyzja Michała):
+  // operacja ogólna dla edycji pojedynczych pól rekordu, gdzie audyt jest warunkiem dopuszczenia
+  // edycji, a nie następstwem incydentu. Celowo NIE nazywa się `radius_update` ani
+  // `base_location_update` — pierwszym konsumentem jest FLD-BASE-LOCATION-EDIT
+  // (kod_pocztowy_bazowy / promien_dzialania_km w auditors i crews), ale wartość jest
+  // przeznaczona do wielokrotnego użytku. Wartość osobna od `manual_status_change`, bo tamta
+  // dotyczy WYŁĄCZNIE przejść maszyny stanów lejka, nie dowolnych pól.
+  // W odróżnieniu od pozostałych sześciu wartości: przy `field_update` uzasadnienie NIE pochodzi
+  // od użytkownika — wylicza je serwer z wartości przed/po, a legal_basis jest stałą 'OTHER'
+  // (ten sam wariant, co bypassLogisticsOrder). Szczegóły w acceptance FLD-BASE-LOCATION-EDIT.
+  mustLog: ['delete', 'anonymize', 'role_change', 'contract_override', 'manual_status_change', 'notification_resend', 'field_update'],
   legalBases: ['RODO_ERASURE_REQUEST', 'OPERATIONAL_ERROR', 'DUPLICATE', 'COURT_ORDER', 'OTHER'],
   requiresJustification: true,
   retentionDays: 1825,
