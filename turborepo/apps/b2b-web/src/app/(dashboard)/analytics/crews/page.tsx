@@ -3,11 +3,10 @@ import { getCrewRankings, getCrewInstallationsForTable, getInstallationTrend } f
 import { CrewsAnalyticsClient } from "./crews-analytics-client"
 import { subDays, parseISO } from "date-fns"
 
-export default async function CrewsAnalyticsPage({
-  searchParams,
-}: {
-  searchParams: { from?: string; to?: string; preset?: string }
+export default async function CrewsAnalyticsPage(props: {
+  searchParams: Promise<{ from?: string; to?: string; preset?: string }>
 }) {
+  const searchParams = await props.searchParams
   const endDate = searchParams.to ? parseISO(searchParams.to) : new Date()
   const startDate = searchParams.from ? parseISO(searchParams.from) : subDays(endDate, 30)
 

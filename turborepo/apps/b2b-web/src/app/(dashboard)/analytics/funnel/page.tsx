@@ -3,11 +3,10 @@ import { getFunnelSankeyData, getFunnelTrend, getLostReasons, getConversionRates
 import { FunnelClient } from "./funnel-client"
 import { subDays, parseISO } from "date-fns"
 
-export default async function FunnelPage({
-  searchParams,
-}: {
-  searchParams: { from?: string; to?: string; preset?: string }
+export default async function FunnelPage(props: {
+  searchParams: Promise<{ from?: string; to?: string; preset?: string }>
 }) {
+  const searchParams = await props.searchParams
   const endDate = searchParams.to ? parseISO(searchParams.to) : new Date()
   const startDate = searchParams.from ? parseISO(searchParams.from) : subDays(endDate, 30)
 
