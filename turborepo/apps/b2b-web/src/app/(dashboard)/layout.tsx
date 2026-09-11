@@ -8,7 +8,7 @@ import type { Role } from '@klikklima/contracts'
 import {
   LayoutDashboard, Users, UserCheck, Wrench, Bell, Search, LogOut,
   ChevronLeft, ChevronRight, Thermometer, X, FolderKanban, Box, Settings,
-  ChevronDown, CalendarDays
+  ChevronDown, CalendarDays, BarChart3
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -65,6 +65,16 @@ const navItems: NavItem[] = [
     ]
   },
   { id: 'logistics', label: 'Logistyka', icon: Box, href: '/logistics' },
+  {
+    id: 'analytics',
+    label: 'Analityka',
+    icon: BarChart3,
+    subItems: [
+      { id: 'funnel', label: 'Lejek sprzedaży', href: '/analytics/funnel' },
+      { id: 'crews_analytics', label: 'Montaże & Ekipy', href: '/analytics/crews' },
+      { id: 'auditors_analytics', label: 'Audyty & Audytorzy', href: '/analytics/auditors' },
+    ]
+  },
   { id: 'notifications', label: 'Centrum Powiadomień', icon: Bell, href: '/notifications', comingSoon: true },
   {
     id: 'settings',
