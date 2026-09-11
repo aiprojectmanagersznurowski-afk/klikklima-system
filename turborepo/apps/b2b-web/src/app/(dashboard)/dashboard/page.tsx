@@ -4,7 +4,7 @@ import { getInstallations } from "../installations/actions"
 import { getUpcomingServices } from "../services/actions"
 import { formatDate } from "@/lib/format-date"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 30
 
 /**
  * KPI-DASHBOARD (audyt UI, 2026-09-03): pierwsza wersja panelu startowego. Ograniczony,

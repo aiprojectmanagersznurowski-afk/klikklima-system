@@ -9,12 +9,12 @@ import { Briefcase, Target, CheckCircle2, XCircle } from "lucide-react"
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from "recharts"
-import { format } from "date-fns"
+import { formatDate } from "@/lib/format-date"
 
-const CHART_INDIGO = "#6366f1"
-const CHART_GREEN = "#10b981"
-const CHART_RED = "#ef4444"
-const CHART_BLUE = "#3b82f6"
+const CHART_INDIGO = "rgb(99, 102, 241)"
+const CHART_GREEN = "rgb(16, 185, 129)"
+const CHART_RED = "rgb(239, 68, 68)"
+const CHART_BLUE = "rgb(59, 130, 246)"
 
 export function AuditorsAnalyticsClient({
   auditorRankings,
@@ -89,7 +89,7 @@ export function AuditorsAnalyticsClient({
     )},
     { header: "Projekt", accessor: (row: any) => <div className="text-muted-foreground text-sm">{row.project_number || '-'}</div> },
     { header: "Wartość (PLN)", accessor: (row: any) => <div className="font-mono text-right">{row.finalna_wycena_pln ? `${Number(row.finalna_wycena_pln).toLocaleString('pl-PL')} zł` : '-'}</div> },
-    { header: "Data utworzenia", accessor: (row: any) => row.created_at ? format(new Date(row.created_at), 'dd.MM.yyyy') : '-' }
+    { header: "Data utworzenia", accessor: (row: any) => row.created_at ? formatDate(row.created_at, 'dd.MM.yyyy') : '-' }
   ]
 
   return (
@@ -109,10 +109,10 @@ export function AuditorsAnalyticsClient({
         <ChartCard title="Ranking wg Wartości Sprzedaży (Zakończone instalacje)">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartDataWithConversion} margin={{ top: 10, right: 0, left: 10, bottom: 20 }} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgb(226, 232, 240)" />
               <XAxis type="number" axisLine={false} tickLine={false} style={{fontSize: 12}} />
               <YAxis dataKey="imie_i_nazwisko" type="category" axisLine={false} tickLine={false} style={{fontSize: 12}} width={120} />
-              <RechartsTooltip formatter={(value: any) => [`${value.toLocaleString('pl-PL')} zł`, 'Wartość']} cursor={{fill: '#f1f5f9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <RechartsTooltip formatter={(value: any) => [`${value.toLocaleString('pl-PL')} zł`, 'Wartość']} cursor={{fill: 'rgb(241, 245, 249)'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Bar dataKey="total_value_pln" name="Sprzedaż PLN" fill={CHART_INDIGO} radius={[0, 4, 4, 0]} barSize={24}
                  onClick={(e: any) => { if(e && e.imie_i_nazwisko) handleFilter('audytor', e.imie_i_nazwisko) }} className="cursor-pointer" />
             </BarChart>
@@ -123,10 +123,10 @@ export function AuditorsAnalyticsClient({
         <ChartCard title="Leady: Zakończone vs Utracone vs Aktywne">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={auditorRankings} margin={{ top: 10, right: 0, left: 10, bottom: 20 }} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgb(226, 232, 240)" />
               <XAxis type="number" axisLine={false} tickLine={false} style={{fontSize: 12}} />
               <YAxis dataKey="imie_i_nazwisko" type="category" axisLine={false} tickLine={false} style={{fontSize: 12}} width={120} />
-              <RechartsTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <RechartsTooltip cursor={{fill: 'rgb(241, 245, 249)'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
               <Bar dataKey="completed" name="Zakończone" stackId="a" fill={CHART_GREEN} barSize={24} />
               <Bar dataKey="active_now" name="W Trakcie" stackId="a" fill={CHART_BLUE} barSize={24} />

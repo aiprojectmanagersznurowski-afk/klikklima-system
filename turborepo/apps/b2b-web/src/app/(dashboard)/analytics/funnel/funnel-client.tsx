@@ -11,12 +11,11 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area, PieChart, Pie, Cell
 } from "recharts"
-import { format } from "date-fns"
-import { pl } from "date-fns/locale"
+import { formatDate } from "@/lib/format-date"
 
-const PIE_COLORS = ['#0f172a', '#334155', '#475569', '#64748b', '#94a3b8', '#cbd5e1']
-const CHART_BLUE = "#3b82f6"
-const CHART_INDIGO = "#6366f1"
+const PIE_COLORS = ['rgb(15, 23, 42)', 'rgb(51, 65, 85)', 'rgb(71, 85, 105)', 'rgb(100, 116, 139)', 'rgb(148, 163, 184)', 'rgb(203, 213, 225)']
+const CHART_BLUE = "rgb(59, 130, 246)"
+const CHART_INDIGO = "rgb(99, 102, 241)"
 
 export function FunnelClient({
   sankeyData,
@@ -45,7 +44,7 @@ export function FunnelClient({
   
   const formattedTrendData = useMemo(() => trendData.map(d => ({
     ...d,
-    monthLabel: format(new Date(d.month), 'LLL yy', { locale: pl })
+    monthLabel: formatDate(d.month, 'LLL yy')
   })), [trendData])
 
   const lostReasonsData = useMemo(() => lostReasons.map(r => ({
@@ -111,7 +110,7 @@ export function FunnelClient({
     return tableData.filter((row: any) => {
       if (filterKey === 'status') return row.status === filterValue
       if (filterKey === 'lost_reason') return row.lost_reason === filterValue
-      if (filterKey === 'month') return format(new Date(row.created_at), 'LLL yy', { locale: pl }) === filterValue
+      if (filterKey === 'month') return formatDate(row.created_at, 'LLL yy') === filterValue
       return true
     })
   }, [tableData, filterKey, filterValue])
@@ -125,7 +124,7 @@ export function FunnelClient({
       </span>
     )},
     { header: "Wartość", accessor: (row: any) => <div className="font-mono text-right">{row.finalna_wycena_pln ? `${Number(row.finalna_wycena_pln).toLocaleString('pl-PL')} zł` : '-'}</div> },
-    { header: "Data utworzenia", accessor: (row: any) => format(new Date(row.created_at), 'dd.MM.yyyy') }
+    { header: "Data utworzenia", accessor: (row: any) => formatDate(row.created_at, 'dd.MM.yyyy') }
   ]
 
   return (
@@ -195,7 +194,7 @@ export function FunnelClient({
               </defs>
               <XAxis dataKey="monthLabel" axisLine={false} tickLine={false} tickMargin={10} style={{fontSize: 12}} />
               <YAxis axisLine={false} tickLine={false} tickMargin={10} style={{fontSize: 12}} />
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgb(226, 232, 240)" />
               <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Area type="monotone" dataKey="new_leads" name="Nowe Leady" stroke={CHART_BLUE} strokeWidth={2} fillOpacity={1} fill="url(#colorLeads)" activeDot={{ r: 6 }} className="cursor-pointer" />
             </AreaChart>

@@ -1,6 +1,12 @@
 {
-  "generatedAt": "2026-09-10T18:38:12.769Z",
+  "generatedAt": "2026-09-11T13:21:49.289Z",
   "counts": {
+    "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
+    "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
+    "apps/b2b-web/src/app/(dashboard)/analytics/auditors/auditors-analytics-client.tsx::adr002-pl-columns": 9,
+    "apps/b2b-web/src/app/(dashboard)/analytics/auditors/auditors-analytics-client.tsx::adr002-pl-tables": 2,
+    "apps/b2b-web/src/app/(dashboard)/analytics/crews/crews-analytics-client.tsx::adr002-pl-columns": 3,
+    "apps/b2b-web/src/app/(dashboard)/analytics/funnel/funnel-client.tsx::adr002-pl-columns": 2,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-columns": 30,
     "apps/b2b-web/src/app/(dashboard)/auditors/actions.ts::adr002-pl-tables": 20,
     "apps/b2b-web/src/app/(dashboard)/auditors/auditors-client.tsx::adr002-pl-columns": 9,
@@ -217,5 +223,5 @@
     "supabase/migrations/20260910101000_fld_auditor_radius_rename.sql::adr002-pl-tables": 4,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2275
+  "total": 2334
 }

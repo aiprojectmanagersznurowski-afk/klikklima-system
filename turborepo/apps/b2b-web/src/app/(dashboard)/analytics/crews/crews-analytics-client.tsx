@@ -10,13 +10,12 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   AreaChart, Area
 } from "recharts"
-import { format } from "date-fns"
-import { pl } from "date-fns/locale"
+import { formatDate } from "@/lib/format-date"
 
-const CHART_INDIGO = "#6366f1"
-const CHART_GREEN = "#10b981"
-const CHART_RED = "#ef4444"
-const CHART_AMBER = "#f59e0b"
+const CHART_INDIGO = "rgb(99, 102, 241)"
+const CHART_GREEN = "rgb(16, 185, 129)"
+const CHART_RED = "rgb(239, 68, 68)"
+const CHART_AMBER = "rgb(245, 158, 11)"
 
 export function CrewsAnalyticsClient({
   crewRankings,
@@ -48,7 +47,7 @@ export function CrewsAnalyticsClient({
   // Przekształcenia do wykresów
   const formattedTrendData = useMemo(() => trendData.map(d => ({
     ...d,
-    monthLabel: format(new Date(d.month), 'LLL yy', { locale: pl })
+    monthLabel: formatDate(d.month, 'LLL yy')
   })), [trendData])
 
   // Kalkulacja score wydajnościowego: (completed*10 - rollbacks*5 - incidents*3) / total
@@ -102,8 +101,8 @@ export function CrewsAnalyticsClient({
         {row.status}
       </span>
     )},
-    { header: "Data Planowana", accessor: (row: any) => row.data_planowana ? format(new Date(row.data_planowana), 'dd.MM.yyyy') : '-' },
-    { header: "Zakończenie", accessor: (row: any) => row.data_zakonczenia ? format(new Date(row.data_zakonczenia), 'dd.MM.yyyy') : '-' }
+    { header: "Data Planowana", accessor: (row: any) => row.data_planowana ? formatDate(row.data_planowana, 'dd.MM.yyyy') : '-' },
+    { header: "Zakończenie", accessor: (row: any) => row.data_zakonczenia ? formatDate(row.data_zakonczenia, 'dd.MM.yyyy') : '-' }
   ]
 
   return (
@@ -123,10 +122,10 @@ export function CrewsAnalyticsClient({
         <ChartCard title="Ranking Wydajności" description="Score = (completed×10 - rollbacks×5 - incidents×3) / total">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={rankingsWithScore} margin={{ top: 10, right: 0, left: -20, bottom: 20 }} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgb(226, 232, 240)" />
               <XAxis type="number" axisLine={false} tickLine={false} style={{fontSize: 12}} />
               <YAxis dataKey="nazwa" type="category" axisLine={false} tickLine={false} style={{fontSize: 12}} width={100} />
-              <RechartsTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <RechartsTooltip cursor={{fill: 'rgb(241, 245, 249)'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Bar dataKey="score" name="Score" fill={CHART_INDIGO} radius={[0, 4, 4, 0]} barSize={24}
                  onClick={(e: any) => { if(e && e.nazwa) handleFilter('zespol', e.nazwa) }} className="cursor-pointer" />
             </BarChart>
@@ -137,10 +136,10 @@ export function CrewsAnalyticsClient({
         <ChartCard title="Zakończone Instalacje">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={crewRankings} margin={{ top: 10, right: 0, left: -20, bottom: 20 }} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgb(226, 232, 240)" />
               <XAxis type="number" axisLine={false} tickLine={false} style={{fontSize: 12}} />
               <YAxis dataKey="nazwa" type="category" axisLine={false} tickLine={false} style={{fontSize: 12}} width={100} />
-              <RechartsTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <RechartsTooltip cursor={{fill: 'rgb(241, 245, 249)'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Bar dataKey="completed" name="Instalacje" fill={CHART_GREEN} radius={[0, 4, 4, 0]} barSize={24}
                  onClick={(e: any) => { if(e && e.nazwa) handleFilter('zespol', e.nazwa) }} className="cursor-pointer" />
             </BarChart>
@@ -151,10 +150,10 @@ export function CrewsAnalyticsClient({
         <ChartCard title="Usterki i Rollbacki (Incydenty)">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={crewRankings} margin={{ top: 10, right: 0, left: -20, bottom: 20 }} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgb(226, 232, 240)" />
               <XAxis type="number" axisLine={false} tickLine={false} style={{fontSize: 12}} />
               <YAxis dataKey="nazwa" type="category" axisLine={false} tickLine={false} style={{fontSize: 12}} width={100} />
-              <RechartsTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <RechartsTooltip cursor={{fill: 'rgb(241, 245, 249)'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Bar dataKey="incidents" name="Usterki" stackId="a" fill={CHART_AMBER} radius={[0, 0, 0, 0]} barSize={24} />
               <Bar dataKey="rollbacks" name="Rollbacki" stackId="a" fill={CHART_RED} radius={[0, 4, 4, 0]} barSize={24} 
                  onClick={(e: any) => { if(e && e.nazwa) handleFilter('zespol', e.nazwa) }} className="cursor-pointer" />
@@ -174,7 +173,7 @@ export function CrewsAnalyticsClient({
               </defs>
               <XAxis dataKey="monthLabel" axisLine={false} tickLine={false} tickMargin={10} style={{fontSize: 12}} />
               <YAxis axisLine={false} tickLine={false} tickMargin={10} style={{fontSize: 12}} />
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgb(226, 232, 240)" />
               <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Area type="monotone" dataKey="completed" name="Zakończone" stroke={CHART_GREEN} strokeWidth={2} fillOpacity={1} fill="url(#colorCompleted)" activeDot={{ r: 6 }} />
             </AreaChart>
