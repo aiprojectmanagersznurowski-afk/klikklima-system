@@ -13,7 +13,8 @@ export function DateRangeFilter() {
 
   const currentPreset = searchParams.get('preset') || '30d'
 
-  const handleValueChange = (value: string) => {
+  const handleValueChange = (value: string | null) => {
+    if (!value) return
     const params = new URLSearchParams(searchParams)
     
     let from: Date | null = null
