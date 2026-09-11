@@ -165,7 +165,7 @@ export function FunnelClient({
                 outerRadius={80}
                 paddingAngle={5}
                 dataKey="value"
-                onClick={(data) => handleFilter('lost_reason', data.name)}
+                onClick={(data: any) => handleFilter('lost_reason', data.name)}
                 className="cursor-pointer outline-none"
               >
                 {lostReasonsData.map((entry, index) => (
@@ -184,7 +184,7 @@ export function FunnelClient({
         <ChartCard title="Trend nowych leadów" description="Ilość leadów per miesiąc" className="lg:col-span-3">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={formattedTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              onClick={(e) => {
+              onClick={(e: any) => {
                  if(e && e.activeLabel) handleFilter('month', e.activeLabel)
               }}>
               <defs>

@@ -114,7 +114,7 @@ export function AuditorsAnalyticsClient({
               <YAxis dataKey="imie_i_nazwisko" type="category" axisLine={false} tickLine={false} style={{fontSize: 12}} width={120} />
               <RechartsTooltip formatter={(value: any) => [`${value.toLocaleString('pl-PL')} zł`, 'Wartość']} cursor={{fill: '#f1f5f9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Bar dataKey="total_value_pln" name="Sprzedaż PLN" fill={CHART_INDIGO} radius={[0, 4, 4, 0]} barSize={24}
-                 onClick={(e) => { if(e && e.imie_i_nazwisko) handleFilter('audytor', e.imie_i_nazwisko) }} className="cursor-pointer" />
+                 onClick={(e: any) => { if(e && e.imie_i_nazwisko) handleFilter('audytor', e.imie_i_nazwisko) }} className="cursor-pointer" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -131,7 +131,7 @@ export function AuditorsAnalyticsClient({
               <Bar dataKey="completed" name="Zakończone" stackId="a" fill={CHART_GREEN} barSize={24} />
               <Bar dataKey="active_now" name="W Trakcie" stackId="a" fill={CHART_BLUE} barSize={24} />
               <Bar dataKey="lost" name="Utracone" stackId="a" fill={CHART_RED} radius={[0, 4, 4, 0]} barSize={24} 
-                 onClick={(e) => { if(e && e.imie_i_nazwisko) handleFilter('audytor', e.imie_i_nazwisko) }} className="cursor-pointer" />
+                 onClick={(e: any) => { if(e && e.imie_i_nazwisko) handleFilter('audytor', e.imie_i_nazwisko) }} className="cursor-pointer" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>

@@ -128,7 +128,7 @@ export function CrewsAnalyticsClient({
               <YAxis dataKey="nazwa" type="category" axisLine={false} tickLine={false} style={{fontSize: 12}} width={100} />
               <RechartsTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Bar dataKey="score" name="Score" fill={CHART_INDIGO} radius={[0, 4, 4, 0]} barSize={24}
-                 onClick={(e) => { if(e && e.nazwa) handleFilter('zespol', e.nazwa) }} className="cursor-pointer" />
+                 onClick={(e: any) => { if(e && e.nazwa) handleFilter('zespol', e.nazwa) }} className="cursor-pointer" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -142,7 +142,7 @@ export function CrewsAnalyticsClient({
               <YAxis dataKey="nazwa" type="category" axisLine={false} tickLine={false} style={{fontSize: 12}} width={100} />
               <RechartsTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Bar dataKey="completed" name="Instalacje" fill={CHART_GREEN} radius={[0, 4, 4, 0]} barSize={24}
-                 onClick={(e) => { if(e && e.nazwa) handleFilter('zespol', e.nazwa) }} className="cursor-pointer" />
+                 onClick={(e: any) => { if(e && e.nazwa) handleFilter('zespol', e.nazwa) }} className="cursor-pointer" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -157,7 +157,7 @@ export function CrewsAnalyticsClient({
               <RechartsTooltip cursor={{fill: '#f1f5f9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Bar dataKey="incidents" name="Usterki" stackId="a" fill={CHART_AMBER} radius={[0, 0, 0, 0]} barSize={24} />
               <Bar dataKey="rollbacks" name="Rollbacki" stackId="a" fill={CHART_RED} radius={[0, 4, 4, 0]} barSize={24} 
-                 onClick={(e) => { if(e && e.nazwa) handleFilter('zespol', e.nazwa) }} className="cursor-pointer" />
+                 onClick={(e: any) => { if(e && e.nazwa) handleFilter('zespol', e.nazwa) }} className="cursor-pointer" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
