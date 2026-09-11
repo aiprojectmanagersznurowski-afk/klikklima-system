@@ -112,7 +112,7 @@ export function AuditorsAnalyticsClient({
               <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
               <XAxis type="number" axisLine={false} tickLine={false} style={{fontSize: 12}} />
               <YAxis dataKey="imie_i_nazwisko" type="category" axisLine={false} tickLine={false} style={{fontSize: 12}} width={120} />
-              <RechartsTooltip formatter={(value: number) => [`${value.toLocaleString('pl-PL')} zł`, 'Wartość']} cursor={{fill: '#f1f5f9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <RechartsTooltip formatter={(value: any) => [`${value.toLocaleString('pl-PL')} zł`, 'Wartość']} cursor={{fill: '#f1f5f9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
               <Bar dataKey="total_value_pln" name="Sprzedaż PLN" fill={CHART_INDIGO} radius={[0, 4, 4, 0]} barSize={24}
                  onClick={(e) => { if(e && e.imie_i_nazwisko) handleFilter('audytor', e.imie_i_nazwisko) }} className="cursor-pointer" />
             </BarChart>
