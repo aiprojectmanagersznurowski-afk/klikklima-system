@@ -54,9 +54,6 @@ export function SankeyChart({ data, onClick }: SankeyChartProps) {
         }}
         nodeBorderRadius={3}
         linkOpacity={0.5}
-        hoverAmongPathsOpacity={1}
-        hoverAmongPathsEdgeOpacity={1}
-        linkHoverOthersOpacity={0.1}
         linkContract={3}
         enableLinkGradient={true}
         labelPosition="inside"
