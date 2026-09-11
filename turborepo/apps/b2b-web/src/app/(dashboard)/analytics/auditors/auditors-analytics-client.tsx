@@ -87,7 +87,7 @@ export function AuditorsAnalyticsClient({
         {row.status}
       </span>
     )},
-    { header: "Projekt", accessor: (row: any) => <div className="text-muted-foreground text-sm">{row.project_number || '-'}</div> },
+    { header: "Projekt", accessor: (row: any) => <div className="font-mono text-sm font-semibold tracking-tight text-foreground">{row.project_number || '-'}</div> },
     { header: "Wartość (PLN)", accessor: (row: any) => <div className="font-mono text-right">{row.finalna_wycena_pln ? `${Number(row.finalna_wycena_pln).toLocaleString('pl-PL')} zł` : '-'}</div> },
     { header: "Data utworzenia", accessor: (row: any) => row.created_at ? formatDate(row.created_at, 'dd.MM.yyyy') : '-' }
   ]

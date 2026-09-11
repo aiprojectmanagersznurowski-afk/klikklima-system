@@ -95,7 +95,7 @@ export function CrewsAnalyticsClient({
            <div className="text-xs text-muted-foreground">{row.lead?.adres?.ulica_miasto || '-'}</div>
         </div> 
     },
-    { header: "Projekt", accessor: (row: any) => <div className="text-muted-foreground text-sm">{row.lead?.project_number || '-'}</div> },
+    { header: "Projekt", accessor: (row: any) => <div className="font-mono text-sm font-semibold tracking-tight text-foreground">{row.lead?.project_number || '-'}</div> },
     { header: "Status", accessor: (row: any) => (
       <span className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
         {row.status}

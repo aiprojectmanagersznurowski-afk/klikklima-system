@@ -95,7 +95,7 @@ export function IncidentsClient({
                 <div key={incident.id} className="flex flex-col bg-card rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow relative">
                   <div className="p-5 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
-                      <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${priorityColor}`}>
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider ${priorityColor}`}>
                         PRIORYTET: {incident.priorytet}
                       </span>
                       <DropdownMenu>

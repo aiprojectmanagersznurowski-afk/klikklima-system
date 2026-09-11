@@ -340,7 +340,7 @@ export function LeadsClient({
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold font-mono tracking-tight text-foreground">{shortId(lead.id)}</span>
                             <span className="text-xs font-mono text-muted-foreground mt-0.5">{dateFormatted}</span>
-                            {isDelayed && <span className="text-[10px] text-destructive font-semibold mt-1">Opóźniony (&gt;24h)</span>}
+                            {isDelayed && <span className="text-xs text-destructive font-semibold mt-1">Opóźniony (&gt;24h)</span>}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -367,7 +367,7 @@ export function LeadsClient({
                             >
                               {auditor ? (
                                 <>
-                                  <div className="size-5 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
+                                  <div className="size-5 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
                                     {auditor.imie_i_nazwisko.charAt(0)}
                                   </div>
                                   <span className="truncate max-w-[120px]">{auditor.imie_i_nazwisko}</span>

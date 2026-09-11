@@ -43,10 +43,10 @@ export function AnalyticsTable<T>({
       
       <div className="border rounded-md bg-card overflow-hidden">
         <Table>
-          <TableHeader className="bg-muted/50">
+          <TableHeader className="bg-secondary/50 border-b border-border">
             <TableRow>
               {columns.map((col, i) => (
-                <TableHead key={i} className="font-semibold">{col.header}</TableHead>
+                <TableHead key={i} className="text-xs uppercase font-semibold text-muted-foreground tracking-wider">{col.header}</TableHead>
               ))}
             </TableRow>
           </TableHeader>

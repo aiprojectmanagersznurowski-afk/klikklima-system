@@ -135,7 +135,7 @@ export default async function InstallationDetailsPage({
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-4">
             {clientName}
             <Badge
               variant="outline"

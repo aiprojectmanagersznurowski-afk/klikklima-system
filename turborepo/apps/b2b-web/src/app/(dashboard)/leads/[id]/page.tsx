@@ -107,7 +107,7 @@ export default async function LeadDetailsPage({
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-card p-8 rounded-xl border border-border shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-4">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-4">
                 {name}
                 <StatusPill
                   className="text-sm px-4 py-1"

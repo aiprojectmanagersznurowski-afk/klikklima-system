@@ -220,7 +220,7 @@ function SidebarNavigation({ collapsed, setCollapsed, items }: { collapsed: bool
                       <div
                         key={sub.id}
                         aria-disabled="true"
-                        className="flex items-center justify-between gap-2 py-2 px-3 rounded-md text-[13px] font-medium text-muted-foreground/60 cursor-not-allowed"
+                        className="flex items-center justify-between gap-2 py-2 px-3 rounded-md text-xs font-medium text-muted-foreground/60 cursor-not-allowed"
                       >
                         <span className="truncate">{sub.label}</span>
                         <Badge variant="secondary" className="shrink-0">Wkrótce</Badge>
@@ -232,7 +232,7 @@ function SidebarNavigation({ collapsed, setCollapsed, items }: { collapsed: bool
                       key={sub.id}
                       href={sub.href}
                       className={cn(
-                        "flex items-center py-2 pl-[10px] pr-3 rounded-md text-[13px] font-medium transition-colors border-l-2",
+                        "flex items-center py-2 pl-[10px] pr-3 rounded-md text-xs font-medium transition-colors border-l-2",
                         isSubActive
                           ? "bg-primary/10 text-primary font-semibold shadow-2xs border-primary"
                           : "text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent"

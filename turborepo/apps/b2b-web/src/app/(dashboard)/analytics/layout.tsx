@@ -24,12 +24,12 @@ export default async function AnalyticsLayout({
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50/50 dark:bg-background">
+    <div className="flex flex-col h-full bg-background">
       {/* Pasek narzędzi analityki */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b bg-card">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b border-border bg-card">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Analityka Systemu</h1>
-          <p className="text-muted-foreground text-sm mt-1">Przegląd efektywności i kluczowych wskaźników wydajności</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Analityka Systemu</h1>
+          <p className="text-sm text-muted-foreground mt-1">Przegląd efektywności i kluczowych wskaźników wydajności</p>
         </div>
         
         {/* Globalny filtr zakresu dat */}

@@ -75,7 +75,7 @@ export function ServicesClient({
         <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-secondary/50 text-muted-foreground uppercase font-medium text-xs border-b border-border">
+              <thead className="bg-secondary/50 text-muted-foreground uppercase font-semibold text-xs tracking-wider border-b border-border">
                 <tr>
                   <th className="px-6 py-4">Data Serwisu</th>
                   <th className="px-6 py-4">Klient i Kontakt</th>
