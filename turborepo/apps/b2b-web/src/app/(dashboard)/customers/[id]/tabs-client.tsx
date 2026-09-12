@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react"
 import { ClipboardList, Package, Wrench, AlertTriangle, FileText, MapPin, Edit, Plus } from "lucide-react"
 import { addCustomerAddress } from "../actions"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { formatDate } from "@/lib/format-date"
 
 const LEAD_STATUS_PL: Record<string, string> = {
@@ -107,16 +108,29 @@ export function Customer360Tabs({ customer }: { customer: any }) {
             ) : (
               <div className="space-y-4">
                 {customer.leady.map((lead: any) => (
-                  <div key={lead.id} className="p-4 border border-border rounded-lg bg-background flex justify-between items-center">
-                    <div>
-                      <span className="text-xs font-mono text-muted-foreground">ID: {lead.id}</span>
-                      <p className="font-semibold text-foreground mt-1">Status: {LEAD_STATUS_PL[lead.status] || lead.status}</p>
+                  <Link
+                    key={lead.id}
+                    href={`/leads/${lead.id}`}
+                    className="block p-4 border border-border rounded-lg bg-background hover:bg-secondary/40 transition-colors cursor-pointer group"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          {lead.project_number && (
+                            <span className="font-mono font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                              {lead.project_number}
+                            </span>
+                          )}
+                          <span className="text-xs font-mono text-muted-foreground">ID: {lead.id.slice(0, 8)}...</span>
+                        </div>
+                        <p className="font-semibold text-foreground mt-1">Status: {LEAD_STATUS_PL[lead.status] || lead.status}</p>
+                      </div>
+                      <div className="text-right text-sm">
+                        <p className="text-muted-foreground">Ostatnia zmiana: {formatDate(lead.updated_at, "dd MMM yyyy")}</p>
+                        {lead.finalna_wycena_pln && <p className="font-bold text-primary mt-1">{lead.finalna_wycena_pln} PLN</p>}
+                      </div>
                     </div>
-                    <div className="text-right text-sm">
-                      <p className="text-muted-foreground">Ostatnia zmiana: {formatDate(lead.updated_at, "dd MMM yyyy")}</p>
-                      {lead.finalna_wycena_pln && <p className="font-bold text-primary mt-1">{lead.finalna_wycena_pln} PLN</p>}
-                    </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

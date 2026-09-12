@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { isScheduleNavItemVisible } from '../../lib/schedule/nav-visibility'
 import { getActorRoleForNavAction } from './nav-role.actions'
+import { GlobalSearch } from '@/components/global-search/global-search'
 
 type NavItem = {
   id: string;
@@ -389,7 +390,9 @@ export default function DashboardLayout({
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {/* Top bar */}
         <header className="bg-card border-b border-border px-6 flex items-center gap-4 h-16 shrink-0 shadow-2xs">
-          <div className="flex-1"></div>
+          <div className="flex-1 max-w-md">
+            <GlobalSearch />
+          </div>
           <div className="ml-auto flex items-center gap-3">
             <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors rounded-md">
               <Bell className="size-5" />

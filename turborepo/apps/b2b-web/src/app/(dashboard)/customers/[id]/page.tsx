@@ -77,9 +77,11 @@ export default async function Customer360Page({ params }: { params: Promise<{ id
             <Button variant="outline" className="font-semibold shadow-sm">
               Wyślij Wiadomość
             </Button>
-            <Button className="font-semibold shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground">
-              Zgłoś Usterkę (Auto-Fill)
-            </Button>
+            <Link href={`/incidents?clientId=${customer.id}`}>
+              <Button className="font-semibold shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground">
+                Zgłoś Usterkę (Auto-Fill)
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

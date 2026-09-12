@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-12T06:44:05.268Z",
+  "generatedAt": "2026-09-12T06:46:31.031Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -57,6 +57,8 @@
     "apps/b2b-web/src/app/(dashboard)/me/schedule/page.tsx::adr002-pl-tables": 2,
     "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-columns": 10,
     "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-tables": 5,
+    "apps/b2b-web/src/components/global-search/actions.ts::adr002-pl-columns": 15,
+    "apps/b2b-web/src/components/global-search/actions.ts::adr002-pl-tables": 6,
     "apps/b2b-web/src/lib/schedule/available-slots.ts::adr002-pl-tables": 2,
     "apps/b2b-web/src/utils/supabase/middleware.ts::adr002-pl-tables": 1,
     "apps/b2b-web/tests/add-auditor-modal-formdata-boundary.test.ts::adr002-pl-columns": 3,
@@ -105,6 +107,8 @@
     "apps/b2b-web/tests/fld-base-location-edit-audit-log.test.ts::adr002-pl-tables": 4,
     "apps/b2b-web/tests/fnl-advance-status-rollback-dedup.test.ts::adr002-pl-columns": 1,
     "apps/b2b-web/tests/fnl-advance-status-rollback-dedup.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/global-search.test.ts::adr002-pl-columns": 4,
+    "apps/b2b-web/tests/global-search.test.ts::adr002-pl-tables": 5,
     "apps/b2b-web/tests/incidents-authz-gates.test.ts::adr002-pl-tables": 1,
     "apps/b2b-web/tests/incidents-read-scope.test.ts::adr002-pl-columns": 5,
     "apps/b2b-web/tests/incidents-read-scope.test.ts::adr002-pl-tables": 7,
@@ -225,5 +229,5 @@
     "supabase/migrations/20260910101000_fld_auditor_radius_rename.sql::adr002-pl-tables": 4,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2379
+  "total": 2409
 }
