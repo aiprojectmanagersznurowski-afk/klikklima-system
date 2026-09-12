@@ -53,7 +53,7 @@ vi.mock("next/cache", () => ({
 describe("CRM-UST-AC3 / SLA: calculateIncidentSla", () => {
   it("zwraca poprawne limity godzinowe z kontraktu SLA.INCIDENT_RESPONSE (48h)", async () => {
     const { calculateIncidentSla } = await import(
-      "../src/app/(dashboard)/incidents/actions"
+      "../src/app/(dashboard)/incidents/sla"
     )
 
     const expectedHours = SLA.INCIDENT_RESPONSE.bands[0]?.afterHours ?? 48
@@ -71,7 +71,7 @@ describe("CRM-UST-AC3 / SLA: calculateIncidentSla", () => {
 
   it("oznacza zgłoszenie jako przeterminowane (isBreached=true) po upływie progu SLA dla krytycznego zgłoszenia", async () => {
     const { calculateIncidentSla } = await import(
-      "../src/app/(dashboard)/incidents/actions"
+      "../src/app/(dashboard)/incidents/sla"
     )
 
     const baseDate = new Date("2026-09-08T10:00:00Z")
@@ -87,7 +87,7 @@ describe("CRM-UST-AC3 / SLA: calculateIncidentSla", () => {
 
   it("wstrzymuje licznik SLA dla statusu OCZEKUJE_NA_CZESCI (CRM-UST-AC3)", async () => {
     const { calculateIncidentSla } = await import(
-      "../src/app/(dashboard)/incidents/actions"
+      "../src/app/(dashboard)/incidents/sla"
     )
 
     const baseDate = new Date("2026-09-08T10:00:00Z")
@@ -107,7 +107,7 @@ describe("CRM-UST-AC3 / SLA: calculateIncidentSla", () => {
 
   it("oznacza jako rozwiązane dla statusu ZAKONCZONE", async () => {
     const { calculateIncidentSla } = await import(
-      "../src/app/(dashboard)/incidents/actions"
+      "../src/app/(dashboard)/incidents/sla"
     )
 
     const baseDate = new Date("2026-09-08T10:00:00Z")

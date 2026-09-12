@@ -4,7 +4,8 @@ import React, { useTransition, useState, useEffect } from "react"
 import { Search, AlertTriangle, MoreHorizontal, Clock, Wrench, ShieldAlert, ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { can, type Role } from "@klikklima/contracts"
-import { IncidentSummary, deleteIncidentAction } from "./actions"
+import type { IncidentSummary } from "./types"
+import { deleteIncidentAction } from "./actions"
 import {
   DropdownMenu,
   DropdownMenuContent,

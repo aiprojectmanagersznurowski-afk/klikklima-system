@@ -8,84 +8,13 @@ import { enqueueNotification } from "../logistics/rollback-effects"
 import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server"
 import { deleteJustificationSchema, type DeleteJustificationInput, type DeleteActionResult } from "../../../lib/audit/delete-justification-schema"
 import { shortId } from "../../../lib/format-id"
-
-export type IncidentSlaStatus = {
-  hoursElapsed: number;
-  slaLimitHours: number;
-  isBreached: boolean;
-  isPaused: boolean;
-  isResolved: boolean;
-  label: string;
-  uiBadgeClass: string;
-};
-
-export function calculateIncidentSla(
-  createdAt: Date,
-  status: string | null,
-  priority: string | null,
-  referenceDate = new Date()
-): IncidentSlaStatus {
-  const slaLimitHours = SLA.INCIDENT_RESPONSE.bands[0]?.afterHours ?? 48;
-  const isResolved = status === "ZAKONCZONE" || status === "ANULOWANE";
-  const isPaused = status === "OCZEKUJE_NA_CZESCI";
-
-  const diffMs = Math.max(0, referenceDate.getTime() - new Date(createdAt).getTime());
-  const hoursElapsed = Math.floor(diffMs / (1000 * 60 * 60));
-
-  const isApplicablePriority =
-    priority === "KRYTYCZNY" ||
-    priority === "WYSOKI" ||
-    priority === "ŚREDNI" ||
-    priority === "CRITICAL" ||
-    priority === "MEDIUM";
-
-  const isBreached = !isResolved && !isPaused && isApplicablePriority && hoursElapsed >= slaLimitHours;
-
-  let label = `${hoursElapsed}h / ${slaLimitHours}h`;
-  let uiBadgeClass = "bg-secondary text-secondary-foreground border-border";
-
-  if (isResolved) {
-    label = "Rozwiązano";
-    uiBadgeClass = "bg-secondary/60 text-muted-foreground border-border/50";
-  } else if (isPaused) {
-    label = "Wstrzymano (części)";
-    uiBadgeClass = "bg-amber-500/15 text-amber-600 dark:text-amber-500 border-amber-500/30";
-  } else if (isBreached) {
-    label = `Przekroczono SLA (${hoursElapsed}h)`;
-    uiBadgeClass = "bg-destructive/15 text-destructive border-destructive/30";
-  } else if (hoursElapsed >= slaLimitHours / 2) {
-    label = `${hoursElapsed}h / ${slaLimitHours}h (Pilne)`;
-    uiBadgeClass = "bg-amber-500/15 text-amber-600 dark:text-amber-500 border-amber-500/30";
-  }
-
-  return {
-    hoursElapsed,
-    slaLimitHours,
-    isBreached,
-    isPaused,
-    isResolved,
-    label,
-    uiBadgeClass,
-  };
-}
-
-export type IncidentSummary = {
-  id: string;
-  numer_zgloszenia: string | null;
-  klient_id?: string | null;
-  klient_name: string;
-  klient_telefon?: string | null;
-  instalacja_id?: string | null;
-  instalacja_model?: string | null;
-  opis_usterki: string;
-  priorytet: string;
-  status: string;
-  created_at: Date;
-  zespol_id?: string | null;
-  zespol_name: string | null;
-  zdjecia_url?: string[];
-  sla?: IncidentSlaStatus;
-}
+import { calculateIncidentSla } from "./sla"
+import type {
+  IncidentSummary,
+  IncidentClientOption,
+  IncidentCrewOption,
+  CreateIncidentInput,
+} from "./types"
 
 export async function getIncidents(): Promise<IncidentSummary[]> {
   let actorRole;
@@ -171,15 +100,13 @@ export async function getIncidents(): Promise<IncidentSummary[]> {
   });
 }
 
-export const createIncidentSchema = z.object({
+const createIncidentSchema = z.object({
   client_id: z.string().uuid("Wybierz klienta"),
   installation_id: z.string().uuid().nullable().optional(),
   priority: z.enum(["NISKI", "ŚREDNI", "WYSOKI", "KRYTYCZNY"]).default("NISKI"),
   description: z.string().min(5, "Opis usterki musi mieć minimum 5 znaków"),
   photo_urls: z.array(z.string()).optional().default([]),
 });
-
-export type CreateIncidentInput = z.input<typeof createIncidentSchema>;
 
 export async function createIncidentAction(
   input: CreateIncidentInput
@@ -422,22 +349,6 @@ export async function assignIncidentCrewAction(
     return { success: false, error: "Nie udało się przypisać serwisu." };
   }
 }
-
-export type IncidentClientOption = {
-  id: string;
-  name: string;
-  phone: string | null;
-  email: string | null;
-  installations: {
-    id: string;
-    label: string;
-  }[];
-};
-
-export type IncidentCrewOption = {
-  id: string;
-  name: string;
-};
 
 export async function getIncidentFormDataAction(): Promise<{
   clients: IncidentClientOption[];

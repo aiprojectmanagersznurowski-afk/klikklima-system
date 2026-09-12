@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button"
 import {
   assignIncidentCrewAction,
   getIncidentFormDataAction,
-  type IncidentCrewOption,
 } from "./actions"
+import type { IncidentCrewOption } from "./types"
 
 export function AssignCrewDialog({
   isOpen,

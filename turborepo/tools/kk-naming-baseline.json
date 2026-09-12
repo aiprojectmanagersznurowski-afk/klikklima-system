@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-12T06:50:54.161Z",
+  "generatedAt": "2026-09-12T07:01:10.642Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -29,9 +29,10 @@
     "apps/b2b-web/src/app/(dashboard)/customers/actions.ts::adr002-pl-columns": 6,
     "apps/b2b-web/src/app/(dashboard)/customers/actions.ts::adr002-pl-tables": 12,
     "apps/b2b-web/src/app/(dashboard)/dashboard/page.tsx::adr002-pl-tables": 6,
-    "apps/b2b-web/src/app/(dashboard)/incidents/actions.ts::adr002-pl-columns": 25,
+    "apps/b2b-web/src/app/(dashboard)/incidents/actions.ts::adr002-pl-columns": 21,
     "apps/b2b-web/src/app/(dashboard)/incidents/actions.ts::adr002-pl-tables": 19,
     "apps/b2b-web/src/app/(dashboard)/incidents/incidents-client.tsx::adr002-pl-columns": 5,
+    "apps/b2b-web/src/app/(dashboard)/incidents/types.ts::adr002-pl-columns": 4,
     "apps/b2b-web/src/app/(dashboard)/installations/[id]/actions.ts::adr002-pl-columns": 1,
     "apps/b2b-web/src/app/(dashboard)/installations/[id]/actions.ts::adr002-pl-tables": 4,
     "apps/b2b-web/src/app/(dashboard)/installations/[id]/page.tsx::adr002-pl-columns": 9,

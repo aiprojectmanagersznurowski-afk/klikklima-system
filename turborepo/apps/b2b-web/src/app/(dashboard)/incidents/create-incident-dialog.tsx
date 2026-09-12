@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button"
 import {
   createIncidentAction,
   getIncidentFormDataAction,
-  type IncidentClientOption,
 } from "./actions"
+import type { IncidentClientOption } from "./types"
 
 export function CreateIncidentDialog({
   isOpen,

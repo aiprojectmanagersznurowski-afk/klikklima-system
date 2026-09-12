@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@repo/database"
-import { LeadStatus, ShippingStatus } from "@repo/database"
 
 export const dynamic = "force-dynamic"
+
+type ShippingStatus = "PENDING" | "SHIPPED" | "DELIVERED"
 
 const shippingWebhookSchema = z.object({
   tracking_id: z.string().min(1, "Numer śledzenia przesyłki jest wymagany"),
@@ -59,16 +60,16 @@ export async function POST(request: NextRequest) {
 
     if (status === "DELIVERED") {
       // FNL-E6-E7: Przejście T08 — doręczenie sprzętu przed instalacją
-      if (shipment.lead.status === LeadStatus.HARDWARE_IN_TRANSIT) {
+      if (shipment.lead.status === "HARDWARE_IN_TRANSIT") {
         await prisma.$transaction(async (tx) => {
           await tx.leady.update({
             where: { id: shipment.lead_id },
-            data: { status: LeadStatus.AWAITING_INSTALLATION },
+            data: { status: "AWAITING_INSTALLATION" },
           })
 
           await tx.logistyka_zamowienia.update({
             where: { id: shipment.id },
-            data: { status_wysylki: ShippingStatus.DELIVERED },
+            data: { status_wysylki: "DELIVERED" },
           })
         })
 
@@ -84,10 +85,10 @@ export async function POST(request: NextRequest) {
       }
 
       // Idempotency: jeśli lead już jest w AWAITING_INSTALLATION lub dalszym etapie
-      if (shipment.status_wysylki !== ShippingStatus.DELIVERED) {
+      if (shipment.status_wysylki !== "DELIVERED") {
         await prisma.logistyka_zamowienia.update({
           where: { id: shipment.id },
-          data: { status_wysylki: ShippingStatus.DELIVERED },
+          data: { status_wysylki: "DELIVERED" },
         })
       }
 
@@ -102,8 +103,8 @@ export async function POST(request: NextRequest) {
     // Inne statusy (np. IN_TRANSIT, EXCEPTION)
     const dbStatus: ShippingStatus =
       status === "IN_TRANSIT" || status === "OUT_FOR_DELIVERY"
-        ? ShippingStatus.SHIPPED
-        : ShippingStatus.PENDING
+        ? "SHIPPED"
+        : "PENDING"
 
     await prisma.logistyka_zamowienia.update({
       where: { id: shipment.id },
