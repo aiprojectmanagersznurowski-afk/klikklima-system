@@ -2,21 +2,18 @@
 
 import React, { useState, useEffect, useRef } from "react"
 import { createClient } from "@/utils/supabase/client"
-import { AlertTriangle, ArrowRight, Sparkles, ShieldCheck } from "lucide-react"
+import { AlertTriangle, ShieldCheck } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
 export default function LoginScreen() {
   const [phase, setPhase] = useState<'splash' | 'transitioning' | 'login'>('splash')
   const [status, setStatus] = useState<'idle' | 'denied'>('idle')
-  const [progress, setProgress] = useState(0)
   const [showContent, setShowContent] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const skipSplash = () => {
     if (timerRef.current) clearTimeout(timerRef.current)
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
     setPhase('login')
   }
 
@@ -29,21 +26,9 @@ export default function LoginScreen() {
       return
     }
 
-    // Płynne wejście wizualizacji
+    // Płynne wejście czystego logo
     const enterTimeout = setTimeout(() => setShowContent(true), 50)
-
-    // Symulacja progresu paska ładowania (2.8 sekundy)
-    const startTime = Date.now()
-    const totalDuration = 2800
-
-    progressIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime
-      const currentProgress = Math.min(100, Math.round((elapsed / totalDuration) * 100))
-      setProgress(currentProgress)
-      if (currentProgress >= 100 && progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current)
-      }
-    }, 40)
+    const splashDuration = 2200
 
     // Płynna zmiana fazy ze splash do logowania
     timerRef.current = setTimeout(() => {
@@ -51,12 +36,11 @@ export default function LoginScreen() {
       setTimeout(() => {
         setPhase('login')
       }, 500)
-    }, totalDuration)
+    }, splashDuration)
 
     return () => {
       clearTimeout(enterTimeout)
       if (timerRef.current) clearTimeout(timerRef.current)
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
     }
   }, [])
 
@@ -77,11 +61,11 @@ export default function LoginScreen() {
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          FAZA 1: EKRAN POWITALNY (DUŻE LOGO + WIZUALIZACJA AURY HVAC)
+          FAZA 1: EKRAN POWITALNY (TYLKO CZYSTE DUŻE LOGO)
          ───────────────────────────────────────────────────────────── */}
       {phase !== 'login' && (
         <div 
-          className={`absolute inset-0 z-30 flex flex-col items-center justify-center p-6 transition-all duration-700 cursor-pointer ${
+          className={`absolute inset-0 z-30 flex items-center justify-center p-6 transition-all duration-700 cursor-pointer ${
             phase === 'transitioning' 
               ? 'opacity-0 scale-95 blur-xs pointer-events-none' 
               : showContent 
@@ -89,60 +73,12 @@ export default function LoginScreen() {
                 : 'opacity-0 scale-90 blur-sm'
           }`}
         >
-          {/* Promieniujące aury świetlne (efekt czystego przepływu powietrza HVAC) */}
-          <div className="relative flex items-center justify-center mb-8">
-            {/* Zewnętrzny pierścień pulsacyjny */}
-            <div className="absolute w-72 h-72 sm:w-96 sm:h-96 md:w-[460px] md:h-[460px] rounded-full border border-primary/20 animate-pulse pointer-events-none" />
-            <div className="absolute w-56 h-56 sm:w-72 sm:h-72 md:w-[360px] md:h-[360px] rounded-full border border-accent/25 animate-ping [animation-duration:3.5s] pointer-events-none" />
-            <div className="absolute w-40 h-40 sm:w-56 sm:h-56 md:w-[260px] md:h-[260px] rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl pointer-events-none" />
-
-            {/* DUŻE GŁÓWNE LOGO KLIKKLIMA */}
-            <div className="relative z-10 p-6 sm:p-8 rounded-3xl bg-card/40 backdrop-blur-md border border-border/50 shadow-2xl transition-transform duration-500 hover:scale-105">
-              <img
-                src="/logo.png"
-                alt="KlikKlima"
-                className="h-28 sm:h-36 md:h-44 w-auto object-contain drop-shadow-[0_12px_28px_rgba(23,80,200,0.25)]"
-              />
-            </div>
-          </div>
-
-          {/* Podpis marki i hasło systemowe */}
-          <div className="text-center space-y-2 max-w-md">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary tracking-wider uppercase">
-              <Sparkles className="size-3.5" />
-              <span>System Operacyjny HVAC</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-              KlikKlima B2B
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Zintegrowana platforma sprzedaży, montaży i obsługi serwisowej
-            </p>
-          </div>
-
-          {/* Pasek postępu i przycisk pominięcia */}
-          <div className="mt-10 w-full max-w-xs sm:max-w-sm space-y-3">
-            <div className="h-1.5 w-full bg-muted/60 rounded-full overflow-hidden p-0.5 border border-border/40">
-              <div 
-                className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-75 ease-out shadow-xs"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
-              <span className="font-mono">Inicjalizacja... {progress}%</span>
-              <button 
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  skipSplash()
-                }}
-                className="inline-flex items-center gap-1 hover:text-foreground transition-colors font-medium cursor-pointer"
-              >
-                <span>Pomiń</span>
-                <ArrowRight className="size-3" />
-              </button>
-            </div>
+          <div className="relative flex items-center justify-center transition-transform duration-500 hover:scale-105">
+            <img
+              src="/logo.png"
+              alt="KlikKlima"
+              className="h-28 sm:h-36 md:h-44 w-auto object-contain drop-shadow-[0_12px_28px_rgba(23,80,200,0.25)]"
+            />
           </div>
         </div>
       )}
@@ -238,25 +174,14 @@ export default function LoginScreen() {
                 type="button"
                 onClick={() => {
                   setPhase('splash')
-                  setProgress(0)
                   setShowContent(false)
                   setTimeout(() => setShowContent(true), 50)
-                  const totalDuration = 2800
-                  const startTime = Date.now()
-                  if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
-                  progressIntervalRef.current = setInterval(() => {
-                    const elapsed = Date.now() - startTime
-                    const currentProgress = Math.min(100, Math.round((elapsed / totalDuration) * 100))
-                    setProgress(currentProgress)
-                    if (currentProgress >= 100 && progressIntervalRef.current) {
-                      clearInterval(progressIntervalRef.current)
-                    }
-                  }, 40)
+                  const splashDuration = 2200
                   if (timerRef.current) clearTimeout(timerRef.current)
                   timerRef.current = setTimeout(() => {
                     setPhase('transitioning')
                     setTimeout(() => setPhase('login'), 500)
-                  }, totalDuration)
+                  }, splashDuration)
                 }}
                 className="text-[11px] text-muted-foreground hover:text-primary transition-colors cursor-pointer"
               >
@@ -269,3 +194,4 @@ export default function LoginScreen() {
     </div>
   )
 }
+
