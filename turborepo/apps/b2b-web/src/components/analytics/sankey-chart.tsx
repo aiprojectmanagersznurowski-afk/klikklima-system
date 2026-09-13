@@ -29,19 +29,17 @@ interface SankeyChartProps {
 }
 
 export function SankeyChart({ data, onClick }: SankeyChartProps) {
-  const isDark = false
-
   return (
-    <div className="h-[500px] w-full">
+    <div className="h-[520px] w-full">
       <ResponsiveSankey
         data={data}
-        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+        margin={{ top: 20, right: 160, bottom: 20, left: 160 }}
         align="justify"
         colors={{ scheme: 'category10' }}
         nodeOpacity={1}
         nodeHoverOthersOpacity={0.3}
-        nodeThickness={18}
-        nodeSpacing={24}
+        nodeThickness={20}
+        nodeSpacing={26}
         nodeBorderWidth={0}
         nodeBorderColor={{
             from: 'color',
@@ -52,13 +50,14 @@ export function SankeyChart({ data, onClick }: SankeyChartProps) {
                 ]
             ]
         }}
-        nodeBorderRadius={3}
+        nodeBorderRadius={4}
         linkOpacity={0.5}
         linkContract={3}
         enableLinkGradient={true}
-        labelPosition="inside"
+        label={(node: any) => (node.label || node.id)}
+        labelPosition="outside"
         labelOrientation="horizontal"
-        labelPadding={16}
+        labelPadding={12}
         labelTextColor={{
             from: 'color',
             modifiers: [
@@ -75,17 +74,17 @@ export function SankeyChart({ data, onClick }: SankeyChartProps) {
         }}
         theme={{
           text: {
-            fill: isDark ? '#e2e8f0' : '#334155',
+            fill: "currentColor",
             fontSize: 12,
             fontWeight: 500
           },
           tooltip: {
             container: {
-              background: isDark ? '#1e293b' : '#ffffff',
-              color: isDark ? '#e2e8f0' : '#334155',
+              background: "var(--card)",
+              color: "var(--card-foreground)",
               fontSize: 13,
-              borderRadius: '6px',
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
+              borderRadius: "6px",
+              boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"
             }
           }
         }}
