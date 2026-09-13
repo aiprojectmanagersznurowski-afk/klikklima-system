@@ -47,8 +47,6 @@ export function FunnelClient({
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const [sankeyMode, setSankeyMode] = useState<"both" | "count" | "value">("both")
-
   const filterKey = searchParams.get('filterKey')
   const filterValue = searchParams.get('filterValue')
 
@@ -68,8 +66,8 @@ export function FunnelClient({
     value: r._count.id
   })).sort((a,b) => b.value - a.value), [lostReasons])
 
-  // Przekształcenie surowych danych w struktury Sankey (ilościową i wartościową)
-  const { sankeyCountData, sankeyValueData } = useMemo(() => {
+  // Przekształcenie surowych danych w strukturę Sankey opartą o przepływ finansowy (kwoty wycen)
+  const sankeyChartData = useMemo(() => {
     const getCount = (status: string) => Number(sankeyData.find(s => s.status === status)?._count?.id || 0)
     const getValue = (status: string) => Number(sankeyData.find(s => s.status === status)?.totalValuePln || 0)
 
@@ -99,75 +97,8 @@ export function FunnelClient({
                       getValue("AWAITING_INSTALLATION") +
                       getValue("ROLLBACK_RESCHEDULING")
 
-    // 1. Węzły i linki dla widoku ilościowego (liczba leadów)
-    const countNodes: SankeyNode[] = [
-      { 
-        id: "NEW_LEAD", 
-        title: formatLeadStatus("NEW_LEAD"), 
-        label: `${formatLeadStatus("NEW_LEAD")} (${newL} szt. • ${formatShortMoney(valNewL)})`,
-        count: newL,
-        valuePln: valNewL
-      },
-      { 
-        id: "AWAITING_AUDIT", 
-        title: formatLeadStatus("AWAITING_AUDIT"), 
-        label: `${formatLeadStatus("AWAITING_AUDIT")} (${awA} szt. • ${formatShortMoney(valAwA)})`,
-        count: awA,
-        valuePln: valAwA
-      },
-      { 
-        id: "AUDIT_COMPLETED", 
-        title: formatLeadStatus("AUDIT_COMPLETED"), 
-        label: `${formatLeadStatus("AUDIT_COMPLETED")} (${auC} szt. • ${formatShortMoney(valAuC)})`,
-        count: auC,
-        valuePln: valAuC
-      },
-      { 
-        id: "IN_INSTALLATION", 
-        title: "Realizacja montażu", 
-        label: `Realizacja montażu (${inProg} szt. • ${formatShortMoney(valInProg)})`,
-        count: inProg,
-        valuePln: valInProg
-      },
-      { 
-        id: "QUOTE_REJECTED", 
-        title: "Wyceny odrzucone", 
-        label: `Wyceny odrzucone (${qR} szt. • ${formatShortMoney(valQR)})`,
-        count: qR,
-        valuePln: valQR
-      },
-      { 
-        id: "ARCHIVED_LOST", 
-        title: "Utracone trwale", 
-        label: `Utracone trwale (${aL} szt. • ${formatShortMoney(valAL)})`,
-        count: aL,
-        valuePln: valAL
-      },
-      { 
-        id: "INSTALLATION_COMPLETED", 
-        title: formatLeadStatus("INSTALLATION_COMPLETED"), 
-        label: `${formatLeadStatus("INSTALLATION_COMPLETED")} (${inC} szt. • ${formatShortMoney(valInC)})`,
-        count: inC,
-        valuePln: valInC
-      }
-    ]
-
-    const fromNewToAwA = awA + auC + inProg + inC + qR
-    const fromAwAToAuC = auC + inProg + inC + qR
-    const fromAuCToInProg = inProg + inC
-    const fromInProgToInC = inC
-    const fromAuCToqR = qR
-    
-    const countLinks: SankeyLink[] = []
-    if (fromNewToAwA > 0) countLinks.push({ source: "NEW_LEAD", target: "AWAITING_AUDIT", value: fromNewToAwA })
-    if (aL > 0) countLinks.push({ source: "NEW_LEAD", target: "ARCHIVED_LOST", value: aL })
-    if (fromAwAToAuC > 0) countLinks.push({ source: "AWAITING_AUDIT", target: "AUDIT_COMPLETED", value: fromAwAToAuC })
-    if (fromAuCToInProg > 0) countLinks.push({ source: "AUDIT_COMPLETED", target: "IN_INSTALLATION", value: fromAuCToInProg })
-    if (fromInProgToInC > 0) countLinks.push({ source: "IN_INSTALLATION", target: "INSTALLATION_COMPLETED", value: fromInProgToInC })
-    if (fromAuCToqR > 0) countLinks.push({ source: "AUDIT_COMPLETED", target: "QUOTE_REJECTED", value: fromAuCToqR })
-
-    // 2. Węzły i linki dla widoku wartościowego (kwota wycen w PLN)
-    const valueNodes: SankeyNode[] = [
+    // Węzły z wartością finansową i liczbą sztuk na etykietach oraz w tooltipach
+    const nodes: SankeyNode[] = [
       { 
         id: "NEW_LEAD", 
         title: formatLeadStatus("NEW_LEAD"), 
@@ -225,33 +156,23 @@ export function FunnelClient({
     const valFromInProgToInC = valInC
     const valFromAuCToqR = valQR
 
-    const valueLinks: SankeyLink[] = []
-    if (valFromNewToAwA > 0) valueLinks.push({ source: "NEW_LEAD", target: "AWAITING_AUDIT", value: Math.round(valFromNewToAwA) })
-    if (valAL > 0) valueLinks.push({ source: "NEW_LEAD", target: "ARCHIVED_LOST", value: Math.round(valAL) })
-    if (valFromAwAToAuC > 0) valueLinks.push({ source: "AWAITING_AUDIT", target: "AUDIT_COMPLETED", value: Math.round(valFromAwAToAuC) })
-    if (valFromAuCToInProg > 0) valueLinks.push({ source: "AUDIT_COMPLETED", target: "IN_INSTALLATION", value: Math.round(valFromAuCToInProg) })
-    if (valFromInProgToInC > 0) valueLinks.push({ source: "IN_INSTALLATION", target: "INSTALLATION_COMPLETED", value: Math.round(valFromInProgToInC) })
-    if (valFromAuCToqR > 0) valueLinks.push({ source: "AUDIT_COMPLETED", target: "QUOTE_REJECTED", value: Math.round(valFromAuCToqR) })
+    const links: SankeyLink[] = []
+    if (valFromNewToAwA > 0) links.push({ source: "NEW_LEAD", target: "AWAITING_AUDIT", value: Math.round(valFromNewToAwA) })
+    if (valAL > 0) links.push({ source: "NEW_LEAD", target: "ARCHIVED_LOST", value: Math.round(valAL) })
+    if (valFromAwAToAuC > 0) links.push({ source: "AWAITING_AUDIT", target: "AUDIT_COMPLETED", value: Math.round(valFromAwAToAuC) })
+    if (valFromAuCToInProg > 0) links.push({ source: "AUDIT_COMPLETED", target: "IN_INSTALLATION", value: Math.round(valFromAuCToInProg) })
+    if (valFromInProgToInC > 0) links.push({ source: "IN_INSTALLATION", target: "INSTALLATION_COMPLETED", value: Math.round(valFromInProgToInC) })
+    if (valFromAuCToqR > 0) links.push({ source: "AUDIT_COMPLETED", target: "QUOTE_REJECTED", value: Math.round(valFromAuCToqR) })
 
-    // Bezpieczne filtrowanie węzłów — tylko węzły występujące w aktywnych linkach
-    const activeCountNodeIds = new Set<string>()
-    countLinks.forEach(l => {
-      activeCountNodeIds.add(l.source)
-      activeCountNodeIds.add(l.target)
+    // Filtrujemy węzły do aktywnych w grafie linków
+    const activeNodeIds = new Set<string>()
+    links.forEach(l => {
+      activeNodeIds.add(l.source)
+      activeNodeIds.add(l.target)
     })
-    const filteredCountNodes = countNodes.filter(n => activeCountNodeIds.has(n.id))
+    const filteredNodes = nodes.filter(n => activeNodeIds.has(n.id))
 
-    const activeValueNodeIds = new Set<string>()
-    valueLinks.forEach(l => {
-      activeValueNodeIds.add(l.source)
-      activeValueNodeIds.add(l.target)
-    })
-    const filteredValueNodes = valueNodes.filter(n => activeValueNodeIds.has(n.id))
-
-    return {
-      sankeyCountData: { nodes: filteredCountNodes, links: countLinks },
-      sankeyValueData: { nodes: filteredValueNodes, links: valueLinks }
-    }
+    return { nodes: filteredNodes, links }
   }, [sankeyData])
 
   // -- Event Handlers --
@@ -304,44 +225,6 @@ export function FunnelClient({
     { header: "Data utworzenia", accessor: (row: any) => formatDate(row.created_at, 'dd.MM.yyyy') }
   ]
 
-  const sankeyModeSwitcher = (
-    <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
-      <button
-        type="button"
-        onClick={() => setSankeyMode('both')}
-        className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-          sankeyMode === 'both'
-            ? "bg-background text-foreground shadow-xs font-semibold"
-            : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        Dwa wykresy (porównanie)
-      </button>
-      <button
-        type="button"
-        onClick={() => setSankeyMode('count')}
-        className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-          sankeyMode === 'count'
-            ? "bg-background text-foreground shadow-xs font-semibold"
-            : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        Ilościowo (szt.)
-      </button>
-      <button
-        type="button"
-        onClick={() => setSankeyMode('value')}
-        className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-          sankeyMode === 'value'
-            ? "bg-background text-foreground shadow-xs font-semibold"
-            : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        Wartościowo (PLN)
-      </button>
-    </div>
-  )
-
   return (
     <div className="space-y-6">
       
@@ -355,79 +238,23 @@ export function FunnelClient({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Sankey Chart */}
+        {/* Sankey Chart (Wartościowy / Finansowy) */}
         <ChartCard 
-          title="Przepływ Leadów (Wykres Sankey)" 
-          description={
-            sankeyMode === 'count'
-              ? "Wizualizacja ilościowa — grubość ścieżek odpowiada liczbie leadów (sztuki). Kliknij węzeł, aby przefiltrować tabelę."
-              : sankeyMode === 'value'
-                ? "Wizualizacja wartościowa — grubość ścieżek odpowiada łącznej kwocie wycen (PLN). Kliknij węzeł, aby przefiltrować tabelę."
-                : "Zestawienie porównawcze: przepływ wolumenowy (sztuki) vs przepływ finansowy wycen (PLN). Kliknij węzeł, aby przefiltrować tabelę."
-          }
-          action={sankeyModeSwitcher}
-          className={sankeyMode === 'both' ? "lg:col-span-3" : "lg:col-span-2"}
+          title="Przepływ wartościowy leadów (Wykres Sankey)" 
+          description="Wizualizacja finansowa — grubość ścieżek odpowiada łącznej kwocie wycen (PLN). Kliknij węzeł, aby przefiltrować tabelę."
+          className="lg:col-span-2"
         >
-          {sankeyMode === 'both' ? (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <div className="border border-border rounded-xl p-4 bg-muted/20 flex flex-col">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold">1. Przepływ wolumenowy (liczba leadów)</span>
-                  <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">Ilościowo [szt.]</span>
-                </div>
-                {sankeyCountData.links.length > 0 ? (
-                  <SankeyChart 
-                    data={sankeyCountData} 
-                    unitLabel="szt."
-                    height={460}
-                    margin={{ top: 20, right: 140, bottom: 20, left: 140 }}
-                    onClick={(id) => handleFilter('status', id)} 
-                  />
-                ) : (
-                  <div className="h-[460px] flex items-center justify-center text-muted-foreground">Brak danych ilościowych</div>
-                )}
-              </div>
-              <div className="border border-border rounded-xl p-4 bg-muted/20 flex flex-col">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold">2. Przepływ finansowy (kwota wycen)</span>
-                  <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">Wartościowo [PLN]</span>
-                </div>
-                {sankeyValueData.links.length > 0 ? (
-                  <SankeyChart 
-                    data={sankeyValueData} 
-                    isCurrency={true}
-                    unitLabel="zł"
-                    height={460}
-                    margin={{ top: 20, right: 140, bottom: 20, left: 140 }}
-                    onClick={(id) => handleFilter('status', id)} 
-                  />
-                ) : (
-                  <div className="h-[460px] flex items-center justify-center text-muted-foreground">Brak danych finansowych</div>
-                )}
-              </div>
-            </div>
-          ) : sankeyMode === 'count' ? (
-            sankeyCountData.links.length > 0 ? (
-              <SankeyChart 
-                data={sankeyCountData} 
-                unitLabel="szt."
-                isCurrency={false}
-                onClick={(id) => handleFilter('status', id)} 
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">Brak danych dla tego okresu</div>
-            )
+          {sankeyChartData.links.length > 0 ? (
+            <SankeyChart 
+              data={sankeyChartData} 
+              isCurrency={true}
+              unitLabel="zł"
+              height={520}
+              margin={{ top: 20, right: 180, bottom: 20, left: 180 }}
+              onClick={(id) => handleFilter('status', id)} 
+            />
           ) : (
-            sankeyValueData.links.length > 0 ? (
-              <SankeyChart 
-                data={sankeyValueData} 
-                unitLabel="zł"
-                isCurrency={true}
-                onClick={(id) => handleFilter('status', id)} 
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">Brak danych dla tego okresu</div>
-            )
+            <div className="h-full flex items-center justify-center text-muted-foreground">Brak danych finansowych dla tego okresu</div>
           )}
         </ChartCard>
 
@@ -435,7 +262,7 @@ export function FunnelClient({
         <ChartCard 
           title="Główne powody utraty" 
           description="Zarchiwizowane według przyczyny"
-          className={sankeyMode === 'both' ? "lg:col-span-1" : ""}
+          className="lg:col-span-1"
         >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -465,7 +292,7 @@ export function FunnelClient({
         <ChartCard 
           title="Trend nowych leadów" 
           description="Ilość leadów per miesiąc" 
-          className={sankeyMode === 'both' ? "lg:col-span-2" : "lg:col-span-3"}
+          className="lg:col-span-3"
         >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={formattedTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
