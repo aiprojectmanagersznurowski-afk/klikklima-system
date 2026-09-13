@@ -129,7 +129,14 @@ export function ServicesClient({
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <div className="font-medium text-foreground">{service.customer_name}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground">{service.customer_name}</span>
+                            {service.service_number && (
+                              <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                                {service.service_number}
+                              </span>
+                            )}
+                          </div>
                           {service.customer_phone && (
                             <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
                               <Phone className="size-3" />

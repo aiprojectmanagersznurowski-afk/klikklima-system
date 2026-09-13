@@ -38,6 +38,7 @@ model indoor_units {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model klienci {
   id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_number   String   @unique @default(dbgenerated("('K-'::text || lpad((nextval('clients_client_number_seq'::regclass))::text, 6, '0'::text))"))
   imie_i_nazwisko String?
   email           String?
   telefon         String?
@@ -62,8 +63,9 @@ model klienci {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model adresy {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  klient_id    String?  @db.Uuid
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  address_number String   @unique @default(dbgenerated("('A-'::text || lpad((nextval('addresses_address_number_seq'::regclass))::text, 6, '0'::text))"))
+  klient_id      String?  @db.Uuid
   klient       klienci? @relation(fields: [klient_id], references: [id], onDelete: SetNull)
   ulica_miasto String?
   // FLD-GEO-COORDS: współrzędne WGS84 (EPSG:4326) punktu docelowego wizyty.
@@ -218,6 +220,7 @@ model system_config {
 
 model zespoly_monterskie {
   id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  crew_number        String  @unique @default(dbgenerated("('E-'::text || lpad((nextval('crews_crew_number_seq'::regclass))::text, 6, '0'::text))"))
   nazwa              String
   telefon_kontaktowy String?
   // @unique wymagane przez identyfikacje "czyj to rekord z sesji" (FLD-AVAILABILITY-SPLIT):
@@ -275,8 +278,9 @@ model zespoly_monterskie {
 }
 
 model instalacje {
-  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  lead_id           String              @db.Uuid
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  installation_number String              @unique @default(dbgenerated("('I-'::text || lpad((nextval('installations_installation_number_seq'::regclass))::text, 6, '0'::text))"))
+  lead_id             String              @db.Uuid
   lead              leady               @relation(fields: [lead_id], references: [id], onDelete: Cascade)
   zespol_id         String?             @db.Uuid
   zespol            zespoly_monterskie? @relation(fields: [zespol_id], references: [id], onDelete: SetNull)
@@ -299,6 +303,7 @@ model instalacje {
 
 model serwisy {
   id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  service_number  String              @unique @default(dbgenerated("('S-'::text || lpad((nextval('services_service_number_seq'::regclass))::text, 6, '0'::text))"))
   klient_id       String?             @db.Uuid
   klient          klienci?            @relation(fields: [klient_id], references: [id], onDelete: SetNull)
   adres_id        String?             @db.Uuid
@@ -325,6 +330,7 @@ model serwisy {
 
 model logistyka_zamowienia {
   id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shipment_number       String         @unique @default(dbgenerated("('P-'::text || lpad((nextval('shipments_shipment_number_seq'::regclass))::text, 6, '0'::text))"))
   lead_id               String         @db.Uuid
   lead                  leady          @relation(fields: [lead_id], references: [id], onDelete: Cascade)
   status_wysylki        ShippingStatus @default(PENDING)
@@ -461,6 +467,7 @@ model AvailabilityDeclaration {
 
 model audytorzy {
   id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auditor_number  String  @unique @default(dbgenerated("('AU-'::text || lpad((nextval('auditors_auditor_number_seq'::regclass))::text, 6, '0'::text))"))
   imie_i_nazwisko String
   telefon         String?
   // @unique wymagane przez identyfikacje "czyj to rekord z sesji" (FLD-AVAILABILITY-SPLIT):
@@ -534,6 +541,7 @@ model audytorzy {
 
 model usterki_incidents {
   id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  incident_number  String              @unique @default(dbgenerated("('U-'::text || lpad((nextval('incidents_incident_number_seq'::regclass))::text, 6, '0'::text))"))
   numer_zgloszenia String?             @unique
   klient_id        String?             @db.Uuid
   klient           klienci?            @relation(fields: [klient_id], references: [id], onDelete: SetNull)
@@ -967,7 +975,8 @@ model Absence {
 ///
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Booking {
-  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  booking_number String @unique @default(dbgenerated("('B-'::text || lpad((nextval('bookings_booking_number_seq'::regclass))::text, 6, '0'::text))"))
 
   /// CZEGO DOTYCZY WIZYTA — dokładnie jedno z trzech (CHECK bookings_one_subject, wzorzec
   /// NTF-POLY). Montaż NIE MA własnej kolumny: rezerwacja montażu wisi na leadzie, a ADR-012

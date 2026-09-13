@@ -741,6 +741,14 @@ export const REQUIREMENTS = [
     'Brak rocznika w numerze jest decyzją: rok jest już w created_at, a numer z rokiem wymusiłby sekwencję zerowaną co roku i unikalność złożoną z dwóch pól',
   ], risk: 'MEDIUM' }),
 
+  R('CRM-READABLE-IDENTIFIERS', { status: 'IMPLEMENTING', source: 'decyzja Michała 2026-09-12 (okno CRM-READABLE-IDENTIFIERS): czytelne identyfikatory biznesowe dla wszystkich głównych encji (Wariant 1: prefiks krótki + 6 cyfr)', domain: 'crm', statement: 'Główne encje biznesowe (klienci, instalacje, serwisy, usterki, adresy, ekipy, audytorzy, przesyłki, rezerwacje) posiadają unikalne, sekwencyjne numery czytelne dla ludzi obok technicznego identyfikatora UUID.', acceptance: [
+    'Techniczny klucz główny id (UUID) POZOSTAJE nienaruszony i jest jedynym celem relacji kluczy obcych. Nowe identyfikatory nie zastępują relacji FK',
+    'Wszystkie numery są generowane w PostgreSQL z dedykowanych sekwencji (DEFAULT nextval) z wyrównaniem do 6 cyfr (lpad) — brak race conditions w kodzie JS',
+    'Formaty prefiksów: K- (klient), I- (instalacja), S- (serwis), U- (usterka), A- (adres), E- (ekipa), AU- (audytor), P- (przesyłka), B- (rezerwacja). Format jest stałej szerokości i sortowalny leksykograficznie',
+    'Każda kolumna identyfikatora biznesowego posiada ograniczenie NOT NULL oraz UNIQUE',
+    'Dziury w numeracji po wycofanych transakcjach są zamierzone i dopuszczalne (sekwencje transakcyjne nie gwarantują ciągłości, gwarantują unikalność i rosnącą kolejność)',
+  ], risk: 'MEDIUM' }),
+
   // ── Dokumentacja zdjęciowa (rozdział 8) ──
   R('FLD-PHOTO-SET', { status: 'BLOCKED', source: 'field_app_requirements.md#8', domain: 'field', statement: 'Zamknięcie montażu wymaga kompletu dokładnie czterech zdjęć: jednostka wewnętrzna, jednostka zewnętrzna, budynek z oddali, odpływ skroplin.', acceptance: ['Brak któregokolwiek z czterech zdjęć odrzuca zamknięcie montażu po stronie serwera, nie tylko wyszarza przycisk w UI', 'Zdjęcia są rozróżnialne rodzajem ze słownika — cztery pliki tego samego rodzaju nie spełniają wymogu', 'Zdjęcia trafiają do dedykowanego bucketu z własnymi politykami dostępu, nie do bucketów awatarów pracowników', 'Model danych przewiduje wiele zdjęć na montaż (installation_photos); pojedyncze pole protocol_url na jeden plik nie wystarcza', 'Nierozstrzygnięte (otwarte pytanie 7, field_app_requirements.md#12): czy komplet obowiązuje przy zamknięciu etapu I montażu dwuetapowego (T17), czy wyłącznie przy T09 — to kryterium uzupełnia się po decyzji, przed implementacją'] }),
 

@@ -7,6 +7,7 @@ import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { LeadStatus } from "@repo/database";
 import { formatDate } from "@/lib/format-date";
 import { shortId } from "@/lib/format-id";
+import { formatLeadStatus } from "@/lib/format-status";
 import { EMPTY_VALUE } from "@/lib/empty-value";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -353,6 +354,7 @@ export function LeadsClient({
                           <td className="px-6 py-4 whitespace-nowrap">
                             <StatusPill
                               label={LEAD_STAGES.find(s => s.id === lead.status)?.short || EMPTY_VALUE}
+                              title={formatLeadStatus(lead.status)}
                               tone={lead.status ? LEAD_STATUS_TONE[lead.status as LeadStatus] : "neutral"}
                             />
                           </td>

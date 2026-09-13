@@ -12,6 +12,8 @@ import {
   AreaChart, Area, PieChart, Pie, Cell
 } from "recharts"
 import { formatDate } from "@/lib/format-date"
+import { formatLeadStatus, getLeadStatusTone, formatLostReason } from "@/lib/format-status"
+import { StatusPill } from "@/components/ui/status-pill"
 
 const PIE_COLORS = ['rgb(15, 23, 42)', 'rgb(51, 65, 85)', 'rgb(71, 85, 105)', 'rgb(100, 116, 139)', 'rgb(148, 163, 184)', 'rgb(203, 213, 225)']
 const CHART_BLUE = "rgb(59, 130, 246)"
@@ -48,7 +50,8 @@ export function FunnelClient({
   })), [trendData])
 
   const lostReasonsData = useMemo(() => lostReasons.map(r => ({
-    name: r.lost_reason,
+    name: formatLostReason(r.lost_reason),
+    rawCode: r.lost_reason,
     value: r._count.id
   })).sort((a,b) => b.value - a.value), [lostReasons])
 
@@ -56,12 +59,12 @@ export function FunnelClient({
   const sankeyNodesAndLinks = useMemo(() => {
     // Prosta symulacja potoku wodospadowego (waterfall) na bazie zliczeń stanów terminalnych i aktywnych
     const nodes: SankeyNode[] = [
-      { id: "NEW_LEAD", label: "Nowe" },
-      { id: "AWAITING_AUDIT", label: "Oczek. Audyt" },
-      { id: "AUDIT_COMPLETED", label: "Audyt Wyk." },
-      { id: "QUOTE_REJECTED", label: "Odrzucone Wyc." },
-      { id: "ARCHIVED_LOST", label: "Utracone" },
-      { id: "INSTALLATION_COMPLETED", label: "Zakończone" }
+      { id: "NEW_LEAD", label: formatLeadStatus("NEW_LEAD") },
+      { id: "AWAITING_AUDIT", label: formatLeadStatus("AWAITING_AUDIT") },
+      { id: "AUDIT_COMPLETED", label: formatLeadStatus("AUDIT_COMPLETED") },
+      { id: "QUOTE_REJECTED", label: "Wyceny odrzucone" },
+      { id: "ARCHIVED_LOST", label: "Utracone trwale" },
+      { id: "INSTALLATION_COMPLETED", label: formatLeadStatus("INSTALLATION_COMPLETED") }
     ]
 
     const getCount = (status: string) => sankeyData.find(s => s.status === status)?._count.id || 0
@@ -119,9 +122,10 @@ export function FunnelClient({
     { header: "Klient", accessor: (row: any) => <div className="font-medium">{row.klient?.imie_i_nazwisko || 'Brak danych'}</div> },
     { header: "Miejscowość", accessor: (row: any) => <div className="text-muted-foreground">{row.adres?.ulica_miasto?.split(',')[1] || row.adres?.ulica_miasto || '-'}</div> },
     { header: "Status", accessor: (row: any) => (
-      <span className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
-        {row.status}
-      </span>
+      <StatusPill
+        label={formatLeadStatus(row.status)}
+        tone={getLeadStatusTone(row.status)}
+      />
     )},
     { header: "Wartość", accessor: (row: any) => <div className="font-mono text-right">{row.finalna_wycena_pln ? `${Number(row.finalna_wycena_pln).toLocaleString('pl-PL')} zł` : '-'}</div> },
     { header: "Data utworzenia", accessor: (row: any) => formatDate(row.created_at, 'dd.MM.yyyy') }
@@ -135,7 +139,7 @@ export function FunnelClient({
         <KpiCard title="Nowe Leady" value={totalLeads} icon={<Users size={20} />} trend="neutral" />
         <KpiCard title="Zakończone Instalacje" value={completedInstalls} icon={<Target size={20} />} trend="up" />
         <KpiCard title="Wskaźnik Konwersji" value={`${conversionRate}%`} icon={<TrendingUp size={20} />} trend={Number(conversionRate) > 10 ? 'up' : 'down'} />
-        <KpiCard title="Odrzucone (Archived Lost)" value={lostReasons.reduce((a,b) => a + b._count.id, 0)} icon={<TrendingDown size={20} />} trend="neutral" />
+        <KpiCard title="Utracone szanse" value={lostReasons.reduce((a,b) => a + b._count.id, 0)} icon={<TrendingDown size={20} />} trend="neutral" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -153,7 +157,7 @@ export function FunnelClient({
         </ChartCard>
 
         {/* Powody utraty - PieChart */}
-        <ChartCard title="Główne powody utraty" description="Archived Lost by Reason">
+        <ChartCard title="Główne powody utraty" description="Zarchiwizowane według przyczyny">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -164,7 +168,7 @@ export function FunnelClient({
                 outerRadius={80}
                 paddingAngle={5}
                 dataKey="value"
-                onClick={(data: any) => handleFilter('lost_reason', data.name)}
+                onClick={(data: any) => handleFilter('lost_reason', data.rawCode || data.name)}
                 className="cursor-pointer outline-none"
               >
                 {lostReasonsData.map((entry, index) => (
@@ -178,7 +182,6 @@ export function FunnelClient({
             </PieChart>
           </ResponsiveContainer>
         </ChartCard>
-
         {/* Trend Miesięczny - AreaChart */}
         <ChartCard title="Trend nowych leadów" description="Ilość leadów per miesiąc" className="lg:col-span-3">
           <ResponsiveContainer width="100%" height="100%">

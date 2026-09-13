@@ -65,8 +65,14 @@ export async function getIncidents(): Promise<IncidentSummary[]> {
       klient: true,
       zespol: true,
       instalacja: {
-        include: {
-          lead: true,
+        select: {
+          id: true,
+          installation_number: true,
+          lead: {
+            select: {
+              project_number: true,
+            },
+          },
         },
       },
     },
@@ -78,11 +84,11 @@ export async function getIncidents(): Promise<IncidentSummary[]> {
   return incidents.map(inc => {
     const instalacjaLabel = inc.instalacja?.lead?.project_number
       ? `Projekt ${inc.instalacja.lead.project_number}`
-      : (inc.instalacja?.id ? `Instalacja ${shortId(inc.instalacja.id)}` : null);
+      : (inc.instalacja?.installation_number ? `Instalacja ${inc.instalacja.installation_number}` : (inc.instalacja?.id ? `Instalacja ${shortId(inc.instalacja.id)}` : null));
 
     return {
       id: inc.id,
-      numer_zgloszenia: inc.numer_zgloszenia,
+      numer_zgloszenia: inc.incident_number || inc.numer_zgloszenia,
       klient_id: inc.klient_id,
       klient_name: inc.klient?.imie_i_nazwisko || "Nieznany Klient",
       klient_telefon: inc.klient?.telefon || null,
@@ -380,6 +386,7 @@ export async function getIncidentFormDataAction(): Promise<{
                 instalacje: {
                   select: {
                     id: true,
+                    installation_number: true,
                   },
                 },
               },
@@ -407,7 +414,11 @@ export async function getIncidentFormDataAction(): Promise<{
       installations: c.leady.flatMap((l) =>
         l.instalacje.map((inst) => ({
           id: inst.id,
-          label: l.project_number ? `Projekt ${l.project_number}` : `Instalacja ${shortId(inst.id)}`,
+          label: l.project_number
+            ? `Projekt ${l.project_number}`
+            : inst.installation_number
+            ? `Instalacja ${inst.installation_number}`
+            : `Instalacja ${shortId(inst.id)}`,
         }))
       ),
     })),

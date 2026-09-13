@@ -266,7 +266,7 @@ export function CustomersClient({
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-foreground">{item.name}</span>
-                          <span className="text-xs font-mono text-muted-foreground mt-0.5">{shortId(item.id)}</span>
+                          <span className="text-xs font-mono text-muted-foreground mt-0.5">{item.clientNumber || shortId(item.id)}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">

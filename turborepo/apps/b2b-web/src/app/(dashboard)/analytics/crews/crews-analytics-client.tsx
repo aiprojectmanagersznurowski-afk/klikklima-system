@@ -11,6 +11,8 @@ import {
   AreaChart, Area
 } from "recharts"
 import { formatDate } from "@/lib/format-date"
+import { formatInstallationStatus, getInstallationStatusTone } from "@/lib/format-status"
+import { StatusPill } from "@/components/ui/status-pill"
 
 const CHART_INDIGO = "rgb(99, 102, 241)"
 const CHART_GREEN = "rgb(16, 185, 129)"
@@ -97,9 +99,10 @@ export function CrewsAnalyticsClient({
     },
     { header: "Projekt", accessor: (row: any) => <div className="font-mono text-sm font-semibold tracking-tight text-foreground">{row.lead?.project_number || '-'}</div> },
     { header: "Status", accessor: (row: any) => (
-      <span className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
-        {row.status}
-      </span>
+      <StatusPill
+        label={formatInstallationStatus(row.status)}
+        tone={getInstallationStatusTone(row.status)}
+      />
     )},
     { header: "Data Planowana", accessor: (row: any) => row.data_planowana ? formatDate(row.data_planowana, 'dd.MM.yyyy') : '-' },
     { header: "Zakończenie", accessor: (row: any) => row.data_zakonczenia ? formatDate(row.data_zakonczenia, 'dd.MM.yyyy') : '-' }

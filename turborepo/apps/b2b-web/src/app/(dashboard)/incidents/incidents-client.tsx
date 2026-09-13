@@ -20,6 +20,8 @@ import { shortId } from "@/lib/format-id"
 import { CreateIncidentDialog } from "./create-incident-dialog"
 import { ChangeStatusDialog } from "./change-status-dialog"
 import { AssignCrewDialog } from "./assign-crew-dialog"
+import { formatIncidentStatus, getIncidentStatusTone } from "@/lib/format-status"
+import { StatusPill } from "@/components/ui/status-pill"
 
 export function IncidentsClient({
   initialIncidents,
@@ -200,9 +202,10 @@ export function IncidentsClient({
                     <div className="text-xs font-semibold text-muted-foreground">
                       Status:
                     </div>
-                    <span className="px-2 py-1 bg-background border border-border rounded text-xs font-bold text-foreground">
-                      {incident.status}
-                    </span>
+                    <StatusPill
+                      label={formatIncidentStatus(incident.status)}
+                      tone={getIncidentStatusTone(incident.status)}
+                    />
                   </div>
                 </div>
               );

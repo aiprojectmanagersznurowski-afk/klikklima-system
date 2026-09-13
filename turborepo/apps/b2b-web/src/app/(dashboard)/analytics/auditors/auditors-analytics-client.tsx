@@ -10,6 +10,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from "recharts"
 import { formatDate } from "@/lib/format-date"
+import { formatLeadStatus, getLeadStatusTone } from "@/lib/format-status"
+import { StatusPill } from "@/components/ui/status-pill"
 
 const CHART_INDIGO = "rgb(99, 102, 241)"
 const CHART_GREEN = "rgb(16, 185, 129)"
@@ -83,9 +85,10 @@ export function AuditorsAnalyticsClient({
         </div> 
     },
     { header: "Status", accessor: (row: any) => (
-      <span className="inline-flex items-center rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
-        {row.status}
-      </span>
+      <StatusPill
+        label={formatLeadStatus(row.status)}
+        tone={getLeadStatusTone(row.status)}
+      />
     )},
     { header: "Projekt", accessor: (row: any) => <div className="font-mono text-sm font-semibold tracking-tight text-foreground">{row.project_number || '-'}</div> },
     { header: "Wartość (PLN)", accessor: (row: any) => <div className="font-mono text-right">{row.finalna_wycena_pln ? `${Number(row.finalna_wycena_pln).toLocaleString('pl-PL')} zł` : '-'}</div> },

@@ -4,6 +4,7 @@ import { prisma } from "@repo/database"
 import { can } from "@klikklima/contracts"
 import { getCurrentActorRole } from "../../utils/supabase/server"
 import { shortId } from "../../lib/format-id"
+import { formatLeadStatus, formatInstallationStatus } from "../../lib/format-status"
 
 export type SearchResultItem = {
   id: string;
@@ -57,12 +58,13 @@ export async function globalSearchAction(query: string): Promise<GlobalSearchRes
 
   const [matchingClients, matchingLeads, matchingIncidents, matchingInstallations] =
     await Promise.all([
-      // 1. Klienci (imię, e-mail, telefon)
+      // 1. Klienci (client_number K-..., imię, e-mail, telefon)
       canReadClients
         ? prisma.klienci.findMany({
             where: {
               anonymized_at: null,
               OR: [
+                { client_number: { contains: trimmed, mode: "insensitive" } },
                 { imie_i_nazwisko: { contains: trimmed, mode: "insensitive" } },
                 { email: { contains: trimmed, mode: "insensitive" } },
                 { telefon: { contains: trimmed } },
@@ -70,6 +72,7 @@ export async function globalSearchAction(query: string): Promise<GlobalSearchRes
             },
             select: {
               id: true,
+              client_number: true,
               imie_i_nazwisko: true,
               email: true,
               telefon: true,
@@ -103,11 +106,12 @@ export async function globalSearchAction(query: string): Promise<GlobalSearchRes
           })
         : [],
 
-      // 3. Usterki (numer zgłoszenia INC-..., opis)
+      // 3. Usterki (incident_number U-..., numer zgłoszenia, opis)
       canReadIncidents
         ? prisma.usterki_incidents.findMany({
             where: {
               OR: [
+                { incident_number: { contains: trimmed, mode: "insensitive" } },
                 { numer_zgloszenia: { contains: trimmed, mode: "insensitive" } },
                 { opis_usterki: { contains: trimmed, mode: "insensitive" } },
                 { klient: { imie_i_nazwisko: { contains: trimmed, mode: "insensitive" } } },
@@ -115,6 +119,7 @@ export async function globalSearchAction(query: string): Promise<GlobalSearchRes
             },
             select: {
               id: true,
+              incident_number: true,
               numer_zgloszenia: true,
               status: true,
               priorytet: true,
@@ -127,17 +132,19 @@ export async function globalSearchAction(query: string): Promise<GlobalSearchRes
           })
         : [],
 
-      // 4. Instalacje
+      // 4. Instalacje (installation_number I-..., lead project_number, klient)
       canReadInstallations
         ? prisma.instalacje.findMany({
             where: {
               OR: [
+                { installation_number: { contains: trimmed, mode: "insensitive" } },
                 { lead: { project_number: { contains: trimmed, mode: "insensitive" } } },
                 { lead: { klient: { imie_i_nazwisko: { contains: trimmed, mode: "insensitive" } } } },
               ],
             },
             select: {
               id: true,
+              installation_number: true,
               status: true,
               lead: {
                 select: {
@@ -153,27 +160,30 @@ export async function globalSearchAction(query: string): Promise<GlobalSearchRes
         : [],
     ])
 
-  const clients: SearchResultItem[] = matchingClients.map((c) => ({
-    id: c.id,
-    title: c.imie_i_nazwisko || "Bez nazwy",
-    subtitle: [c.telefon, c.email, c.adresy?.[0]?.ulica_miasto].filter(Boolean).join(" • "),
-    href: `/customers/${c.id}`,
-    badge: "Klient",
-    badgeVariant: "default",
-  }))
+  const clients: SearchResultItem[] = matchingClients.map((c) => {
+    const name = c.imie_i_nazwisko || "Bez nazwy";
+    return {
+      id: c.id,
+      title: c.client_number ? `${c.client_number} — ${name}` : name,
+      subtitle: [c.telefon, c.email, c.adresy?.[0]?.ulica_miasto].filter(Boolean).join(" • "),
+      href: `/customers/${c.id}`,
+      badge: "Klient",
+      badgeVariant: "default",
+    };
+  });
 
   const leads: SearchResultItem[] = matchingLeads.map((l) => ({
     id: l.id,
     title: l.project_number ? `Projekt ${l.project_number}` : `Lead ${shortId(l.id)}`,
     subtitle: l.klient?.imie_i_nazwisko || "Brak przypisanego klienta",
     href: `/leads/${l.id}`,
-    badge: l.status || "Etap",
+    badge: formatLeadStatus(l.status),
     badgeVariant: "secondary",
   }))
 
   const incidents: SearchResultItem[] = matchingIncidents.map((inc) => ({
     id: inc.id,
-    title: inc.numer_zgloszenia || `Zgłoszenie ${shortId(inc.id)}`,
+    title: inc.incident_number || inc.numer_zgloszenia || `Zgłoszenie ${shortId(inc.id)}`,
     subtitle: `${inc.klient?.imie_i_nazwisko ? inc.klient.imie_i_nazwisko + " • " : ""}${inc.opis_usterki?.slice(0, 50) || "Brak opisu"}`,
     href: `/incidents`,
     badge: inc.priorytet || "Usterka",
@@ -182,12 +192,14 @@ export async function globalSearchAction(query: string): Promise<GlobalSearchRes
 
   const installations: SearchResultItem[] = matchingInstallations.map((inst) => ({
     id: inst.id,
-    title: inst.lead?.project_number
+    title: inst.installation_number
+      ? `Instalacja ${inst.installation_number}${inst.lead?.project_number ? ` (${inst.lead.project_number})` : ""}`
+      : inst.lead?.project_number
       ? `Instalacja (${inst.lead.project_number})`
       : `Instalacja ${shortId(inst.id)}`,
     subtitle: inst.lead?.klient?.imie_i_nazwisko || "Zlecenie montażu",
     href: `/installations/${inst.id}`,
-    badge: inst.status || "Montaż",
+    badge: formatInstallationStatus(inst.status),
     badgeVariant: "outline",
   }))
 

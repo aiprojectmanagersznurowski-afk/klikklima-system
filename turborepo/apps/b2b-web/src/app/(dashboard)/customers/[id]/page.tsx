@@ -54,7 +54,14 @@ export default async function Customer360Page({ params }: { params: Promise<{ id
               <User className="size-8 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">{customer.imie_i_nazwisko || "Nieznany Klient"}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">{customer.imie_i_nazwisko || "Nieznany Klient"}</h1>
+                {customer.client_number && (
+                  <span className="font-mono text-sm font-semibold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+                    {customer.client_number}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground font-medium">
                 {customer.email && (
                   <span className="flex items-center gap-1.5">

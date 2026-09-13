@@ -16,6 +16,7 @@ export type CronExecutionResult = {
  * Tworzy rekord serwisu (PLANNED) i kolejkuje powiadomienie N10 dla klienta.
  * Idempotentny — wielokrotne uruchomienie nie duplikuje wierszy serwisu ani powiadomień.
  */
+// AUTHZ-EXEMPT: Zadanie crona uruchamiane w tle przez webhook serwisowy, brak sesji interaktywnej uzytkownika
 export async function runServiceInspectionCron(referenceDate = new Date()): Promise<CronExecutionResult> {
   const result: CronExecutionResult = {
     inspectedCount: 0,

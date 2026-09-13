@@ -19,6 +19,7 @@ const shippingWebhookSchema = z.object({
  * Po odebraniu statusu DELIVERED przesuwa leada ze statusu HARDWARE_IN_TRANSIT
  * na AWAITING_INSTALLATION (E7) i aktualizuje status przesyłki w logistyce.
  */
+// AUTHZ-EXEMPT: Zewnetrzny webhook kurierski zabezpieczony naglowkiem x-webhook-secret, brak sesji uzytkownika
 export async function POST(request: NextRequest) {
   const secretHeader = request.headers.get("x-webhook-secret")
   const expectedSecret = process.env.SHIPPING_WEBHOOK_SECRET

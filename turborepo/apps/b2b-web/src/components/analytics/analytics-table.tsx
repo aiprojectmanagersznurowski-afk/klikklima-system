@@ -3,6 +3,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { X, Filter } from "lucide-react"
+import { formatAnyStatus } from "@/lib/format-status"
 
 interface Column<T> {
   header: string
@@ -33,7 +34,7 @@ export function AnalyticsTable<T>({
         <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
           <div className="flex items-center gap-2 text-sm text-primary font-medium">
             <Filter className="size-4" />
-            <span>Filtrowanie: {filterValue}</span>
+            <span>Filtrowanie: {formatAnyStatus(filterValue)}</span>
           </div>
           <Button variant="ghost" size="sm" onClick={onClearFilter} className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground">
             <X className="size-3 mr-1" /> Wyczyść filtr
