@@ -170,6 +170,8 @@ export function formatAnyStatus(val?: string | null): string {
   if (val in STATE_META) return formatLeadStatus(val)
   if (val in LOST_REASON_PL) return formatLostReason(val)
   switch (val) {
+    case "IN_INSTALLATION":
+      return "Realizacja i montaż"
     case "PLANNED":
     case "IN_PROGRESS":
     case "COMPLETED":

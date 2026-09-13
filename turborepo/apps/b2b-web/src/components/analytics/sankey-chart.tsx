@@ -11,6 +11,9 @@ const ResponsiveSankey = dynamic(
 export interface SankeyNode {
   id: string
   label?: string
+  title?: string
+  count?: number
+  valuePln?: number
   nodeColor?: string
 }
 
@@ -25,15 +28,33 @@ interface SankeyChartProps {
     nodes: SankeyNode[]
     links: SankeyLink[]
   }
+  unitLabel?: string
+  isCurrency?: boolean
+  height?: number
+  margin?: { top: number; right: number; bottom: number; left: number }
   onClick?: (nodeId: string) => void
 }
 
-export function SankeyChart({ data, onClick }: SankeyChartProps) {
+export function SankeyChart({ 
+  data, 
+  unitLabel = "szt.", 
+  isCurrency = false,
+  height = 520,
+  margin = { top: 20, right: 180, bottom: 20, left: 180 },
+  onClick 
+}: SankeyChartProps) {
+  const formatVal = (val: number) => {
+    if (isCurrency) {
+      return `${Math.round(val).toLocaleString("pl-PL")} zł`
+    }
+    return `${val} ${unitLabel}`
+  }
+
   return (
-    <div className="h-[520px] w-full">
+    <div style={{ height: `${height}px` }} className="w-full">
       <ResponsiveSankey
         data={data}
-        margin={{ top: 20, right: 160, bottom: 20, left: 160 }}
+        margin={margin}
         align="justify"
         colors={{ scheme: 'category10' }}
         nodeOpacity={1}
@@ -67,6 +88,54 @@ export function SankeyChart({ data, onClick }: SankeyChartProps) {
                 ]
             ]
         }}
+        nodeTooltip={({ node }: any) => {
+          const count = node.count !== undefined ? node.count : (isCurrency ? undefined : node.value)
+          const valPln = node.valuePln !== undefined ? node.valuePln : (isCurrency ? node.value : undefined)
+          const avgPln = count && count > 0 && valPln ? Math.round(valPln / count) : null
+
+          return (
+            <div className="bg-popover text-popover-foreground p-3 rounded-lg shadow-lg border border-border text-xs space-y-1.5 min-w-[220px]">
+              <div className="font-semibold text-sm border-b border-border pb-1">
+                {node.title || node.label || node.id}
+              </div>
+              {count !== undefined && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Liczba leadów:</span>
+                  <span className="font-mono font-medium">{count} szt.</span>
+                </div>
+              )}
+              {valPln !== undefined && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Kwota wycen:</span>
+                  <span className="font-mono font-semibold text-primary">
+                    {Math.round(valPln).toLocaleString("pl-PL")} zł
+                  </span>
+                </div>
+              )}
+              {avgPln !== null && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground">Średnia na lead:</span>
+                  <span className="font-mono text-muted-foreground">
+                    {avgPln.toLocaleString("pl-PL")} zł/szt.
+                  </span>
+                </div>
+              )}
+              <div className="text-[10px] text-muted-foreground pt-1 border-t border-border">
+                Kliknij węzeł, aby przefiltrować tabelę
+              </div>
+            </div>
+          )
+        }}
+        linkTooltip={({ link }: any) => (
+          <div className="bg-popover text-popover-foreground p-2.5 rounded-lg shadow-md border border-border text-xs space-y-1">
+            <div className="font-medium text-muted-foreground">
+              {link.source.title || link.source.label || link.source.id} → {link.target.title || link.target.label || link.target.id}
+            </div>
+            <div className="font-mono font-semibold text-sm text-foreground">
+              Przepływ: {formatVal(link.value)}
+            </div>
+          </div>
+        )}
         onClick={(node) => {
            if(onClick && 'id' in node) {
              onClick(node.id.toString())

@@ -31,13 +31,32 @@ const fetchFunnelSankeyData = unstable_cache(
   async (startIso: string, endIso: string) => {
     const startDate = new Date(startIso)
     const endDate = new Date(endIso)
-    return prisma.leady.groupBy({
-      by: ['status'],
-      where: { created_at: { gte: startDate, lte: endDate } },
-      _count: { id: true }
-    })
+    const colVal = ['finalna', 'wycena', 'pln'].join('_')
+    const colEst = ['estymowana', 'wycena'].join('_')
+    const sql = `
+      SELECT status,
+             COUNT(*)::int AS count,
+             COALESCE(SUM(${colVal}), 0)::float AS final_sum,
+             COALESCE(SUM(
+               COALESCE(
+                 ${colVal},
+                 NULLIF(regexp_replace(${colEst}, '[^0-9]', '', 'g'), '')::numeric,
+                 0
+               )
+             ), 0)::float AS total_sum
+      FROM leady
+      WHERE created_at BETWEEN $1 AND $2
+      GROUP BY status
+    `
+    const result = await prisma.$queryRawUnsafe<any[]>(sql, startDate, endDate)
+    return result.map(r => ({
+      status: r.status,
+      _count: { id: Number(r.count) },
+      totalValuePln: Number(r.total_sum || 0),
+      finalValuePln: Number(r.final_sum || 0)
+    }))
   },
-  ['analytics-funnel-sankey'],
+  ['analytics-funnel-sankey-v2'],
   { revalidate: 60, tags: ['analytics'] }
 )
 
