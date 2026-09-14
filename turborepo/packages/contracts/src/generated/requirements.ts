@@ -922,7 +922,7 @@ export const REQUIREMENTS = [
   {
     "id": "CAL-POOL-AGGREGATE",
     "domain": "b2c",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "MEDIUM",
     "source": "wyniesione 2026-09-10 z FLD-AVAIL-WEEKLY-RULES (kryterium widoku puli), bo docs/workorders/FLD-AVAIL-WEEKLY-RULES.md sekcja „Poza zakresem\" jawnie wyłączyła je z tamtej tury; docs/architecture/FIELD-APP-PLAN.md 6.3",
     "statement": "Klient wybierający termin widzi sumę wolnych terminów całej puli wykonawców, a nie kalendarz konkretnej osoby."
