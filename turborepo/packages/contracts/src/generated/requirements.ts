@@ -714,7 +714,7 @@ export const REQUIREMENTS = [
   {
     "id": "B2C-BOOKING-SLOT",
     "domain": "b2c",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "docs/prompts/figma_triage_ui_prompt.md#ekran-rezerwacji",
     "statement": "Rezerwacja terminu audytu przez klienta jest atomowa — ten sam slot może zostać zajęty tylko raz."
