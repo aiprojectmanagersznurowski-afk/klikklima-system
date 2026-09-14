@@ -2,7 +2,7 @@
 
 - [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, audytorzy MAJĄ promień, timestamp ≠ kolejność uruchomienia, migracje LIVE.
 - [FLD-AVAIL-WEEKLY-RULES: AC szersze niż WO](project_fld_avail_weekly_rules_ac_wider_than_wo.md) — 2026-09-10 DOMKNIĘTE na DONE (4075fdd); AC7/AC8 wyniesione do CAL-SLOT-ENGINE i CAL-POOL-AGGREGATE.
-- [FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT zostaje TODO](project_booking_one_active_per_subject.md) — 2026-09-14 migracja LIVE, ale 6/8 kryteriów bez testu; poprawny kod 23505 ≠ dowód; AC6 luka implementacyjna.
+- [FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT zamknięte](project_booking_one_active_per_subject.md) — 2026-09-14 DONE (dd69d56); podział kryteriów wg PRZEDMIOTU: kod -> atrapa, indeks -> żywy Postgres.
 - [CAL-SLOT-ENGINE zamknięte](project_cal_slot_engine_done.md) — 2026-09-10 DONE; silnik bez wywołań produkcyjnych (to nie luka), 6 AC w rejestrze vs 40 w WO.
 - [CAL-POOL-AGGREGATE zamknięte](project_cal_pool_aggregate_done.md) — 2026-09-14 DONE; kryteria mówią „Klient widzi", a konsumenta B2C nie ma — warstwę kliencką przejęło B2C-BOOKING-SLOT.
 - [B2C-BOOKING-SLOT zamknięte](project_b2c_booking_slot_done.md) — 2026-09-14 DONE (74bd07c); Google Calendar odpięty od odczytu, itest współbieżności NIEURUCHOMIONY, B2C-LEAD-ATOMIC zostaje otwarte.
