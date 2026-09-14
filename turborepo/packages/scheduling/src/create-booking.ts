@@ -72,14 +72,35 @@ export type BookingRow = {
 
 export type CreateBookingResult =
   | { ok: true; booking: BookingRow; error: null }
-  | { ok: false; booking: null; error: { code: CreateBookingErrorCode; message: string; alternatives: AvailableSlot[] } }
+  | {
+      ok: false
+      booking: null
+      error: {
+        code: CreateBookingErrorCode
+        message: string
+        alternatives: AvailableSlot[]
+        // AC6 FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT: przy SUBJECT_ALREADY_BOOKED niesie
+        // odesłanie do rezerwacji, z którą podmiot już koliduje. Puste dla innych kodów.
+        existingBooking?: BookingRow | null
+      }
+    }
 
 function fail(
   code: CreateBookingErrorCode,
   message: string,
   alternatives: AvailableSlot[] = [],
+  existingBooking?: BookingRow | null,
 ): CreateBookingResult {
-  return { ok: false, booking: null, error: { code, message, alternatives } }
+  return {
+    ok: false,
+    booking: null,
+    error: {
+      code,
+      message,
+      alternatives,
+      ...(existingBooking !== undefined ? { existingBooking } : {}),
+    },
+  }
 }
 
 /**
@@ -277,7 +298,21 @@ export async function createBooking(params: CreateBookingParams): Promise<Create
       if (sqlState === "23505") {
         // D-3: bookings_one_active_per_subject — podmiot ma już aktywną rezerwację.
         // PRZERWIJ pętlę: próba na innym kandydacie skończy się identycznie.
-        return fail("SUBJECT_ALREADY_BOOKED", "Ten podmiot (lead/serwis/usterka) ma już aktywną rezerwację.")
+        // AC6: błąd musi nieść odesłanie do rezerwacji, z którą podmiot koliduje.
+        // Szukamy po ID podmiotu z `params.subject` (nie przez kolumnę generowaną
+        // subject_id — ta jest niewidoczna dla modelu Prisma), więc bez $queryRaw.
+        const existingBooking = (await prisma.booking.findFirst({
+          where: {
+            ...subjectFields(params.subject),
+            status: { in: ACTIVE_BOOKING_STATUSES },
+          },
+        })) as BookingRow | null
+        return fail(
+          "SUBJECT_ALREADY_BOOKED",
+          "Ten podmiot (lead/serwis/usterka) ma już aktywną rezerwację.",
+          [],
+          existingBooking,
+        )
       }
       if (sqlState === "23P01") {
         // bookings_no_overlap_per_resource — ten kandydat przegrał wyścig, następny.

@@ -461,3 +461,183 @@ describe('createBooking — współbieżność na żywym Postgresie, FLD-BOOKING
     30000,
   );
 });
+
+/**
+ * Domykanie FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT (contracts/requirements.contract.mjs:687),
+ * AC2/AC3/AC4 — jedyne trzy kryteria z tego wymagania które dowodzą właściwość SAMEGO
+ * indeksu częściowego `bookings_one_active_per_subject` (a nie zachowania kodu, patrz
+ * `apps/b2b-web/tests/booking-one-active-per-subject.test.ts` dla AC5/AC6 na atrapie).
+ * AC1/AC8 spełnione wcześniej (contract-steward). AC7 jest kryterium meta, spełnionym samym
+ * faktem, że te trzy testy są `*.itest.ts`, nie testami na atrapie.
+ *
+ * AC2 używa DOMENOWEJ funkcji `createBooking` (dowodzi, że kod rozróżnia 23505 od 23P01) —
+ * AC3/AC4 bypassują warstwę domenową przez bezpośredni `prisma.booking.create/update` (dowód
+ * właściwości SAMEGO ograniczenia, patrz `feedback_db_constraint_itest_bypass_domain`).
+ */
+describe('createBooking — FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT AC2/AC3/AC4, żywy Postgres', () => {
+  // @REQ: FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT
+  it(
+    'AC2 — dwa RÓWNOLEGŁE żądania, TEN SAM podmiot, RÓŻNE sloty, pula DWUOSOBOWA -> dokładnie jeden sukces, przegrany dostaje SUBJECT_ALREADY_BOOKED (23505), NIE SLOT_TAKEN (23P01)',
+    async () => {
+      const auditorOne = await createTestAuditor();
+      const auditorTwo = await createTestAuditor();
+      await createTestSaturdayRule(auditorOne.id, '08:00', '16:00');
+      await createTestSaturdayRule(auditorTwo.id, '08:00', '16:00');
+      const lead = await createTestLead();
+
+      // sobota nieużywana w innych testach tego pliku
+      const startA = localMoment('2026-12-05', '08:00');
+      // inny slot — AUDIT trwa 120 min (08:00-10:00), więc 11:00 nie nakłada się na startA,
+      // niezależnie od tego, którego z dwóch audytorów wybierze silnik.
+      const startB = localMoment('2026-12-05', '11:00');
+
+      const [resultA, resultB] = await Promise.all([
+        createBooking({
+          visitBasketId: auditBasketId,
+          startAt: startA,
+          subject: { kind: 'LEAD', leadId: lead.id },
+          bookedBy: 'DISPATCHER',
+        }),
+        createBooking({
+          visitBasketId: auditBasketId,
+          startAt: startB,
+          subject: { kind: 'LEAD', leadId: lead.id },
+          bookedBy: 'DISPATCHER',
+        }),
+      ]);
+
+      const outcomes = [resultA, resultB];
+      const successes = outcomes.filter((r) => r.ok);
+      const failures = outcomes.filter((r) => !r.ok);
+
+      expect(successes).toHaveLength(1);
+      expect(failures).toHaveLength(1);
+      if (failures[0]!.ok) throw new Error('unreachable');
+      // Rdzeń AC2: przegrany MUSI dostać kod właściwy dla kolizji NA PODMIOCIE, nie kolizji
+      // zasobu — różne sloty formalnie nie nakładają się na `bookings_no_overlap_per_resource`,
+      // więc SLOT_TAKEN (23P01) byłby tu dowodem błędnego rozpoznania SQLSTATE.
+      expect(failures[0]!.error.code).toBe('SUBJECT_ALREADY_BOOKED');
+
+      const activeRowsForLead = await prisma.booking.count({
+        where: { leadId: lead.id, status: { in: ['RESERVED', 'CONFIRMED'] } },
+      });
+      expect(activeRowsForLead).toBe(1);
+    },
+    30000,
+  );
+
+  // @REQ: FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT
+  it(
+    'AC3 — CRM-BOOK-HISTORY nienaruszone: łańcuch przekładań (RELEASED, RELEASED, RESERVED) na tym samym podmiocie — WSZYSTKIE trzy INSERT-y się udają, bo w chwili każdego z nich podmiot nie ma innej aktywnej rezerwacji',
+    async () => {
+      // Dowód właściwości ograniczenia (indeks obejmuje wyłącznie RESERVED/CONFIRMED) —
+      // bezpośredni `prisma.booking.create()`/`update()`, z pominięciem warstwy domenowej.
+      const auditor = await createTestAuditor();
+      const lead = await createTestLead();
+
+      const start = localMoment('2026-11-27', '08:00');
+      const end = new Date(start.getTime() + 120 * MS_PER_MINUTE);
+
+      const bookingBase = {
+        leadId: lead.id,
+        auditorId: auditor.id,
+        resourceKind: 'AUDITOR',
+        visitBasketId: auditBasketId,
+        scheduledStart: start,
+        scheduledEnd: end,
+        bookedBy: 'DISPATCHER',
+        assignmentMode: 'AUTO',
+      } as const;
+
+      const first = await prisma.booking.create({ data: { ...bookingBase, status: 'RESERVED' } });
+      expect(first.id).toBeTruthy();
+      await prisma.booking.update({ where: { id: first.id }, data: { status: 'RELEASED' } });
+
+      const second = await prisma.booking.create({ data: { ...bookingBase, status: 'RESERVED' } });
+      expect(second.id).toBeTruthy();
+      await prisma.booking.update({ where: { id: second.id }, data: { status: 'RELEASED' } });
+
+      const third = await prisma.booking.create({ data: { ...bookingBase, status: 'RESERVED' } });
+      expect(third.id).toBeTruthy();
+      expect(third.status).toBe('RESERVED');
+
+      const historyRowsForLead = await prisma.booking.count({ where: { leadId: lead.id } });
+      expect(historyRowsForLead).toBe(3);
+
+      const activeRowsForLead = await prisma.booking.count({
+        where: { leadId: lead.id, status: { in: ['RESERVED', 'CONFIRMED'] } },
+      });
+      expect(activeRowsForLead).toBe(1);
+    },
+    30000,
+  );
+
+  // @REQ: FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT
+  it(
+    'AC4 — indeks NIE jest odroczony: w jednej transakcji, kolejność ODWROTNA (najpierw INSERT nowej aktywnej rezerwacji, POTEM UPDATE starej na RELEASED) daje odmowę 23505, a cała transakcja się wycofuje',
+    async () => {
+      // Dowód właściwości ograniczenia (brak DEFERRABLE) — bezpośredni `prisma.$transaction`
+      // z pominięciem warstwy domenowej (przełożenia w `createBooking` nie ma w zakresie tego
+      // WO — dotyczy wyłącznie samego ograniczenia).
+      const auditor = await createTestAuditor();
+      const lead = await createTestLead();
+
+      const oldStart = localMoment('2026-11-30', '08:00');
+      const oldEnd = new Date(oldStart.getTime() + 120 * MS_PER_MINUTE);
+      const oldBooking = await prisma.booking.create({
+        data: {
+          leadId: lead.id,
+          auditorId: auditor.id,
+          resourceKind: 'AUDITOR',
+          visitBasketId: auditBasketId,
+          scheduledStart: oldStart,
+          scheduledEnd: oldEnd,
+          status: 'RESERVED',
+          bookedBy: 'DISPATCHER',
+          assignmentMode: 'AUTO',
+        },
+      });
+
+      const newStart = localMoment('2026-11-30', '13:00');
+      const newEnd = new Date(newStart.getTime() + 120 * MS_PER_MINUTE);
+
+      let thrown: unknown = null;
+      try {
+        await prisma.$transaction(async (tx) => {
+          // KOLEJNOŚĆ ODWROTNA, ZAMIERZONA: INSERT nowej aktywnej PRZED zwolnieniem starej —
+          // w chwili tego INSERT-u podmiot ma DWIE aktywne rezerwacje, co indeks musi odrzucić.
+          await tx.booking.create({
+            data: {
+              leadId: lead.id,
+              auditorId: auditor.id,
+              resourceKind: 'AUDITOR',
+              visitBasketId: auditBasketId,
+              scheduledStart: newStart,
+              scheduledEnd: newEnd,
+              status: 'RESERVED',
+              bookedBy: 'DISPATCHER',
+              assignmentMode: 'AUTO',
+            },
+          });
+          await tx.booking.update({ where: { id: oldBooking.id }, data: { status: 'RELEASED' } });
+        });
+      } catch (err) {
+        thrown = err;
+      }
+
+      expect(thrown).not.toBeNull();
+      expect(extractSqlState(thrown)).toBe('23505');
+
+      // Transakcja MUSI wycofać się w całości: stara rezerwacja pozostaje RESERVED, żaden
+      // nowy wiersz nie przetrwał.
+      const reread = await prisma.booking.findUnique({ where: { id: oldBooking.id } });
+      expect(reread?.status).toBe('RESERVED');
+
+      const activeRowsForLead = await prisma.booking.count({
+        where: { leadId: lead.id, status: { in: ['RESERVED', 'CONFIRMED'] } },
+      });
+      expect(activeRowsForLead).toBe(1);
+    },
+    30000,
+  );
+});
