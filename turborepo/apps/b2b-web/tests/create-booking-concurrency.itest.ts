@@ -36,6 +36,7 @@ import { prisma } from '@repo/database';
  */
 
 const TIME_ZONE = 'Europe/Warsaw';
+const MS_PER_MINUTE = 60000;
 
 function localMoment(dateStr: string, hhmm: string): Date {
   return fromZonedTime(`${dateStr}T${hhmm}:00`, TIME_ZONE);
@@ -46,7 +47,19 @@ function timeOfDay(hhmm: string): Date {
 }
 
 let createdAuditorIds: string[] = [];
+let createdCrewIds: string[] = [];
 let createdLeadIds: string[] = [];
+
+async function createTestCrew(): Promise<{ id: string }> {
+  const suffix = randomUUID();
+  const crew = await prisma.zespoly_monterskie.create({
+    data: {
+      nazwa: `ITEST FLD-BOOKING-ATOMIC-ASSIGN ${suffix}`,
+    },
+  });
+  createdCrewIds.push(crew.id);
+  return crew;
+}
 
 async function createTestAuditor(): Promise<{ id: string }> {
   const suffix = randomUUID();
@@ -93,31 +106,46 @@ afterEach(async () => {
     // 3) audytorzy testowi.
     await prisma.audytorzy.deleteMany({ where: { id: { in: createdAuditorIds } } });
   }
+  if (createdCrewIds.length > 0) {
+    // Rezerwacje testów bezpośredniego INSERT (bypass silnika) na ekipach — analogiczne
+    // FK RESTRICT jak przy audytorach, sprzątamy jawnie zanim usuniemy ekipę.
+    await prisma.booking.deleteMany({ where: { crewId: { in: createdCrewIds } } });
+    await prisma.zespoly_monterskie.deleteMany({ where: { id: { in: createdCrewIds } } });
+  }
   // 4) leady testowe.
   if (createdLeadIds.length > 0) {
     await prisma.leady.deleteMany({ where: { id: { in: createdLeadIds } } });
   }
   createdAuditorIds = [];
+  createdCrewIds = [];
   createdLeadIds = [];
 });
 
-const { createBooking } = await import('../src/lib/schedule/create-booking');
+const { createBooking, extractSqlState } = await import('../src/lib/schedule/create-booking');
 
 let auditBasketId: string;
+let installStandardBasketId: string;
+let incidentBasketId: string;
 
-beforeAll(async () => {
-  // Koszyk 'AUDIT' jest SEEDOWANY przez migrację `20260910100000_fld_calendar_foundation.sql`
-  // — czytamy, nie tworzymy (WO, "Zadanie 2": "sprawdź (...) czy trzeba wypełnić tylko to, co
-  // NOT NULL wymaga" — tu nic nie trzeba wypełniać, koszyk już istnieje na każdym stacku, który
-  // aplikuje migracje z repo, w tym lokalny `supabase start`).
-  const basket = await prisma.visitDurationBasket.findFirst({ where: { code: 'AUDIT', isActive: true } });
+async function requireBasket(code: string): Promise<string> {
+  // Koszyki są SEEDOWANE przez migrację `20260910100000_fld_calendar_foundation.sql` —
+  // czytamy, nie tworzymy (WO, "Zadanie 2": "sprawdź (...) czy trzeba wypełnić tylko to, co
+  // NOT NULL wymaga" — tu nic nie trzeba wypełniać, koszyki już istnieją na każdym stacku,
+  // który aplikuje migracje z repo, w tym lokalny `supabase start`).
+  const basket = await prisma.visitDurationBasket.findFirst({ where: { code, isActive: true } });
   if (!basket) {
     throw new Error(
-      "Koszyk 'AUDIT' nie istnieje na tej bazie — migracja 20260910100000_fld_calendar_foundation.sql " +
+      `Koszyk '${code}' nie istnieje na tej bazie — migracja 20260910100000_fld_calendar_foundation.sql ` +
         'nie została zaaplikowana. Uruchom `supabase start` w katalogu repo przed `npm run test:integration`.',
     );
   }
-  auditBasketId = basket.id;
+  return basket.id;
+}
+
+beforeAll(async () => {
+  auditBasketId = await requireBasket('AUDIT');
+  installStandardBasketId = await requireBasket('INSTALL_STANDARD');
+  incidentBasketId = await requireBasket('INCIDENT');
 });
 
 describe('createBooking — współbieżność na żywym Postgresie, FLD-BOOKING-ATOMIC-ASSIGN AC-A4/AC-A5', () => {
@@ -216,6 +244,219 @@ describe('createBooking — współbieżność na żywym Postgresie, FLD-BOOKING
         },
       });
       expect(rowsForThisSlot).toBe(2);
+    },
+    30000,
+  );
+
+  // @REQ: FLD-BOOKING-ATOMIC-ASSIGN
+  it(
+    'ograniczenie zabrania NAKŁADANIA SIĘ przedziałów, nie tylko identycznego startu — montaż całodniowy od 08:00 blokuje usterkę od 10:00 u TEJ SAMEJ ekipy',
+    async () => {
+      // Test celuje wyłącznie w `bookings_no_overlap_per_resource` (EXCLUDE USING gist), nie
+      // w algorytm doboru wykonawcy z `createBooking` — `findAvailableSlots` odfiltrowałby tę
+      // ekipę PRZED próbą zapisu drugiej rezerwacji (WO), więc oba wiersze wstawiamy
+      // bezpośrednio przez `prisma.booking.create()`, z pominięciem warstwy domenowej.
+      const crew = await createTestCrew();
+      const leadA = await createTestLead();
+      const leadB = await createTestLead();
+
+      const installStart = localMoment('2026-11-23', '08:00');
+      const installEnd = new Date(installStart.getTime() + 480 * MS_PER_MINUTE);
+
+      await prisma.booking.create({
+        data: {
+          leadId: leadA.id,
+          crewId: crew.id,
+          resourceKind: 'CREW',
+          visitBasketId: installStandardBasketId,
+          scheduledStart: installStart,
+          scheduledEnd: installEnd,
+          status: 'RESERVED',
+          bookedBy: 'DISPATCHER',
+          assignmentMode: 'AUTO',
+        },
+      });
+
+      // 10:00 NIE jest identyczny start z 08:00 — łapie go WYŁĄCZNIE ograniczenie nakładania
+      // się przedziałów, nie zwykły UNIQUE(pracownik, godzina startu).
+      const incidentStart = localMoment('2026-11-23', '10:00');
+      const incidentEnd = new Date(incidentStart.getTime() + 120 * MS_PER_MINUTE);
+
+      let thrown: unknown = null;
+      try {
+        await prisma.booking.create({
+          data: {
+            leadId: leadB.id,
+            crewId: crew.id,
+            resourceKind: 'CREW',
+            visitBasketId: incidentBasketId,
+            scheduledStart: incidentStart,
+            scheduledEnd: incidentEnd,
+            status: 'RESERVED',
+            bookedBy: 'DISPATCHER',
+            assignmentMode: 'AUTO',
+          },
+        });
+      } catch (err) {
+        thrown = err;
+      }
+
+      expect(thrown).not.toBeNull();
+      expect(extractSqlState(thrown)).toBe('23P01');
+
+      const activeRowsForCrew = await prisma.booking.count({
+        where: { crewId: crew.id, status: { in: ['RESERVED', 'CONFIRMED'] } },
+      });
+      expect(activeRowsForCrew).toBe(1);
+    },
+    30000,
+  );
+
+  // @REQ: FLD-BOOKING-ATOMIC-ASSIGN
+  it(
+    'styk godzinowy NIE jest kolizją — wizyta 08:00–10:00 i wizyta 10:00–12:00 u TEJ SAMEJ osoby przechodzą OBIE',
+    async () => {
+      // Dowód właściwości ograniczenia bazy (przedział `[)`), nie algorytmu doboru wykonawcy —
+      // bezpośredni `prisma.booking.create()`, z pominięciem warstwy domenowej.
+      const auditor = await createTestAuditor();
+      const leadA = await createTestLead();
+      const leadB = await createTestLead();
+
+      const firstStart = localMoment('2026-11-24', '08:00');
+      const firstEnd = new Date(firstStart.getTime() + 120 * MS_PER_MINUTE); // AUDIT = 120 min -> 10:00
+
+      const bookingA = await prisma.booking.create({
+        data: {
+          leadId: leadA.id,
+          auditorId: auditor.id,
+          resourceKind: 'AUDITOR',
+          visitBasketId: auditBasketId,
+          scheduledStart: firstStart,
+          scheduledEnd: firstEnd,
+          status: 'RESERVED',
+          bookedBy: 'DISPATCHER',
+          assignmentMode: 'AUTO',
+        },
+      });
+
+      const secondStart = firstEnd; // dokładny styk: koniec pierwszej = start drugiej
+      const secondEnd = new Date(secondStart.getTime() + 120 * MS_PER_MINUTE);
+
+      const bookingB = await prisma.booking.create({
+        data: {
+          leadId: leadB.id,
+          auditorId: auditor.id,
+          resourceKind: 'AUDITOR',
+          visitBasketId: auditBasketId,
+          scheduledStart: secondStart,
+          scheduledEnd: secondEnd,
+          status: 'RESERVED',
+          bookedBy: 'DISPATCHER',
+          assignmentMode: 'AUTO',
+        },
+      });
+
+      expect(bookingA.id).toBeTruthy();
+      expect(bookingB.id).toBeTruthy();
+
+      const activeRowsForAuditor = await prisma.booking.count({
+        where: { auditorId: auditor.id, status: { in: ['RESERVED', 'CONFIRMED'] } },
+      });
+      expect(activeRowsForAuditor).toBe(2);
+    },
+    30000,
+  );
+
+  // @REQ: FLD-BOOKING-ATOMIC-ASSIGN
+  it(
+    'rezerwacja w statusie RELEASED nie blokuje slotu — nowa rezerwacja na TEN SAM slot u TEGO SAMEGO pracownika się udaje',
+    async () => {
+      // Ograniczenie jest CZĘŚCIOWE (WHERE status IN ('RESERVED','CONFIRMED')) — dowód na
+      // bezpośrednim `prisma.booking.create()`, z pominięciem warstwy domenowej.
+      const auditor = await createTestAuditor();
+      const leadA = await createTestLead();
+      const leadB = await createTestLead();
+
+      const startAt = localMoment('2026-11-25', '08:00');
+      const endAt = new Date(startAt.getTime() + 120 * MS_PER_MINUTE);
+
+      await prisma.booking.create({
+        data: {
+          leadId: leadA.id,
+          auditorId: auditor.id,
+          resourceKind: 'AUDITOR',
+          visitBasketId: auditBasketId,
+          scheduledStart: startAt,
+          scheduledEnd: endAt,
+          status: 'RELEASED',
+          bookedBy: 'DISPATCHER',
+          assignmentMode: 'AUTO',
+        },
+      });
+
+      const newBooking = await prisma.booking.create({
+        data: {
+          leadId: leadB.id,
+          auditorId: auditor.id,
+          resourceKind: 'AUDITOR',
+          visitBasketId: auditBasketId,
+          scheduledStart: startAt,
+          scheduledEnd: endAt,
+          status: 'RESERVED',
+          bookedBy: 'DISPATCHER',
+          assignmentMode: 'AUTO',
+        },
+      });
+
+      expect(newBooking.id).toBeTruthy();
+      expect(newBooking.status).toBe('RESERVED');
+    },
+    30000,
+  );
+
+  // @REQ: FLD-BOOKING-ATOMIC-ASSIGN
+  it(
+    'rezerwacja w statusie COMPLETED nie blokuje slotu — nowa rezerwacja na TEN SAM slot u TEGO SAMEGO pracownika się udaje',
+    async () => {
+      // Ograniczenie jest CZĘŚCIOWE (WHERE status IN ('RESERVED','CONFIRMED')) — dowód na
+      // bezpośrednim `prisma.booking.create()`, z pominięciem warstwy domenowej.
+      const auditor = await createTestAuditor();
+      const leadA = await createTestLead();
+      const leadB = await createTestLead();
+
+      const startAt = localMoment('2026-11-26', '08:00');
+      const endAt = new Date(startAt.getTime() + 120 * MS_PER_MINUTE);
+
+      await prisma.booking.create({
+        data: {
+          leadId: leadA.id,
+          auditorId: auditor.id,
+          resourceKind: 'AUDITOR',
+          visitBasketId: auditBasketId,
+          scheduledStart: startAt,
+          scheduledEnd: endAt,
+          status: 'COMPLETED',
+          bookedBy: 'DISPATCHER',
+          assignmentMode: 'AUTO',
+        },
+      });
+
+      const newBooking = await prisma.booking.create({
+        data: {
+          leadId: leadB.id,
+          auditorId: auditor.id,
+          resourceKind: 'AUDITOR',
+          visitBasketId: auditBasketId,
+          scheduledStart: startAt,
+          scheduledEnd: endAt,
+          status: 'RESERVED',
+          bookedBy: 'DISPATCHER',
+          assignmentMode: 'AUTO',
+        },
+      });
+
+      expect(newBooking.id).toBeTruthy();
+      expect(newBooking.status).toBe('RESERVED');
     },
     30000,
   );

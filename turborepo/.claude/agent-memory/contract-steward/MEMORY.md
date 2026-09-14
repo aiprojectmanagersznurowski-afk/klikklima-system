@@ -4,6 +4,8 @@
 - [FLD-AVAIL-WEEKLY-RULES: AC szersze niż WO](project_fld_avail_weekly_rules_ac_wider_than_wo.md) — 2026-09-10 DOMKNIĘTE na DONE (4075fdd); AC7/AC8 wyniesione do CAL-SLOT-ENGINE i CAL-POOL-AGGREGATE.
 - [FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT: D-3 wariant (b)](project_booking_one_active_per_subject.md) — 2026-09-10; subject_id + indeks częściowy NAPISANE, NIE zaaplikowane; 23505 ≠ 23P01, brak DEFERRABLE.
 - [CAL-SLOT-ENGINE zamknięte](project_cal_slot_engine_done.md) — 2026-09-10 DONE; silnik bez wywołań produkcyjnych (to nie luka), 6 AC w rejestrze vs 40 w WO.
+- [FLD-BOOKING-ATOMIC-ASSIGN zablokowane](project_fld_booking_atomic_assign_blocked.md) — 2026-09-14 zostaje TODO; 3 z 11 kryteriów opisuje ograniczenie w bazie, a dowodzi ich tylko atrapa.
+- [Atrapa nie dowodzi ograniczenia w bazie](feedback_mock_cannot_prove_db_constraint.md) — sprawdź PODMIOT kryterium: obiekt bazy wymaga żywego Postgresa, kod wystarczy atrapą.
 - [Rozjazd zakresu: sprawdź innego właściciela](feedback_scope_mismatch_check_other_owner.md) — kryterium spoza WO blokuje DONE tylko wtedy, gdy nie ma go przy innym OTWARTYM ID.
 - [Rename promienia audytora](project_auditor_radius_rename.md) — 2026-09-10 DOMKNIĘTE (migracja live, kod i testy); `tsc` łapał 4 z 13 miejsc, reszta psuła się w runtime.
 
