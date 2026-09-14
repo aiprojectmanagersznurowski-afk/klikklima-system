@@ -930,7 +930,7 @@ export const REQUIREMENTS = [
   {
     "id": "FLD-BOOKING-ATOMIC-ASSIGN",
     "domain": "field",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "docs/architecture/FIELD-APP-PLAN.md 6.4 R3 (rozstrzygnięcie „z przypisaniem\", decyzja Michała 2026-09-09/2026-09-10); ADR-012; nośnik atomowości dla FNL-E3-E4 i B2C-BOOKING-SLOT",
     "statement": "Rezerwacja terminu jest atomowa i od razu wiąże konkretnego wykonawcę: system wybiera wolną osobę z puli i zapisuje rezerwację na nią w jednej operacji, a dyspozytor może to przypisanie nadpisać."
