@@ -938,7 +938,7 @@ export const REQUIREMENTS = [
   {
     "id": "FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT",
     "domain": "field",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "rozstrzygnięcie D-3 z docs/workorders/FLD-BOOKING-ATOMIC-ASSIGN.md (decyzja Michała 2026-09-10: wariant b — ograniczenie w bazie, nie sprawdzenie w kodzie); migracja supabase/migrations/20260910110000_fld_booking_one_active_per_subject.sql",
     "statement": "Jeden podmiot — lead, serwis albo usterka — ma w danym momencie najwyżej JEDNĄ aktywną rezerwację, a pilnuje tego baza, nie kod akcji."
