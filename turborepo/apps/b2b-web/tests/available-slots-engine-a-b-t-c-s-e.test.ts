@@ -102,7 +102,7 @@ vi.mock('@repo/database', () => ({
   },
 }));
 
-const { findAvailableSlots } = await import('../src/lib/schedule/available-slots');
+const { findAvailableSlots } = await import('@repo/scheduling');
 
 function basketRow(
   overrides: Partial<{
@@ -570,7 +570,7 @@ describe('findAvailableSlots — grupa T (bufor dojazdu), CAL-SLOT-ENGINE', () =
 
   // @REQ: CAL-SLOT-ENGINE
   it('AC-T5 (statyczny) — literał 60 nie występuje w kodzie silnika', () => {
-    const enginePath = path.join(__dirname, '..', 'src', 'lib', 'schedule', 'available-slots.ts');
+    const enginePath = path.join(__dirname, '..', '..', '..', 'packages', 'scheduling', 'src', 'available-slots.ts');
     expect(existsSync(enginePath)).toBe(true);
     const content = readFileSync(enginePath, 'utf-8');
     expect(content).not.toMatch(/\b60\b/);
@@ -622,7 +622,7 @@ describe('findAvailableSlots — grupa C (dzienny limit wizyt), CAL-SLOT-ENGINE'
   // @REQ: CAL-SLOT-ENGINE
   it('AC-C1 — literał 5 nie występuje w kodzie silnika (wartość limitu pochodzi z SLA.AUDITOR_DAILY_CAP.count)', () => {
     expect(SLA.AUDITOR_DAILY_CAP.count).toBe(5);
-    const enginePath = path.join(__dirname, '..', 'src', 'lib', 'schedule', 'available-slots.ts');
+    const enginePath = path.join(__dirname, '..', '..', '..', 'packages', 'scheduling', 'src', 'available-slots.ts');
     expect(existsSync(enginePath)).toBe(true);
     const content = readFileSync(enginePath, 'utf-8');
     expect(content).not.toMatch(/\b5\b/);

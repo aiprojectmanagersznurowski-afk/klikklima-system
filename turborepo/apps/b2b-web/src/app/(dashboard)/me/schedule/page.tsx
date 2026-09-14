@@ -10,8 +10,7 @@ import {
   setAvailabilityRuleAction as setCrewAvailabilityRuleAction,
   getAvailabilityAction as getCrewAvailabilityAction,
 } from "../../crews/actions"
-import type { AvailabilityRuleInput } from "../../../../lib/schedule/availability-rule-schema"
-import type { EffectiveAvailabilityDay } from "../../../../lib/schedule/effective-availability"
+import type { AvailabilityRuleInput, EffectiveAvailabilityDay } from "@repo/scheduling"
 import { ScheduleClient } from "./schedule-client"
 
 /**

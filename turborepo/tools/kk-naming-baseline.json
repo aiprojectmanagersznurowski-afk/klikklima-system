@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-14T13:29:15.384Z",
+  "generatedAt": "2026-09-14T15:33:24.756Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -64,7 +64,6 @@
     "apps/b2b-web/src/app/api/webhooks/shipping/route.ts::adr002-pl-tables": 5,
     "apps/b2b-web/src/components/global-search/actions.ts::adr002-pl-columns": 15,
     "apps/b2b-web/src/components/global-search/actions.ts::adr002-pl-tables": 6,
-    "apps/b2b-web/src/lib/schedule/available-slots.ts::adr002-pl-tables": 2,
     "apps/b2b-web/src/utils/supabase/middleware.ts::adr002-pl-tables": 1,
     "apps/b2b-web/tests/add-auditor-modal-formdata-boundary.test.ts::adr002-pl-columns": 3,
     "apps/b2b-web/tests/add-crew-modal-formdata-boundary.test.ts::adr002-pl-columns": 4,
@@ -216,6 +215,7 @@
     "insert_6000_leads_part3.sql::adr002-pl-tables": 12,
     "packages/database/prisma/schema.prisma::adr002-pl-columns": 56,
     "packages/database/prisma/schema.prisma::adr002-pl-tables": 53,
+    "packages/scheduling/src/available-slots.ts::adr002-pl-tables": 2,
     "setup_combinations.sql::adr002-pl-columns": 6,
     "supabase/migrations/00000000000000_baseline.sql::adr002-pl-columns": 47,
     "supabase/migrations/00000000000000_baseline.sql::adr002-pl-tables": 30,

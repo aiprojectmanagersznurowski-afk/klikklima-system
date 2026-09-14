@@ -77,7 +77,7 @@ vi.mock('../src/utils/supabase/server', () => ({
   getCurrentActorRole: getCurrentActorRoleMock,
 }));
 
-const { createBooking } = await import('../src/lib/schedule/create-booking');
+const { createBooking } = await import('@repo/scheduling');
 const { createBookingAction } = await import('../src/app/(dashboard)/bookings/actions');
 
 function basketRow(

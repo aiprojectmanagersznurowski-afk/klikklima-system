@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fromZonedTime } from 'date-fns-tz';
-import type { AvailableSlot, ResourceSlots, AvailableSlotsResult } from '../src/lib/schedule/available-slots';
+import type { AvailableSlot, ResourceSlots, AvailableSlotsResult } from '@repo/scheduling';
 
 /**
  * WO: docs/workorders/CAL-POOL-AGGREGATE.md — wymaganie CAL-POOL-AGGREGATE, kryteria AC1..AC18.
@@ -53,7 +53,14 @@ const { findAvailableSlotsMock, prismaCallLog } = vi.hoisted(() => ({
   prismaCallLog: [] as string[],
 }));
 
-vi.mock('../src/lib/schedule/available-slots', () => ({
+// `findPoolSlots` (packages/scheduling/src/pool-slots.ts) importuje `findAvailableSlots`
+// PRZEZ WEWNĘTRZNĄ ścieżkę względną `./available-slots`, nie przez barrel `@repo/scheduling`
+// — mockowanie samego `@repo/scheduling` (barrel) NIE przechwyciłoby tego wewnętrznego
+// wywołania, bo Vitest kluczuje mocki po ROZWIĄZANEJ ścieżce modułu, a barrel (index.ts)
+// i `available-slots.ts` to dwa różne pliki/moduły mimo tego samego pakietu. Mockujemy więc
+// wprost plik, który `pool-slots.ts` faktycznie importuje — ta ścieżka względna z tego testu
+// rozwiązuje się do TEGO SAMEGO absolutnego pliku, co `./available-slots` w pool-slots.ts.
+vi.mock('../../../packages/scheduling/src/available-slots', () => ({
   findAvailableSlots: findAvailableSlotsMock,
 }));
 
@@ -80,7 +87,7 @@ vi.mock('@repo/database', () => ({
   ),
 }));
 
-const { findPoolSlots } = await import('../src/lib/schedule/pool-slots');
+const { findPoolSlots } = await import('@repo/scheduling');
 
 function mkSlot(startAt: Date, endAt: Date, date: string): AvailableSlot {
   return { start_at: startAt, end_at: endAt, date };
@@ -456,7 +463,7 @@ describe('findPoolSlots — przypadki brzegowe (WO, "Przypadki brzegowe, które 
 
   // @REQ: CAL-POOL-AGGREGATE
   it('statyczny: pool-slots.ts nie importuje bramki sesji/roli (utils/supabase/server) — czysta funkcja domenowa', () => {
-    const filePath = path.join(__dirname, '..', 'src', 'lib', 'schedule', 'pool-slots.ts');
+    const filePath = path.join(__dirname, '..', '..', '..', 'packages', 'scheduling', 'src', 'pool-slots.ts');
     expect(existsSync(filePath)).toBe(true);
     const source = readFileSync(filePath, 'utf-8');
     expect(source).not.toMatch(/utils\/supabase\/server/);
@@ -487,7 +494,7 @@ describe('findPoolSlots — przepięcie istniejącego wywołania w create-bookin
 
   // @REQ: CAL-POOL-AGGREGATE
   it('AC17 — findAlternatives w create-booking.ts woła findPoolSlots i NIE zawiera już własnej pętli deduplikującej/sortującej', () => {
-    const filePath = path.join(__dirname, '..', 'src', 'lib', 'schedule', 'create-booking.ts');
+    const filePath = path.join(__dirname, '..', '..', '..', 'packages', 'scheduling', 'src', 'create-booking.ts');
     const source = readFileSync(filePath, 'utf-8');
     const body = extractFunctionBody(source, 'findAlternatives');
     expect(body.length).toBeGreaterThan(0);
@@ -501,7 +508,7 @@ describe('findPoolSlots — przepięcie istniejącego wywołania w create-bookin
 
   // @REQ: CAL-POOL-AGGREGATE
   it('AC18 — MAX_ALTERNATIVES=5 i DEFAULT_ALTERNATIVES_HORIZON_DAYS=14 ZOSTAJĄ literałami lokalnymi create-booking.ts', () => {
-    const filePath = path.join(__dirname, '..', 'src', 'lib', 'schedule', 'create-booking.ts');
+    const filePath = path.join(__dirname, '..', '..', '..', 'packages', 'scheduling', 'src', 'create-booking.ts');
     const source = readFileSync(filePath, 'utf-8');
     expect(source).toMatch(/const\s+MAX_ALTERNATIVES\s*=\s*5\b/);
     expect(source).toMatch(/const\s+DEFAULT_ALTERNATIVES_HORIZON_DAYS\s*=\s*14\b/);
@@ -509,7 +516,7 @@ describe('findPoolSlots — przepięcie istniejącego wywołania w create-bookin
 
   // @REQ: CAL-POOL-AGGREGATE
   it('AC18 — pool-slots.ts NIE definiuje/importuje MAX_ALTERNATIVES ani DEFAULT_ALTERNATIVES_HORIZON_DAYS', () => {
-    const filePath = path.join(__dirname, '..', 'src', 'lib', 'schedule', 'pool-slots.ts');
+    const filePath = path.join(__dirname, '..', '..', '..', 'packages', 'scheduling', 'src', 'pool-slots.ts');
     expect(existsSync(filePath)).toBe(true);
     const source = readFileSync(filePath, 'utf-8');
     expect(source).not.toMatch(/MAX_ALTERNATIVES/);

@@ -121,7 +121,7 @@ afterEach(async () => {
   createdLeadIds = [];
 });
 
-const { createBooking, extractSqlState } = await import('../src/lib/schedule/create-booking');
+const { createBooking, extractSqlState } = await import('@repo/scheduling');
 
 let auditBasketId: string;
 let installStandardBasketId: string;

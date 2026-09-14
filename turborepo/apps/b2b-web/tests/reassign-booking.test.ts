@@ -96,7 +96,7 @@ vi.mock('@klikklima/contracts', async (importOriginal) => {
   };
 });
 
-const { reassignBooking } = await import('../src/lib/schedule/reassign-booking');
+const { reassignBooking } = await import('@repo/scheduling');
 const { reassignBookingAction } = await import('../src/app/(dashboard)/bookings/actions');
 
 function bookingFixture(

@@ -80,7 +80,7 @@ vi.mock('@repo/database', () => ({
   },
 }));
 
-const { findAvailableSlots } = await import('../src/lib/schedule/available-slots');
+const { findAvailableSlots } = await import('@repo/scheduling');
 
 function basketRow(
   overrides: Partial<{
@@ -339,7 +339,7 @@ describe('findAvailableSlots — grupa D (długość wizyty i siatka), CAL-SLOT-
 
   // @REQ: CAL-SLOT-ENGINE
   it('AC-D1 (statyczny) — literały 120/90/240/480 nie występują w kodzie silnika', () => {
-    const enginePath = path.join(__dirname, '..', 'src', 'lib', 'schedule', 'available-slots.ts');
+    const enginePath = path.join(__dirname, '..', '..', '..', 'packages', 'scheduling', 'src', 'available-slots.ts');
     expect(existsSync(enginePath)).toBe(true);
     const content = readFileSync(enginePath, 'utf-8');
     expect(content).not.toMatch(/\b120\b/);

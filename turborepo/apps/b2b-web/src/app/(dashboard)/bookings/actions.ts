@@ -7,12 +7,10 @@ import {
   createBooking,
   type CreateBookingResult,
   type CreateBookingErrorCode,
-} from "../../../lib/schedule/create-booking"
-import {
   reassignBooking,
   type ReassignBookingResult,
   type ReassignBookingErrorCode,
-} from "../../../lib/schedule/reassign-booking"
+} from "@repo/scheduling"
 
 /**
  * FLD-BOOKING-ATOMIC-ASSIGN (docs/workorders/FLD-BOOKING-ATOMIC-ASSIGN.md), Faza A.
