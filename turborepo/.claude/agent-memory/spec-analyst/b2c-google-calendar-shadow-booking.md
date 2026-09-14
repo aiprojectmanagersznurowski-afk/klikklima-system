@@ -1,9 +1,14 @@
 ---
 name: b2c-google-calendar-shadow-booking
-description: Żywa ścieżka rezerwacji w apps/b2c-web stoi na Google Calendar, nie na bazie; mock w app/api/calendar/slots/route.ts jest martwym kodem, a service_role przeczy ADR-001
+description: Żywa ścieżka rezerwacji w apps/b2c-web stoi na Google Calendar; Michał rozstrzygnął 2026-09-14, że zastępuje ją baza bookings (WO B2C-BOOKING-SLOT) — opis stanu sprzed przełączenia
 metadata:
   type: project
 ---
+
+**ROZSTRZYGNIĘTE 2026-09-14 (Michał):** Google Calendar przestaje być źródłem prawdy dla terminów
+audytu B2C — zastępuje go `bookings` + `absences` przez `findPoolSlots`/`createBooking`
+z `@repo/scheduling` (pakiet ISTNIEJE od `51f3cd5`). Zakres wykonawczy: `docs/workorders/B2C-BOOKING-SLOT.md`
+(wersja 2). Poniższy opis to stan PRZED przełączeniem — po wdrożeniu WO sprawdź kod, zanim go zacytujesz.
 
 W `apps/b2c-web` istnieje druga, nieskontraktowana implementacja rezerwacji terminów, równoległa do
 tabeli `bookings` z `FLD-CALENDAR-FOUNDATION`:
@@ -31,4 +36,4 @@ daje zielony `kk-trace` przy zerowej zmianie produkcyjnej.
 **How to apply:** Planując cokolwiek dotyczącego terminów/rezerwacji w B2C, najpierw ustal
 grepem, KTO woła dany plik. Każdy WO ruszający terminy B2C musi zawierać decyzję człowieka
 „Google Calendar czy `bookings`" — dotyka też licznika FOMO i kalendarzy ludzi w terenie.
-Powiązane: [[repo-drift-traps]], [[project_klikklima_wo_conventions]].
+Powiązane: [[repo-drift-traps]], [[project_klikklima_wo_conventions]], [[b2c-two-db-clients-one-flow]].
