@@ -18,6 +18,12 @@ import { fileURLToPath } from 'node:url';
  * Ta konfiguracja NIE ma `passWithNoTests: true` — w odróżnieniu od `vitest.config.mts`,
  * zero testów integracyjnych przy istniejącym pliku `*.itest.ts` jest sygnałem błędu
  * konfiguracji (np. złej ścieżki `include`), nie prawdziwym brakiem testów.
+ *
+ * `globalSetup: tools/vitest-integration-db-guard.mjs` (2026-09-10, po incydencie —
+ * przeczytaj komentarz w tamtym pliku): odmawia uruchomienia CAŁEGO przebiegu, jeśli
+ * `DATABASE_URL` nie wskazuje na lokalny stack `supabase start`. Testy współbieżności
+ * na czymkolwiek innym niż lokalna, jednorazowa baza to ryzyko dla współdzielonych
+ * albo produkcyjnych danych — ten guard nie jest opcjonalny.
  */
 export default defineConfig({
   resolve: {
@@ -31,6 +37,7 @@ export default defineConfig({
   test: {
     include: ['**/*.itest.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/e2e/**', 'examples/**'],
+    globalSetup: ['./tools/vitest-integration-db-guard.mjs'],
     // Testy współbieżności otwierają realne połączenia równoległe do jednej bazy —
     // domyślna izolacja procesów vitest (workery) i wspólny stan bazy między testami
     // nie mieszają się dobrze z domyślnym paralelizmem plików testowych.
