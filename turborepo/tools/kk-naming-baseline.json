@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-14T21:25:40.998Z",
+  "generatedAt": "2026-09-14T22:16:56.208Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -239,11 +239,11 @@
     "supabase/migrations/20260903061000_security_employee_email_unique_reassert.sql::adr002-pl-tables": 11,
     "supabase/migrations/20260910090000_b2c_catalog_view_tracked.sql::adr002-pl-columns": 6,
     "supabase/migrations/20260910100000_fld_calendar_foundation.sql::adr002-pl-columns": 1,
-    "supabase/migrations/20260910100000_fld_calendar_foundation.sql::adr002-pl-tables": 15,
+    "supabase/migrations/20260910100000_fld_calendar_foundation.sql::adr002-pl-tables": 17,
     "supabase/migrations/20260910100100_crm_lead_project_number.sql::adr002-pl-tables": 7,
     "supabase/migrations/20260910101000_fld_auditor_radius_rename.sql::adr002-pl-tables": 4,
     "supabase/migrations/20260912220000_crm_readable_identifiers.sql::adr002-pl-tables": 41,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2518
+  "total": 2520
 }
