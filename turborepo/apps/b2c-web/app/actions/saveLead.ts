@@ -3,14 +3,15 @@
 import { randomUUID } from "node:crypto";
 import { supabase } from "@/lib/supabaseClient";
 import { createCalendarEvent } from "./calendar";
+import { prisma } from "@repo/database";
+import { createBooking } from "@repo/scheduling";
 
 export interface SaveLeadData {
   name: string;
   email: string;
   phone: string;
   address: string;
-  bookingDate: string;
-  bookingSlot: string;
+  startAtIso: string;
   triageData: any;
   lat?: number;
   lng?: number;
@@ -58,13 +59,11 @@ export async function saveLead(data: SaveLeadData) {
 
     if (adresError) throw new Error(`Błąd tworzenia adresu: ${adresError.message}`);
 
-    // 3. Połącz w pełną datę rezerwacji (Data + Godzina z wybranego slotu)
-    const startTimeStr = data.bookingSlot.split(' - ')[0];
-    const dateObj = new Date(data.bookingDate);
-    const [hours, minutes] = startTimeStr.split(':');
-    dateObj.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-
-    // 4. Utwórz Lead
+    // 3. Utwórz Lead. `leadId` generowany serwerowo (B2C-BOOKING-SLOT, AC7) — jest to
+    // jedyny sposób zaadresowania `createBooking({ subject: { kind: 'LEAD', leadId } })`
+    // bez `.select()` (SEC-RLS-BASELINE). `data_rezerwacji` NIE jest ustawiane tutaj —
+    // zależy od wyniku `createBooking`, którego jeszcze nie znamy (D-6 wariant (a),
+    // FK `Booking.lead` wymaga, żeby lead istniał PRZED próbą rezerwacji).
     let estimatedQuote = null;
     if (data.triageData?.priceDevices || data.triageData?.priceInstallation) {
       const total = (data.triageData.priceDevices || 0) + (data.triageData.priceInstallation || 0);
@@ -73,31 +72,81 @@ export async function saveLead(data: SaveLeadData) {
       }
     }
 
+    const leadId = randomUUID();
     const { error: leadError } = await supabase
       .from('leady')
       .insert({
+        id: leadId,
         klient_id: klientId,
         adres_id: adresId,
         odpowiedzi_triage: data.triageData,
         estymowana_wycena: estimatedQuote,
         status: 'NEW_LEAD',
-        data_rezerwacji: dateObj.toISOString()
+        data_rezerwacji: null
       });
 
     if (leadError) throw new Error(`Błąd tworzenia leada: ${leadError.message}`);
 
-    // 5. Utwórz wydarzenie w kalendarzu Google
+    // 4. Rozwiąż koszyk AUDIT (kod -> UUID) po stronie serwera — klient nie przysyła
+    // ani koszyka, ani `bookedBy` (D-3, AC5).
+    const auditBasket = await prisma.visitDurationBasket.findFirst({
+      where: { code: 'AUDIT', isActive: true },
+    });
+
+    if (!auditBasket) {
+      return {
+        success: false,
+        code: 'BASKET_NOT_FOUND',
+        message: 'Koszyk audytu jest chwilowo niedostępny — spróbuj ponownie później.',
+      };
+    }
+
+    // 5. Rezerwacja terminu — jedna implementacja domenowa (@repo/scheduling, AC6).
+    // `visitBasketId` i `bookedBy` pochodzą WYŁĄCZNIE z serwera; jakiekolwiek dodatkowe
+    // pola dołączone do żądania klienta (visitBasketId, bookedBy, resource_id, leadId,
+    // status, ...) NIE są honorowane — nie istnieją w tym obiekcie.
+    const bookingResult = await createBooking({
+      visitBasketId: auditBasket.id,
+      startAt: new Date(data.startAtIso),
+      subject: { kind: 'LEAD', leadId },
+      bookedBy: 'CLIENT',
+    });
+
+    if (!bookingResult.ok) {
+      // D-6 wariant (a): klient/adres/lead ZOSTAJĄ zapisane — żaden nie jest kasowany
+      // ani wycofywany. Kod błędu domenowy jest przekazywany dalej, bez surowego SQLSTATE
+      // (createBooking już go opakował).
+      return {
+        success: false,
+        code: bookingResult.error.code,
+        message: bookingResult.error.message,
+        alternatives: bookingResult.error.alternatives,
+      };
+    }
+
+    // 6. `leady.data_rezerwacji` ustawiane WYŁĄCZNIE po udanej rezerwacji, osobnym
+    // UPDATE (nie w INSERT z kroku 3).
+    const { error: updateError } = await supabase
+      .from('leady')
+      .update({ data_rezerwacji: bookingResult.booking.scheduledStart.toISOString() })
+      .eq('id', leadId);
+
+    if (updateError) {
+      console.warn("Rezerwacja utworzona, ale nie udało się zapisać daty rezerwacji na leadzie:", updateError.message);
+    }
+
+    // 7. Kopia informacyjna w Google Calendar — best-effort, wywoływana PO udanej
+    // rezerwacji; awaria integracji nie przerywa flow klienta (WO, "Google Calendar").
     const calendarResult = await createCalendarEvent(
       data.name,
       data.phone,
       data.address,
-      data.bookingDate,
-      data.bookingSlot
+      bookingResult.booking.scheduledStart,
+      bookingResult.booking.scheduledEnd
     );
 
     if (!calendarResult.success) {
       console.warn("Rezerwacja zapisana w Supabase, ale wystąpił błąd z Google Calendar:", calendarResult.error);
-      // Opcjonalnie: Nie przerywamy flow klienta z powodu awarii API Google
     }
 
     return { success: true };

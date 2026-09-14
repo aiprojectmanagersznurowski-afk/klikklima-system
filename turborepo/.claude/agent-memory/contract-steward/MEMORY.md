@@ -5,6 +5,7 @@
 - [FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT: D-3 wariant (b)](project_booking_one_active_per_subject.md) — 2026-09-10; subject_id + indeks częściowy NAPISANE, NIE zaaplikowane; 23505 ≠ 23P01, brak DEFERRABLE.
 - [CAL-SLOT-ENGINE zamknięte](project_cal_slot_engine_done.md) — 2026-09-10 DONE; silnik bez wywołań produkcyjnych (to nie luka), 6 AC w rejestrze vs 40 w WO.
 - [CAL-POOL-AGGREGATE zamknięte](project_cal_pool_aggregate_done.md) — 2026-09-14 DONE; kryteria mówią „Klient widzi", a konsumenta B2C nie ma — warstwę kliencką przejęło B2C-BOOKING-SLOT.
+- [B2C: żywe źródło slotów vs martwy route.ts](project_b2c_slots_live_source_vs_dead_route.md) — 2026-09-14; `api/calendar/slots/route.ts` ma zero konsumentów, żyje `actions/calendar.ts` -> `Step8Booking.tsx`.
 - [Bramka nazewnictwa i artefakt ścieżki](feedback_naming_gate_path_artifact.md) — cudze niezacommitowane `git mv` wygląda jak nowy dług; sprawdź baseline pod starą ścieżką, nie odświeżaj go.
 - [FLD-BOOKING-ATOMIC-ASSIGN domknięte](project_fld_booking_atomic_assign_blocked.md) — 2026-09-14 DONE; testy ograniczenia dopisane, ale NIEURUCHOMIONE (brak Dockera) — świadomy dług.
 - [Atrapa nie dowodzi ograniczenia w bazie](feedback_mock_cannot_prove_db_constraint.md) — sprawdź PODMIOT kryterium: obiekt bazy wymaga żywego Postgresa, kod wystarczy atrapą.

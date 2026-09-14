@@ -45,6 +45,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * pokaże dla niego przyrost > 0 — to jest oczekiwane i zaakceptowane w WO ("Ograniczenia"),
  * zgłoszone w podsumowaniu, baseline NIE jest aktualizowany przez tego agenta.
  *
+ * Addendum (2026-09-14, BEZ własnego WO — następstwo przepisania `saveLead.ts` pod WO
+ * `B2C-BOOKING-SLOT` wersja 2, zgłoszone implementerowi jako `TEST-DEFECT` na tym pliku):
+ * `saveLead()` przyjmuje teraz `startAtIso: string` (zamiast `bookingDate`/`bookingSlot`)
+ * i po insercie na `leady` woła `createBooking()` z `@repo/scheduling`, a przy sukcesie
+ * dopisuje `data_rezerwacji` osobnym UPDATE na `leady` — DWA nowe wywołania `from('leady')`
+ * (insert, potem update), których ten plik (WO B2C-LEAD-GEO-PERSIST, zamknięte, dotyczy
+ * WYŁĄCZNIE geokodowania) nie ma powodu weryfikować merytorycznie. Rezerwacja jest tu
+ * zamockowana na `ok: true` (wzorzec 1:1 z `saveLead.booking.test.ts`, plikiem siostrzanym
+ * napisanym w tej samej turze RED dla WO B2C-BOOKING-SLOT) wyłącznie po to, żeby ścieżka
+ * sukcesu dotarła do asercji o geokodowaniu — to NIE jest test rezerwacji, więc rezerwacja
+ * ma się "po prostu udać" w tle i nie przesłaniać właściwej asercji. Z tego samego powodu
+ * mock na `leady` zyskuje `update` (analogicznie do `adresyUpdateSpy` już istniejącego
+ * wcześniej w tym pliku, ale bez rzucania — update na leady jest tu oczekiwany i zamierzony
+ * po sukcesie rezerwacji, w przeciwieństwie do update na adresy, który nigdy nie powinien
+ * zajść).
+ *
  * Addendum (2026-08-24, BEZ własnego WO — następstwo naprawy bezpieczeństwa `SEC-RLS-BASELINE`,
  * migracja `supabase/migrations/20260824185845_security_enable_rls_baseline.sql`, już
  * scommitowana): `klienciInsertSpy`/`adresyInsertSpy` NIE zwracają już
@@ -72,7 +88,10 @@ const {
   adresyInsertSpy,
   adresyUpdateSpy,
   leadyInsertSpy,
+  leadyUpdateSpy,
+  leadyUpdateEqSpy,
   calendarSpy,
+  createBookingSpy,
 } = vi.hoisted(() => {
   // Parametr insertu jest jawnie typowany (Record<string, unknown>, zgodnie z tym, co
   // realnie przekazuje saveLead.ts: pojedynczy obiekt, nie tablica) — bez tego `vi.fn(() =>`
@@ -103,7 +122,24 @@ const {
   // odczytać `adres_id`/`klient_id` z przekazanego wiersza.
   const leadyInsertSpy = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
 
+  // Addendum 2026-09-14 (B2C-BOOKING-SLOT, patrz komentarz na górze pliku): update na
+  // `leady` po sukcesie rezerwacji — kształt 1:1 z `saveLead.booking.test.ts`.
+  const leadyUpdateEqSpy = vi.fn(async (_col: string, _val: unknown) => ({ error: null }));
+  const leadyUpdateSpy = vi.fn((_row: Record<string, unknown>) => ({ eq: leadyUpdateEqSpy }));
+
   const calendarSpy = vi.fn(async () => ({ success: true, eventLink: 'stub' }));
+
+  // Addendum 2026-09-14 (B2C-BOOKING-SLOT) — rezerwacja zamockowana na sukces domyślnie,
+  // żeby ścieżka geokodowania (jedyny cel tego pliku) mogła dotrzeć do `result.success`.
+  const createBookingSpy = vi.fn(async (_params: Record<string, unknown>) => ({
+    ok: true,
+    booking: {
+      id: 'booking-default',
+      scheduledStart: new Date('2026-11-16T07:00:00.000Z'),
+      scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
+    },
+    error: null,
+  }));
 
   const fromSpy = vi.fn((table: string) => {
     switch (table) {
@@ -112,7 +148,7 @@ const {
       case 'adresy':
         return { insert: adresyInsertSpy, update: adresyUpdateSpy };
       case 'leady':
-        return { insert: leadyInsertSpy };
+        return { insert: leadyInsertSpy, update: leadyUpdateSpy };
       default:
         throw new Error(
           `saveLead.test: nieoczekiwana tabela "${table}" — dopisz obsługę w mocku zanim rozszerzysz test.`,
@@ -120,21 +156,34 @@ const {
     }
   });
 
-  return { fromSpy, klienciInsertSpy, adresyInsertSpy, adresyUpdateSpy, leadyInsertSpy, calendarSpy };
+  return {
+    fromSpy,
+    klienciInsertSpy,
+    adresyInsertSpy,
+    adresyUpdateSpy,
+    leadyInsertSpy,
+    leadyUpdateSpy,
+    leadyUpdateEqSpy,
+    calendarSpy,
+    createBookingSpy,
+  };
 });
 
 vi.mock('@/lib/supabaseClient', () => ({ supabase: { from: fromSpy } }));
 vi.mock('../../app/actions/calendar', () => ({ createCalendarEvent: calendarSpy }));
+vi.mock('@repo/scheduling', () => ({ createBooking: createBookingSpy }));
 
 const { saveLead } = await import('../../app/actions/saveLead');
 
+// Addendum 2026-09-14 (B2C-BOOKING-SLOT) — `startAtIso` zamiast `bookingDate`/`bookingSlot`
+// (kontrakt wejścia `SaveLeadData` po przepisaniu); wartość bez znaczenia dla tego pliku
+// (geokodowanie), musi być tylko parsowalna przez `new Date(...)`.
 const basePayload = () => ({
   name: 'Jan Kowalski',
   email: 'jan.kowalski@example.com',
   phone: '500600700',
   address: 'Marszałkowska 1, Warszawa',
-  bookingDate: '2026-08-25',
-  bookingSlot: '08:00 - 10:00',
+  startAtIso: '2026-11-16T08:00:00.000+01:00',
   triageData: {},
 });
 
@@ -150,7 +199,10 @@ describe('saveLead — persystencja współrzędnych adresu (WO B2C-LEAD-GEO-PER
     adresyInsertSpy.mockClear();
     adresyUpdateSpy.mockClear();
     leadyInsertSpy.mockClear();
+    leadyUpdateSpy.mockClear();
+    leadyUpdateEqSpy.mockClear();
     calendarSpy.mockClear();
+    createBookingSpy.mockClear();
   });
 
   // @REQ: FLD-GEO-COORDS
@@ -162,9 +214,13 @@ describe('saveLead — persystencja współrzędnych adresu (WO B2C-LEAD-GEO-PER
 
     expect(result.success).toBe(true);
 
-    // AC5 / B2C-LEAD-ATOMIC — dokładnie jeden insert na adresy, żadnego drugiego kroku,
-    // ta sama sekwencja tabel co dziś (klienci -> adresy -> leady).
-    expect(fromSpy.mock.calls.map(([table]) => table)).toEqual(['klienci', 'adresy', 'leady']);
+    // AC5 / B2C-LEAD-ATOMIC — dokładnie jeden insert na adresy, żadnego drugiego kroku.
+    // Sekwencja tabel ma dziś (po B2C-BOOKING-SLOT) DODATKOWE wywołanie `leady` na końcu
+    // — to UPDATE ustawiający `data_rezerwacji` po sukcesie rezerwacji (zamockowanej
+    // wyżej na `ok: true`), nie drugi insert na adresy. Sedno tej asercji — brak
+    // dodatkowego kroku na `adresy` — jest bez zmian, weryfikowane precyzyjniej niżej
+    // (`adresyInsertSpy` razy 1, `adresyUpdateSpy` brak wywołania).
+    expect(fromSpy.mock.calls.map(([table]) => table)).toEqual(['klienci', 'adresy', 'leady', 'leady']);
     expect(adresyInsertSpy).toHaveBeenCalledTimes(1);
     expect(adresyUpdateSpy).not.toHaveBeenCalled();
 

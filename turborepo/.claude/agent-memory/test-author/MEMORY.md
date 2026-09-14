@@ -13,3 +13,4 @@
 - [RBAC capability spy when roles identical](feedback_rbac_capability_spy_when_roles_identical.md) — spy-wrap `can()` via importOriginal to assert exact capability string (e.g. `assign` vs `update`) when both resolve to same roles today.
 - [DB-constraint itest bypass domain layer](feedback_db_constraint_itest_bypass_domain.md) — for raw Postgres constraint boundary criteria, insert both rows via direct `prisma.<model>.create()`, not the domain function (upstream filtering hides the collision).
 - [No-Docker sandbox blocks .itest.ts execution](project_itest_no_docker_sandbox.md) — verify itest additions via tsc+vitest(unit-only)+close code review only; report real execution deferred to CI/dev machine.
+- [TEST-DEFECT payload/contract bump fix](feedback_test_defect_payload_contract_bump.md) — field-rename + new success-path call: fix payload+mocks only, mirror sibling test's mock shape, update forced from()-call-sequence assertions.
