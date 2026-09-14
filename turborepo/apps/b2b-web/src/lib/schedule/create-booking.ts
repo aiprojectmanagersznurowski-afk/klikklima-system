@@ -1,6 +1,7 @@
 import { prisma } from "@repo/database"
 import { formatInTimeZone } from "date-fns-tz"
 import { findAvailableSlots, type AvailableSlot, type ResourceSlots } from "./available-slots"
+import { findPoolSlots } from "./pool-slots"
 
 /**
  * FLD-BOOKING-ATOMIC-ASSIGN (docs/workorders/FLD-BOOKING-ATOMIC-ASSIGN.md), Faza A
@@ -204,24 +205,8 @@ async function findAlternatives(params: CreateBookingParams): Promise<AvailableS
     to: new Date(params.startAt.getTime() + DEFAULT_ALTERNATIVES_HORIZON_DAYS * MS_PER_DAY),
   }
 
-  const result = await findAvailableSlots(params.visitBasketId, range)
-
-  const flattened: AvailableSlot[] = []
-  for (const resource of result.resources) {
-    flattened.push(...resource.slots)
-  }
-  flattened.sort((a, b) => a.start_at.getTime() - b.start_at.getTime())
-
-  const seen = new Set<number>()
-  const alternatives: AvailableSlot[] = []
-  for (const slot of flattened) {
-    const key = slot.start_at.getTime()
-    if (seen.has(key)) continue
-    seen.add(key)
-    alternatives.push({ start_at: slot.start_at, end_at: slot.end_at, date: slot.date })
-    if (alternatives.length >= MAX_ALTERNATIVES) break
-  }
-  return alternatives
+  const result = await findPoolSlots(params.visitBasketId, range, { limit: MAX_ALTERNATIVES })
+  return result.slots
 }
 
 export async function createBooking(params: CreateBookingParams): Promise<CreateBookingResult> {
