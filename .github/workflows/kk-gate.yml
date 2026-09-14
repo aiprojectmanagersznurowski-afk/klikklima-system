@@ -86,6 +86,17 @@ jobs:
   integracja:
     needs: kontrakt
     runs-on: ubuntu-latest
+    env:
+      # Ten sam powód co w jobie `aplikacja`: `npm ci` odpala `postinstall` -> `prisma
+      # generate` PRZED `supabase start`, a `prisma.config.ts` wymaga DATABASE_URL nawet
+      # do samego `generate` (który realnego połączenia i tak nie otwiera). Placeholder
+      # jest nadpisywany prawdziwym URL-em lokalnego stacku w kroku "Eksport zmiennych
+      # środowiskowych" niżej — brak tego bloku psuje `npm ci` na starcie, zanim Supabase
+      # CLI zostanie nawet zainstalowane (wykryte 2026-09-11 na żywym uruchomieniu CI:
+      # "Missing required environment variable: DATABASE_URL", potem "supabase: command
+      # not found" w kroku sprzątania, bo job padł zanim CLI zdążyło się zainstalować).
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/klikklima_ci_placeholder
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/klikklima_ci_placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
