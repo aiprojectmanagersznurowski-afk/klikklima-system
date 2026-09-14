@@ -119,7 +119,7 @@ function subjectFields(subject: BookingSubject): { leadId: string | null; servic
  * jest poprawnym mapowaniem dla żadnego z ograniczeń tego WO (ani exclusion, ani
  * unique-na-kolumnie-generowanej) — nie sprawdzamy go.
  */
-function extractSqlState(err: unknown): string | null {
+export function extractSqlState(err: unknown): string | null {
   if (err && typeof err === "object") {
     const meta = (err as { meta?: unknown }).meta
     if (meta && typeof meta === "object") {
