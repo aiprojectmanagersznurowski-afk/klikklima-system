@@ -1,5 +1,8 @@
 # Pamięć agenta: contract-steward
 
+- [Migracja musi działać w OBU porządkach](feedback_migration_both_run_orders.md) — replay wg nazw plików vs ręczne uruchomienie poza kolejnością; nazwa nieznana statycznie -> dynamiczny COMMENT.
+- [Weryfikacja SQL bez Dockera](feedback_sql_verify_via_rolled_back_tx.md) — blok na żywej bazie w transakcji z celowym ROLLBACK przez `node -e`; guard-paths blokuje pliki skryptowe.
+
 - [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, audytorzy MAJĄ promień, timestamp ≠ kolejność uruchomienia, migracje LIVE.
 - [FLD-AVAIL-WEEKLY-RULES: AC szersze niż WO](project_fld_avail_weekly_rules_ac_wider_than_wo.md) — 2026-09-10 DOMKNIĘTE na DONE (4075fdd); AC7/AC8 wyniesione do CAL-SLOT-ENGINE i CAL-POOL-AGGREGATE.
 - [FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT zamknięte](project_booking_one_active_per_subject.md) — 2026-09-14 DONE (dd69d56); podział kryteriów wg PRZEDMIOTU: kod -> atrapa, indeks -> żywy Postgres.
