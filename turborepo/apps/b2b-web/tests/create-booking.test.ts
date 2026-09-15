@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fromZonedTime } from 'date-fns-tz';
 import { SLA } from '@klikklima/contracts';
 
@@ -35,6 +35,8 @@ const TIME_ZONE = 'Europe/Warsaw';
 function localMoment(dateStr: string, hhmm: string): Date {
   return fromZonedTime(`${dateStr}T${hhmm}:00`, TIME_ZONE);
 }
+
+const FIXED_NOW = new Date('2026-01-01T00:00:00Z');
 
 const {
   availabilityRuleFindManyMock,
@@ -233,6 +235,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
   it('AC-A1 — udana rezerwacja tworzy JEDEN wiersz z dokładnie jednym wykonawcą, status RESERVED, assignment_mode AUTO', async () => {
     const startAt = localMoment('2026-09-14', '08:00');
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt,
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -259,6 +262,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
     visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 120 }));
 
     await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt,
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -282,6 +286,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
   it('AC-A3 — koszyk AUDIT ląduje na audytorze (auditorId niepuste, crewId puste)', async () => {
     visitDurationBasketQueryMock.mockResolvedValue(basketRow({ code: 'AUDIT', pool: 'AUDITOR' }));
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt: localMoment('2026-09-14', '08:00'),
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -299,6 +304,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       basketRow({ id: 'basket-install', code: 'INSTALL_STANDARD', pool: 'CREW', durationMinutes: 480 }),
     );
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-install',
       startAt: localMoment('2026-09-14', '08:00'),
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -314,6 +320,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
   it('AC-A3 — POOL_MISMATCH: 23514 z wyzwalacza (kształt raw/P2010+meta.code) wraca jako błąd domenowy, nie wyjątek', async () => {
     bookingCreateMock.mockRejectedValue(poolMismatchErrorRaw());
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt: localMoment('2026-09-14', '08:00'),
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -335,6 +342,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
     ]);
 
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-incident',
       startAt: localMoment('2026-09-14', '10:00'),
       subject: { kind: 'INCIDENT', incidentId: 'incident-1' },
@@ -358,6 +366,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
     visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 120 }));
 
     const first = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt: localMoment('2026-09-14', '08:00'),
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -372,6 +381,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
     ]);
 
     const second = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt: localMoment('2026-09-14', '10:00'),
       subject: { kind: 'LEAD', leadId: 'lead-2' },
@@ -386,6 +396,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       bookingRow({ auditorId: 'aud-1', scheduledStart: localMoment('2026-09-14', '08:00'), scheduledEnd: localMoment('2026-09-14', '10:00'), status: 'RELEASED' }),
     ]);
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt: localMoment('2026-09-14', '08:00'),
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -400,6 +411,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       bookingRow({ auditorId: 'aud-1', scheduledStart: localMoment('2026-09-14', '08:00'), scheduledEnd: localMoment('2026-09-14', '10:00'), status: 'COMPLETED' }),
     ]);
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt: localMoment('2026-09-14', '08:00'),
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -415,6 +427,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       availabilityRuleFindManyMock.mockResolvedValue([ruleRow(2, '08:00', '16:00', true)]); // tylko wtorek
       // 2026-09-14 to poniedziałek (weekday=1) — brak reguły na ten dzień.
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -432,6 +445,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
         { auditorId: 'aud-1', crewId: null, startsAt: localMoment('2026-09-14', '00:00'), endsAt: localMoment('2026-09-15', '00:00') },
       ]);
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -452,6 +466,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       ]);
       systemConfigFindUniqueMock.mockResolvedValue(schedulingConfigRow({ buffer: 60 }));
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '10:30'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -475,6 +490,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       );
       bookingFindManyMock.mockResolvedValue(existingBookings);
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-15', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -486,6 +502,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       expect(result.ok).toBe(true);
 
       const exhaustedResult = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', `0${8 + capacity}:00`.slice(-5)),
         subject: { kind: 'LEAD', leadId: 'lead-2' },
@@ -502,6 +519,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
     it('AC-A10 (kształt raw/P2010+meta.code) — SLOT_TAKEN z co najmniej jedną alternatywą bez resource_id', async () => {
       bookingCreateMock.mockRejectedValue(exclusionViolationErrorRaw());
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -521,6 +539,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
     it('AC-A10 (kształt bez mapowania, tekst SQLSTATE 23P01 w komunikacie) — SLOT_TAKEN, nie wyjątek', async () => {
       bookingCreateMock.mockRejectedValue(exclusionViolationErrorUnknown());
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -537,6 +556,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       bookingCreateMock.mockRejectedValue(exclusionViolationErrorRaw());
 
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -569,6 +589,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
         bookingRow({ auditorId: 'aud-b', scheduledStart: localMoment('2026-09-14', '13:00'), scheduledEnd: localMoment('2026-09-14', '15:00') }),
       ]);
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -584,6 +605,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       auditorFindManyMock.mockResolvedValue([auditorRow('aud-z'), auditorRow('aud-a')]);
       bookingFindManyMock.mockResolvedValue([]);
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -613,6 +635,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       ]);
       const startAt = localMoment('2026-03-29', '08:00');
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt,
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -644,6 +667,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       ]);
       const startAt = localMoment('2026-10-25', '08:00');
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt,
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -662,6 +686,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       availabilityRuleFindManyMock.mockResolvedValue([ruleRow(7, '08:00', '16:00')]);
       const startAt = localMoment('2026-03-29', '08:00');
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-install',
         startAt,
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -681,6 +706,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
       availabilityRuleFindManyMock.mockResolvedValue([ruleRow(7, '08:00', '16:00')]);
       const startAt = localMoment('2026-10-25', '08:00');
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-install',
         startAt,
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -698,6 +724,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
     it('koszyk wycofany (is_active=false) -> BASKET_INACTIVE, zero zapisu (silnik już to zwraca, akcja nie może tego przykryć)', async () => {
       visitDurationBasketQueryMock.mockResolvedValue(basketRow({ isActive: false }));
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -713,6 +740,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
     it('koszyk nieistniejący -> BASKET_NOT_FOUND, zero zapisu', async () => {
       visitDurationBasketQueryMock.mockResolvedValue(null);
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-nieistniejacy',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -728,6 +756,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
     it('brak travel_buffer_minutes w scheduling_config -> fail-CLOSED (CONFIG_MISSING), bufor 0 NIE jest wartością domyślną', async () => {
       systemConfigFindUniqueMock.mockResolvedValue(schedulingConfigRow({ buffer: null }));
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -743,6 +772,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
     it('pusta pula (wszyscy nieaktywni) -> SLOT_NOT_OFFERED, nie wyjątek', async () => {
       auditorFindManyMock.mockResolvedValue([auditorRow('aud-1', { is_active: false })]);
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -760,6 +790,7 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
         { id: 'decl-1', auditorId: 'aud-1', crewId: null, isAvailable: false },
       ]);
       const result = await createBooking({
+        now: FIXED_NOW,
         visitBasketId: 'basket-audit',
         startAt: localMoment('2026-09-14', '08:00'),
         subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -774,6 +805,22 @@ describe('createBooking — Faza A (automat), FLD-BOOKING-ATOMIC-ASSIGN', () => 
 });
 
 describe('createBookingAction — bramka uprawnień, FLD-BOOKING-ATOMIC-ASSIGN AC-A12', () => {
+  // `createBookingAction` waliduje wejście przez Zod (bez pola `now` w schemacie) i
+  // przekazuje wynik dalej do `createBooking`, który wtedy domyślnie liczy `now = new
+  // Date()` — CAL-SLOT-ENGINE-PAST-REJECTION odrzuciłby '2026-09-14' względem
+  // prawdziwego zegara systemowego. Zamiast literału daty (zakazane) albo zmiany
+  // production-code schematu (zakazane dla test-authora), zamrażamy zegar systemowy
+  // na FIXED_NOW — dokładnie ten sam mechanizm, którym `now` byłby przekazany, gdyby
+  // schemat go przyjmował.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(FIXED_NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   const VALID_PAYLOAD = {
     visitBasketId: 'basket-audit',
     startAt: localMoment('2026-09-14', '08:00'),

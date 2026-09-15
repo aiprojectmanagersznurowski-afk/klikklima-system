@@ -24,6 +24,8 @@ function localMoment(dateStr: string, hhmm: string): Date {
   return fromZonedTime(`${dateStr}T${hhmm}:00`, TIME_ZONE);
 }
 
+const FIXED_NOW = new Date('2026-01-01T00:00:00Z');
+
 const {
   availabilityRuleFindManyMock,
   systemConfigFindUniqueMock,
@@ -186,6 +188,7 @@ describe('createBooking — FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT, AC5/AC6 (atrapa 
     bookingCreateMock.mockRejectedValue(subjectAlreadyBookedErrorRaw());
 
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt: localMoment('2026-09-14', '08:00'),
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -205,6 +208,7 @@ describe('createBooking — FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT, AC5/AC6 (atrapa 
     bookingFindFirstMock.mockResolvedValue(existing);
 
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt: localMoment('2026-09-14', '08:00'),
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -237,6 +241,7 @@ describe('createBooking — FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT, AC5/AC6 (atrapa 
     bookingFindFirstMock.mockResolvedValue(null);
 
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt: localMoment('2026-09-14', '08:00'),
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -263,6 +268,7 @@ describe('createBooking — FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT, AC5/AC6 (atrapa 
     bookingCreateMock.mockRejectedValue(subjectAlreadyBookedErrorRaw());
 
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt: localMoment('2026-09-14', '08:00'),
       subject: { kind: 'LEAD', leadId: 'lead-1' },
@@ -285,6 +291,7 @@ describe('createBooking — FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT, AC5/AC6 (atrapa 
     bookingFindFirstMock.mockResolvedValue(existing);
 
     const result = await createBooking({
+      now: FIXED_NOW,
       visitBasketId: 'basket-audit',
       startAt: localMoment('2026-09-14', '08:00'),
       subject: { kind: 'SERVICE', serviceId: 'service-1' },

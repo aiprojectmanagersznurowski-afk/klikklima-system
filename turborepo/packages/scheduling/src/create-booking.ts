@@ -41,6 +41,7 @@ export type CreateBookingParams = {
   subject: BookingSubject
   bookedBy: "CLIENT" | "DISPATCHER"
   alternativesRange?: { from: Date; to: Date }
+  now?: Date
 }
 
 export type CreateBookingErrorCode =
@@ -135,19 +136,31 @@ function subjectFields(subject: BookingSubject): { leadId: string | null; servic
 }
 
 /**
- * R-3: rozpoznanie SQLSTATE z wyjątku Prismy. Dwa plauzybilne kształty (WO, "Ryzyka
- * i nieznane" #3): `PrismaClientKnownRequestError`-podobny z `meta.code` (raw query,
- * P2010) albo błąd bez mapowania z surowym SQLSTATE w treści komunikatu. `P2002` NIE
- * jest poprawnym mapowaniem dla żadnego z ograniczeń tego WO (ani exclusion, ani
- * unique-na-kolumnie-generowanej) — nie sprawdzamy go.
+ * R-3: rozpoznanie SQLSTATE z wyjątku Prismy. Trzy plauzybilne kształty, potwierdzone
+ * na żywym Postgresie: (1) `PrismaClientKnownRequestError` z `code: 'P2002'` dla
+ * naruszenia zwykłego indeksu unikalnego/częściowego (np. `bookings_one_active_per_subject`)
+ * — mapowane bezwarunkowo na 23505; (2) `PrismaClientKnownRequestError`-podobny z
+ * `meta.code` (raw query, P2010); (3) `PrismaClientUnknownRequestError` bez mapowania,
+ * z surowym SQLSTATE w treści komunikatu (np. `EXCLUDE`/wyzwalacz, 23P01).
  */
 export function extractSqlState(err: unknown): string | null {
   if (err && typeof err === "object") {
+    // Prawdziwy `PrismaClientKnownRequestError` dla ZWYKŁEGO indeksu unikalnego
+    // (w tym częściowego, np. `bookings_one_active_per_subject`) — Prisma mapuje
+    // naruszenie na `code: 'P2002'` z ustrukturyzowanym `meta`, NIE osadza
+    // surowego SQLSTATE w treści. P2002 jest bezwarunkowym, bezpośrednim
+    // mapowaniem na 23505 (naruszenie unikalności) — zmierzone na żywym
+    // Postgresie 2026-09-14/15.
+    const code = (err as { code?: unknown }).code
+    if (code === "P2002") {
+      return "23505"
+    }
+
     const meta = (err as { meta?: unknown }).meta
     if (meta && typeof meta === "object") {
-      const code = (meta as Record<string, unknown>).code
-      if (typeof code === "string" && /^[0-9A-Z]{5}$/.test(code)) {
-        return code
+      const metaCode = (meta as Record<string, unknown>).code
+      if (typeof metaCode === "string" && /^[0-9A-Z]{5}$/.test(metaCode)) {
+        return metaCode
       }
     }
   }
@@ -226,7 +239,7 @@ async function findAlternatives(params: CreateBookingParams): Promise<AvailableS
     to: new Date(params.startAt.getTime() + DEFAULT_ALTERNATIVES_HORIZON_DAYS * MS_PER_DAY),
   }
 
-  const result = await findPoolSlots(params.visitBasketId, range, { limit: MAX_ALTERNATIVES })
+  const result = await findPoolSlots(params.visitBasketId, range, { limit: MAX_ALTERNATIVES }, params.now)
   return result.slots
 }
 
@@ -251,7 +264,11 @@ export async function createBooking(params: CreateBookingParams): Promise<Create
 
   const resourceKind: "AUDITOR" | "CREW" = basket.pool === "CREW" ? "CREW" : "AUDITOR"
 
-  const slotsResult = await findAvailableSlots(params.visitBasketId, { from: params.startAt, to: params.startAt })
+  const slotsResult = await findAvailableSlots(
+    params.visitBasketId,
+    { from: params.startAt, to: params.startAt },
+    params.now,
+  )
 
   const startAtMs = params.startAt.getTime()
   const candidates = slotsResult.resources.filter((resource) =>

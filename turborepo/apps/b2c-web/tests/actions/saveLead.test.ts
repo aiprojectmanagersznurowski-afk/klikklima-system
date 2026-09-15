@@ -92,6 +92,7 @@ const {
   leadyUpdateEqSpy,
   calendarSpy,
   createBookingSpy,
+  visitDurationBasketFindFirstMock,
 } = vi.hoisted(() => {
   // Parametr insertu jest jawnie typowany (Record<string, unknown>, zgodnie z tym, co
   // realnie przekazuje saveLead.ts: pojedynczy obiekt, nie tablica) — bez tego `vi.fn(() =>`
@@ -141,6 +142,22 @@ const {
     error: null,
   }));
 
+  // Higiena testów (WO ad-hoc, patrz podsumowanie tury): `saveLead.ts` woła
+  // `prisma.visitDurationBasket.findFirst(...)` (`@repo/database`, PRZED `createBooking`)
+  // żeby rozwiązać koszyk AUDIT. Bez tego mocka test cicho łączył się z prawdziwą bazą
+  // przez `.env` lokalnie (przechodził przypadkiem), a w CI (DATABASE_URL placeholder)
+  // padał na `PrismaClientInitializationError` przechwyconym przez generyczny `catch`.
+  // Domyślnie zwraca realistyczny wiersz koszyka AUDIT — ten plik nie testuje ścieżki
+  // BASKET_NOT_FOUND, więc `auditBasket` musi być zawsze prawdziwe (`!auditBasket` w
+  // saveLead.ts) i mieć `id`, którego `saveLead.ts` czyta wprost (`auditBasket.id`).
+  const visitDurationBasketFindFirstMock = vi.fn(async (_args: Record<string, unknown>) => ({
+    id: 'basket-audit-id',
+    code: 'AUDIT',
+    isActive: true,
+    durationMinutes: 120,
+    pool: 'AUDITOR',
+  }));
+
   const fromSpy = vi.fn((table: string) => {
     switch (table) {
       case 'klienci':
@@ -166,12 +183,18 @@ const {
     leadyUpdateEqSpy,
     calendarSpy,
     createBookingSpy,
+    visitDurationBasketFindFirstMock,
   };
 });
 
 vi.mock('@/lib/supabaseClient', () => ({ supabase: { from: fromSpy } }));
 vi.mock('../../app/actions/calendar', () => ({ createCalendarEvent: calendarSpy }));
 vi.mock('@repo/scheduling', () => ({ createBooking: createBookingSpy }));
+vi.mock('@repo/database', () => ({
+  prisma: {
+    visitDurationBasket: { findFirst: visitDurationBasketFindFirstMock },
+  },
+}));
 
 const { saveLead } = await import('../../app/actions/saveLead');
 
@@ -203,6 +226,7 @@ describe('saveLead — persystencja współrzędnych adresu (WO B2C-LEAD-GEO-PER
     leadyUpdateEqSpy.mockClear();
     calendarSpy.mockClear();
     createBookingSpy.mockClear();
+    visitDurationBasketFindFirstMock.mockClear();
   });
 
   // @REQ: FLD-GEO-COORDS

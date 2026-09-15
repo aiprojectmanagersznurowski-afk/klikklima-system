@@ -34,6 +34,7 @@ const {
   leadyUpdateEqSpy,
   calendarSpy,
   createBookingSpy,
+  visitDurationBasketFindFirstMock,
 } = vi.hoisted(() => {
   const klienciInsertSpy = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
   const adresyInsertSpy = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
@@ -55,6 +56,20 @@ const {
       scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
     },
     error: null,
+  }));
+
+  // Higiena testów (WO ad-hoc, patrz podsumowanie tury): `saveLead.ts` woła
+  // `prisma.visitDurationBasket.findFirst(...)` (`@repo/database`) PRZED `createBooking`.
+  // Ten plik testuje wyłącznie rezerwację (AC5/AC6/AC7/AC9/AC10) — koszyk AUDIT musi
+  // się zawsze rozwiązać, więc mock zwraca stały, prawdziwy wiersz (nie `null`), inaczej
+  // każdy test padłby wcześniej na `BASKET_NOT_FOUND`, zanim `createBookingSpy` w ogóle
+  // zostanie wywołany.
+  const visitDurationBasketFindFirstMock = vi.fn(async (_args: Record<string, unknown>) => ({
+    id: 'basket-audit-id',
+    code: 'AUDIT',
+    isActive: true,
+    durationMinutes: 120,
+    pool: 'AUDITOR',
   }));
 
   const fromSpy = vi.fn((table: string) => {
@@ -81,12 +96,18 @@ const {
     leadyUpdateEqSpy,
     calendarSpy,
     createBookingSpy,
+    visitDurationBasketFindFirstMock,
   };
 });
 
 vi.mock('@/lib/supabaseClient', () => ({ supabase: { from: fromSpy } }));
 vi.mock('../../app/actions/calendar', () => ({ createCalendarEvent: calendarSpy }));
 vi.mock('@repo/scheduling', () => ({ createBooking: createBookingSpy }));
+vi.mock('@repo/database', () => ({
+  prisma: {
+    visitDurationBasket: { findFirst: visitDurationBasketFindFirstMock },
+  },
+}));
 
 const { saveLead } = await import('../../app/actions/saveLead');
 
@@ -108,6 +129,14 @@ function resetAllMocks(): void {
   leadyUpdateEqSpy.mockClear();
   calendarSpy.mockClear();
   createBookingSpy.mockClear();
+  visitDurationBasketFindFirstMock.mockClear();
+  visitDurationBasketFindFirstMock.mockResolvedValue({
+    id: 'basket-audit-id',
+    code: 'AUDIT',
+    isActive: true,
+    durationMinutes: 120,
+    pool: 'AUDITOR',
+  });
   createBookingSpy.mockResolvedValue({
     ok: true,
     booking: {

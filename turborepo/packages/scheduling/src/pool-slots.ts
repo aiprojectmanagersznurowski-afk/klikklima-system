@@ -19,13 +19,14 @@ export async function findPoolSlots(
   visitBasketId: string,
   dateRange: { from: Date; to: Date },
   options?: { limit?: number },
+  now?: Date,
 ): Promise<PoolSlotsResult> {
   const limit = options?.limit
   if (limit !== undefined && (!Number.isInteger(limit) || limit < 0)) {
     throw new Error(`Parametr "limit" musi być nieujemną liczbą całkowitą, otrzymano: ${limit}.`)
   }
 
-  const result = await findAvailableSlots(visitBasketId, dateRange)
+  const result = await findAvailableSlots(visitBasketId, dateRange, now)
 
   const flattened: AvailableSlot[] = []
   for (const resource of result.resources) {

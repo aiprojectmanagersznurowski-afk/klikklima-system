@@ -37,6 +37,8 @@ function localMoment(dateStr: string, hhmm: string): Date {
   return fromZonedTime(`${dateStr}T${hhmm}:00`, TIME_ZONE);
 }
 
+const FIXED_NOW = new Date('2026-01-01T00:00:00Z');
+
 function utcDay(iso: string): Date {
   return new Date(`${iso}T00:00:00.000Z`);
 }
@@ -168,7 +170,7 @@ describe('findAvailableSlots — grupa P (pula i kształt wyniku), CAL-SLOT-ENGI
     const result = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
 
     expect(result.resources).toHaveLength(2);
     expect(result.resources.map((r) => r.resource_id).sort()).toEqual(['aud-1', 'aud-2']);
@@ -180,7 +182,7 @@ describe('findAvailableSlots — grupa P (pula i kształt wyniku), CAL-SLOT-ENGI
     const auditResult = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
 
     visitDurationBasketQueryMock.mockResolvedValue(
       basketRow({ id: 'basket-install', code: 'INSTALL_STANDARD', pool: 'CREW', durationMinutes: 480 }),
@@ -188,7 +190,7 @@ describe('findAvailableSlots — grupa P (pula i kształt wyniku), CAL-SLOT-ENGI
     const installResult = await findAvailableSlots('basket-install', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
 
     expect(auditResult.resources.every((r) => r.resource_kind === 'AUDITOR')).toBe(true);
     expect(installResult.resources.every((r) => r.resource_kind === 'CREW')).toBe(true);
@@ -206,7 +208,7 @@ describe('findAvailableSlots — grupa P (pula i kształt wyniku), CAL-SLOT-ENGI
     const result = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
     const ids = result.resources.map((r) => r.resource_id);
     expect(ids).not.toContain('aud-blocked');
     expect(ids).toContain('aud-1');
@@ -221,7 +223,7 @@ describe('findAvailableSlots — grupa P (pula i kształt wyniku), CAL-SLOT-ENGI
     const result = await findAvailableSlots('basket-install', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
     const ids = result.resources.map((r) => r.resource_id);
     expect(ids).not.toContain('crew-blocked');
     expect(ids).toContain('crew-1');
@@ -233,7 +235,7 @@ describe('findAvailableSlots — grupa P (pula i kształt wyniku), CAL-SLOT-ENGI
     const result = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
     expect(result.resources.map((r) => r.resource_id)).not.toContain('aud-vacation');
   });
 
@@ -247,7 +249,7 @@ describe('findAvailableSlots — grupa P (pula i kształt wyniku), CAL-SLOT-ENGI
     const result = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
     const ids = result.resources.map((r) => r.resource_id);
     expect(ids).not.toContain('aud-declined');
     expect(ids).toContain('aud-1');
@@ -266,7 +268,7 @@ describe('findAvailableSlots — grupa P (pula i kształt wyniku), CAL-SLOT-ENGI
     const small = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-01'),
       to: utcDay('2026-09-30'), // 30 dni
-    });
+    }, FIXED_NOW);
     const smallCounts = {
       booking: bookingFindManyMock.mock.calls.length,
       absence: absenceFindManyMock.mock.calls.length,
@@ -282,7 +284,7 @@ describe('findAvailableSlots — grupa P (pula i kształt wyniku), CAL-SLOT-ENGI
     const big = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-01'),
       to: utcDay('2026-10-30'), // 60 dni
-    });
+    }, FIXED_NOW);
     const bigCounts = {
       booking: bookingFindManyMock.mock.calls.length,
       absence: absenceFindManyMock.mock.calls.length,
@@ -312,7 +314,7 @@ describe('findAvailableSlots — grupa P (pula i kształt wyniku), CAL-SLOT-ENGI
     const result = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-19'),
       to: utcDay('2026-09-19'),
-    });
+    }, FIXED_NOW);
     expect(result.error).toBeNull();
     expect(result.resources.length).toBeGreaterThan(0);
     for (const r of result.resources) {
@@ -325,13 +327,13 @@ describe('findAvailableSlots — grupa D (długość wizyty i siatka), CAL-SLOT-
   // @REQ: CAL-SLOT-ENGINE
   it('AC-D1 (funkcjonalny) — długość slotu pochodzi WYŁĄCZNIE z visit_duration_baskets.duration_minutes: zmiana 120->180 zmienia end_at-start_at', async () => {
     visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 120 }));
-    const r120 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const r120 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slot120 = r120.resources.find((r) => r.resource_id === 'aud-1')!.slots[0]!;
     expect(slot120.end_at.getTime() - slot120.start_at.getTime()).toBe(120 * 60000);
     expect(r120.duration_minutes).toBe(120);
 
     visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 180 }));
-    const r180 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const r180 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slot180 = r180.resources.find((r) => r.resource_id === 'aud-1')!.slots[0]!;
     expect(slot180.end_at.getTime() - slot180.start_at.getTime()).toBe(180 * 60000);
     expect(r180.duration_minutes).toBe(180);
@@ -351,7 +353,7 @@ describe('findAvailableSlots — grupa D (długość wizyty i siatka), CAL-SLOT-
   // @REQ: CAL-SLOT-ENGINE
   it('AC-D2 — koszyk 480min w oknie 08:00-16:00 daje DOKŁADNIE jeden slot (08:00-16:00), slot nigdy nie przekracza końca okna', async () => {
     visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 480 }));
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots = result.resources.find((r) => r.resource_id === 'aud-1')!.slots;
     expect(slots).toHaveLength(1);
     expect(slots[0]!.start_at).toEqual(localMoment('2026-09-14', '08:00'));
@@ -361,7 +363,7 @@ describe('findAvailableSlots — grupa D (długość wizyty i siatka), CAL-SLOT-
   // @REQ: CAL-SLOT-ENGINE
   it('AC-D2 — koszyk 481min w oknie 08:00-16:00 (480 minut) daje ZERO slotów', async () => {
     visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 481 }));
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots = result.resources.find((r) => r.resource_id === 'aud-1')!.slots;
     expect(slots).toEqual([]);
   });
@@ -371,14 +373,14 @@ describe('findAvailableSlots — grupa D (długość wizyty i siatka), CAL-SLOT-
     auditorFindManyMock.mockResolvedValue([auditorRow('aud-solo')]);
     availabilityRuleFindManyMock.mockResolvedValue([ruleRow(1, '08:00', '16:00', false)]);
     // poniedziałek 2026-09-14 = ISODOW 1
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(result.resources.find((r) => r.resource_id === 'aud-solo')!.slots).toEqual([]);
   });
 
   // @REQ: CAL-SLOT-ENGINE
   it('AC-D4 — koszyk nieaktywny (is_active=false) daje kontrolowany error, nie wyjątek i nie cichą listę slotów', async () => {
     visitDurationBasketQueryMock.mockResolvedValue(basketRow({ isActive: false }));
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(result.error).toEqual(expect.any(String));
     expect(result.error!.length).toBeGreaterThan(0);
     expect(result.resources).toEqual([]);
@@ -390,7 +392,7 @@ describe('findAvailableSlots — grupa D (długość wizyty i siatka), CAL-SLOT-
     const result = await findAvailableSlots('basket-nieistniejacy', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
     expect(result.error).toEqual(expect.any(String));
     expect(result.error!.length).toBeGreaterThan(0);
     expect(result.resources).toEqual([]);

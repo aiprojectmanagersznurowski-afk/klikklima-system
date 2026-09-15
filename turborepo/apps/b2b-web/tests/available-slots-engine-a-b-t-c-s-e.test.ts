@@ -65,6 +65,8 @@ function localMoment(dateStr: string, hhmm: string): Date {
   return fromZonedTime(`${dateStr}T${hhmm}:00`, TIME_ZONE);
 }
 
+const FIXED_NOW = new Date('2026-01-01T00:00:00Z');
+
 function utcDay(iso: string): Date {
   return new Date(`${iso}T00:00:00.000Z`);
 }
@@ -246,7 +248,7 @@ describe('findAvailableSlots — grupa A (odjęcie nieobecności), CAL-SLOT-ENGI
     const result = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
     const slots = slotsFor(result, 'aud-1');
     for (const slot of slots) {
       const overlaps =
@@ -268,7 +270,7 @@ describe('findAvailableSlots — grupa A (odjęcie nieobecności), CAL-SLOT-ENGI
     const result = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-17'),
-    });
+    }, FIXED_NOW);
     const byDate = new Map<string, ReturnType<typeof slotsFor>>();
     for (const slot of slotsFor(result, 'aud-1')) {
       byDate.set(slot.date, [...(byDate.get(slot.date) ?? []), slot]);
@@ -293,7 +295,7 @@ describe('findAvailableSlots — grupa A (odjęcie nieobecności), CAL-SLOT-ENGI
     const resultEndTouch = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
     const slotsEndTouch = slotsFor(resultEndTouch, 'aud-1');
     expect(
       slotsEndTouch.some(
@@ -310,7 +312,7 @@ describe('findAvailableSlots — grupa A (odjęcie nieobecności), CAL-SLOT-ENGI
     const resultStartTouch = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
     const slotsStartTouch = slotsFor(resultStartTouch, 'aud-1');
     expect(
       slotsStartTouch.some(
@@ -333,7 +335,7 @@ describe('findAvailableSlots — grupa A (odjęcie nieobecności), CAL-SLOT-ENGI
     const resultOverlapping = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
 
     absenceFindManyMock.mockResolvedValue([
       absenceRow({ auditorId: 'aud-1', startsAt: localMoment('2026-09-14', '10:00'), endsAt: localMoment('2026-09-14', '13:00') }),
@@ -341,7 +343,7 @@ describe('findAvailableSlots — grupa A (odjęcie nieobecności), CAL-SLOT-ENGI
     const resultUnion = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
 
     const normalize = (r: typeof resultOverlapping) =>
       slotsFor(r, 'aud-1')
@@ -362,7 +364,7 @@ describe('findAvailableSlots — grupa A (odjęcie nieobecności), CAL-SLOT-ENGI
     const result = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-14'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
     const slots = slotsFor(result, 'aud-1');
     expect(slots.some((s) => s.start_at.getTime() === localMoment('2026-09-14', '10:00').getTime())).toBe(true);
     // Żaden slot nie zaczyna się przed końcem nieobecności.
@@ -378,7 +380,7 @@ describe('findAvailableSlots — grupa B (odjęcie rezerwacji), CAL-SLOT-ENGINE'
     bookingFindManyMock.mockResolvedValue([
       bookingRow({ auditorId: 'aud-1', status: 'RESERVED', scheduledStart: localMoment('2026-09-14', '10:00'), scheduledEnd: localMoment('2026-09-14', '12:00') }),
     ]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     for (const slot of slotsFor(result, 'aud-1')) {
       const overlaps =
         slot.start_at.getTime() < localMoment('2026-09-14', '12:00').getTime() &&
@@ -392,7 +394,7 @@ describe('findAvailableSlots — grupa B (odjęcie rezerwacji), CAL-SLOT-ENGINE'
     bookingFindManyMock.mockResolvedValue([
       bookingRow({ auditorId: 'aud-1', status: 'CONFIRMED', scheduledStart: localMoment('2026-09-14', '10:00'), scheduledEnd: localMoment('2026-09-14', '12:00') }),
     ]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     for (const slot of slotsFor(result, 'aud-1')) {
       const overlaps =
         slot.start_at.getTime() < localMoment('2026-09-14', '12:00').getTime() &&
@@ -407,7 +409,7 @@ describe('findAvailableSlots — grupa B (odjęcie rezerwacji), CAL-SLOT-ENGINE'
     bookingFindManyMock.mockResolvedValue([
       bookingRow({ auditorId: 'aud-1', status: 'RELEASED', scheduledStart: localMoment('2026-09-14', '08:00'), scheduledEnd: localMoment('2026-09-14', '10:00') }),
     ]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots = slotsFor(result, 'aud-1');
     expect(slots.some((s) => s.start_at.getTime() === localMoment('2026-09-14', '08:00').getTime())).toBe(true);
   });
@@ -418,7 +420,7 @@ describe('findAvailableSlots — grupa B (odjęcie rezerwacji), CAL-SLOT-ENGINE'
     bookingFindManyMock.mockResolvedValue([
       bookingRow({ auditorId: 'aud-1', status: 'COMPLETED', scheduledStart: localMoment('2026-09-14', '08:00'), scheduledEnd: localMoment('2026-09-14', '10:00') }),
     ]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots = slotsFor(result, 'aud-1');
     expect(slots.some((s) => s.start_at.getTime() === localMoment('2026-09-14', '08:00').getTime())).toBe(true);
   });
@@ -429,7 +431,7 @@ describe('findAvailableSlots — grupa B (odjęcie rezerwacji), CAL-SLOT-ENGINE'
     bookingFindManyMock.mockResolvedValue([
       bookingRow({ auditorId: 'aud-2', status: 'RESERVED', scheduledStart: localMoment('2026-09-14', '08:00'), scheduledEnd: localMoment('2026-09-14', '16:00') }),
     ]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(slotsFor(result, 'aud-1').length).toBeGreaterThan(0);
     expect(slotsFor(result, 'aud-2').length).toBe(0);
   });
@@ -441,7 +443,7 @@ describe('findAvailableSlots — grupa B (odjęcie rezerwacji), CAL-SLOT-ENGINE'
       bookingRow({ auditorId: 'aud-1', status: 'RESERVED', scheduledStart: localMoment('2026-09-14', '08:00'), scheduledEnd: localMoment('2026-09-14', '10:00') }),
     ]);
     visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 480 }));
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     // Koszyk 480 min w oknie 08-16 z rezerwacją utrwaloną na 08:00-10:00 (nie 08:00-16:00):
     // jedyny możliwy slot 08:00-16:00 nakłada się na blokadę 08:00-10:00 -> zero slotów.
     // Gdyby silnik przeliczał blokadę na nowo z duration_minutes=480, wynik byłby ten sam
@@ -450,7 +452,7 @@ describe('findAvailableSlots — grupa B (odjęcie rezerwacji), CAL-SLOT-ENGINE'
 
     visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 60 }));
     systemConfigFindUniqueMock.mockResolvedValue(schedulingConfigRow({ buffer: 0 }));
-    const resultShort = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const resultShort = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slotsShort = slotsFor(resultShort, 'aud-1');
     // Blokada utrwalona 08:00-10:00 (2h) — NIE 08:00-08:60 (gdyby przeliczona z duration=60).
     // Slot 10:00-11:00 musi być wolny, a żaden slot nie może zaczynać się przed 10:00.
@@ -466,7 +468,7 @@ describe('findAvailableSlots — grupa B (odjęcie rezerwacji), CAL-SLOT-ENGINE'
     bookingFindManyMock.mockResolvedValue([
       bookingRow({ auditorId: 'aud-1', status: 'RESERVED', scheduledStart: localMoment('2026-09-14', '08:00'), scheduledEnd: localMoment('2026-09-14', '10:00') }),
     ]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots = slotsFor(result, 'aud-1');
     expect(
       slots.some(
@@ -486,7 +488,7 @@ describe('findAvailableSlots — grupa T (bufor dojazdu), CAL-SLOT-ENGINE', () =
     bookingFindManyMock.mockResolvedValue([
       bookingRow({ auditorId: 'aud-1', status: 'RESERVED', scheduledStart: localMoment('2026-09-14', '08:00'), scheduledEnd: localMoment('2026-09-14', '10:00') }),
     ]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots = slotsFor(result, 'aud-1');
     expect(
       slots.some(
@@ -511,7 +513,7 @@ describe('findAvailableSlots — grupa T (bufor dojazdu), CAL-SLOT-ENGINE', () =
     bookingFindManyMock.mockResolvedValue([
       bookingRow({ auditorId: 'aud-1', status: 'RESERVED', scheduledStart: localMoment('2026-09-14', '14:00'), scheduledEnd: localMoment('2026-09-14', '16:00') }),
     ]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots = slotsFor(result, 'aud-1');
     // Kończy się dokładnie o 13:00 -> bufor do 14:00 = 60 min = dopuszczone.
     expect(slots.some((s) => s.end_at.getTime() === localMoment('2026-09-14', '13:00').getTime())).toBe(true);
@@ -527,7 +529,7 @@ describe('findAvailableSlots — grupa T (bufor dojazdu), CAL-SLOT-ENGINE', () =
   it('AC-T3 — bufor NIE jest wymagany na krawędziach okna pracy: pierwszy slot zaczyna się dokładnie o starcie okna, ostatni kończy dokładnie o jego końcu', async () => {
     visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 120 }));
     systemConfigFindUniqueMock.mockResolvedValue(schedulingConfigRow({ buffer: 60, start: '08:00', end: '16:00' }));
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots = slotsFor(result, 'aud-1');
     expect(slots.length).toBeGreaterThan(0);
     const starts = slots.map((s) => s.start_at.getTime());
@@ -543,7 +545,7 @@ describe('findAvailableSlots — grupa T (bufor dojazdu), CAL-SLOT-ENGINE', () =
     bookingFindManyMock.mockResolvedValue([
       bookingRow({ auditorId: 'aud-2', status: 'RESERVED', scheduledStart: localMoment('2026-09-14', '08:00'), scheduledEnd: localMoment('2026-09-14', '09:00') }),
     ]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots = slotsFor(result, 'aud-1');
     expect(slots.some((s) => s.start_at.getTime() === localMoment('2026-09-14', '08:00').getTime())).toBe(true);
   });
@@ -556,13 +558,13 @@ describe('findAvailableSlots — grupa T (bufor dojazdu), CAL-SLOT-ENGINE', () =
     ]);
 
     systemConfigFindUniqueMock.mockResolvedValue(schedulingConfigRow({ buffer: 60 }));
-    const withBuffer60 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const withBuffer60 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots60 = slotsFor(withBuffer60, 'aud-1');
     // Kandydat naturalny z siatki (08:00 + 90+60 = 10:30) — gap do końca rezerwacji (10:00) = 30 min < 60.
     expect(slots60.some((s) => s.start_at.getTime() === localMoment('2026-09-14', '10:30').getTime())).toBe(false);
 
     systemConfigFindUniqueMock.mockResolvedValue(schedulingConfigRow({ buffer: 30 }));
-    const withBuffer30 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const withBuffer30 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots30 = slotsFor(withBuffer30, 'aud-1');
     // Ten sam kandydat 10:30 — gap 30 min >= bufor 30 -> dopuszczony.
     expect(slots30.some((s) => s.start_at.getTime() === localMoment('2026-09-14', '10:30').getTime())).toBe(true);
@@ -587,9 +589,9 @@ describe('findAvailableSlots — grupa T (bufor dojazdu), CAL-SLOT-ENGINE', () =
       bookingRow({ auditorId: 'aud-1', status: 'RESERVED', scheduledStart: localMoment('2026-09-14', '08:00'), scheduledEnd: localMoment('2026-09-14', '10:00') }),
     ]);
     await expect(
-      findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }),
+      findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW),
     ).resolves.not.toThrow();
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(result.error).toBeNull();
     expect(
       slotsFor(result, 'aud-1').some(
@@ -607,7 +609,7 @@ describe('findAvailableSlots — grupa T (bufor dojazdu), CAL-SLOT-ENGINE', () =
     bookingFindManyMock.mockResolvedValue([
       bookingRow({ auditorId: 'aud-1', status: 'RESERVED', scheduledStart: localMoment('2026-09-14', '08:00'), scheduledEnd: localMoment('2026-09-14', '10:00') }),
     ]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots = slotsFor(result, 'aud-1');
     // Granica: 10:00 + 60 = 11:00, dokładnie równy bufor -> dopuszczony.
     expect(slots.some((s) => s.start_at.getTime() === localMoment('2026-09-14', '11:00').getTime())).toBe(true);
@@ -641,7 +643,7 @@ describe('findAvailableSlots — grupa C (dzienny limit wizyt), CAL-SLOT-ENGINE'
       }),
     );
     bookingFindManyMock.mockResolvedValue(bookings);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(slotsFor(result, 'aud-1')).toEqual([]);
   });
 
@@ -658,7 +660,7 @@ describe('findAvailableSlots — grupa C (dzienny limit wizyt), CAL-SLOT-ENGINE'
       }),
     );
     bookingFindManyMock.mockResolvedValue(bookings);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(slotsFor(result, 'aud-1').length).toBeGreaterThan(0);
   });
 
@@ -676,7 +678,7 @@ describe('findAvailableSlots — grupa C (dzienny limit wizyt), CAL-SLOT-ENGINE'
       return bookingRow({ auditorId: 'aud-1', status: 'RESERVED', scheduledStart: start, scheduledEnd: end });
     });
     bookingFindManyMock.mockResolvedValue(bookings);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-15') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-15') }, FIXED_NOW);
     expect(slotsFor(result, 'aud-1').filter((s) => s.date === '2026-09-14').length).toBeGreaterThan(0);
     expect(slotsFor(result, 'aud-1').filter((s) => s.date === '2026-09-15')).toEqual([]);
   });
@@ -694,7 +696,7 @@ describe('findAvailableSlots — grupa C (dzienny limit wizyt), CAL-SLOT-ENGINE'
       }),
     );
     bookingFindManyMock.mockResolvedValue(bookings);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-15') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-15') }, FIXED_NOW);
     expect(slotsFor(result, 'aud-1').filter((s) => s.date === '2026-09-14')).toEqual([]);
     expect(slotsFor(result, 'aud-1').filter((s) => s.date === '2026-09-15').length).toBeGreaterThan(0);
   });
@@ -712,7 +714,7 @@ describe('findAvailableSlots — grupa C (dzienny limit wizyt), CAL-SLOT-ENGINE'
       }),
     );
     bookingFindManyMock.mockResolvedValue(bookings);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(slotsFor(result, 'aud-1').length).toBeGreaterThan(0);
   });
 
@@ -731,7 +733,7 @@ describe('findAvailableSlots — grupa C (dzienny limit wizyt), CAL-SLOT-ENGINE'
       }),
     );
     bookingFindManyMock.mockResolvedValue(bookings);
-    const result = await findAvailableSlots('basket-install', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-install', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(result.error).toBeNull();
     expect(slotsFor(result, 'crew-1').length).toBeGreaterThan(0);
   });
@@ -740,7 +742,7 @@ describe('findAvailableSlots — grupa C (dzienny limit wizyt), CAL-SLOT-ENGINE'
 describe('findAvailableSlots — grupa S (strefa czasowa i granice), CAL-SLOT-ENGINE', () => {
   // @REQ: CAL-SLOT-ENGINE
   it('AC-S1 — okno dnia bierze się z materializacji już-w-UTC (fromZonedTime), silnik nie robi własnej arytmetyki offsetów', async () => {
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slot = slotsFor(result, 'aud-1')[0]!;
     expect(slot.start_at).toEqual(localMoment('2026-09-14', '08:00'));
   });
@@ -748,7 +750,7 @@ describe('findAvailableSlots — grupa S (strefa czasowa i granice), CAL-SLOT-EN
   // @REQ: CAL-SLOT-ENGINE
   it('AC-S2 — doba zmiany czasu 2026-03-29 (23h, CET->CEST): reguła 8-16 daje lokalny start 08:00 = 06:00 UTC', async () => {
     availabilityRuleFindManyMock.mockResolvedValue([ruleRow(7, '08:00', '16:00')]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-03-29'), to: utcDay('2026-03-29') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-03-29'), to: utcDay('2026-03-29') }, FIXED_NOW);
     const slot = slotsFor(result, 'aud-1')[0]!;
     expect(slot.start_at).toEqual(localMoment('2026-03-29', '08:00'));
     expect(slot.start_at).toEqual(new Date('2026-03-29T06:00:00.000Z'));
@@ -757,7 +759,7 @@ describe('findAvailableSlots — grupa S (strefa czasowa i granice), CAL-SLOT-EN
   // @REQ: CAL-SLOT-ENGINE
   it('AC-S2 — doba zmiany czasu 2026-10-25 (25h, CEST->CET): reguła 8-16 daje lokalny start 08:00 = 07:00 UTC', async () => {
     availabilityRuleFindManyMock.mockResolvedValue([ruleRow(7, '08:00', '16:00')]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-10-25'), to: utcDay('2026-10-25') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-10-25'), to: utcDay('2026-10-25') }, FIXED_NOW);
     const slot = slotsFor(result, 'aud-1')[0]!;
     expect(slot.start_at).toEqual(localMoment('2026-10-25', '08:00'));
     expect(slot.start_at).toEqual(new Date('2026-10-25T07:00:00.000Z'));
@@ -769,7 +771,7 @@ describe('findAvailableSlots — grupa S (strefa czasowa i granice), CAL-SLOT-EN
     // okno 00:30-02:00 (90 min) z poprzedniej wersji testu było fizycznie za krótkie na
     // 120-minutową wizytę i gwarantowało zero slotów niezależnie od implementacji (TEST-DEFECT).
     availabilityRuleFindManyMock.mockResolvedValue([ruleRow(1, '00:30', '03:00')]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slot = slotsFor(result, 'aud-1')[0]!;
     // 2026-09-14 00:30 czasu Warszawy (CEST, +2) = 2026-09-13T22:30:00.000Z — data UTC to
     // 2026-09-13, ale pole `date` musi zostać LOKALNE: 2026-09-14.
@@ -789,7 +791,7 @@ describe('findAvailableSlots — grupa E (stany błędne), CAL-SLOT-ENGINE', () 
         // travel_buffer_minutes celowo brak
       },
     });
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(result.error).toEqual(expect.any(String));
     expect(result.error!.length).toBeGreaterThan(0);
     expect(result.resources).toEqual([]);
@@ -798,7 +800,7 @@ describe('findAvailableSlots — grupa E (stany błędne), CAL-SLOT-ENGINE', () 
   // @REQ: CAL-SLOT-ENGINE
   it('AC-E1 — brak wiersza scheduling_config w ogóle daje kontrolowany error i PUSTĄ listę', async () => {
     systemConfigFindUniqueMock.mockResolvedValue(null);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(result.error).toEqual(expect.any(String));
     expect(result.resources).toEqual([]);
   });
@@ -821,7 +823,7 @@ describe('findAvailableSlots — grupa E (stany błędne), CAL-SLOT-ENGINE', () 
         default_weekdays: [1, 2, 3, 4, 5],
       },
     });
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(result.error).toEqual(expect.any(String));
     const brokenResourceSlots = result.resources.find((r) => r.resource_id === 'aud-no-rule')?.slots ?? [];
     expect(brokenResourceSlots).toEqual([]);
@@ -832,7 +834,7 @@ describe('findAvailableSlots — grupa E (stany błędne), CAL-SLOT-ENGINE', () 
     const result = await findAvailableSlots('basket-audit', {
       from: utcDay('2026-09-20'),
       to: utcDay('2026-09-14'),
-    });
+    }, FIXED_NOW);
     expect(result.error).toEqual(expect.any(String));
     expect(result.resources).toEqual([]);
   });
@@ -849,7 +851,7 @@ describe('findAvailableSlots — przypadki brzegowe wymagane przez WO, CAL-SLOT-
       return [];
     });
     systemConfigFindUniqueMock.mockResolvedValue(schedulingConfigRow({ start: '08:00', end: '16:00', buffer: 0 }));
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
 
     const withRuleSlots = slotsFor(result, 'aud-with-rule');
     const defaultSlots = slotsFor(result, 'aud-default');
@@ -865,7 +867,7 @@ describe('findAvailableSlots — przypadki brzegowe wymagane przez WO, CAL-SLOT-
     bookingFindManyMock.mockResolvedValue([
       bookingRow({ auditorId: 'aud-1', status: 'RESERVED', scheduledStart: localMoment('2026-09-14', '12:00'), scheduledEnd: localMoment('2026-09-14', '12:10') }),
     ]);
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(slotsFor(result, 'aud-1')).toEqual([]);
   });
 
@@ -873,9 +875,9 @@ describe('findAvailableSlots — przypadki brzegowe wymagane przez WO, CAL-SLOT-
   it('pusta pula (zero aktywnych pracowników): resources:[], error===null, bez wyjątku', async () => {
     auditorFindManyMock.mockResolvedValue([]);
     await expect(
-      findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }),
+      findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW),
     ).resolves.not.toThrow();
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     expect(result.error).toBeNull();
     expect(result.resources).toEqual([]);
   });
@@ -884,8 +886,8 @@ describe('findAvailableSlots — przypadki brzegowe wymagane przez WO, CAL-SLOT-
   it('idempotencja odczytu: dwa wywołania z tymi samymi danymi dają identyczny wynik w identycznej kolejności, sloty posortowane rosnąco po start_at', async () => {
     auditorFindManyMock.mockResolvedValue([auditorRow('aud-3'), auditorRow('aud-1'), auditorRow('aud-2')]);
     systemConfigFindUniqueMock.mockResolvedValue(schedulingConfigRow({ buffer: 0 }));
-    const result1 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-16') });
-    const result2 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-16') });
+    const result1 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-16') }, FIXED_NOW);
+    const result2 = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-16') }, FIXED_NOW);
 
     expect(result1.resources.map((r) => r.resource_id)).toEqual(result2.resources.map((r) => r.resource_id));
     expect(
@@ -930,7 +932,7 @@ describe('findAvailableSlots — przypadki brzegowe wymagane przez WO, CAL-SLOT-
     ];
     bookingFindManyMock.mockResolvedValue(bookings);
 
-    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') });
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, FIXED_NOW);
     const slots = slotsFor(result, 'aud-1');
 
     // Cap nie osiągnięty (4 wizyty < 5) -> dzień nie jest zerowany przez limit.
@@ -955,5 +957,84 @@ describe('findAvailableSlots — przypadki brzegowe wymagane przez WO, CAL-SLOT-
         expect(slot.start_at.getTime()).toBeGreaterThanOrEqual(localMoment('2026-09-14', '11:30').getTime());
       }
     }
+  });
+});
+
+describe('findAvailableSlots — grupa N (odrzucenie slotów przeszłych), CAL-SLOT-ENGINE-PAST-REJECTION', () => {
+  // Rejestr wymagań: contracts/requirements.contract.mjs, CAL-SLOT-ENGINE-PAST-REJECTION.
+  // Dowód CZĘŚCI (a): sam silnik (`findAvailableSlots` / `computeDaySlots`) filtruje kandydatów
+  // sprzed `now`, niezależnie od tego, że `createBooking` też odrzuca taki `startAt`
+  // (część (b), pokryta gdzie indziej — booking-concurrency.itest.ts i create-booking.test.ts).
+  //
+  // Warunek w silniku to `start < nowMs` (ŚCISŁA nierówność, packages/scheduling/src/
+  // available-slots.ts, sekcja CAL-SLOT-ENGINE-PAST-REJECTION) — slot zaczynający się DOKŁADNIE
+  // w `now` jest DOZWOLONY, nie jest traktowany jako przeszły. Testy poniżej to dokumentują
+  // wprost jako wartość graniczną.
+
+  // @REQ: CAL-SLOT-ENGINE
+  it('slot, którego start_at jest wcześniejszy niż `now`, nie pojawia się w wyniku, mimo że dzień i reguła formalnie by go dopuściły', async () => {
+    visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 120 }));
+    systemConfigFindUniqueMock.mockResolvedValue(schedulingConfigRow({ buffer: 0, start: '08:00', end: '16:00' }));
+    const now = localMoment('2026-09-14', '09:00');
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, now);
+    const slots = slotsFor(result, 'aud-1');
+    // Kandydat z siatki 08:00-10:00 start=08:00 < now=09:00 -> odrzucony, mimo że okno pracy
+    // (08:00-16:00) i pusta lista rezerwacji/nieobecności by go w pełni dopuściły.
+    expect(slots.some((s) => s.start_at.getTime() === localMoment('2026-09-14', '08:00').getTime())).toBe(false);
+    // Żaden slot nie zaczyna się przed `now`.
+    for (const slot of slots) {
+      expect(slot.start_at.getTime()).toBeGreaterThanOrEqual(now.getTime());
+    }
+  });
+
+  // @REQ: CAL-SLOT-ENGINE
+  it('wartość graniczna: slot zaczynający się DOKŁADNIE w `now` jest dozwolony (warunek w silniku to `<`, nie `<=`), slot zaczynający się choćby minutę wcześniej jest odrzucony', async () => {
+    visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 60 }));
+    systemConfigFindUniqueMock.mockResolvedValue(schedulingConfigRow({ buffer: 0, start: '08:00', end: '16:00' }));
+    const now = localMoment('2026-09-14', '10:00');
+    const result = await findAvailableSlots('basket-audit', { from: utcDay('2026-09-14'), to: utcDay('2026-09-14') }, now);
+    const slots = slotsFor(result, 'aud-1');
+    // Kandydat 09:00-10:00: start=09:00 < now=10:00 -> odrzucony.
+    expect(slots.some((s) => s.start_at.getTime() === localMoment('2026-09-14', '09:00').getTime())).toBe(false);
+    // Kandydat 10:00-11:00: start === now -> DOZWOLONY (granica, `<` nie `<=`).
+    expect(slots.some((s) => s.start_at.getTime() === localMoment('2026-09-14', '10:00').getTime())).toBe(true);
+    // Kandydat 11:00-12:00: start jest PO now (o godzinę, a więc też o samą minutę z zapasem) -> dozwolony.
+    expect(slots.some((s) => s.start_at.getTime() === localMoment('2026-09-14', '11:00').getTime())).toBe(true);
+  });
+
+  // @REQ: CAL-SLOT-ENGINE
+  it('zakres wielodniowy: dzień dzisiejszy (now w środku okna pracy) traci tylko sloty sprzed `now`, dzień jutrzejszy — w całości w przyszłości — nie traci ani jednego slotu', async () => {
+    visitDurationBasketQueryMock.mockResolvedValue(basketRow({ durationMinutes: 120 }));
+    systemConfigFindUniqueMock.mockResolvedValue(schedulingConfigRow({ buffer: 0, start: '08:00', end: '16:00' }));
+    const now = localMoment('2026-09-14', '12:00');
+    const result = await findAvailableSlots(
+      'basket-audit',
+      { from: utcDay('2026-09-14'), to: utcDay('2026-09-15') },
+      now,
+    );
+    const slots = slotsFor(result, 'aud-1');
+    const todaySlots = slots.filter((s) => s.date === '2026-09-14');
+    const tomorrowSlots = slots.filter((s) => s.date === '2026-09-15');
+
+    // Siatka dnia dzisiejszego (buffer=0, duration=120): 08:00, 10:00, 12:00, 14:00.
+    // now=12:00 odcina 08:00 i 10:00 (start < now), zostawia 12:00 (start === now, granica
+    // dozwolona) i 14:00.
+    expect(todaySlots.map((s) => s.start_at.getTime()).sort((a, b) => a - b)).toEqual(
+      [
+        localMoment('2026-09-14', '12:00').getTime(),
+        localMoment('2026-09-14', '14:00').getTime(),
+      ].sort((a, b) => a - b),
+    );
+
+    // Dzień jutrzejszy w całości leży w przyszłości względem `now` (2026-09-14 12:00) —
+    // wszystkie cztery sloty z siatki muszą zostać, żaden nie jest odcięty.
+    expect(tomorrowSlots.map((s) => s.start_at.getTime()).sort((a, b) => a - b)).toEqual(
+      [
+        localMoment('2026-09-15', '08:00').getTime(),
+        localMoment('2026-09-15', '10:00').getTime(),
+        localMoment('2026-09-15', '12:00').getTime(),
+        localMoment('2026-09-15', '14:00').getTime(),
+      ].sort((a, b) => a - b),
+    );
   });
 });

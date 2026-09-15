@@ -99,8 +99,9 @@ function computeDaySlots(params: {
   bufferMs: number
   dayBookings: BookingLike[]
   dayAbsences: AbsenceLike[]
+  nowMs: number
 }): AvailableSlot[] {
-  const { dayStartMs, dayEndMs, dateLabel, durationMs, bufferMs, dayBookings, dayAbsences } = params
+  const { dayStartMs, dayEndMs, dateLabel, durationMs, bufferMs, dayBookings, dayAbsences, nowMs } = params
   const step = durationMs + bufferMs
 
   const candidateStarts = new Set<number>()
@@ -139,6 +140,12 @@ function computeDaySlots(params: {
       continue
     }
 
+    // CAL-SLOT-ENGINE-PAST-REJECTION (contracts/requirements.contract.mjs): slot, którego
+    // start jest wcześniejszy niż moment bieżący, nie jest oferowany.
+    if (start < nowMs) {
+      continue
+    }
+
     // AC-A1/AC-A3/AC-A4: przedział domknięty z lewej, otwarty z prawej — styk nie jest kolizją.
     const overlapsAbsence = dayAbsences.some(
       (absence) => start < absence.endsAt.getTime() && end > absence.startsAt.getTime(),
@@ -174,6 +181,7 @@ function computeDaySlots(params: {
 export async function findAvailableSlots(
   visitBasketId: string,
   dateRange: { from: Date; to: Date },
+  now: Date = new Date(),
 ): Promise<AvailableSlotsResult> {
   // AC-E3: zakres odwrócony — kontrolowany błąd, zero pętli.
   if (dateRange.to.getTime() < dateRange.from.getTime()) {
@@ -326,6 +334,7 @@ export async function findAvailableSlots(
           bufferMs,
           dayBookings,
           dayAbsences,
+          nowMs: now.getTime(),
         }),
       )
     }
