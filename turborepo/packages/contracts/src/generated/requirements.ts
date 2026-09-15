@@ -914,7 +914,7 @@ export const REQUIREMENTS = [
   {
     "id": "CAL-SLOT-ENGINE",
     "domain": "field",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "wyniesione 2026-09-10 z FLD-AVAIL-WEEKLY-RULES (kryterium silnika odjęć), bo docs/workorders/FLD-AVAIL-WEEKLY-RULES.md sekcja „Poza zakresem\" jawnie wyłączyła je z tamtej tury; docs/architecture/FIELD-APP-PLAN.md 6.3 i 6.4; powiązane: FLD-BOOKING-ATOMIC-ASSIGN (wstawienie wiersza), CAL-TRAVEL-BUFFER (wartość bufora), CAL-VISIT-DURATION-BASKETS (długość wizyty)",
     "statement": "Silnik wolnych terminów wylicza dostępność pracownika, odejmując od jego reguły tygodniowej nieobecności, istniejące rezerwacje, bufor dojazdu i dzienny limit wizyt."
