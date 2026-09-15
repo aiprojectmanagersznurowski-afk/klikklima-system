@@ -301,6 +301,7 @@ describe('createBooking na ścieżce B2C — B2C-BOOKING-SLOT AC1/AC4, żywy Pos
   );
 
   // @REQ: B2C-BOOKING-SLOT
+  // @REQ: CAL-SLOT-ENGINE
   it(
     'brzeg: termin w przeszłości — klient B2C wysyła startAt sprzed "teraz": SLOT_NOT_OFFERED, nie rezerwacja',
     async () => {
