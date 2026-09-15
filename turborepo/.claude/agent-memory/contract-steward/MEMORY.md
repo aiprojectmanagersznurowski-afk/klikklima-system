@@ -1,6 +1,7 @@
 # Pamięć agenta: contract-steward
 
 - [Migracja musi działać w OBU porządkach](feedback_migration_both_run_orders.md) — replay wg nazw plików vs ręczne uruchomienie poza kolejnością; nazwa nieznana statycznie -> dynamiczny COMMENT.
+- [audit_log_resource_check to PODZBIÓR RESOURCES](project_audit_log_resource_check_subset_of_resources.md) — nowy zasób nie trafia tam sam, żadna bramka nie wykryje; 15 wartości od 20260915120000.
 - [Weryfikacja SQL bez Dockera](feedback_sql_verify_via_rolled_back_tx.md) — blok na żywej bazie w transakcji z celowym ROLLBACK przez `node -e`; guard-paths blokuje pliki skryptowe.
 
 - [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, audytorzy MAJĄ promień, timestamp ≠ kolejność uruchomienia, migracje LIVE.
