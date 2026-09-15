@@ -31,6 +31,16 @@ export const RESOURCES = [
   // ZOSTAJE: jego usunięcie jest zmianą łamiącą kompatybilność i wymaga osobnego ADR.
   // Tabela `regions` nie powstanie — to zasób bez nośnika, świadomie, do czasu tamtej decyzji.
   'availability_rules', 'visit_duration_baskets',
+  // ── CAL-SCHEDULING-CONFIG-RBAC (2026-09-15, rozstrzygnięcie P-1 przez Michała) ──
+  // Odpowiada tabeli public.system_config (istnieje od dawna, wiersz
+  // typ_konfiguracji = 'scheduling_config' zasiedlony migracją 20260910100000).
+  // Zasób NIE powstaje z nową tabelą ani migracją — powstaje, bo `can()` dla zasobu
+  // spoza tej listy zwraca 'no' dla KAŻDEJ roli, więc bramka w updateTravelBufferAction
+  // (CAL-TRAVEL-BUFFER) odmawiałaby zapisu także administratorowi.
+  // Odrzucono przepięcie bufora pod `visit_duration_baskets:update`: działałoby, ale
+  // zakłamywałoby macierz — nazwy zasobów są tożsame z nazwami tabel (ADR-002), a audyt
+  // czytałby „admin edytuje słownik koszyków" tam, gdzie edytuje konfigurację harmonogramu.
+  'system_config',
 ];
 
 /** capability: read | create | update | delete | assign */
@@ -126,6 +136,23 @@ export const MATRIX = [
   // ustawianym w panelu B2B. Gdyby audytor mógł edytować słownik, „wybór z koszyka" zamieniłby się
   // z powrotem we wpisywanie godzin z palca — czyli w to, co ta konstrukcja miała wykluczyć.
   { resource: 'visit_duration_baskets', read: ['admin', 'dyspozytor', 'audytor', 'monter'], create: ['admin'], update: ['admin'], delete: ['admin'] },
+  // ── CAL-SCHEDULING-CONFIG-RBAC: zasób dodany 2026-09-15 (P-1, decyzja Michała) ──
+  //
+  // system_config — parametry operacyjne firmy w JSONB, dziś wiersz `scheduling_config`
+  // (travel_buffer_minutes + default_workday_start/end + default_weekdays).
+  // `read`/`update` wyłącznie admin: to ekran administracyjny, a role terenowe konsumują
+  // te wartości WYŁĄCZNIE pośrednio, przez silnik terminów (packages/scheduling), który
+  // czyta konfigurację po stronie serwera i nie pyta macierzy o zgodę w imieniu pracownika.
+  // Dlatego brak tu wariantu :own i brak dyspozytora — zmiana bufora przesuwa terminy
+  // obiecywane wszystkim klientom, więc nie jest czynnością operacyjną dyspozytora.
+  //
+  // `create: []` i `delete: []` — świadomie, nie z przeoczenia. Kolumna typ_konfiguracji jest
+  // @unique, a wiersz `scheduling_config` powstaje migracją; UI ma go wyłącznie EDYTOWAĆ.
+  // Puste `create` znaczy „konfiguracja nie jest zakładana z panelu", puste `delete` znaczy
+  // „nie ma ścieżki skasowania konfiguracji" — usunięcie wiersza nie zerowałoby bufora, tylko
+  // wywróciłoby silnik, który jest fail-closed (brak wartości => error, nie fallback do 0).
+  // Rozszerzenie o create/delete to osobna decyzja i osobne okno, nie domyślne dopełnienie wzorca.
+  { resource: 'system_config',      read: ['admin'],                                   create: [],                      update: ['admin'],               delete: [] },
 ];
 
 /** Polityki kluczy obcych przy usuwaniu — database_model.md §4.2 */

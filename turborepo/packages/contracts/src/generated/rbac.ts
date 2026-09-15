@@ -36,6 +36,7 @@ export const PERMISSIONS: Record<string, Partial<Record<Capability, string[]>>> 
   employee_consents: { read: ["admin","audytor:own","monter:own"], create: ["audytor","monter"], update: [], delete: [] },
   availability_rules: { read: ["admin","dyspozytor","audytor:own","monter:own"], create: ["admin","audytor:own","monter:own"], update: ["admin","audytor:own","monter:own"], delete: ["admin"] },
   visit_duration_baskets: { read: ["admin","dyspozytor","audytor","monter"], create: ["admin"], update: ["admin"], delete: ["admin"] },
+  system_config: { read: ["admin"], create: [], update: ["admin"], delete: [] },
 };
 
 export const DELETE_POLICIES = [
