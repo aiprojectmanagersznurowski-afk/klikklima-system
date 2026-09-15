@@ -6,7 +6,8 @@
 - [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, audytorzy MAJĄ promień, timestamp ≠ kolejność uruchomienia, migracje LIVE.
 - [FLD-AVAIL-WEEKLY-RULES: AC szersze niż WO](project_fld_avail_weekly_rules_ac_wider_than_wo.md) — 2026-09-10 DOMKNIĘTE na DONE (4075fdd); AC7/AC8 wyniesione do CAL-SLOT-ENGINE i CAL-POOL-AGGREGATE.
 - [FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT zamknięte](project_booking_one_active_per_subject.md) — 2026-09-14 DONE (dd69d56); podział kryteriów wg PRZEDMIOTU: kod -> atrapa, indeks -> żywy Postgres.
-- [CAL-SLOT-ENGINE: DONE cofnięte na TODO](project_cal_slot_engine_done.md) — 2026-09-15 luka "termin w przeszłości" z CI; właścicielem silnik, bo CHECK z czasem bieżącym jest w PG niemożliwy.
+- [CAL-SLOT-ENGINE: DONE -> TODO -> DONE](project_cal_slot_engine_done.md) — 2026-09-15 domknięte na przebiegu itestu w CI; właścicielem silnik, bo CHECK z czasem bieżącym jest w PG niemożliwy.
+- [Przebieg CI jako dowód domknięcia](feedback_ci_run_as_proof_verify_sha_and_execution.md) — sprawdź sam headSha, conclusion każdego joba i log dowodzący WYKONANIA testu, nie pominięcia.
 - [Przebieg itestów w CI unieważnia domknięcia po tsc](feedback_ci_itest_run_invalidates_tsc_closures.md) — cofaj status, nie doklejaj wyjaśnień; kolejni kandydaci do upadku to oba FLD-BOOKING-*.
 - [CAL-POOL-AGGREGATE zamknięte](project_cal_pool_aggregate_done.md) — 2026-09-14 DONE; kryteria mówią „Klient widzi", a konsumenta B2C nie ma — warstwę kliencką przejęło B2C-BOOKING-SLOT.
 - [B2C-BOOKING-SLOT zamknięte](project_b2c_booking_slot_done.md) — 2026-09-14 DONE (74bd07c); Google Calendar odpięty od odczytu, itest współbieżności NIEURUCHOMIONY, B2C-LEAD-ATOMIC zostaje otwarte.

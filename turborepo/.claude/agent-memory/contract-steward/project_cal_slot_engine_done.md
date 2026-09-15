@@ -1,6 +1,6 @@
 ---
 name: cal-slot-engine-done
-description: CAL-SLOT-ENGINE — DONE 2026-09-10, COFNIĘTE NA TODO 2026-09-15 po luce "termin w przeszłości"; silnik bez wywołań produkcyjnych, 7 AC w rejestrze vs 40 w WO
+description: CAL-SLOT-ENGINE — cykl DONE -> TODO -> DONE 2026-09-15; domknięte dopiero na przebiegu itestu w CI (run 34939998108); silnik bez wywołań produkcyjnych, 7 AC w rejestrze vs 40 w WO
 metadata:
   type: project
 ---
@@ -17,4 +17,5 @@ metadata:
 - Kod silnika żyje dziś w `packages/scheduling/src/` (`available-slots.ts`, `create-booking.ts`, `pool-slots.ts`), nie w `apps/b2b-web/src/lib/schedule/` — ścieżka zmieniła się po pierwszym zamknięciu.
 - Powrót na `DONE` dopiero po ZIELONYM przebiegu `apps/b2c-web/tests/actions/booking-concurrency.itest.ts` w CI, nie po samym `tsc`.
 - **Druga próba domknięcia 2026-09-15 (okno `CAL-SLOT-ENGINE-PAST-REJECTION-DONE`, commit `98b3758`) ODMÓWIONA, status dalej `TODO`.** Część (a) kryterium (silnik sam nie zwraca przeszłych slotów) jest po `bee9261` spełniona i URUCHOMIONA — `start < nowMs` w `computeDaySlots`, blok „grupa N" w `available-slots-engine-a-b-t-c-s-e.test.ts`, 111/111 zielonych przy osobistym przebiegu stewarda. Brakuje WYŁĄCZNIE części (b): jedyne pokrycie „`createBooking` ze `startAt` sprzed teraz -> `SLOT_NOT_OFFERED`" to wspomniany itest, nieuruchomiony (brak Dockera) i bez przebiegu CI na commicie z poprawką — gałąź była o 2 commity przed `origin`.
-- **Pokrycie części (b) jest otagowane `@REQ: B2C-BOOKING-SLOT`, nie `CAL-SLOT-ENGINE`** — `kk-trace` pokazuje przy tym wpisie wyłącznie dwa pliki silnika. B2C-BOOKING-SLOT jest już `DONE` (z zadeklarowanym długiem nieuruchomionego itestu), więc [[feedback_scope_mismatch_check_other_owner]] tu NIE ratuje: kryterium nie ma dowodu przy żadnym otwartym ID.
+- **TRZECIA próba domknięcia 2026-09-15 (okno `...-DONE-2`, commit `915b0c5`) PRZYJĘTA — status `DONE`.** Dowód: run `34939998108`, `headSha 0dc54dc0881ee46db197c3555e3e628f2fae8be8`, 4/4 joby `success`, log joba `integracja` pokazuje `booking-concurrency.itest.ts ✓ 5 tests` i `Tests 14 passed (14)` — zero `skipped`. To pierwsze zamknięcie w tej sesji oparte na WYKONANIU kodu na żywym Postgresie, nie na `tsc`/atrapie/przeglądzie. Wzorzec weryfikacji: [[feedback_ci_run_as_proof_verify_sha_and_execution]].
+- Dwie nieaktualności usunięte przy domknięciu: pokrycie części (b) ma od `0dc54dc` drugi tag `@REQ: CAL-SLOT-ENGINE` (`kk-trace` liczy dziś przy tym wpisie także itest B2C), a gałąź nie jest już za `origin`.
