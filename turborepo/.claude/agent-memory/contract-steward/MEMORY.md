@@ -1,7 +1,7 @@
 # Pamięć agenta: contract-steward
 
 - [Migracja musi działać w OBU porządkach](feedback_migration_both_run_orders.md) — replay wg nazw plików vs ręczne uruchomienie poza kolejnością; nazwa nieznana statycznie -> dynamiczny COMMENT.
-- [audit_log_resource_check to PODZBIÓR RESOURCES](project_audit_log_resource_check_subset_of_resources.md) — nowy zasób nie trafia tam sam, żadna bramka nie wykryje; 15 wartości od 20260915120000.
+- [audit_log_resource_check to PODZBIÓR RESOURCES](project_audit_log_resource_check_subset_of_resources.md) — nowy zasób nie trafia tam sam, żadna bramka nie wykryje; ŻYWO 15 wartości, migracja 20260915120000 URUCHOMIONA 2026-09-15.
 - [Weryfikacja SQL bez Dockera](feedback_sql_verify_via_rolled_back_tx.md) — blok na żywej bazie w transakcji z celowym ROLLBACK przez `node -e`; guard-paths blokuje pliki skryptowe.
 
 - [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, audytorzy MAJĄ promień, timestamp ≠ kolejność uruchomienia, migracje LIVE.
@@ -12,6 +12,8 @@
 - [Przebieg itestów w CI unieważnia domknięcia po tsc](feedback_ci_itest_run_invalidates_tsc_closures.md) — cofaj status, nie doklejaj wyjaśnień; kolejni kandydaci do upadku to oba FLD-BOOKING-*.
 - [CAL-POOL-AGGREGATE zamknięte](project_cal_pool_aggregate_done.md) — 2026-09-14 DONE; kryteria mówią „Klient widzi", a konsumenta B2C nie ma — warstwę kliencką przejęło B2C-BOOKING-SLOT.
 - [B2C-BOOKING-SLOT zamknięte](project_b2c_booking_slot_done.md) — 2026-09-14 DONE (74bd07c); Google Calendar odpięty od odczytu, itest współbieżności NIEURUCHOMIONY, B2C-LEAD-ATOMIC zostaje otwarte.
+- [CAL-SCHEDULING-CONFIG: koszyki i bufor zamknięte](project_cal_scheduling_config_closed.md) — 2026-09-15 DONE (9073232); AC2 rozdzielone: nośnik zostaje, ekran wyceny -> FLD-QUOTE-BASKET-SELECT.
+- [Pokrycie bywa pod tagiem rodzeństwa](feedback_coverage_may_sit_under_sibling_req_tag.md) — brak testu przy @REQ ≠ brak pokrycia; szukaj po pojęciu domenowym, nie po ID (grupa T bufora).
 - [B2C: żywe źródło slotów vs martwy route.ts](project_b2c_slots_live_source_vs_dead_route.md) — 2026-09-14; `api/calendar/slots/route.ts` ma zero konsumentów, żyje `actions/calendar.ts` -> `Step8Booking.tsx`.
 - [Bramka nazewnictwa i artefakt ścieżki](feedback_naming_gate_path_artifact.md) — cudze niezacommitowane `git mv` wygląda jak nowy dług; sprawdź baseline pod starą ścieżką, nie odświeżaj go.
 - [FLD-BOOKING-ATOMIC-ASSIGN domknięte](project_fld_booking_atomic_assign_blocked.md) — 2026-09-14 DONE; testy ograniczenia dopisane, ale NIEURUCHOMIONE (brak Dockera) — świadomy dług.

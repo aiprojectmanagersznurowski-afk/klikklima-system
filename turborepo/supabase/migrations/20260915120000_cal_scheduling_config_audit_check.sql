@@ -5,13 +5,16 @@
 -- Źródło decyzji: decyzja Michała 2026-09-15 (P-3: zmiany koszyków i bufora MAJĄ być logowane)
 --
 -- ╔══════════════════════════════════════════════════════════════════════════════════════╗
--- ║  STAN: TA MIGRACJA NIE ZOSTAŁA JESZCZE URUCHOMIONA NA ŻYWEJ BAZIE.                    ║
--- ║  Plik zacommitowany świadomie jako NIEZAAPLIKOWANY — uruchomienie wymaga osobnej,     ║
--- ║  jawnej zgody człowieka (ten sam tryb co 20260910103000).                             ║
--- ║  DOPÓKI NIE ZOSTANIE URUCHOMIONA, R-6 z WO POZOSTAJE OTWARTE: obie Server Actions     ║
--- ║  (updateVisitDurationBasketAction, updateTravelBufferAction) wywrócą się na pierwszym ║
--- ║  zapisie, bo wpis audytowy jest w tej samej transakcji co zmiana danych.              ║
--- ║  Po uruchomieniu: przepisać ten nagłówek na stan faktyczny (wzorzec 20260910103000).  ║
+-- ║  STAN: TA MIGRACJA ZOSTAŁA URUCHOMIONA NA ŻYWEJ BAZIE 2026-09-15.                     ║
+-- ║  Napisana 2026-09-15, zacommitowana najpierw jako plik świadomie NIEZAAPLIKOWANY.     ║
+-- ║  Uruchomiona po osobnej, jawnej zgodzie Michała, w tym samym trybie co 20260910103000 ║
+-- ║  (nie db push, nie migrate reset).                                                    ║
+-- ║  Weryfikacja po fakcie, read-only: pg_get_constraintdef dla                           ║
+-- ║  audit_log_resource_check zwraca 15 wartości, w tym 'visit_duration_baskets'          ║
+-- ║  i 'system_config' — lista i jej kolejność zgodne co do znaku z blokiem poniżej.      ║
+-- ║  Treść poniżej opisuje więc stan FAKTYCZNY bazy, a nie stan postulowany.              ║
+-- ║  R-6 z WO jest tym samym ZAMKNIĘTE: updateVisitDurationBasketAction                   ║
+-- ║  i updateTravelBufferAction mają w produkcji nośnik dla swojego wpisu audytowego.     ║
 -- ╚══════════════════════════════════════════════════════════════════════════════════════╝
 --
 -- CO SIĘ ZMIENIA
@@ -24,11 +27,13 @@
 -- DLACZEGO
 -- P-3 rozstrzygnięte 2026-09-15: zmiana czasu trwania koszyka wizyty i zmiana bufora dojazdu
 -- tworzą wpis `field_update` w audit_log — w TEJ SAMEJ TRANSAKCJI co sam zapis (rekord zmieniony
--- bez wpisu znosi warunek, pod którym edycja została dopuszczona). Stan ograniczenia sprawdzony
--- na ŻYWEJ bazie 2026-09-15 przez pg_get_constraintdef, nie odczytany z pliku:
+-- bez wpisu znosi warunek, pod którym edycja została dopuszczona). Stan ograniczenia PRZED
+-- uruchomieniem tego pliku, sprawdzony na ŻYWEJ bazie 2026-09-15 przez pg_get_constraintdef,
+-- nie odczytany z pliku (zapis historyczny — uzasadnienie, po co ta migracja powstała):
 --   audit_log_operation_check -> 7 wartości, 'field_update' JEST (migracja 20260910103000)
 --   audit_log_resource_check  -> 13 wartości, NIE MA ani 'visit_duration_baskets',
 --                                ani 'system_config'
+-- Stan PO uruchomieniu: audit_log_resource_check -> 15 wartości (patrz ramka STAN wyżej).
 -- Oba są natomiast od dawna zasobami w contracts/rbac.contract.mjs ('visit_duration_baskets'
 -- od 2026-09-10, 'system_config' od okna CAL-SCHEDULING-CONFIG-RBAC z 2026-09-15). Bez tej
 -- migracji pierwszy auditLog.create z takim `resource` leci wyjątkiem CHECK i wywraca całą akcję.

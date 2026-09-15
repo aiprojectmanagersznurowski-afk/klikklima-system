@@ -7,8 +7,16 @@ metadata:
 
 Tabela `audit_log` ma dwa niezależne słowniki-CHECK, pilnowane wyłącznie ręcznie migracjami:
 - `audit_log_operation_check` — lustro `AUDIT_REQUIREMENTS.mustLog` (7 wartości od 20260910103000);
-- `audit_log_resource_check` — **podzbiór** `RESOURCES`, 15 wartości od 20260915120000
-  (13 pierwotnych + `visit_duration_baskets` + `system_config`).
+- `audit_log_resource_check` — **podzbiór** `RESOURCES`, **15 wartości NA ŻYWEJ BAZIE**
+  (13 pierwotnych + `visit_duration_baskets` + `system_config`). Migracja 20260915120000
+  URUCHOMIONA 2026-09-15 za jawną zgodą człowieka (okno
+  `CAL-SCHEDULING-CONFIG-AUDIT-CHECK-APPLIED`); stan potwierdzony niezależnym odczytem
+  `pg_get_constraintdef`, kolejność wartości zgodna z blokiem ADD CONSTRAINT w pliku.
+  Nagłówek migracji przepisany na stan faktyczny, zastrzeżenia przy
+  `CAL-VISIT-DURATION-BASKETS` i `CAL-TRAVEL-BUFFER` zdjęte (patrz
+  [[cal-scheduling-config-closed]]) — ekran `/settings/calendar` działa w produkcji.
+  Cykl tego pliku (napisany jako NIEZAAPLIKOWANY -> uruchomiony -> nagłówek przepisany)
+  jest wzorcem dla każdej następnej migracji słownikowej.
 
 `RESOURCES` w `contracts/rbac.contract.mjs` ma dziś ~28 pozycji. Rozjazd jest ZAMIERZONY:
 pełna synchronizacja dopuściłaby do rejestru zasoby bez nośnika w bazie (np. `regions` — zasób
