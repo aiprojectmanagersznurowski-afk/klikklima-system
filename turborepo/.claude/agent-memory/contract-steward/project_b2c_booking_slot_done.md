@@ -1,6 +1,6 @@
 ---
 name: b2c-booking-slot-done
-description: B2C-BOOKING-SLOT zamknięte DONE 2026-09-14 (74bd07c) — Google Calendar przestał być źródłem terminów audytu; itest współbieżności nieuruchomiony
+description: B2C-BOOKING-SLOT zamknięte DONE 2026-09-14 (74bd07c) — Google Calendar przestał być źródłem terminów audytu; itest współbieżności URUCHOMIONY i zielony w CI 2026-09-15
 metadata:
   type: project
 ---
@@ -16,9 +16,13 @@ przedmiotem zmiany ([[project_b2c_slots_live_source_vs_dead_route]]).
 
 **How to apply:**
 - Kryteria K1-K4 (ograniczenie w bazie, 23P01 -> `SLOT_TAKEN`, dwa równoległe żądania, alternatywy)
-  stoją na `apps/b2c-web/tests/actions/booking-concurrency.itest.ts` — 5 testów, **nigdy nieuruchomionych**
-  (brak Dockera). To ten sam świadomy dług co przy [[project_fld_booking_atomic_assign_blocked]].
-  Pierwsze uruchomienie `npm run test:integration` na żywym stacku może wywrócić oba wymagania naraz.
+  stoją na `apps/b2c-web/tests/actions/booking-concurrency.itest.ts` — 5 testów, **URUCHOMIONYCH
+  I ZIELONYCH 2026-09-15** w CI (run `34939998108`, job `integracja`, SHA `0dc54dc`, „5 tests 225ms”,
+  zero skipped). Dług z braku Dockera SPŁACONY; dowód dopisany do pola `note` w rejestrze (wcześniej
+  wpis w ogóle nie miał `note` — zapis o nieuruchomionym iteście żył tylko tutaj i w opisie commita).
+  Ten sam przebieg wykonał `apps/b2b-web/tests/create-booking-concurrency.itest.ts` (9 testów, zielone),
+  czyli identyczny dług w [[project_fld_booking_atomic_assign_blocked]] też jest faktycznie spłacony,
+  ale jego `note` NADAL kłamie („te testy NIE ZOSTAŁY URUCHOMIONE”) — do poprawy w osobnym oknie.
 - D-6 wariant (a) jest ROZSTRZYGNIĘTY i celowy: ścieżka jest NIETRANSAKCYJNA. Po błędzie rezerwacji
   osierocone trójki klient+adres+lead ZOSTAJĄ w bazie, `leady.data_rezerwacji` zostaje `NULL`.
   Sprzątanie i pełna atomowość należą do `B2C-LEAD-ATOMIC` — osobne, wciąż OTWARTE wymaganie bez
