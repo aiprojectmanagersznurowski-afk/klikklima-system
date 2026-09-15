@@ -172,6 +172,12 @@ export function extractSqlState(err: unknown): string | null {
   // Prawdziwy `PrismaClientUnknownRequestError` (błąd $queryRaw-mniej znany silnikowi
   // zapytań, np. z EXCLUDE/wyzwalacza) osadza surowy SQLSTATE w treści zagnieżdżonego
   // `PostgresError { code: "23P01", ... }` — zmierzone na żywym Postgresie 2026-09-10.
+  // Ten sam wzorzec tekstowy niesie też `code: "40P01"` (deadlock detected) —
+  // potwierdzone realnym przebiegiem CI (run 34944442379, PR #1): pod prawdziwą
+  // równoczesnością na `EXCLUDE USING gist` silnik detekcji deadlocków bywa szybszy
+  // niż walidacja ograniczenia, więc ten sam wyścig o zasób czasem kończy się 40P01
+  // zamiast czystym 23P01. Regex ogólny (nie tylko 23P01) — obsługa kodu w
+  // `createBooking` decyduje o znaczeniu.
   const postgresErrorCodeMatch = message.match(/code:\s*"([0-9A-Z]{5})"/)
   if (postgresErrorCodeMatch) return postgresErrorCodeMatch[1]
   return null
@@ -331,8 +337,22 @@ export async function createBooking(params: CreateBookingParams): Promise<Create
           existingBooking,
         )
       }
-      if (sqlState === "23P01") {
+      if (sqlState === "23P01" || sqlState === "40P01") {
         // bookings_no_overlap_per_resource — ten kandydat przegrał wyścig, następny.
+        // 40P01 (deadlock detected) jest RÓWNOWAŻNY 23P01 w tym kontekście: pod
+        // realną równoczesnością na `EXCLUDE USING gist` Postgres może ALBO zwrócić
+        // czyste 23P01, ALBO wykryć deadlock między dwiema transakcjami wstawiającymi
+        // nakładające się zakresy i ubić jedną z SQLSTATE 40P01 — nondeterministyczne,
+        // zależne od dokładnego zbiegu blokad GiST (potwierdzone realnym przebiegiem CI,
+        // run 34944442379, PR #1: ten sam test raz dostał 23P01, raz 40P01).
+        // SQLSTATE sam nie mówi, na KTÓRYM ograniczeniu deadlock powstał — teoretycznie
+        // mógłby to być `bookings_one_active_per_subject` (unikalny indeks częściowy),
+        // nie tylko EXCLUDE. Ale kontynuacja pętli jest bezpiecznym domyślnym wyborem
+        // dla obu przypadków: jeśli to faktycznie był konflikt na podmiocie, następny
+        // kandydat i tak dostanie czyste 23505/P2002 (SUBJECT_ALREADY_BOOKED) w kolejnej
+        // iteracji — błąd ujawni się poprawnie, tylko jedną iterację później. Przerwanie
+        // pętli na niepewności byłoby BŁĘDNE dla prawdziwego przypadku "przegrany wyścig
+        // o zasób" (większość przypadków 40P01 tutaj).
         continue
       }
 
