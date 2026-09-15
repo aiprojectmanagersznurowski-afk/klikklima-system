@@ -727,13 +727,18 @@ model AuditLog {
   /// może zniknąć — wpis ma dokumentować stan z momentu zdarzenia, nie stan bieżący.
   actorRole String @map("actor_role")
 
-  /// CHECK w bazie ogranicza do 6 wartości AUDIT_REQUIREMENTS.mustLog.
+  /// CHECK w bazie ogranicza do 7 wartości AUDIT_REQUIREMENTS.mustLog
+  /// (6 pierwotnych + 'field_update', migracja 20260910103000).
   /// To oś OPERACJI AUDYTOWYCH, nie zdolności RBAC: anonimizacja klienta zapisuje się jako
   /// operation = 'anonymize', podczas gdy bramka pyta can(role, 'clients', 'delete').
   /// Te dwie osie się nie pokrywają i nie muszą.
   operation String
 
-  /// CHECK w bazie ogranicza do 13 wartości RESOURCES z rbac.contract.mjs.
+  /// CHECK w bazie ogranicza do 15 wartości: 13 pierwotnych + 'visit_duration_baskets'
+  /// i 'system_config' (migracja 20260915120000, WO CAL-SCHEDULING-CONFIG-UI).
+  /// UWAGA: to PODZBIÓR RESOURCES z rbac.contract.mjs, nie kopia — macierz zna dziś ~28 zasobów,
+  /// a do rejestru dopuszczane są świadomie tylko te, które faktycznie coś logują.
+  /// Nowy zasób w RESOURCES NIE trafia tu automatycznie; wymaga osobnej migracji.
   resource String
 
   /// „Na jakim rekordzie". TEXT, nie UUID i bez klucza obcego — tabela jest wspólna dla wszystkich
