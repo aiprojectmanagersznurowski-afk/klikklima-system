@@ -7,9 +7,12 @@ import { getCurrentActorRole, createClient } from "../../../utils/supabase/serve
 import { crewSchema } from "./schema"
 import type { ZodError } from "zod"
 import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
-import { availabilityRuleSchema } from "../../../lib/schedule/availability-rule-schema"
-import { writeAvailabilityRuleRaw } from "../../../lib/schedule/availability-rule"
-import { getEffectiveAvailability, type EffectiveAvailabilityDay } from "../../../lib/schedule/effective-availability"
+import {
+  availabilityRuleSchema,
+  writeAvailabilityRuleRaw,
+  getEffectiveAvailability,
+  type EffectiveAvailabilityDay,
+} from "@repo/scheduling"
 
 class CrewBlockedError extends Error {
   result: DeleteCrewResult

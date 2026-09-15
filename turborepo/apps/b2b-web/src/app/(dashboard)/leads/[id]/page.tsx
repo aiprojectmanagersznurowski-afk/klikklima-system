@@ -14,6 +14,7 @@ import { LEAD_STATUS_TONE } from "../leads-client";
 import { signStoragePaths } from "@/lib/storage/signed-urls";
 import type { TriageAnswers } from "@/lib/triage-answers";
 import { formatDate } from "@/lib/format-date";
+import { formatLeadStatus } from "@/lib/format-status";
 import { EMPTY_VALUE } from "@/lib/empty-value";
 import type { LeadStatus } from "@repo/database";
 
@@ -107,11 +108,11 @@ export default async function LeadDetailsPage({
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-card p-8 rounded-xl border border-border shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-4">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-4">
                 {name}
                 <StatusPill
                   className="text-sm px-4 py-1"
-                  label={(lead.status || "").replace(/_/g, " ")}
+                  label={formatLeadStatus(lead.status)}
                   tone={lead.status ? LEAD_STATUS_TONE[lead.status as LeadStatus] : "neutral"}
                 />
               </h1>

@@ -184,7 +184,7 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
                     const isWarning = item.status === 'HARDWARE_IN_WAREHOUSE' && item.daysToInstall !== null && item.daysToInstall >= 3 && item.daysToInstall <= 7;
 
                     let slaBadge = (
-                      <span className="text-xs text-muted-foreground font-mono">
+                      <span className="text-xs text-muted-foreground">
                         {item.installationDate
                           ? `${formatDate(item.installationDate, "d MMM yyyy")} (Bezpieczny termin)`
                           : EMPTY_VALUE}
@@ -221,7 +221,7 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
                             <span className="text-sm font-semibold font-mono tracking-tight text-foreground">{item.id}</span>
                             <span className="text-xs font-mono text-muted-foreground mt-0.5">{item.leadId}</span>
                             {item.trackingNumber && (
-                              <span className="text-[11px] font-mono text-primary mt-1 bg-primary/10 px-1.5 py-0.5 rounded w-max">
+                              <span className="text-xs font-mono text-primary mt-1 bg-primary/10 px-1.5 py-0.5 rounded w-max">
                                 {item.trackingNumber}
                               </span>
                             )}
@@ -301,7 +301,7 @@ export function LogisticsClient({ initialShipments }: { initialShipments: Logist
 
                                 {item.status === 'HARDWARE_IN_TRANSIT' && (
                                   <DropdownMenuItem onClick={() => handleAction(item.leadId, "Paczka dostarczona", () => markAsDelivered(item.leadId))}>
-                                    <CheckCircle2 className="mr-2 size-4 text-green-600" />
+                                    <CheckCircle2 className="mr-2 size-4 text-primary" />
                                     <span>Paczka dostarczona</span>
                                   </DropdownMenuItem>
                                 )}

@@ -146,7 +146,14 @@ export function InstallationsClient({
                       >
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1">
-                            <span className="text-sm font-semibold text-foreground">{item.clientName}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-foreground">{item.clientName}</span>
+                              {item.installationNumber && (
+                                <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                                  {item.installationNumber}
+                                </span>
+                              )}
+                            </div>
                             <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                               <MapPin className="size-3.5 text-muted-foreground" />
                               {item.clientAddress === null

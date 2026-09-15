@@ -71,57 +71,57 @@ export function EditLeadModal({ leadId, initialData, defaultOpen = false, actorR
           <DialogTitle>Edytuj dane Leada</DialogTitle>
         </DialogHeader>
 
-        {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+        {error && <div className="text-destructive text-sm font-medium mb-4">{error}</div>}
 
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Imię i nazwisko</label>
+            <label className="text-sm font-medium text-foreground">Imię i nazwisko</label>
             <input
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border border-border bg-input-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
           
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Telefon</label>
+            <label className="text-sm font-medium text-foreground">Telefon</label>
             <input
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border border-border bg-input-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium text-foreground">Email</label>
             <input
               name="email"
               type="email"
               value={formData.email}
               onChange={handleChange}
-              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border border-border bg-input-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Adres montażu</label>
+            <label className="text-sm font-medium text-foreground">Adres montażu</label>
             <input
               name="address"
               value={formData.address}
               onChange={handleChange}
-              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border border-border bg-input-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Estymowana wycena (PLN)</label>
+            <label className="text-sm font-medium text-foreground">Estymowana wycena (PLN)</label>
             <input
               name="estimatedQuote"
               value={formData.estimatedQuote}
               onChange={handleChange}
-              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border border-border bg-input-background px-3 py-2 text-sm text-foreground font-mono placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
         </div>

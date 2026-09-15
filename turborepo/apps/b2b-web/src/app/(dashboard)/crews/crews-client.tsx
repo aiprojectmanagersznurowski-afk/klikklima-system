@@ -15,6 +15,7 @@ import {
 } from "./actions"
 import { AddCrewModal, type AddCrewModalSaveResult } from "./components/AddCrewModal"
 import { can, type Role } from "@klikklima/contracts"
+import { formatInstallationStatus } from "@/lib/format-status"
 import { createClient } from "@/utils/supabase/client"
 import {
   DropdownMenu,
@@ -340,7 +341,7 @@ export function CrewsClient({
           onConfirm={async (values) => {
             const result = await deleteCrewAction(deleteDialogId, values);
             if (!result.success) {
-              const blocking = result.blockingInstallations?.map(i => `${i.id} (${i.status})`).join(", ");
+              const blocking = result.blockingInstallations?.map(i => `${i.id} (${formatInstallationStatus(i.status)})`).join(", ");
               return { success: false, error: result.error + (blocking ? `\nBlokujące instalacje: ${blocking}` : "") };
             }
             return result;

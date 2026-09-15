@@ -10,8 +10,7 @@ import {
   setAvailabilityRuleAction as setCrewAvailabilityRuleAction,
   getAvailabilityAction as getCrewAvailabilityAction,
 } from "../../crews/actions"
-import type { AvailabilityRuleInput } from "../../../../lib/schedule/availability-rule-schema"
-import type { EffectiveAvailabilityDay } from "../../../../lib/schedule/effective-availability"
+import type { AvailabilityRuleInput, EffectiveAvailabilityDay } from "@repo/scheduling"
 import { ScheduleClient } from "./schedule-client"
 
 /**
@@ -105,7 +104,7 @@ export default async function MyScheduleScreen() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">Mój grafik</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Mój grafik</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Cykliczna dostępność tygodniowa — nie steruje aktywnością konta ani urlopem.
         </p>

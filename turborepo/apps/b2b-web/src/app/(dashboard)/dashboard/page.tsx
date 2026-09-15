@@ -4,7 +4,7 @@ import { getInstallations } from "../installations/actions"
 import { getUpcomingServices } from "../services/actions"
 import { formatDate } from "@/lib/format-date"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 30
 
 /**
  * KPI-DASHBOARD (audyt UI, 2026-09-03): pierwsza wersja panelu startowego. Ograniczony,
@@ -51,7 +51,7 @@ export default async function DashboardPage() {
               <Inbox className="size-5 text-primary" />
             </div>
             <p className="text-3xl font-bold tracking-tight text-foreground mt-3">{newLeadsCount}</p>
-            <span className="text-xs text-muted-foreground mt-1 font-mono">Etap 1 lejka</span>
+            <span className="text-xs text-muted-foreground mt-1">Etap 1 lejka</span>
           </div>
 
           <div
@@ -81,7 +81,7 @@ export default async function DashboardPage() {
               <ClipboardList className="size-5 text-primary" />
             </div>
             <p className="text-3xl font-bold tracking-tight text-foreground mt-3">{activeInFunnelCount}</p>
-            <span className="text-xs text-muted-foreground mt-1 font-mono">Wszystkie etapy i buckety</span>
+            <span className="text-xs text-muted-foreground mt-1">Wszystkie etapy i buckety</span>
           </div>
 
           <div className="bg-card border border-border rounded-2xl p-5 shadow-xs flex flex-col justify-between">
@@ -90,7 +90,7 @@ export default async function DashboardPage() {
               <Hammer className="size-5 text-accent" />
             </div>
             <p className="text-3xl font-bold tracking-tight text-foreground mt-3">{upcomingInstallations.length}</p>
-            <span className="text-xs text-muted-foreground mt-1 font-mono">Zaplanowane / w trakcie</span>
+            <span className="text-xs text-muted-foreground mt-1">Zaplanowane / w trakcie</span>
           </div>
 
           <div className="bg-card border border-border rounded-2xl p-5 shadow-xs flex flex-col justify-between">
@@ -99,13 +99,13 @@ export default async function DashboardPage() {
               <Wrench className="size-5 text-accent" />
             </div>
             <p className="text-3xl font-bold tracking-tight text-foreground mt-3">{upcomingServices.length}</p>
-            <span className="text-xs text-muted-foreground mt-1 font-mono">Nierozliczone / prognozowane</span>
+            <span className="text-xs text-muted-foreground mt-1">Nierozliczone / prognozowane</span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-card border border-border rounded-2xl p-5 shadow-xs">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Najbliższe instalacje</h2>
+            <h2 className="text-base font-semibold text-foreground mb-3">Najbliższe instalacje</h2>
             {upcomingInstallations.length === 0 ? (
               <p className="text-sm text-muted-foreground">Brak zaplanowanych instalacji.</p>
             ) : (
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
                 {upcomingInstallations.map((inst) => (
                   <li key={inst.id} className="py-2 flex items-center justify-between text-sm">
                     <span className="text-foreground">{inst.clientName}</span>
-                    <span className="text-muted-foreground font-mono text-xs">
+                    <span className="text-muted-foreground text-xs">
                       {inst.plannedDate ? formatDate(inst.plannedDate, "dd MMM yyyy") : "Brak daty"}
                     </span>
                   </li>
@@ -123,7 +123,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="bg-card border border-border rounded-2xl p-5 shadow-xs">
-            <h2 className="text-sm font-semibold text-foreground mb-3">Najbliższe serwisy</h2>
+            <h2 className="text-base font-semibold text-foreground mb-3">Najbliższe serwisy</h2>
             {upcomingServices.length === 0 ? (
               <p className="text-sm text-muted-foreground">Brak nadchodzących serwisów.</p>
             ) : (
@@ -134,7 +134,7 @@ export default async function DashboardPage() {
                     className="py-2 flex items-center justify-between text-sm"
                   >
                     <span className="text-foreground">{svc.customer_name}</span>
-                    <span className="text-muted-foreground font-mono text-xs">
+                    <span className="text-muted-foreground text-xs">
                       {svc.date_undetermined ? "Termin niewyznaczony" : formatDate(svc.next_service_date, "dd MMM yyyy")}
                     </span>
                   </li>

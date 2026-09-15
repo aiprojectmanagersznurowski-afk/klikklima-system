@@ -178,18 +178,18 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
       <div
-        className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-foreground/40 backdrop-blur-xs transition-opacity"
         onClick={() => onOpenChange(false)}
       />
 
-      <div className="relative z-50 w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 font-sans">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-900">
+      <div className="relative z-50 w-full max-w-2xl bg-card rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-200 font-sans">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
+          <h2 className="text-xl font-bold tracking-tight text-foreground">
             {initialData ? "Edytuj audytora" : "Dodaj nowego audytora"}
           </h2>
           <button
             onClick={() => onOpenChange(false)}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-secondary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -208,7 +208,7 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
               className="relative group cursor-pointer"
               onClick={() => fileInputRef.current?.click()}
             >
-              <div className="w-20 h-20 rounded-full bg-gray-50 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden group-hover:border-blue-400 transition-colors relative">
+              <div className="w-20 h-20 rounded-full bg-secondary border-2 border-dashed border-border flex items-center justify-center overflow-hidden group-hover:border-primary/50 transition-colors relative">
                 {photoPreview ? (
                   <>
                     <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
@@ -217,10 +217,10 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
                     </div>
                   </>
                 ) : (
-                  <Camera className="w-6 h-6 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                  <Camera className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
                 )}
               </div>
-              <div className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700 text-center">
+              <div className="mt-3 text-sm font-medium text-primary hover:underline text-center">
                 Wgraj zdjęcie profilowe
               </div>
             </div>
@@ -233,16 +233,16 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
             />
           </div>
 
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Podstawowe dane</h3>
+          <h3 className="text-base font-semibold text-foreground mb-4">Podstawowe dane</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-1.5">
-              <label htmlFor="imie_i_nazwisko" className="text-sm font-medium text-gray-700">Imię i nazwisko <span className="text-red-500">*</span></label>
+              <label htmlFor="imie_i_nazwisko" className="text-sm font-medium text-foreground">Imię i nazwisko <span className="text-destructive">*</span></label>
               <input
                 id="imie_i_nazwisko"
                 type="text"
                 placeholder="np. Jan Kowalski"
                 aria-invalid={!!errors.imie_i_nazwisko}
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400 aria-invalid:border-destructive aria-invalid:ring-destructive/20"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground transition-shadow placeholder:text-muted-foreground aria-invalid:border-destructive aria-invalid:ring-destructive/20"
                 {...register('imie_i_nazwisko')}
               />
               {errors.imie_i_nazwisko && (
@@ -251,24 +251,24 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="telefon" className="text-sm font-medium text-gray-700">Telefon</label>
+              <label htmlFor="telefon" className="text-sm font-medium text-foreground">Telefon</label>
               <input
                 id="telefon"
                 type="tel"
                 placeholder="+48 000 000 000"
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground transition-shadow placeholder:text-muted-foreground"
                 {...register('telefon')}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
+              <label htmlFor="email" className="text-sm font-medium text-foreground">Email</label>
               <input
                 id="email"
                 type="email"
                 placeholder="jan@example.com"
                 aria-invalid={!!errors.email}
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400 aria-invalid:border-destructive aria-invalid:ring-destructive/20"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground transition-shadow placeholder:text-muted-foreground aria-invalid:border-destructive aria-invalid:ring-destructive/20"
                 {...register('email')}
               />
               {errors.email && (
@@ -277,7 +277,7 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
             </div>
 
             <div className="space-y-1.5 relative">
-              <label htmlFor="adres" className="text-sm font-medium text-gray-700">Adres / Miasto</label>
+              <label htmlFor="adres" className="text-sm font-medium text-foreground">Adres / Miasto</label>
               <input
                 id="adres"
                 type="text"
@@ -288,15 +288,15 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
                   setValue('adres', e.target.value);
                 }}
                 disabled={!ready}
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground transition-shadow placeholder:text-muted-foreground"
               />
               {status === "OK" && (
-                <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-60 overflow-y-auto">
+                <ul className="absolute z-10 left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                   {data.map(({ place_id, description }) => (
                     <li
                       key={place_id}
                       onClick={() => handleSelect(description)}
-                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors text-sm text-gray-700 border-b border-gray-100 last:border-0"
+                      className="px-4 py-3 hover:bg-secondary cursor-pointer transition-colors text-sm text-foreground border-b border-border last:border-0"
                     >
                       {description}
                     </li>
@@ -306,58 +306,58 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="nazwa_firmy" className="text-sm font-medium text-gray-700">Nazwa firmy</label>
+              <label htmlFor="nazwa_firmy" className="text-sm font-medium text-foreground">Nazwa firmy</label>
               <input
                 id="nazwa_firmy"
                 type="text"
                 placeholder="Wpisz nazwę firmy"
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground transition-shadow placeholder:text-muted-foreground"
                 {...register('nazwa_firmy')}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="nip" className="text-sm font-medium text-gray-700">NIP</label>
+              <label htmlFor="nip" className="text-sm font-medium text-foreground">NIP</label>
               <input
                 id="nip"
                 type="text"
                 placeholder="000-000-00-00"
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground font-mono transition-shadow placeholder:text-muted-foreground"
                 {...register('nip')}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="certyfikat_fgaz" className="text-sm font-medium text-gray-700">Nr certyfikatu F-GAZ</label>
+              <label htmlFor="certyfikat_fgaz" className="text-sm font-medium text-foreground">Nr certyfikatu F-GAZ</label>
               <input
                 id="certyfikat_fgaz"
                 type="text"
                 placeholder="np. FGAZ/1234/2024"
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground font-mono transition-shadow placeholder:text-muted-foreground"
                 {...register('certyfikat_fgaz')}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="fgaz_valid_until" className="text-sm font-medium text-gray-700">Data ważności certyfikatu F-GAZ</label>
+              <label htmlFor="fgaz_valid_until" className="text-sm font-medium text-foreground">Data ważności certyfikatu F-GAZ</label>
               <input
                 id="fgaz_valid_until"
                 type="date"
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground transition-shadow"
                 {...register('fgaz_valid_until')}
               />
             </div>
           </div>
 
-          <h3 className="text-lg font-medium text-gray-900 mb-4 mt-8">Kwalifikacje i Logistyka</h3>
+          <h3 className="text-base font-semibold text-foreground mb-4 mt-8">Kwalifikacje i Logistyka</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-1.5">
-              <label htmlFor="doswiadczenie_hvac_lata" className="text-sm font-medium text-gray-700">Doświadczenie HVAC (lata)</label>
+              <label htmlFor="doswiadczenie_hvac_lata" className="text-sm font-medium text-foreground">Doświadczenie HVAC (lata)</label>
               <input
                 id="doswiadczenie_hvac_lata"
                 type="number"
                 min="0"
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground transition-shadow"
                 {...register('doswiadczenie_hvac_lata')}
               />
             </div>
@@ -366,54 +366,54 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
               <input
                 id="uprawnienia_sep"
                 type="checkbox"
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus-visible:ring-2 focus-visible:ring-primary"
+                className="w-4 h-4 text-primary accent-primary border-border rounded focus-visible:ring-2 focus-visible:ring-primary"
                 {...register('uprawnienia_sep')}
               />
-              <label htmlFor="uprawnienia_sep" className="ml-2 block text-sm text-gray-900">Uprawnienia SEP do 1kV</label>
+              <label htmlFor="uprawnienia_sep" className="ml-2 block text-sm text-foreground">Uprawnienia SEP do 1kV</label>
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="sep_valid_until" className="text-sm font-medium text-gray-700">Data ważności uprawnień SEP</label>
+              <label htmlFor="sep_valid_until" className="text-sm font-medium text-foreground">Data ważności uprawnień SEP</label>
               <input
                 id="sep_valid_until"
                 type="date"
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground transition-shadow"
                 {...register('sep_valid_until')}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="kod_pocztowy_bazowy" className="text-sm font-medium text-gray-700">Bazowy kod pocztowy</label>
+              <label htmlFor="kod_pocztowy_bazowy" className="text-sm font-medium text-foreground">Bazowy kod pocztowy</label>
               <input
                 id="kod_pocztowy_bazowy"
                 type="text"
                 placeholder="XX-XXX"
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground font-mono transition-shadow placeholder:text-muted-foreground"
                 {...register('kod_pocztowy_bazowy')}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="promien_dzialania_km" className="text-sm font-medium text-gray-700">Max promień dojazdu (km)</label>
+              <label htmlFor="promien_dzialania_km" className="text-sm font-medium text-foreground">Max promień dojazdu (km)</label>
               <input
                 id="promien_dzialania_km"
                 type="number"
                 min="10"
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground transition-shadow"
                 {...register('promien_dzialania_km')}
               />
             </div>
           </div>
 
-          <h3 className="text-lg font-medium text-gray-900 mb-4 mt-8">Finanse</h3>
+          <h3 className="text-base font-semibold text-foreground mb-4 mt-8">Finanse</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-1.5">
-              <label htmlFor="iban" className="text-sm font-medium text-gray-700">IBAN</label>
+              <label htmlFor="iban" className="text-sm font-medium text-foreground">IBAN</label>
               <input
                 id="iban"
                 type="text"
                 placeholder="PL..."
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-shadow placeholder:text-gray-400"
+                className="w-full px-3 py-2 bg-input-background border border-border rounded-md shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary text-sm text-foreground font-mono transition-shadow placeholder:text-muted-foreground"
                 {...register('iban')}
               />
             </div>
@@ -423,18 +423,18 @@ export function AddAuditorModal({ open, onOpenChange, onSave, initialData, isLoa
             <p className="text-sm text-destructive font-medium mb-4" role="alert">{submitError}</p>
           )}
 
-          <div className="mt-8 flex justify-end space-x-3 pt-6 border-t border-gray-100">
+          <div className="mt-8 flex justify-end space-x-3 pt-6 border-t border-border">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 transition-colors"
+              className="px-5 py-2.5 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer"
             >
               Anuluj
             </button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 transition-colors shadow-sm"
+              className="px-5 py-2.5 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-md hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors shadow-xs cursor-pointer"
             >
               {isSubmitting ? "Zapisywanie..." : "Zapisz"}
             </Button>

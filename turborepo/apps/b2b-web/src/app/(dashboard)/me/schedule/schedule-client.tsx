@@ -8,8 +8,7 @@ import { Loader2, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { WEEKDAY_LABELS } from "../../../../lib/schedule/weekday-labels"
-import { availabilityRuleSchema, type AvailabilityRuleInput } from "../../../../lib/schedule/availability-rule-schema"
-import type { EffectiveAvailabilityDay } from "../../../../lib/schedule/effective-availability"
+import { availabilityRuleSchema, type AvailabilityRuleInput, type EffectiveAvailabilityDay } from "@repo/scheduling"
 
 /**
  * FLD-AVAIL-WEEKLY-RULES (WO, blok C): ekran własnego grafiku tygodniowego

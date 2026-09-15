@@ -1,32 +1,42 @@
 ---
 name: booking-one-active-per-subject
-description: 2026-09-10 D-3 rozstrzygnięte wariantem (b); migracja subject_id + indeks częściowy NAPISANA, NIE ZAAPLIKOWANA na żywej bazie
+description: 2026-09-14 ZAMKNIĘTE na DONE (dd69d56) po dwóch turach; wzorzec podziału 8 kryteriów na „przedmiot = kod" (atrapa) vs „przedmiot = indeks" (żywy Postgres)
 metadata:
   type: project
 ---
 
-`FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT` zarejestrowane (TODO, risk HIGH) i zamknięte commitem `14fd8f5`.
-Migracja `supabase/migrations/20260910110000_fld_booking_one_active_per_subject.sql`: kolumna generowana
-`bookings.subject_id = COALESCE(lead_id, service_id, incident_id)` + częściowy indeks unikalny
-`bookings_one_active_per_subject` WHERE status IN ('RESERVED','CONFIRMED').
-**Nie uruchomiona na produkcji** — Michał wymaga osobnej, jawnej zgody na każde uruchomienie migracji.
+`FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT` (risk HIGH) zamknięte **DONE 2026-09-14**, commit `dd69d56`,
+okno `FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT-DONE`, druga tura. Pierwsza tura słusznie się zatrzymała:
+6 z 8 kryteriów nie miało ani jednego testu, a AC6 miało dodatkowo lukę IMPLEMENTACYJNĄ
+(`fail("SUBJECT_ALREADY_BOOKED", …)` nie zwracał identyfikatora kolidującej rezerwacji).
+Lukę zamknął `d4c82b6` w `packages/scheduling/src/create-booking.ts` (pole `error.existingBooking`).
 
-**Why:** D-3 z `docs/workorders/FLD-BOOKING-ATOMIC-ASSIGN.md` — podwójne kliknięcie przy puli dwuosobowej
-tworzyło dwie poprawne rezerwacje jednego leada u dwóch osób; `bookings_one_subject` pilnuje wiersza,
-nie podmiotu. Michał wybrał wariant (b): ograniczenie w bazie, bo sprawdzenie w kodzie jest nieszczelne
-dokładnie tą samą klasą błędu, którą zwalcza [[project_cal_slot_engine_done]].
+**Why zatrzymanie było trafne:** notatka poprzedniej tury mówiła „kod poprawny, dowodu nie ma" —
+i to zadziałało jako specyfikacja dla implementera i test-authora. Blokada nie była formalna:
+AC6 naprawdę wymagało zmiany kodu, nie testu.
 
-**How to apply:**
-- Trzy pułapki, które muszą przetrwać do implementacji: (1) 23505 ≠ 23P01 — przy 23P01 ponawia się na
-  kolejnym kandydacie z puli, przy 23505 pętla musi się przerwać; (2) indeks częściowy NIE MOŻE być
-  DEFERRABLE (nie da się wyrazić jako UNIQUE CONSTRAINT), więc przekładanie terminu musi ustawić stary
-  wiersz na RELEASED PRZED wstawieniem nowego; (3) test dowodzący czegokolwiek to dwa równoległe żądania
-  na ten sam podmiot, ale RÓŻNE sloty i różnych pracowników — inaczej odmowę produkuje
-  `bookings_no_overlap_per_resource`, czyli inne ograniczenie.
-- Wzorzec kolumny generowanej dla „dokładnie jedno z kilku FK, unikalność po tym jednym" jest w tym repo
-  ustalony: `resource_id = COALESCE(auditor_id, crew_id)` (migracja 20260910100000). Prisma kolumn
-  generowanych nie wyraża — dopisuje się je do bloku komentarza nad sekcją FLD-CALENDAR-FOUNDATION
-  w `schema.prisma`, NIE do modelu.
-- D-2 (Postgres w CI) nadal nierozstrzygnięte, więc kryteriów współbieżnych nie da się dziś zaliczyć.
-  Uwaga: 2026-09-10 ktoś równolegle dodał `vitest.integration.config.mts` — sprawdź, czy D-2 nie zostało
-  w międzyczasie zamknięte.
+**Wzorzec do powtórzenia przy każdym wymaganiu o ograniczeniu w bazie:** podziel kryteria wg
+PRZEDMIOTU, zanim ocenisz pokrycie.
+- Przedmiot = zachowanie KODU (rozróżnianie SQLSTATE, kształt błędu domenowego) -> wystarczy atrapa
+  Prismy, błąd podawany jako `P2010` + `meta.code: '23505'`.
+- Przedmiot = zachowanie INDEKSU (częściowość po statusie, brak DEFERRABLE, wyścig) -> żywy Postgres,
+  i wtedy itest MUSI omijać warstwę domenową (`prisma.booking.create` wprost), bo silnik odfiltrowałby
+  zajęty zasób przed próbą zapisu. Patrz [[feedback_mock_cannot_prove_db_constraint]].
+- Kryterium „test wymaga prawdziwego Postgresa" jest META: spełnia je sam fakt, że tamte testy są
+  `*.itest.ts`.
+
+**Czego szukać, czytając test dla takiego kryterium (nie wystarczy, że test istnieje):**
+- Wyścig o podmiot musi iść na RÓŻNE, NIENAKŁADAJĄCE SIĘ sloty — inaczej odmowę wyprodukowałoby
+  `bookings_no_overlap_per_resource` (23P01) i dowód jest pozorny. Asercja na KOD błędu
+  (`SUBJECT_ALREADY_BOOKED`, nie `SLOT_TAKEN`) jest tu rozstrzygająca.
+- Test rollbacku musi PONOWNIE ODCZYTAĆ stary wiersz po wyjątku i sprawdzić, że nie przeszedł na
+  RELEASED. Sam wyjątek 23505 dowodzi odmowy INSERT-u, nie wycofania całej transakcji.
+
+**Dług „itesty AC2/AC3/AC4 nieuruchomione" SPŁACONY 2026-09-15** (okno `STALE-ITEST-NOT-RUN-NOTES-FIX`,
+commit `a69a013`): CI wykonało `create-booking-concurrency.itest.ts` na żywym Postgresie —
+run `34939998108`, headSha `0dc54dc`, job „integracja" `104286315640` success, 9 testów zielonych,
+zero skipped; trzy z nich to właśnie AC2/AC3/AC4. Poprawiono wyłącznie `note` (status DONE i kryteria
+bez zmian). Szczegóły i wzorzec sprostowania: [[fld-booking-atomic-assign-blocked]].
+
+**How to apply:** przy kolejnym wymaganiu opartym o ograniczenie w bazie zrób ten podział jawnie
+w notatce rejestru — implementer i test-author czytają ją jak WO.

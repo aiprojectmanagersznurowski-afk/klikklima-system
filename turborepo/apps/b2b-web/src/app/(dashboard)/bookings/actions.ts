@@ -7,7 +7,10 @@ import {
   createBooking,
   type CreateBookingResult,
   type CreateBookingErrorCode,
-} from "../../../lib/schedule/create-booking"
+  reassignBooking,
+  type ReassignBookingResult,
+  type ReassignBookingErrorCode,
+} from "@repo/scheduling"
 
 /**
  * FLD-BOOKING-ATOMIC-ASSIGN (docs/workorders/FLD-BOOKING-ATOMIC-ASSIGN.md), Faza A.
@@ -51,4 +54,34 @@ export async function createBookingAction(input: unknown): Promise<CreateBooking
   }
 
   return createBooking(parsed.data)
+}
+
+/**
+ * Faza B (`docs/workorders/FLD-BOOKING-ATOMIC-ASSIGN.md`) — nadpisanie przypisania
+ * wykonawcy przez dyspozytora. Bramka RBAC: `bookings.assign`, NIE `bookings.update` —
+ * to osobna operacja w `contracts/rbac.contract.mjs` (patrz nagłówek testu).
+ */
+
+const reassignBookingInputSchema = z.object({
+  bookingId: z.string().min(1),
+  newResourceId: z.string().min(1),
+})
+
+function reassignDenied(code: ReassignBookingErrorCode | "FORBIDDEN" | "VALIDATION_ERROR", message: string): ReassignBookingResult {
+  return { ok: false, booking: null, error: { code: code as ReassignBookingErrorCode, message } }
+}
+
+export async function reassignBookingAction(input: unknown): Promise<ReassignBookingResult> {
+  const actorRole = await getCurrentActorRole()
+
+  if (!actorRole || can(actorRole, "bookings", "assign") === "no") {
+    return reassignDenied("FORBIDDEN", "Brak uprawnień do przepięcia wykonawcy rezerwacji.")
+  }
+
+  const parsed = reassignBookingInputSchema.safeParse(input)
+  if (!parsed.success) {
+    return reassignDenied("VALIDATION_ERROR", "Niepoprawne dane wejściowe przepięcia rezerwacji.")
+  }
+
+  return reassignBooking(parsed.data)
 }

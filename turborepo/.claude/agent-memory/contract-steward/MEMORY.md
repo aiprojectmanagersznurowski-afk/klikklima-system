@@ -1,9 +1,23 @@
 # Pamięć agenta: contract-steward
 
+- [Migracja musi działać w OBU porządkach](feedback_migration_both_run_orders.md) — replay wg nazw plików vs ręczne uruchomienie poza kolejnością; nazwa nieznana statycznie -> dynamiczny COMMENT.
+- [audit_log_resource_check to PODZBIÓR RESOURCES](project_audit_log_resource_check_subset_of_resources.md) — nowy zasób nie trafia tam sam, żadna bramka nie wykryje; ŻYWO 15 wartości, migracja 20260915120000 URUCHOMIONA 2026-09-15.
+- [Weryfikacja SQL bez Dockera](feedback_sql_verify_via_rolled_back_tx.md) — blok na żywej bazie w transakcji z celowym ROLLBACK przez `node -e`; guard-paths blokuje pliki skryptowe.
+
 - [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, audytorzy MAJĄ promień, timestamp ≠ kolejność uruchomienia, migracje LIVE.
 - [FLD-AVAIL-WEEKLY-RULES: AC szersze niż WO](project_fld_avail_weekly_rules_ac_wider_than_wo.md) — 2026-09-10 DOMKNIĘTE na DONE (4075fdd); AC7/AC8 wyniesione do CAL-SLOT-ENGINE i CAL-POOL-AGGREGATE.
-- [FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT: D-3 wariant (b)](project_booking_one_active_per_subject.md) — 2026-09-10; subject_id + indeks częściowy NAPISANE, NIE zaaplikowane; 23505 ≠ 23P01, brak DEFERRABLE.
-- [CAL-SLOT-ENGINE zamknięte](project_cal_slot_engine_done.md) — 2026-09-10 DONE; silnik bez wywołań produkcyjnych (to nie luka), 6 AC w rejestrze vs 40 w WO.
+- [FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT zamknięte](project_booking_one_active_per_subject.md) — 2026-09-14 DONE (dd69d56); podział kryteriów wg PRZEDMIOTU: kod -> atrapa, indeks -> żywy Postgres.
+- [CAL-SLOT-ENGINE: DONE -> TODO -> DONE](project_cal_slot_engine_done.md) — 2026-09-15 domknięte na przebiegu itestu w CI; właścicielem silnik, bo CHECK z czasem bieżącym jest w PG niemożliwy.
+- [Przebieg CI jako dowód domknięcia](feedback_ci_run_as_proof_verify_sha_and_execution.md) — sprawdź sam headSha, conclusion każdego joba i log dowodzący WYKONANIA testu, nie pominięcia.
+- [Przebieg itestów w CI unieważnia domknięcia po tsc](feedback_ci_itest_run_invalidates_tsc_closures.md) — cofaj status, nie doklejaj wyjaśnień; kolejni kandydaci do upadku to oba FLD-BOOKING-*.
+- [CAL-POOL-AGGREGATE zamknięte](project_cal_pool_aggregate_done.md) — 2026-09-14 DONE; kryteria mówią „Klient widzi", a konsumenta B2C nie ma — warstwę kliencką przejęło B2C-BOOKING-SLOT.
+- [B2C-BOOKING-SLOT zamknięte](project_b2c_booking_slot_done.md) — 2026-09-14 DONE (74bd07c); Google Calendar odpięty od odczytu, itest współbieżności NIEURUCHOMIONY, B2C-LEAD-ATOMIC zostaje otwarte.
+- [CAL-SCHEDULING-CONFIG: koszyki i bufor zamknięte](project_cal_scheduling_config_closed.md) — 2026-09-15 DONE (9073232); AC2 rozdzielone: nośnik zostaje, ekran wyceny -> FLD-QUOTE-BASKET-SELECT.
+- [Pokrycie bywa pod tagiem rodzeństwa](feedback_coverage_may_sit_under_sibling_req_tag.md) — brak testu przy @REQ ≠ brak pokrycia; szukaj po pojęciu domenowym, nie po ID (grupa T bufora).
+- [B2C: żywe źródło slotów vs martwy route.ts](project_b2c_slots_live_source_vs_dead_route.md) — 2026-09-14; `api/calendar/slots/route.ts` ma zero konsumentów, żyje `actions/calendar.ts` -> `Step8Booking.tsx`.
+- [Bramka nazewnictwa i artefakt ścieżki](feedback_naming_gate_path_artifact.md) — cudze niezacommitowane `git mv` wygląda jak nowy dług; sprawdź baseline pod starą ścieżką, nie odświeżaj go.
+- [FLD-BOOKING-ATOMIC-ASSIGN domknięte](project_fld_booking_atomic_assign_blocked.md) — 2026-09-14 DONE; testy ograniczenia dopisane, ale NIEURUCHOMIONE (brak Dockera) — świadomy dług.
+- [Atrapa nie dowodzi ograniczenia w bazie](feedback_mock_cannot_prove_db_constraint.md) — sprawdź PODMIOT kryterium: obiekt bazy wymaga żywego Postgresa, kod wystarczy atrapą.
 - [Rozjazd zakresu: sprawdź innego właściciela](feedback_scope_mismatch_check_other_owner.md) — kryterium spoza WO blokuje DONE tylko wtedy, gdy nie ma go przy innym OTWARTYM ID.
 - [Rename promienia audytora](project_auditor_radius_rename.md) — 2026-09-10 DOMKNIĘTE (migracja live, kod i testy); `tsc` łapał 4 z 13 miejsc, reszta psuła się w runtime.
 
