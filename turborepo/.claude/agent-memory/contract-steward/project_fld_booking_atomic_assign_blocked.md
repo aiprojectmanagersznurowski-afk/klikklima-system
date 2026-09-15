@@ -1,6 +1,6 @@
 ---
 name: fld-booking-atomic-assign-blocked
-description: FLD-BOOKING-ATOMIC-ASSIGN — blokada zdjęta 2026-09-14, status DONE po dopisaniu testów ograniczenia, których w tym sandboxie NIE DA SIĘ uruchomić (decyzja Michała)
+description: FLD-BOOKING-ATOMIC-ASSIGN — DONE 2026-09-14; dług „itest nieuruchomiony" SPŁACONY 2026-09-15 przebiegiem CI 34939998108 (9 testów zielonych)
 metadata:
   type: project
 ---
@@ -16,4 +16,6 @@ metadata:
 
 **Why:** ten sandbox nigdy nie był bezpiecznym miejscem na testy współbieżności — jedyna osiągalna z niego baza to produkcja. Trzymanie `TODO` do czasu przebiegu oznaczałoby, że wymaganie nie da się zamknąć NIGDY z tego środowiska, a nie że jest niedokończone.
 
-**How to apply:** dług jest zapisany w polu `note` wymagania („spełnione co do FORMY testu, nie co do jego przebiegu") — nie kasuj go przy następnej edycji wpisu, zgodnie z [[feedback_closing_requirement_with_residual_debt]]. Jeżeli CI kiedyś zgłosi czerwony przebieg tego pliku, to NIE jest regresja implementacji, tylko pierwsze faktyczne wykonanie kryteriów 3/4/5. Nie mylić z [[project_booking_one_active_per_subject]] — tamto ID blokuje niezaaplikowana migracja (fakt o bazie), nie brak testu.
+**DŁUG SPŁACONY 2026-09-15** (okno `STALE-ITEST-NOT-RUN-NOTES-FIX`, commit `a69a013`): `apps/b2b-web/tests/create-booking-concurrency.itest.ts` faktycznie się wykonał na żywym Postgresie — GitHub Actions run `34939998108`, headSha `0dc54dc`, job „integracja" `104286315640` success, log `✓ ... (9 tests) 269ms`, podsumowanie `Test Files 2 passed (2) | Tests 14 passed (14)`, zero skipped. Sześć z tych dziewięciu przypadków jest otagowanych tym ID (AC-A4, AC-A5 + cztery z `fd1c1c8`), trzy należą do [[booking-one-active-per-subject]]. Zmieniono WYŁĄCZNIE `note` w obu wpisach — status i kryteria bez zmian, bo decyzja o DONE była prawidłowa, nieprawdziwy był opis dowodu.
+
+**How to apply:** przy zamykaniu długu „test nieuruchomiony" nie dopisuj wyjaśnienia obok starego zdania — usuń nieprawdę, zgodnie z [[verify-source-notes-before-blocking]]. W repozytorium istnieją tylko DWA pliki `*.itest.ts` (ten i `apps/b2c-web/tests/actions/booking-concurrency.itest.ts`), oba wykonane w tym przebiegu, więc żadnemu z wymagań rodziny FLD-BOOKING-* nie zostaje nieuruchomiony dowód. Jeżeli CI zgłosi czerwony przebieg tego pliku po tej dacie, to JEST już regresja, nie pierwsze wykonanie. Nie mylić z [[booking-one-active-per-subject]] — tamto ID blokowała niezaaplikowana migracja (fakt o bazie), nie brak testu.

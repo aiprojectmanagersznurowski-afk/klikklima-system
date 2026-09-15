@@ -32,10 +32,11 @@ PRZEDMIOTU, zanim ocenisz pokrycie.
 - Test rollbacku musi PONOWNIE ODCZYTAĆ stary wiersz po wyjątku i sprawdzić, że nie przeszedł na
   RELEASED. Sam wyjątek 23505 dowodzi odmowy INSERT-u, nie wycofania całej transakcji.
 
-**Dług przeniesiony (świadomy, ten sam co [[project_fld_booking_atomic_assign_blocked]]):** itesty
-AC2/AC3/AC4 NIE ZOSTAŁY URUCHOMIONE — brak Dockera, `DATABASE_URL` wskazuje produkcję,
-`tools/vitest-integration-db-guard.mjs` blokuje. Podstawa domknięcia: `tsc --noEmit` czysty
-+ wzorzec identyczny z AC-A4/AC-A5, zweryfikowanymi kiedyś na żywo. Wykonanie należy do CI.
+**Dług „itesty AC2/AC3/AC4 nieuruchomione" SPŁACONY 2026-09-15** (okno `STALE-ITEST-NOT-RUN-NOTES-FIX`,
+commit `a69a013`): CI wykonało `create-booking-concurrency.itest.ts` na żywym Postgresie —
+run `34939998108`, headSha `0dc54dc`, job „integracja" `104286315640` success, 9 testów zielonych,
+zero skipped; trzy z nich to właśnie AC2/AC3/AC4. Poprawiono wyłącznie `note` (status DONE i kryteria
+bez zmian). Szczegóły i wzorzec sprostowania: [[fld-booking-atomic-assign-blocked]].
 
 **How to apply:** przy kolejnym wymaganiu opartym o ograniczenie w bazie zrób ten podział jawnie
 w notatce rejestru — implementer i test-author czytają ją jak WO.
