@@ -37,7 +37,7 @@ export async function writeAvailabilityRuleRaw(
 
   const rows = await prisma.$queryRaw<AvailabilityRuleRow[]>`
     INSERT INTO public.availability_rules (auditor_id, crew_id, weekday, start_time, end_time, is_active)
-    VALUES (${auditorId}::uuid, ${crewId}::uuid, ${weekday}, ${startTime}, ${endTime}, ${isActive})
+    VALUES (${auditorId}::uuid, ${crewId}::uuid, ${weekday}, ${startTime}::time, ${endTime}::time, ${isActive})
     ON CONFLICT (resource_id, weekday) DO UPDATE SET
       start_time = EXCLUDED.start_time,
       end_time = EXCLUDED.end_time,
