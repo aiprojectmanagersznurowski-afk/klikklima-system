@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T17:15:26.507Z",
+  "generatedAt": "2026-09-16T17:26:46.540Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -55,7 +55,7 @@
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/logistics/actions.ts::adr002-pl-tables": 15,
     "apps/b2b-web/src/app/(dashboard)/logistics/rollback-effects.ts::adr002-pl-columns": 3,
-    "apps/b2b-web/src/app/(dashboard)/logistics/rollback-effects.ts::adr002-pl-tables": 4,
+    "apps/b2b-web/src/app/(dashboard)/logistics/rollback-effects.ts::adr002-pl-tables": 5,
     "apps/b2b-web/src/app/(dashboard)/me/schedule/page.tsx::adr002-pl-tables": 2,
     "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-columns": 10,
     "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-tables": 5,
@@ -258,5 +258,5 @@
     "supabase/migrations/20260916060000_fnl_2phase_booking_mechanics.sql::adr002-pl-tables": 5,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2610
+  "total": 2611
 }

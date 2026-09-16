@@ -54,6 +54,66 @@ export async function suspendLogisticsSla(tx: Prisma.TransactionClient, leadId: 
   });
 }
 
+/**
+ * FNL-2PHASE-ROLLBACK-RELEASE (WO, sekcja "Szkic projektu", wariant preferowany D1a):
+ * zwalnia WYŁĄCZNIE rezerwację etapu II montażu dwuetapowego przy rollbacku
+ * (`AWAITING_INSTALLATION -> ROLLBACK_RESCHEDULING`, T10-T13). Zakres wąski —
+ * etap I i montaż jednoetapowy NIE są tu dotykane (poza zakresem, patrz
+ * `FNL-ROLLBACK-BOOKING-RELEASE`).
+ *
+ * Kroki:
+ *  1. instalacje leada z `installation_type = 'TWO_PHASE'` — BEZ filtra po
+ *     `instalacje.status` (D2 WO: `releaseCrewSlot` ustawia `CANCELLED` na
+ *     wierszach `PLANNED`, więc filtrowanie po statusie instalacji tutaj
+ *     zależałoby od kolejności wywołań względem `releaseCrewSlot`).
+ *  2. `installation_phases(phaseNumber=2)` tej instalacji.
+ *  3. jeżeli ma `bookingId`: `SELECT ... FOR UPDATE` na wierszu `bookings`
+ *     PRZED jakąkolwiek mutacją (pułapka 4 CLAUDE.md), potem odczyt statusu.
+ *  4. `RESERVED`/`CONFIRMED` -> `RELEASED`. W przeciwnym razie (już
+ *     `RELEASED`/`COMPLETED`) — nic (idempotencja, ochrona pracy wykonanej,
+ *     brzegi 2 i 3 WO).
+ *  5. `installation_phases.booking_id` NIE jest zerowane (ślad historyczny),
+ *     etap I NIE jest dotykany w żadnym polu (AC6/AC7).
+ */
+export async function releasePhaseTwoBooking(tx: Prisma.TransactionClient, leadId: string): Promise<void> {
+  // Zapytanie defensywne (dług nazewniczy KK-NAMING-BASELINE, jak w
+  // `two-phase-actions.ts`): dublom `tx` w testach starszym od tej funkcji,
+  // które nie modelują montażu dwuetapowego, brakuje `findMany` na `instalacje`
+  // — traktujemy taki przypadek jak "brak instalacji dwuetapowych", nie jak
+  // awarię. Prawdziwy `Prisma.TransactionClient` ma `findMany` zawsze.
+  const twoPhaseInstallations = (await tx.instalacje.findMany?.({
+    where: { lead_id: leadId, installation_type: "TWO_PHASE" },
+  })) ?? [];
+
+  for (const installation of twoPhaseInstallations) {
+    const phaseTwo = await tx.installationPhase.findUnique({
+      where: { installationId_phaseNumber: { installationId: installation.id, phaseNumber: 2 } },
+    });
+
+    if (!phaseTwo?.bookingId) {
+      continue;
+    }
+
+    const lockedRows = await tx.$queryRaw<{ id: string; status: string }[]>`
+      SELECT id, status FROM bookings WHERE id = ${phaseTwo.bookingId}::uuid FOR UPDATE
+    `;
+    const lockedBooking = lockedRows[0];
+    if (!lockedBooking) {
+      continue;
+    }
+
+    const booking = await tx.booking.findUnique({ where: { id: phaseTwo.bookingId } });
+    if (!booking || (booking.status !== "RESERVED" && booking.status !== "CONFIRMED")) {
+      continue;
+    }
+
+    await tx.booking.update({
+      where: { id: phaseTwo.bookingId },
+      data: { status: "RELEASED" },
+    });
+  }
+}
+
 type EnqueueNotificationParams = {
   notificationId: string
   idempotencyKey: string
