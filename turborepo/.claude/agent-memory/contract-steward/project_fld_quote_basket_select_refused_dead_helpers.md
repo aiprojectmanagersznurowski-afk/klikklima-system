@@ -1,19 +1,33 @@
 ---
 name: fld-quote-basket-select-refused-dead-helpers
-description: 2026-09-16 odmowa domknięcia FLD-QUOTE-BASKET-SELECT — dwa z trzech eksportów basket-select.ts nie mają konsumenta, testy dowodzą martwego kodu
+description: FLD-QUOTE-BASKET-SELECT — odmowa domknięcia 2026-09-16 (martwe helpery), domknięte na DONE tego samego dnia za drugim podejściem; został wąski dług asercji value={basket.id}
 metadata:
   type: project
 ---
 
-`FLD-QUOTE-BASKET-SELECT` zostaje na `TODO` po weryfikacji 2026-09-16 (okno `FLD-QUOTE-BASKET-CLOSE`). Commity `dab0363` (RED) i `033c8cd` (GREEN) na `feat/crm-suite-complete` zostają bez zmiany kontraktu. Przebieg testów zweryfikowany samodzielnie: 3 pliki, **39** przypadków zielonych (zlecający mówił o 40).
+`FLD-QUOTE-BASKET-SELECT` jest od 2026-09-16 na `DONE` (okno `FLD-QUOTE-BASKET-CLOSE`,
+gałąź `feat/crm-suite-complete`). Domknięcie nastąpiło za DRUGIM podejściem — pierwsza tura
+skończyła się ODMOWĄ, bo dwa z trzech eksportów `basket-select.ts` miały zero konsumentów
+w `apps/*/src`: testy dowodziły funkcji, których żaden ekran nie wołał.
 
-Dwie luki, obie tej samej klasy — **test celuje w funkcję, której ekran nie woła**:
+Co zamknęło obie dziury (sprawdzone greppem po `apps/*/src`, nie z opisu zlecającego):
+`buildCreateBookingPayload` wołane wewnątrz `createBookingAction(...)` w `onSubmit`
+dialogu, `findBasketById` wołane w NOWYM `leads/[id]/lead-bookings-list.tsx`, a `page.tsx`
+dociąga `prisma.booking.findMany({ where: { leadId } })` i przekazuje ten SAM wariant
+`baskets` (komplet z `findMany()` bez `where`) do obu komponentów — dlatego koszyk wycofany
+fizycznie dociera do wyszukiwania. 5 plików, 49 przypadków, uruchomione samodzielnie.
 
-1. **AC2 (identyfikator, nie nazwa).** `buildCreateBookingPayload` ma ZERO konsumentów w `apps/*/src` — dialog konstruuje payload w `onSubmit` wprost. Żadna asercja nie dotyka `<option value={basket.id}>`, czyli dosłownej treści AC2. Podmiana na `value={basket.code}` przechodzi cały dzisiejszy zestaw.
-2. **AC1 część druga (wycena historyczna pokazuje etykietę koszyka wycofanego).** `findBasketById` ma ZERO konsumentów, a w repozytorium NIE ISTNIEJE żaden widok szczegółu rezerwacji — `find apps/b2b-web/src/app -path "*booking*"` zwraca wyłącznie `bookings/actions.ts` i sam dialog. WO ma to kryterium jawnie w zakresie (AC3 WO), nie w „Poza zakresem".
+**Why:** odmowa zadziałała dokładnie tak, jak miała — wymusiła powstanie konsumenta zamiast
+domknięcia na atrapie. Wzorzec z [[feedback_mock_cannot_prove_db_constraint]] w wariancie UI:
+podmiotem kryterium „ekran pokazuje" jest EKRAN, nie funkcja pomocnicza.
 
-Poboczne, nieblokujące: dialog nie renderuje `durationMinutes` w ogóle, więc WO AC5 („ekran pokazuje NOWĄ wartość") jest spełnione tylko negatywnie (brak literału), nie pozytywnie.
-
-**Why:** to powtórka dokładnie tego powodu, dla którego ten wpis w ogóle wyniesiono z `CAL-VISIT-DURATION-BASKETS` — tam nośnik był gotowy, a ekranu nie było. Domknięcie na martwych helperach przywróciłoby ten sam fałsz jedno piętro wyżej. Patrz [[feedback_mock_cannot_prove_db_constraint]] w wariancie UI: podmiotem kryterium jest EKRAN.
-
-**How to apply:** przy następnym podejściu wystarczy (a) asercja statyczna `value={basket.id}` albo wpięcie `buildCreateBookingPayload` w `onSubmit`, oraz (b) rozstrzygnięcie, czy widok szczegółu rezerwacji powstaje teraz, czy AC1 część druga idzie do osobnego ID wzorcem z [[feedback_closing_requirement_with_residual_debt]]. Nie kasować kryterium.
+**How to apply:** przy powrocie do tego obszaru pamiętaj o JEDNYM świadomym długu zapisanym
+w `note`: żaden test nie asertuje `value={basket.id}` na `<option>`, więc podmiana na
+`basket.code` przechodzi cały zestaw — `buildCreateBookingPayload` jest przepustem (identity),
+a obie walidacje Zod to `z.string().min(1)`, nie `.uuid()`. Skutek byłby GŁOŚNY
+(`BASKET_NOT_FOUND` przy każdej rezerwacji, FK `onDelete: Restrict` chroni dane), dlatego
+nie blokował domknięcia. Zamknięcie to jedna asercja statyczna — zadanie test-authora, patrz
+[[project_steward_cannot_write_tests]] i [[feedback_closing_requirement_with_residual_debt]].
+Uwaga na pułapkę oceny: „wpięcie helpera" NIE jest tożsame z „dowiedzeniem identyfikatora",
+bo helper tylko przepuszcza wartość z formularza.
+Aktor i zakres: [[project_fld_quote_basket_select_actor_decided]].
