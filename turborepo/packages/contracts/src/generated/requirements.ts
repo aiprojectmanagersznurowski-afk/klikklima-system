@@ -890,7 +890,7 @@ export const REQUIREMENTS = [
   {
     "id": "FLD-AVAIL-SELF",
     "domain": "field",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "HIGH",
     "source": "field_app_requirements.md#4.2",
     "statement": "Pracownik terenowy sam deklaruje własną niedostępność, a deklaracja jest rozłączna z blokadą administracyjną (is_active) i ze statusem kadrowym (leave_status), których właścicielem pozostaje administrator."
@@ -898,7 +898,7 @@ export const REQUIREMENTS = [
   {
     "id": "FLD-AVAIL-RESTORE",
     "domain": "field",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "MEDIUM",
     "source": "field_app_requirements.md#4.2",
     "statement": "Powrót pracownika do statusu dostępnego przywraca wcześniej wprowadzoną dostępność bez ponownego jej wprowadzania (D3)."
