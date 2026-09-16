@@ -8,12 +8,13 @@ import type { Role } from '@klikklima/contracts'
 import {
   LayoutDashboard, Users, UserCheck, Wrench, Bell, Search, LogOut,
   ChevronLeft, ChevronRight, Thermometer, X, FolderKanban, Box, Settings,
-  ChevronDown, CalendarDays
+  ChevronDown, CalendarDays, BarChart3
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { isScheduleNavItemVisible } from '../../lib/schedule/nav-visibility'
 import { getActorRoleForNavAction } from './nav-role.actions'
+import { GlobalSearch } from '@/components/global-search/global-search'
 
 type NavItem = {
   id: string;
@@ -65,6 +66,16 @@ const navItems: NavItem[] = [
     ]
   },
   { id: 'logistics', label: 'Logistyka', icon: Box, href: '/logistics' },
+  {
+    id: 'analytics',
+    label: 'Analityka',
+    icon: BarChart3,
+    subItems: [
+      { id: 'funnel', label: 'Lejek sprzedaży', href: '/analytics/funnel' },
+      { id: 'crews_analytics', label: 'Montaże & Ekipy', href: '/analytics/crews' },
+      { id: 'auditors_analytics', label: 'Audyty & Audytorzy', href: '/analytics/auditors' },
+    ]
+  },
   { id: 'notifications', label: 'Centrum Powiadomień', icon: Bell, href: '/notifications', comingSoon: true },
   {
     id: 'settings',
@@ -73,6 +84,7 @@ const navItems: NavItem[] = [
     subItems: [
       { id: 'exit_intent', label: 'Exit Intent', href: '/settings/exit-intent' },
       { id: 'rbac', label: 'Użytkownicy i Uprawnienia', href: '/settings' },
+      { id: 'calendar_settings', label: 'Kalendarz i wizyty', href: '/settings/calendar' },
       { id: 'notifications_settings', label: 'Parametry powiadomień', href: '/settings/notifications', comingSoon: true },
     ]
   }
@@ -210,7 +222,7 @@ function SidebarNavigation({ collapsed, setCollapsed, items }: { collapsed: bool
                       <div
                         key={sub.id}
                         aria-disabled="true"
-                        className="flex items-center justify-between gap-2 py-2 px-3 rounded-md text-[13px] font-medium text-muted-foreground/60 cursor-not-allowed"
+                        className="flex items-center justify-between gap-2 py-2 px-3 rounded-md text-xs font-medium text-muted-foreground/60 cursor-not-allowed"
                       >
                         <span className="truncate">{sub.label}</span>
                         <Badge variant="secondary" className="shrink-0">Wkrótce</Badge>
@@ -222,7 +234,7 @@ function SidebarNavigation({ collapsed, setCollapsed, items }: { collapsed: bool
                       key={sub.id}
                       href={sub.href}
                       className={cn(
-                        "flex items-center py-2 pl-[10px] pr-3 rounded-md text-[13px] font-medium transition-colors border-l-2",
+                        "flex items-center py-2 pl-[10px] pr-3 rounded-md text-xs font-medium transition-colors border-l-2",
                         isSubActive
                           ? "bg-primary/10 text-primary font-semibold shadow-2xs border-primary"
                           : "text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent"
@@ -379,7 +391,9 @@ export default function DashboardLayout({
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {/* Top bar */}
         <header className="bg-card border-b border-border px-6 flex items-center gap-4 h-16 shrink-0 shadow-2xs">
-          <div className="flex-1"></div>
+          <div className="flex-1 max-w-md">
+            <GlobalSearch />
+          </div>
           <div className="ml-auto flex items-center gap-3">
             <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors rounded-md">
               <Bell className="size-5" />

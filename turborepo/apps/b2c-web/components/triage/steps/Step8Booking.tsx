@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTriageStore } from '@/store/triageStore';
 import { StepWrapper } from '../StepWrapper';
 import { saveLead } from '@/app/actions/saveLead';
-import { getAvailableSlots, type AvailableSlot } from '@/app/actions/calendar';
+import { getAuditSlots, type AuditDay, type AuditSlot } from '@/app/actions/auditSlots';
 import { CheckCircle2, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameMonth, startOfToday, isBefore } from 'date-fns';
@@ -53,9 +53,10 @@ export const Step8Booking = () => {
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [availableDays, setAvailableDays] = useState<AvailableSlot[]>([]);
+  const [availableDays, setAvailableDays] = useState<AuditDay[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
   const [error, setError] = useState<'date' | 'terms' | null>(null);
+  const [bookingError, setBookingError] = useState<{ message: string; alternativeLabels: string[] } | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [formDataState, setFormDataState] = useState({ name: '', phone: '', email: '' });
@@ -86,8 +87,8 @@ export const Step8Booking = () => {
   const emptyDaysCount = startDay === 0 ? 6 : startDay - 1;
 
   useEffect(() => {
-    getAvailableSlots().then(days => {
-      setAvailableDays(days);
+    getAuditSlots().then(result => {
+      setAvailableDays(result.days);
       setIsLoadingSlots(false);
     });
   }, []);
@@ -177,8 +178,7 @@ export const Step8Booking = () => {
 
     if (hasErrors) return;
 
-    // Konwersja dateStr na ISO 
-    const dateObj = parseISO(selectedDateStr as string);
+    setBookingError(null);
 
     const leadData = {
       name: formDataState.name,
@@ -187,8 +187,7 @@ export const Step8Booking = () => {
       address: value,
       lat: coordinates?.lat,
       lng: coordinates?.lng,
-      bookingDate: dateObj.toISOString(),
-      bookingSlot: selectedSlot as string,
+      startAtIso: selectedSlot as string,
       triageData: triageData
     };
 
@@ -196,7 +195,19 @@ export const Step8Booking = () => {
     if (result.success) {
       setIsSubmitted(true);
     } else {
-      alert("Wystąpił błąd podczas zapisywania rezerwacji. Spróbuj ponownie.");
+      const rawAlternatives = (result as { alternatives?: Array<{ start_at: string | Date; end_at: string | Date }> }).alternatives ?? [];
+      const alternativeLabels = rawAlternatives.map(alt => {
+        const start = new Date(alt.start_at);
+        const end = new Date(alt.end_at);
+        const fmt = (d: Date) => new Intl.DateTimeFormat('pl-PL', { timeZone: 'Europe/Warsaw', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(d);
+        return `${fmt(start)} - ${fmt(end)}`;
+      });
+
+      setBookingError({
+        message: (result as { message?: string }).message
+          ?? "Wybrany termin nie jest już dostępny. Wybierz inny termin i spróbuj ponownie.",
+        alternativeLabels,
+      });
     }
   };
 
@@ -281,7 +292,7 @@ export const Step8Booking = () => {
                     const availableDay = availableDays.find(d => d.dateStr === dateStr);
                     const isWeekend = getDay(dayDate) === 0 || getDay(dayDate) === 6;
                     const isPastDay = isBefore(dayDate, startOfToday());
-                    const isClickable = availableDay && !availableDay.isWeekend && !isPastDay && availableDay.slots.length > 0;
+                    const isClickable = !!availableDay && !isPastDay && availableDay.slots.length > 0;
 
                     return (
                       <button
@@ -324,16 +335,16 @@ export const Step8Booking = () => {
                   <div className="grid grid-cols-2 gap-3">
                     {availableDays.find(d => d.dateStr === selectedDateStr)?.slots.map(slot => (
                       <button
-                        key={slot}
-                        onClick={() => setSelectedSlot(slot)}
+                        key={slot.startAtIso}
+                        onClick={() => setSelectedSlot(slot.startAtIso)}
                         className={cn(
                           "py-3 rounded-xl font-medium transition-all border-2",
-                          selectedSlot === slot
+                          selectedSlot === slot.startAtIso
                             ? "bg-primary text-primary-foreground border-primary shadow-md"
                             : "bg-white text-foreground border-border hover:border-primary/30"
                         )}
                       >
-                        {slot}
+                        {slot.label}
                       </button>
                     ))}
                   </div>
@@ -352,6 +363,29 @@ export const Step8Booking = () => {
                   <div className="p-4 bg-rose-50 text-rose-600 rounded-xl text-sm font-medium border border-rose-100 flex items-center gap-2">
                     <AlertCircle size={18} className="shrink-0" />
                     Wybierz datę i godzinę wizyty.
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {bookingError && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginTop: 24 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-4 bg-rose-50 text-rose-600 rounded-xl text-sm font-medium border border-rose-100 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle size={18} className="shrink-0" />
+                      {bookingError.message}
+                    </div>
+                    {bookingError.alternativeLabels.length > 0 && (
+                      <p className="text-xs text-rose-500 font-normal">
+                        Dostępne alternatywy: {bookingError.alternativeLabels.join(', ')}
+                      </p>
+                    )}
                   </div>
                 </motion.div>
               )}

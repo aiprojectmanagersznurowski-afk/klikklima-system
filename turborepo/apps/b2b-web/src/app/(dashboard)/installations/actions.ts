@@ -9,6 +9,8 @@ import type { TriageAnswers } from "@/lib/triage-answers"
 
 export type InstallationSummary = {
   id: string;
+  installationNumber?: string | null;
+  projectNumber?: string | null;
   leadId: string;
   clientName: string;
   clientAddress: string | null;
@@ -85,6 +87,8 @@ export async function getInstallations(): Promise<InstallationSummary[]> {
 
     return {
       id: inst.id,
+      installationNumber: inst.installation_number,
+      projectNumber: inst.lead.project_number,
       leadId: inst.lead_id,
       clientName: inst.lead.klient?.imie_i_nazwisko || "Nieznany",
       clientAddress: inst.lead.adres?.ulica_miasto || null,

@@ -146,7 +146,7 @@ const { setAvailabilityRuleAction: setAuditorRule } = await import(
 const { setAvailabilityRuleAction: setCrewRule } = await import(
   '../src/app/(dashboard)/crews/actions'
 );
-const { writeAvailabilityRuleRaw } = await import('../src/lib/schedule/availability-rule');
+const { writeAvailabilityRuleRaw } = await import('@repo/scheduling');
 
 const AUDITOR_EMAIL = 'audytor.jan@klikklima.pl';
 const CREW_EMAIL = 'ekipa.warszawa@klikklima.pl';
@@ -570,6 +570,9 @@ describe('setAvailabilityRuleAction (crews/actions.ts) — zapis reguł tygodnio
 
 describe('AC-A9 (statyczny) — żadna ścieżka dostępna pracownikowi nie usuwa wiersz availability_rules', () => {
   const APPS_ROOT = path.resolve(__dirname, '../../');
+  // Moduł domenowy przeniesiony do packages/scheduling/src/ (implementer-server,
+  // 2026-09-14) — skan MUSI objąć też ten pakiet, nie tylko apps/.
+  const SCHEDULING_PACKAGE_ROOT = path.resolve(__dirname, '../../../packages/scheduling/src');
 
   function listSourceFiles(dir: string, acc: string[] = []): string[] {
     let entries: string[];
@@ -601,8 +604,8 @@ describe('AC-A9 (statyczny) — żadna ścieżka dostępna pracownikowi nie usuw
   }
 
   // @REQ: FLD-AVAIL-WEEKLY-RULES
-  it('AC-A9 — grep po apps/ nie znajduje availabilityRule.delete ani availabilityRule.deleteMany poza kodem administracyjnym', () => {
-    const files = listSourceFiles(APPS_ROOT);
+  it('AC-A9 — grep po apps/ i packages/scheduling/src/ nie znajduje availabilityRule.delete ani availabilityRule.deleteMany poza kodem administracyjnym', () => {
+    const files = [...listSourceFiles(APPS_ROOT), ...listSourceFiles(SCHEDULING_PACKAGE_ROOT)];
     expect(files.length).toBeGreaterThan(0);
 
     const offenders: { file: string; match: string }[] = [];

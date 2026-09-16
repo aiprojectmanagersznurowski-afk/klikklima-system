@@ -13,11 +13,14 @@ import { deleteJustificationSchema, type DeleteJustificationInput, type DeleteAc
 export type ServiceSummary = {
   source: "service" | "forecast";
   service_id: string | null;
+  service_number?: string | null;
   installation_id: string | null;
+  installation_number?: string | null;
   next_service_date: Date;
   date_undetermined?: boolean;
   status: string;
   lead_id: string | null;
+  project_number?: string | null;
   customer_name: string;
   customer_phone: string | null;
   address: string;
@@ -115,11 +118,14 @@ export async function getUpcomingServices(): Promise<ServiceSummary[]> {
     rows.push({
       source: "service",
       service_id: service.id,
+      service_number: service.service_number,
       installation_id: service.instalacja_id ?? null,
+      installation_number: service.instalacja?.installation_number ?? null,
       next_service_date: (service.data_realizacji ?? service.instalacja?.next_service_date) as Date,
       date_undetermined: !service.data_realizacji,
       status: service.status,
       lead_id: service.instalacja?.lead_id ?? null,
+      project_number: service.instalacja?.lead?.project_number ?? null,
       customer_name: klient?.imie_i_nazwisko || "Nieznany Klient",
       customer_phone: klient?.telefon ?? null,
       address: adres?.ulica_miasto ?? "Brak adresu",
@@ -158,10 +164,13 @@ export async function getUpcomingServices(): Promise<ServiceSummary[]> {
     rows.push({
       source: "forecast",
       service_id: null,
+      service_number: null,
       installation_id: inst.id,
+      installation_number: inst.installation_number ?? null,
       next_service_date: inst.next_service_date,
       status: inst.status,
       lead_id: inst.lead_id ?? null,
+      project_number: inst.lead?.project_number ?? null,
       customer_name: inst.lead?.klient?.imie_i_nazwisko || "Nieznany Klient",
       customer_phone: inst.lead?.klient?.telefon ?? null,
       address: inst.lead?.adres?.ulica_miasto ?? "Brak adresu",

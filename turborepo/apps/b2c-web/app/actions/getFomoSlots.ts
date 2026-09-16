@@ -1,8 +1,9 @@
 "use server";
 
 import { createClient } from '@supabase/supabase-js';
-import { startOfWeek, endOfWeek, addWeeks, format } from 'date-fns';
-import { getAvailableSlots } from './calendar';
+import { startOfWeek, endOfWeek, addWeeks } from 'date-fns';
+import { prisma } from '@repo/database';
+import { findPoolSlots } from '@repo/scheduling';
 
 export interface FomoData {
   slots: number;
@@ -13,17 +14,17 @@ export async function getFomoSlots(): Promise<FomoData> {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    
+
     // Używamy Service Role Key, żeby móc odpytywać leady i omijać RLS w bezpiecznym środowisku serwera
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    
+
     // 1. Pobieramy limit z konfiguracji
     const { data: configData } = await supabaseAdmin
       .from('system_config')
       .select('konfiguracja')
       .eq('typ_konfiguracji', 'fomo_config')
       .single();
-      
+
     const limit = configData?.konfiguracja?.weekly_audit_limit || 10;
 
     // 2. Ustalamy daty na "ten tydzień"
@@ -44,16 +45,15 @@ export async function getFomoSlots(): Promise<FomoData> {
     const bookedThisWeek = countThisWeek || 0;
     let availableThisWeek = limit - bookedThisWeek;
 
-    // Pobierzmy faktyczne sloty z kalendarza, żeby upewnić się, że nie kłamiemy
-    const allCalendarSlots = await getAvailableSlots();
-    
-    // Zlicz realne sloty w Google Calendar dla tego tygodnia
-    const startOfThisWeekIso = format(startOfThisWeek, 'yyyy-MM-dd');
-    const endOfThisWeekIso = format(endOfThisWeek, 'yyyy-MM-dd');
-    
-    const realSlotsThisWeek = allCalendarSlots
-      .filter(day => day.dateStr >= startOfThisWeekIso && day.dateStr <= endOfThisWeekIso)
-      .reduce((sum, day) => sum + day.slots.length, 0);
+    // B2C-BOOKING-SLOT: liczba realnie dostępnych terminów pochodzi z `findPoolSlots`
+    // (koszyk AUDIT, bookings + absences), nie z Google Calendar.
+    const auditBasket = await prisma.visitDurationBasket.findFirst({
+      where: { code: 'AUDIT', isActive: true },
+    });
+
+    const realSlotsThisWeek = auditBasket
+      ? (await findPoolSlots(auditBasket.id, { from: startOfThisWeek, to: endOfThisWeek })).slots.length
+      : 0;
 
     availableThisWeek = Math.min(availableThisWeek, realSlotsThisWeek);
 
@@ -77,16 +77,13 @@ export async function getFomoSlots(): Promise<FomoData> {
     const bookedNextWeek = countNextWeek || 0;
     let availableNextWeek = limit - bookedNextWeek;
 
-    const startOfNextWeekIso = format(startOfNextWeek, 'yyyy-MM-dd');
-    const endOfNextWeekIso = format(endOfNextWeek, 'yyyy-MM-dd');
-
-    const realSlotsNextWeek = allCalendarSlots
-      .filter(day => day.dateStr >= startOfNextWeekIso && day.dateStr <= endOfNextWeekIso)
-      .reduce((sum, day) => sum + day.slots.length, 0);
+    const realSlotsNextWeek = auditBasket
+      ? (await findPoolSlots(auditBasket.id, { from: startOfNextWeek, to: endOfNextWeek })).slots.length
+      : 0;
 
     availableNextWeek = Math.min(availableNextWeek, realSlotsNextWeek);
 
-    // Nawet jeśli kolejny też by był full, zwracamy minimum 1 żeby podtrzymać FOMO 
+    // Nawet jeśli kolejny też by był full, zwracamy minimum 1 żeby podtrzymać FOMO
     // lub możemy po prostu zwrócić availableNextWeek i jeśli znowu 0 to "w najbliższym czasie"
     if (availableNextWeek > 0) {
       return { slots: availableNextWeek, period: "w przyszłym tygodniu" };

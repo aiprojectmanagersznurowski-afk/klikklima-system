@@ -48,27 +48,27 @@ export function AssignAuditor({
   const currentAuditorName = auditors.find((a) => a.id === optimisticAuditor)?.imie_i_nazwisko;
 
   return (
-    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900">Zarządzanie</h3>
+    <div className="bg-card p-6 rounded-2xl border border-border shadow-xs">
+      <h3 className="text-lg font-semibold mb-4 text-foreground">Zarządzanie</h3>
       
       <div className="flex flex-col gap-2">
-        <span className="text-sm text-gray-500">Przypisany audytor</span>
+        <span className="text-sm text-muted-foreground">Przypisany audytor</span>
         
         {isEditing ? (
-          <div className="flex flex-col gap-2 border border-gray-200 rounded-lg p-2 bg-gray-50">
+          <div className="flex flex-col gap-2 border border-border rounded-lg p-2 bg-secondary/50">
             {auditors.map((auditor) => (
               <button
                 key={auditor.id}
                 onClick={() => handleSelect(auditor.id)}
-                className="flex items-center justify-between p-2 hover:bg-blue-50 hover:text-blue-700 rounded-md text-sm text-left transition-colors"
+                className="flex items-center justify-between p-2 hover:bg-secondary text-foreground rounded-md text-sm text-left transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <div className="flex-shrink-0 h-6 w-6">
                     {auditor.avatarUrl ? (
                       <img className="h-6 w-6 rounded-full object-cover" src={auditor.avatarUrl} alt={auditor.imie_i_nazwisko} />
                     ) : (
-                      <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-600 font-semibold text-[10px]">
+                      <div className="h-6 w-6 rounded-full bg-secondary flex items-center justify-center border border-border">
+                        <span className="text-primary font-semibold text-xs">
                           {(auditor.imie_i_nazwisko || "").charAt(0)}
                         </span>
                       </div>
@@ -76,15 +76,15 @@ export function AssignAuditor({
                   </div>
                   <span>{auditor.imie_i_nazwisko}</span>
                 </div>
-                {optimisticAuditor === auditor.id && <Check size={16} className="text-blue-600" />}
+                {optimisticAuditor === auditor.id && <Check size={16} className="text-primary" />}
               </button>
             ))}
             {auditors.length === 0 && (
-              <div className="text-xs text-gray-500 p-2 italic text-center">Brak dodanych audytorów w bazie</div>
+              <div className="text-xs text-muted-foreground p-2 italic text-center">Brak dodanych audytorów w bazie</div>
             )}
             <button
               onClick={() => handleSelect(null)}
-              className="text-xs text-red-600 p-2 hover:bg-red-50 text-left rounded-md mt-1 border-t border-gray-200"
+              className="text-xs text-destructive p-2 hover:bg-destructive/10 text-left rounded-md mt-1 border-t border-border cursor-pointer"
             >
               Odznacz audytora
             </button>
@@ -100,12 +100,12 @@ export function AssignAuditor({
                   {auditors.find((a) => a.id === optimisticAuditor)?.avatarUrl ? (
                     <img className="h-8 w-8 rounded-full object-cover" src={auditors.find((a) => a.id === optimisticAuditor)?.avatarUrl ?? undefined} alt={currentAuditorName} />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-primary font-bold text-sm border border-border">
                       {currentAuditorName?.charAt(0)}
                     </div>
                   )}
                 </div>
-                <span className="font-medium text-gray-900">{currentAuditorName}</span>
+                <span className="font-medium text-foreground">{currentAuditorName}</span>
                 {canUpdateLead && (
                   <Button
                     variant="outline"
@@ -124,7 +124,7 @@ export function AssignAuditor({
                   variant="outline"
                   onClick={() => setIsEditing(true)}
                   disabled={isPending}
-                  className="gap-2 text-blue-700 border-blue-200 hover:bg-blue-50 bg-blue-50/50"
+                  className="gap-2 text-primary border-primary/20 hover:bg-primary/10 bg-primary/5"
                 >
                   {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus size={16} />}
                   Przypisz audytora

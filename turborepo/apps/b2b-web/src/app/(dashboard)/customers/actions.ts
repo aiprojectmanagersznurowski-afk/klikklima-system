@@ -9,6 +9,7 @@ import { createCustomerSchema } from "./create-customer-schema"
 
 export type CustomerSummary = {
   id: string;
+  clientNumber?: string | null;
   name: string;
   email: string | null;
   phone: string | null;
@@ -51,6 +52,7 @@ export async function getCustomers(
       take: limit,
       select: {
         id: true,
+        client_number: true,
         imie_i_nazwisko: true,
         email: true,
         telefon: true,
@@ -75,6 +77,7 @@ export async function getCustomers(
 
       return {
         id: c.id,
+        clientNumber: c.client_number,
         name: c.imie_i_nazwisko || "Nieznany",
         email: c.email,
         phone: c.telefon,

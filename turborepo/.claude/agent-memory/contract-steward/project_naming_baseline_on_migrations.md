@@ -132,6 +132,8 @@ hook liczy drzewo, nie stage. Uprzedzaj o tym na POCZĄTKU tury i pytaj, czy cz�
 baseline po oddaniu testów, czy commitować w odwrotnej kolejności (najpierw testy + `chore(naming)`,
 potem kontrakt).
 
+**Przypadek WZORCOWY, bo delta jest w 100% moja i drzewo czyste (2026-09-16, FNL-2PHASE-BOOKING-MECHANICS, STAN OTWARTY):** +6 `adr002-pl-tables` — +5 z migracji `20260916060000_fnl_2phase_booking_mechanics.sql` (`instalacje` w FK, dwóch `ALTER TABLE`, `conrelid = 'public.instalacje'::regclass` w bloku idempotencji i w `COMMENT ON COLUMN`) oraz +1 z `schema.prisma` (53 -> 54, typ relacji `instalacje` w nowym modelu `InstallationPhase`). Kryterium rozstrzygające spełnione: `instalacje` ISTNIEJE w `schema.prisma`, a migracja tej tabeli NIE TWORZY — tylko ją rozszerza, więc nazwa docelowa (`installations`) dałaby migrację, która się nie wykona. **Nietypowo korzystna sytuacja: żadnej cudzej niezacommitowanej pracy w drzewie**, więc jedno `--update-baseline` obsługuje dokładnie mój commit i nic poza nim. Pozostałe kroki pre-commit przeszły (`kk-precommit-scan` na plikach ze stage: 0 naruszeń; `kk-validate`, `kk-codegen --check` zielone) — baseline był JEDYNYM powodem zatrzymania. Praca zostawiona w stage, `--no-verify` nieużyte.
+
 **Pułapka przy raportowaniu (2026-08-22, WO FLD-AVAILABILITY-SPLIT uzup.):** `--check-baseline` podaje
 deltę ZBIORCZĄ dla całego drzewa roboczego, więc miesza moje pliki z niezacommitowaną pracą
 `implementer-server` i `test-author`. Przykład: łączna delta +26, z czego moja migracja to +2 — reszta

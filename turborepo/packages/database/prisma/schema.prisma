@@ -38,6 +38,7 @@ model indoor_units {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model klienci {
   id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  client_number   String   @unique @default(dbgenerated("('K-'::text || lpad((nextval('clients_client_number_seq'::regclass))::text, 6, '0'::text))"))
   imie_i_nazwisko String?
   email           String?
   telefon         String?
@@ -62,8 +63,9 @@ model klienci {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model adresy {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  klient_id    String?  @db.Uuid
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  address_number String   @unique @default(dbgenerated("('A-'::text || lpad((nextval('addresses_address_number_seq'::regclass))::text, 6, '0'::text))"))
+  klient_id      String?  @db.Uuid
   klient       klienci? @relation(fields: [klient_id], references: [id], onDelete: SetNull)
   ulica_miasto String?
   // FLD-GEO-COORDS: współrzędne WGS84 (EPSG:4326) punktu docelowego wizyty.
@@ -218,6 +220,7 @@ model system_config {
 
 model zespoly_monterskie {
   id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  crew_number        String  @unique @default(dbgenerated("('E-'::text || lpad((nextval('crews_crew_number_seq'::regclass))::text, 6, '0'::text))"))
   nazwa              String
   telefon_kontaktowy String?
   // @unique wymagane przez identyfikacje "czyj to rekord z sesji" (FLD-AVAILABILITY-SPLIT):
@@ -275,8 +278,9 @@ model zespoly_monterskie {
 }
 
 model instalacje {
-  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  lead_id           String              @db.Uuid
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  installation_number String              @unique @default(dbgenerated("('I-'::text || lpad((nextval('installations_installation_number_seq'::regclass))::text, 6, '0'::text))"))
+  lead_id             String              @db.Uuid
   lead              leady               @relation(fields: [lead_id], references: [id], onDelete: Cascade)
   zespol_id         String?             @db.Uuid
   zespol            zespoly_monterskie? @relation(fields: [zespol_id], references: [id], onDelete: SetNull)
@@ -287,8 +291,20 @@ model instalacje {
   status            InstallationStatus  @default(PLANNED)
   created_at        DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
-  serwisy           serwisy[]
-  usterki_incidents usterki_incidents[]
+  /// FNL-2PHASE kryt. 2 (D1, decyzja Michała 2026-09-16, migracja 20260916060000).
+  /// Tryb montażu ustalony przez audytora na miejscu — wartość WIĄŻĄCA, deklaracja
+  /// klienta z Triage jest tylko przesłanką. 'SINGLE_PHASE' albo 'TWO_PHASE';
+  /// NULL = tryb NIEUSTALONY, nigdy „jednoetapowy" — guard installationIsTwoPhase
+  /// przepuszcza wyłącznie jawne 'TWO_PHASE'. Pilnuje tego
+  /// CONSTRAINT instalacje_installation_type_check (NULL przechodzi celowo).
+  /// Nazwa pola snake_case wzorem project_number na `leady`: nowe pole na modelu
+  /// z zamrożonego długu nazewniczego trzyma styl SWOJEGO modelu; sama kolumna jest
+  /// po angielsku i snake_case, więc ADR-002 jest spełnione.
+  installation_type String?
+
+  serwisy            serwisy[]
+  usterki_incidents  usterki_incidents[]
+  installation_phases InstallationPhase[]
 
   /// PERF-B2B-AUDIT: lead_id — zagnieżdżony select instalacje w getLeads() (WHERE lead_id
   /// IN (...)), findFirst({ where: { lead_id } }) w assignCrewToLead(), oraz kaskada
@@ -299,6 +315,7 @@ model instalacje {
 
 model serwisy {
   id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  service_number  String              @unique @default(dbgenerated("('S-'::text || lpad((nextval('services_service_number_seq'::regclass))::text, 6, '0'::text))"))
   klient_id       String?             @db.Uuid
   klient          klienci?            @relation(fields: [klient_id], references: [id], onDelete: SetNull)
   adres_id        String?             @db.Uuid
@@ -325,6 +342,7 @@ model serwisy {
 
 model logistyka_zamowienia {
   id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shipment_number       String         @unique @default(dbgenerated("('P-'::text || lpad((nextval('shipments_shipment_number_seq'::regclass))::text, 6, '0'::text))"))
   lead_id               String         @db.Uuid
   lead                  leady          @relation(fields: [lead_id], references: [id], onDelete: Cascade)
   status_wysylki        ShippingStatus @default(PENDING)
@@ -461,6 +479,7 @@ model AvailabilityDeclaration {
 
 model audytorzy {
   id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auditor_number  String  @unique @default(dbgenerated("('AU-'::text || lpad((nextval('auditors_auditor_number_seq'::regclass))::text, 6, '0'::text))"))
   imie_i_nazwisko String
   telefon         String?
   // @unique wymagane przez identyfikacje "czyj to rekord z sesji" (FLD-AVAILABILITY-SPLIT):
@@ -534,6 +553,7 @@ model audytorzy {
 
 model usterki_incidents {
   id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  incident_number  String              @unique @default(dbgenerated("('U-'::text || lpad((nextval('incidents_incident_number_seq'::regclass))::text, 6, '0'::text))"))
   numer_zgloszenia String?             @unique
   klient_id        String?             @db.Uuid
   klient           klienci?            @relation(fields: [klient_id], references: [id], onDelete: SetNull)
@@ -719,13 +739,18 @@ model AuditLog {
   /// może zniknąć — wpis ma dokumentować stan z momentu zdarzenia, nie stan bieżący.
   actorRole String @map("actor_role")
 
-  /// CHECK w bazie ogranicza do 6 wartości AUDIT_REQUIREMENTS.mustLog.
+  /// CHECK w bazie ogranicza do 7 wartości AUDIT_REQUIREMENTS.mustLog
+  /// (6 pierwotnych + 'field_update', migracja 20260910103000).
   /// To oś OPERACJI AUDYTOWYCH, nie zdolności RBAC: anonimizacja klienta zapisuje się jako
   /// operation = 'anonymize', podczas gdy bramka pyta can(role, 'clients', 'delete').
   /// Te dwie osie się nie pokrywają i nie muszą.
   operation String
 
-  /// CHECK w bazie ogranicza do 13 wartości RESOURCES z rbac.contract.mjs.
+  /// CHECK w bazie ogranicza do 15 wartości: 13 pierwotnych + 'visit_duration_baskets'
+  /// i 'system_config' (migracja 20260915120000, WO CAL-SCHEDULING-CONFIG-UI).
+  /// UWAGA: to PODZBIÓR RESOURCES z rbac.contract.mjs, nie kopia — macierz zna dziś ~28 zasobów,
+  /// a do rejestru dopuszczane są świadomie tylko te, które faktycznie coś logują.
+  /// Nowy zasób w RESOURCES NIE trafia tu automatycznie; wymaga osobnej migracji.
   resource String
 
   /// „Na jakim rekordzie". TEXT, nie UUID i bez klucza obcego — tabela jest wspólna dla wszystkich
@@ -967,7 +992,8 @@ model Absence {
 ///
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Booking {
-  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  booking_number String @unique @default(dbgenerated("('B-'::text || lpad((nextval('bookings_booking_number_seq'::regclass))::text, 6, '0'::text))"))
 
   /// CZEGO DOTYCZY WIZYTA — dokładnie jedno z trzech (CHECK bookings_one_subject, wzorzec
   /// NTF-POLY). Montaż NIE MA własnej kolumny: rezerwacja montażu wisi na leadzie, a ADR-012
@@ -1024,6 +1050,17 @@ model Booking {
   createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
+  /// Strona odwrotna installation_phases.booking_id. Kierunek klucza jest celowy:
+  /// rezerwacja NIE MA kolumny installation_id (patrz komentarz przy leadId).
+  ///
+  /// LISTA, choć w bazie rezerwacja obsługuje DOKŁADNIE JEDEN etap. Relacja 1-1
+  /// wymagałaby @unique na installation_phases.booking_id, a tamta unikalność jest
+  /// CZĘŚCIOWA (WHERE booking_id IS NOT NULL) i Prisma nie potrafi jej wyrazić —
+  /// zadeklarowanie pełnego @unique zakłamywałoby kształt indeksu w bazie i wywołało
+  /// dryf przy introspekcji. Ten sam wzorzec, co bookings_one_active_per_subject:
+  /// gwarancja mieszka w SQL, Prisma ją tylko opisuje (patrz nagłówek tego modelu).
+  installationPhases InstallationPhase[]
+
   @@index([leadId])
   @@index([serviceId])
   @@index([incidentId])
@@ -1031,4 +1068,54 @@ model Booking {
   @@index([auditorId])
   @@index([crewId])
   @@map("bookings")
+}
+
+/// FNL-2PHASE / FNL-2PHASE-BOOKING — etapy montażu dwuetapowego
+/// (migracja 20260916060000, WO FNL-2PHASE-BOOKING-MECHANICS).
+///
+/// Dokładnie DWA wiersze na instalację w trybie TWO_PHASE, ZERO w trybie SINGLE_PHASE
+/// i ZERO przy trybie nieustalonym (installation_type IS NULL).
+///
+/// ZAKRES ZAWĘŻONY (D3, decyzja Michała 2026-09-16): wyłącznie mechanika rezerwacji
+/// w panelu B2B. Nie ma tu i nie ma się pojawić pola na zdjęcie montażu, protokół
+/// odbioru ani status płatności — Field App, upload zdjęć, generowanie PDF i płatności
+/// są odłożone w całości i wymagają ADR-013. Brak tych pól jest decyzją, nie luką.
+model InstallationPhase {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// Powiązanie z leadem jest POŚREDNIE, przez instalacje.lead_id. Zdublowanie tu
+  /// lead_id utworzyłoby drugą, konkurencyjną drogę do tej samej prawdy.
+  installationId String     @map("installation_id") @db.Uuid
+  installation   instalacje @relation(fields: [installationId], references: [id], onDelete: Cascade)
+
+  /// 1 = przygotowanie instalacji przed wykończeniem, 2 = montaż jednostek po wykończeniu.
+  /// CONSTRAINT installation_phases_phase_number_check ogranicza do (1, 2).
+  /// Etapy NIE SĄ dwoma dniami pod rząd i NIE MA minimalnej przerwy między nimi
+  /// (D2, decyzja Michała 2026-09-16) — żadnego progu w SLA, CHECK-u ani w kodzie.
+  phaseNumber Int @map("phase_number") @db.SmallInt
+
+  /// Osobna rezerwacja dla każdego etapu (FNL-2PHASE-BOOKING kryt. 1). NULL do czasu
+  /// rezerwacji; dla etapu II NULL jest stanem NORMALNYM, nie brakiem danych.
+  /// SET NULL, nie Cascade: skasowanie rezerwacji nie może skasować faktu istnienia
+  /// etapu ani jego completedAt. Unikalność wymusza częściowy indeks
+  /// installation_phases_booking_id_key (WHERE booking_id IS NOT NULL), którego
+  /// Prisma nie potrafi wyrazić — dlatego NIE MA tu @unique: byłoby to kłamstwo
+  /// o kształcie indeksu w bazie.
+  bookingId String?  @map("booking_id") @db.Uuid
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  /// Moment zamknięcia etapu. NULL = etap otwarty i tym samym nośnik guardu
+  /// phaseOneNotCompleted. Rezerwacja etapu II nie jest możliwa, dopóki etap 1
+  /// ma tu NULL (FNL-2PHASE-BOOKING kryt. 3).
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  /// Nośnik IDEMPOTENCJI tworzenia etapów: dwa równoległe wywołania dają dwa wiersze,
+  /// nie cztery. Sprawdzenie w JS nie wystarcza (pułapka 4 z CLAUDE.md).
+  @@unique([installationId, phaseNumber], map: "installation_phases_unique_phase")
+  /// PERF-B2B-AUDIT: Postgres nie zakłada indeksu na kolumnie FK sam.
+  @@index([installationId], map: "installation_phases_installation_id_idx")
+  @@map("installation_phases")
 }

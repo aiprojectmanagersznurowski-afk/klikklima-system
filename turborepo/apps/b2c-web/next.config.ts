@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  typescript: {
+    // tsconfig.json (used by `npm run check-types` / CI) includes tests/ so
+    // vitest-only files get type-checked there too. `next build`'s own
+    // type-check doesn't need that, and some deploy environments don't
+    // install vitest (a devDependency) at all, which crashed the build on
+    // an unrelated *.itest.ts import. tsconfig.build.json is the same
+    // config minus tests/.
+    tsconfigPath: "./tsconfig.build.json",
+  },
 };
 
 export default nextConfig;

@@ -191,7 +191,7 @@ describe('AC-C2 — formularz na react-hook-form + zodResolver na wspólnym sche
     const content = readScheduleClient();
 
     expect(content).toMatch(
-      /import\s*\{[^}]*availabilityRuleSchema[^}]*\}\s*from\s*['"][.\/]*lib\/schedule\/availability-rule-schema['"]/,
+      /import\s*\{[^}]*availabilityRuleSchema[^}]*\}\s*from\s*['"]@repo\/scheduling['"]/,
     );
 
     const resolverIdx = content.indexOf('zodResolver(');

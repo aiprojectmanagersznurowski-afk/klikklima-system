@@ -7,6 +7,8 @@ import { ArrowLeft } from "lucide-react";
 import { AssignAuditor } from "./assign-auditor";
 import { EditLeadModal } from "./edit-lead-modal";
 import { DeleteLeadButton } from "./delete-lead-button";
+import { CreateBookingDialog } from "./create-booking-dialog";
+import { LeadBookingsList, type LeadBookingRow } from "./lead-bookings-list";
 import { getAuditors } from "../actions";
 import { getLeadDetail } from "./actions";
 import { getCurrentActorRole } from "../../../../utils/supabase/server";
@@ -14,8 +16,10 @@ import { LEAD_STATUS_TONE } from "../leads-client";
 import { signStoragePaths } from "@/lib/storage/signed-urls";
 import type { TriageAnswers } from "@/lib/triage-answers";
 import { formatDate } from "@/lib/format-date";
+import { formatLeadStatus } from "@/lib/format-status";
 import { EMPTY_VALUE } from "@/lib/empty-value";
 import type { LeadStatus } from "@repo/database";
+import { prisma } from "@repo/database";
 
 export const dynamic = "force-dynamic";
 
@@ -92,6 +96,34 @@ export default async function LeadDetailsPage({
     avatarUrl: auditor.zdjecie_url ? signedUrlsMap[auditor.zdjecie_url as string] : null,
   }));
 
+  // FLD-QUOTE-BASKET-SELECT (WO, "Kształt zmiany"): KOMPLET koszyków (aktywne i wycofane) —
+  // filtrowanie po puli/aktywności jest zadaniem `selectableBaskets` (lib/schedule/basket-select),
+  // nie tego Server Component. Wzorzec identyczny z `settings/calendar/page.tsx`. Zapytanie
+  // opakowane w try/catch tak jak `actorRole` powyżej — to dodatek do karty leada (dialog
+  // rezerwacji), nie krytyczna ścieżka odczytu; awaria tego zapytania nie ma wywalać całej
+  // strony szczegółu leada.
+  let baskets: Awaited<ReturnType<typeof prisma.visitDurationBasket.findMany>> = [];
+  try {
+    baskets = await prisma.visitDurationBasket.findMany();
+  } catch {
+    baskets = [];
+  }
+
+  // FLD-QUOTE-BASKET-SELECT (dziura 2, contract-steward): rezerwacje TEGO leada, zmapowane na
+  // kontrakt {id, scheduledStart, basketId} — etykieta koszyka jest znajdowana przez
+  // `<LeadBookingsList>` (findBasketById), nigdy wyliczana tutaj.
+  let bookings: LeadBookingRow[] = [];
+  try {
+    const bookingRows = await prisma.booking.findMany({ where: { leadId: lead.id } });
+    bookings = bookingRows.map((booking) => ({
+      id: booking.id,
+      scheduledStart: booking.scheduledStart,
+      basketId: booking.visitBasketId,
+    }));
+  } catch {
+    bookings = [];
+  }
+
   return (
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-300">
       <div className="mb-6">
@@ -107,11 +139,11 @@ export default async function LeadDetailsPage({
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-card p-8 rounded-xl border border-border shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-4">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-4">
                 {name}
                 <StatusPill
                   className="text-sm px-4 py-1"
-                  label={(lead.status || "").replace(/_/g, " ")}
+                  label={formatLeadStatus(lead.status)}
                   tone={lead.status ? LEAD_STATUS_TONE[lead.status as LeadStatus] : "neutral"}
                 />
               </h1>
@@ -254,6 +286,13 @@ export default async function LeadDetailsPage({
             auditors={auditorsWithAvatars}
             actorRole={actorRole}
           />
+          <CreateBookingDialog
+            baskets={baskets}
+            leadId={lead.id}
+            subject={{ kind: "LEAD", leadId: lead.id }}
+            actorRole={actorRole}
+          />
+          <LeadBookingsList bookings={bookings} baskets={baskets} />
         </div>
       </div>
     </div>

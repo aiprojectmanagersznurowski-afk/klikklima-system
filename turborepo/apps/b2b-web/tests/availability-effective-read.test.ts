@@ -118,7 +118,7 @@ vi.mock('../src/utils/supabase/server', () => ({
   createClient: createClientMock,
 }));
 
-const { getEffectiveAvailability } = await import('../src/lib/schedule/effective-availability');
+const { getEffectiveAvailability } = await import('@repo/scheduling');
 const { getAvailabilityAction: getAuditorAvailability } = await import(
   '../src/app/(dashboard)/auditors/actions'
 );
@@ -286,9 +286,11 @@ describe('getEffectiveAvailability (lib/schedule/effective-availability.ts) — 
     const enginePath = path.join(
       __dirname,
       '..',
+      '..',
+      '..',
+      'packages',
+      'scheduling',
       'src',
-      'lib',
-      'schedule',
       'effective-availability.ts'
     );
     expect(existsSync(enginePath)).toBe(true);

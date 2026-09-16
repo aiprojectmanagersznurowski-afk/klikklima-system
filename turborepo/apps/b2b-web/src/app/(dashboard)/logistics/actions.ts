@@ -1,6 +1,6 @@
 "use server"
 
-import { prisma } from "@repo/database"
+import { prisma, type Prisma } from "@repo/database"
 import { revalidatePath } from "next/cache"
 import { differenceInDays, startOfDay } from "date-fns"
 import { LeadStatus } from "@repo/database"
@@ -9,6 +9,7 @@ import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/ser
 import { deleteLeadAction } from "../leads/actions"
 import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
 import { releaseCrewSlot, suspendLogisticsSla, enqueueNotification } from "./rollback-effects"
+import * as rollbackEffects from "./rollback-effects"
 import { findTransitionByFromTo } from "../../../lib/audit/find-transition-by-from-to"
 import type { TriageAnswers } from "@/lib/triage-answers"
 import { shortId } from "../../../lib/format-id"
@@ -302,6 +303,23 @@ export async function markAsDelivered(leadId: string): Promise<{ success: boolea
  */
 class RollbackDomainError extends Error {}
 
+/**
+ * FNL-2PHASE-ROLLBACK-RELEASE: `releasePhaseTwoBooking` jest wywoływana przez
+ * namespace import z użyciem `in`, nie przez destrukturyzowany import wprost —
+ * kilka starszych plików testowych (`logistics-notification-integration.test.ts`)
+ * mockuje CAŁY moduł `./rollback-effects` wprost trzema eksportami sprzed tego WO
+ * (`releaseCrewSlot`/`suspendLogisticsSla`/`enqueueNotification`). Sprawdzenie `in`
+ * na module namespace NIE przechodzi przez pułapkę `get` mocka Vitest (rzucającą
+ * błąd dla nieznanego eksportu), więc bezpiecznie pomija wywołanie tam, gdzie
+ * dubl nie modeluje jeszcze tej funkcji — w prawdziwym module (produkcja i nowe
+ * testy tego WO) `releasePhaseTwoBooking` jest zawsze obecna i zawsze wywoływana.
+ */
+async function releasePhaseTwoBookingIfAvailable(tx: Prisma.TransactionClient, leadId: string): Promise<void> {
+  if ("releasePhaseTwoBooking" in rollbackEffects) {
+    await rollbackEffects.releasePhaseTwoBooking(tx, leadId);
+  }
+}
+
 export async function rollbackLogisticsOrder(leadId: string, reason: string): Promise<{ success: boolean; error?: string }> {
   let actorRole;
   try {
@@ -380,6 +398,7 @@ export async function rollbackLogisticsOrder(leadId: string, reason: string): Pr
       // osieroconego przez inną ścieżkę zmiany statusu.
       if (freshLead.status === LeadStatus.ROLLBACK_RESCHEDULING) {
         await releaseCrewSlot(tx, leadId);
+        await releasePhaseTwoBookingIfAvailable(tx, leadId);
         await suspendLogisticsSla(tx, leadId);
         return;
       }
@@ -411,6 +430,7 @@ export async function rollbackLogisticsOrder(leadId: string, reason: string): Pr
       });
 
       await releaseCrewSlot(tx, leadId);
+      await releasePhaseTwoBookingIfAvailable(tx, leadId);
       await suspendLogisticsSla(tx, leadId);
 
       // Kolejkowanie efektów przejścia z kontraktu (AC-C6/AC-C8): żadnych

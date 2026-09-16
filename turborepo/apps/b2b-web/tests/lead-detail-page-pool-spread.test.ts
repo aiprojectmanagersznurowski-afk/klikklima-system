@@ -111,6 +111,7 @@ vi.mock('@/lib/storage/signed-urls', () => ({
 vi.mock('@/components/ui/button', () => ({ Button: () => null }));
 vi.mock('@/components/ui/status-pill', () => ({ StatusPill: () => null }));
 vi.mock('@/lib/format-date', () => ({ formatDate: vi.fn(() => 'formatted-date') }));
+vi.mock('@/lib/format-status', () => ({ formatLeadStatus: vi.fn((s) => s) }));
 vi.mock('@/lib/empty-value', () => ({ EMPTY_VALUE: '—' }));
 vi.mock('../src/app/(dashboard)/leads/[id]/assign-auditor', () => ({
   AssignAuditor: AssignAuditorMock,

@@ -7,6 +7,7 @@ import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { LeadStatus } from "@repo/database";
 import { formatDate } from "@/lib/format-date";
 import { shortId } from "@/lib/format-id";
+import { formatLeadStatus } from "@/lib/format-status";
 import { EMPTY_VALUE } from "@/lib/empty-value";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -340,7 +341,7 @@ export function LeadsClient({
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold font-mono tracking-tight text-foreground">{shortId(lead.id)}</span>
                             <span className="text-xs font-mono text-muted-foreground mt-0.5">{dateFormatted}</span>
-                            {isDelayed && <span className="text-[10px] text-destructive font-semibold mt-1">Opóźniony (&gt;24h)</span>}
+                            {isDelayed && <span className="text-xs text-destructive font-semibold mt-1">Opóźniony (&gt;24h)</span>}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -353,6 +354,7 @@ export function LeadsClient({
                           <td className="px-6 py-4 whitespace-nowrap">
                             <StatusPill
                               label={LEAD_STAGES.find(s => s.id === lead.status)?.short || EMPTY_VALUE}
+                              title={formatLeadStatus(lead.status)}
                               tone={lead.status ? LEAD_STATUS_TONE[lead.status as LeadStatus] : "neutral"}
                             />
                           </td>
@@ -367,7 +369,7 @@ export function LeadsClient({
                             >
                               {auditor ? (
                                 <>
-                                  <div className="size-5 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
+                                  <div className="size-5 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
                                     {auditor.imie_i_nazwisko.charAt(0)}
                                   </div>
                                   <span className="truncate max-w-[120px]">{auditor.imie_i_nazwisko}</span>

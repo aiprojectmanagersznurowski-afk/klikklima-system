@@ -38,14 +38,22 @@
 --     kolumny o tym samym znaczeniu utworzyłoby dwa źródła prawdy o promieniu audytora.
 --     Ta migracja jedynie DOKUMENTUJE istniejącą kolumnę (sekcja 6), nie tworzy jej.
 --
---     KOLEJNOŚĆ URUCHOMIENIA, WAŻNE PRZY CZYTANIU HISTORII: mimo wcześniejszego timestampu
---     ten plik trafia na żywą bazę PO migracji 20260910101000_fld_auditor_radius_rename.sql,
---     która 2026-09-10 przemianowała `audytorzy.max_promien_dojazdu_km` na
---     `audytorzy.promien_dzialania_km`. Rename został uruchomiony pierwszy, ten plik zastaje
---     już NOWĄ nazwę i taką nazwą się posługuje. Wcześniejsza wersja tego nagłówka opisywała
---     asymetrię nazw `audytorzy` / `zespoly_monterskie` jako stan zamrożony (KK-NAMING-BASELINE)
---     — po rename asymetrii nie ma i to uzasadnienie jest nieaktualne. Obie tabele mają dziś
---     kolumnę o identycznej nazwie `promien_dzialania_km`.
+--     KOLEJNOŚĆ URUCHOMIENIA — TEN PLIK MUSI DZIAŁAĆ W DWÓCH RÓŻNYCH PORZĄDKACH:
+--       (A) Świeży replay od zera (CI `supabase start`, nowa instalacja u developera):
+--           migracje idą po nazwach plików, więc 20260910100000 (ten plik) uruchamia się
+--           PRZED 20260910101000_fld_auditor_radius_rename.sql. W tej chwili kolumna
+--           promienia wciąż nazywa się `max_promien_dojazdu_km` — rename jeszcze nie zaszedł.
+--       (B) Żywa produkcja: rename 20260910101000 został 2026-09-10 uruchomiony RĘCZNIE,
+--           POZA kolejnością, PRZED tym plikiem. Ten plik zastaje już `promien_dzialania_km`.
+--     Dlatego sekcja 6 NIE może odwoływać się do kolumny promienia statycznie — jej nazwa
+--     nie jest znana w chwili pisania tego pliku. Komentarz jest zakładany dynamicznie, na
+--     tej nazwie, która w danym środowisku ISTNIEJE (patrz blok DO w sekcji 6). Wcześniejsza
+--     wersja tego nagłówka twierdziła, że rename zawsze idzie pierwszy — to było prawdą
+--     wyłącznie dla produkcji i wysypywało CI błędem 42703 (uruchomienie 34576559098).
+--     Wcześniejsza wersja opisywała też asymetrię nazw `audytorzy` / `zespoly_monterskie`
+--     jako stan zamrożony (KK-NAMING-BASELINE) — po rename asymetrii nie ma. STAN KOŃCOWY
+--     po obu migracjach jest w obu porządkach identyczny: kolumna `promien_dzialania_km`
+--     z komentarzem nadanym przez 20260910101000.
 --   * `leady.project_number` — osobny plik 20260910100100 (dotyka istniejącej tabeli).
 --   * Zmiany w katalogu powiadomień (N8a: `handover_protocol`, `amount`, rozdzielenie
 --     `link` na `booking_link` i `payment_link`) — poza zakresem tego okna, osobne okno.
@@ -491,11 +499,55 @@ ON CONFLICT (typ_konfiguracji) DO NOTHING;
 -- Model promieniowy (decyzja Michała, 2026-09-10, zamiast regionowego z ADR-012) czyta
 -- z kolumn, które JUŻ ISTNIEJĄ. Ta sekcja niczego nie dodaje i niczego nie zmienia —
 -- ustawia wyłącznie komentarze, żeby przy następnym „przecież audytor nie ma promienia"
--- odpowiedź była w bazie, a nie w czyjejś pamięci. Nazwa kolumny promienia jest w obu
--- tabelach TA SAMA (`promien_dzialania_km`) od migracji 20260910101000, uruchomionej na
--- żywej bazie przed tym plikiem — patrz nota o kolejności w nagłówku.
-COMMENT ON COLUMN public.audytorzy.promien_dzialania_km IS
-  'Promień działania audytora w km (CRM-REGION-AUTO, model promieniowy). Nazwa ujednolicona z zespoly_monterskie.promien_dzialania_km w oknie FLD-AUDITOR-RADIUS-RENAME (2026-09-10) — wcześniej max_promien_dojazdu_km. Jedno pojęcie, jedna nazwa, dwa miejsca odczytu dla silnika przydzielania. NULL = promień nieustalony, co znaczy „brak danych", NIE „0 km" i NIE „nieograniczony".';
+-- odpowiedź była w bazie, a nie w czyjejś pamięci.
+--
+-- KOLUMNA PROMIENIA AUDYTORA — NAZWA ROZSTRZYGANA W CZASIE URUCHOMIENIA.
+-- Ten plik i 20260910101000_fld_auditor_radius_rename.sql bywają uruchamiane w OBU
+-- kolejnościach (szczegóły w nagłówku), więc w chwili wykonania tej sekcji kolumna może
+-- nazywać się jeszcze `max_promien_dojazdu_km` (świeży replay: ten plik pierwszy) albo
+-- już `promien_dzialania_km` (produkcja: rename uruchomiony ręcznie pierwszy). Statyczny
+-- COMMENT ON COLUMN na którąkolwiek z tych nazw wywala jeden z tych dwóch scenariuszy
+-- błędem 42703. Dlatego: sprawdzamy, która nazwa ISTNIEJE, i komentujemy właśnie ją.
+--
+-- Prześledzenie obu porządków:
+--   (A) replay od zera — istnieje `max_promien_dojazdu_km`; komentarz ląduje na niej, w
+--       treści przejściowej („docelowo promien_dzialania_km"). Chwilę później migracja
+--       20260910101000 robi RENAME (który przenosi ten komentarz na nową nazwę), a zaraz
+--       po nim własny COMMENT ON COLUMN — NADPISUJE treść przejściową treścią docelową.
+--   (B) produkcja — istnieje już `promien_dzialania_km`; komentarz ląduje na niej od razu
+--       w treści docelowej, identycznej z tą, którą nadało 20260910101000.
+--   W obu przypadkach stan końcowy: `promien_dzialania_km` z komentarzem docelowym.
+--   Gałąź ELSE (żadna z nazw nie istnieje) nie przerywa migracji — kolumna pochodzi
+--   z baseline.sql i jej brak znaczyłby, że baza nie jest tą bazą; RAISE NOTICE zostawia
+--   ślad w logu zamiast wywracać cały replay na komentarzu dokumentacyjnym.
+DO $$
+DECLARE
+  v_kolumna text;
+  v_tresc   text;
+BEGIN
+  SELECT column_name INTO v_kolumna
+  FROM information_schema.columns
+  WHERE table_schema = 'public'
+    AND table_name = 'audytorzy'
+    AND column_name IN ('promien_dzialania_km', 'max_promien_dojazdu_km')
+  ORDER BY (column_name = 'promien_dzialania_km') DESC
+  LIMIT 1;
+
+  IF v_kolumna IS NULL THEN
+    RAISE NOTICE 'audytorzy: brak kolumny promienia (ani promien_dzialania_km, ani max_promien_dojazdu_km) — komentarz pominięty';
+    RETURN;
+  END IF;
+
+  IF v_kolumna = 'promien_dzialania_km' THEN
+    v_tresc := $txt$Promień działania audytora w km (CRM-REGION-AUTO, model promieniowy). Nazwa ujednolicona z zespoly_monterskie.promien_dzialania_km w oknie FLD-AUDITOR-RADIUS-RENAME (2026-09-10) — wcześniej max_promien_dojazdu_km. Jedno pojęcie, jedna nazwa, dwa miejsca odczytu dla silnika przydzielania. NULL = promień nieustalony, co znaczy „brak danych", NIE „0 km" i NIE „nieograniczony".$txt$;
+  ELSE
+    v_tresc := $txt$Promień działania audytora w km (CRM-REGION-AUTO, model promieniowy). STAN PRZEJŚCIOWY: kolumna nosi jeszcze nazwę max_promien_dojazdu_km i zostanie przemianowana na promien_dzialania_km przez migrację 20260910101000_fld_auditor_radius_rename.sql, która nadpisze też ten komentarz. Jedno pojęcie, jedna nazwa, dwa miejsca odczytu dla silnika przydzielania. NULL = promień nieustalony, co znaczy „brak danych", NIE „0 km" i NIE „nieograniczony".$txt$;
+  END IF;
+
+  EXECUTE format('COMMENT ON COLUMN public.audytorzy.%I IS %L', v_kolumna, v_tresc);
+END
+$$;
+
 COMMENT ON COLUMN public.audytorzy.kod_pocztowy_bazowy IS
   'Kod pocztowy bazy audytora — punkt, od którego liczony jest promień (CRM-REGION-AUTO). Edytowalny przez pracownika w Field App i przez administratora w panelu B2B; każda zmiana idzie do audit_log (FLD-BASE-LOCATION-EDIT).';
 COMMENT ON COLUMN public.zespoly_monterskie.promien_dzialania_km IS
