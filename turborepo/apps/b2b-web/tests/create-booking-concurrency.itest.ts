@@ -184,7 +184,23 @@ describe('createBooking — współbieżność na żywym Postgresie, FLD-BOOKING
       expect(successes).toHaveLength(1);
       expect(failures).toHaveLength(1);
       if (failures[0]!.ok) throw new Error('unreachable');
-      expect(failures[0]!.error.code).toBe('SLOT_TAKEN');
+      // Oba kody są RÓWNOWAŻNYM dowodem tej samej właściwości domenowej, różnym tylko
+      // etapem, na którym przegrany odkrył porażkę — `createBooking` (packages/scheduling/
+      // src/create-booking.ts) najpierw woła `findAvailableSlots` (same SELECT-y, BEZ
+      // blokady/`FOR UPDATE`), a rywalizacja realna zaczyna się dopiero na
+      // `prisma.booking.create()`. `Promise.all` gwarantuje jedynie wspólny start w tym
+      // samym ticku JS — NIE gwarantuje, że odpowiadające zapytania SQL trafią do
+      // Postgresa w tym samym momencie. Jeśli zwycięzca zdąży w pełni zacommitować swój
+      // `INSERT` PRZED tym, jak przegrany wykona swój `findAvailableSlots`, przegrany
+      // zobaczy `candidates.length === 0` i dostanie `SLOT_NOT_OFFERED` (silnik nie ma tu
+      // błędu — to prawidłowa odpowiedź "ten termin już nie jest wolny", odkryta wcześniej
+      // niż na etapie INSERT-u). Jeśli obie strony zdążą dotrzeć do `INSERT`-u, o wyniku
+      // rozstrzyga ograniczenie `bookings_no_overlap_per_resource` i przegrany dostaje
+      // `SLOT_TAKEN`. Zaakceptowane oba, bo test dowodzi WŁAŚCIWOŚCI DOMENOWEJ ("drugie
+      // żądanie na ten sam termin nie może się powtórnie udać"), nie DOKŁADNEGO ETAPU
+      // wykrycia — patrz identyczny wzorzec i uzasadnienie w
+      // `apps/b2c-web/tests/actions/booking-concurrency.itest.ts`, AC1/AC4.
+      expect(['SLOT_TAKEN', 'SLOT_NOT_OFFERED']).toContain(failures[0]!.error.code);
 
       const rowsForThisSlot = await prisma.booking.count({
         where: {
