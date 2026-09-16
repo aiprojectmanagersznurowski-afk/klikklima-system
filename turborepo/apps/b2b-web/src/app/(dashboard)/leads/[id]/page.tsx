@@ -8,6 +8,7 @@ import { AssignAuditor } from "./assign-auditor";
 import { EditLeadModal } from "./edit-lead-modal";
 import { DeleteLeadButton } from "./delete-lead-button";
 import { CreateBookingDialog } from "./create-booking-dialog";
+import { LeadBookingsList, type LeadBookingRow } from "./lead-bookings-list";
 import { getAuditors } from "../actions";
 import { getLeadDetail } from "./actions";
 import { getCurrentActorRole } from "../../../../utils/supabase/server";
@@ -106,6 +107,21 @@ export default async function LeadDetailsPage({
     baskets = await prisma.visitDurationBasket.findMany();
   } catch {
     baskets = [];
+  }
+
+  // FLD-QUOTE-BASKET-SELECT (dziura 2, contract-steward): rezerwacje TEGO leada, zmapowane na
+  // kontrakt {id, scheduledStart, basketId} — etykieta koszyka jest znajdowana przez
+  // `<LeadBookingsList>` (findBasketById), nigdy wyliczana tutaj.
+  let bookings: LeadBookingRow[] = [];
+  try {
+    const bookingRows = await prisma.booking.findMany({ where: { leadId: lead.id } });
+    bookings = bookingRows.map((booking) => ({
+      id: booking.id,
+      scheduledStart: booking.scheduledStart,
+      basketId: booking.visitBasketId,
+    }));
+  } catch {
+    bookings = [];
   }
 
   return (
@@ -276,6 +292,7 @@ export default async function LeadDetailsPage({
             subject={{ kind: "LEAD", leadId: lead.id }}
             actorRole={actorRole}
           />
+          <LeadBookingsList bookings={bookings} baskets={baskets} />
         </div>
       </div>
     </div>

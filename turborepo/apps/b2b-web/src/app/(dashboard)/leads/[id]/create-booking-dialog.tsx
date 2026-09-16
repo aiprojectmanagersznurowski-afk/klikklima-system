@@ -8,7 +8,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { CalendarPlus, Loader2, AlertTriangle, X } from "lucide-react"
 import { can, type Role } from "@klikklima/contracts"
 import { Button } from "@/components/ui/button"
-import { selectableBaskets, type ScheduleBasket, type CreateBookingSubject } from "../../../../lib/schedule/basket-select"
+import { selectableBaskets, buildCreateBookingPayload, type ScheduleBasket, type CreateBookingSubject } from "../../../../lib/schedule/basket-select"
 import { createBookingAction } from "../../bookings/actions"
 
 /**
@@ -98,12 +98,14 @@ export function CreateBookingDialog({
     setServerError(null)
     setAlternatives([])
     startTransition(async () => {
-      const result = await createBookingAction({
-        visitBasketId: values.visitBasketId,
-        startAt: new Date(values.startAt),
-        subject,
-        bookedBy: "DISPATCHER",
-      })
+      const result = await createBookingAction(
+        buildCreateBookingPayload({
+          visitBasketId: values.visitBasketId,
+          startAt: new Date(values.startAt),
+          subject,
+          bookedBy: "DISPATCHER",
+        }),
+      )
       if (!result.ok) {
         setServerError(result.error.message)
         setAlternatives(result.error.alternatives.map((slot) => new Date(slot.start_at)))
