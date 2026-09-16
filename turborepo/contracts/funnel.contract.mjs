@@ -183,9 +183,26 @@ export const TRANSITIONS = [
     id: 'T17', from: 'AWAITING_INSTALLATION', to: 'AWAITING_INSTALLATION',
     action: 'completePhaseOne', actor: 'INSTALLER', trigger: 'MANUAL',
     guards: ['installationIsTwoPhase', 'phaseOneNotCompleted'],
-    effects: ['N8a', 'do:issuePhaseOneInvoice', 'do:openPhaseTwoBooking'],
-    req: ['FNL-2PHASE'], status: 'STABLE',
-    note: 'Ekipa zamyka etap I w mieszkaniu deweloperskim. Klient dostaje fakturę za etap I i link do rezerwacji etapu II.',
+    // ZAWĘŻENIE ŚWIADOME I TYMCZASOWE (R7, decyzja orkiestratora 2026-09-16, WO
+    // FNL-2PHASE-BOOKING-MECHANICS): usunięto `do:issuePhaseOneInvoice`. Efekt domenowy
+    // jest z definicji OBOWIĄZKOWĄ zmianą stanu, a test kontraktowy sprawdza jego
+    // wystąpienie — zostawienie go tutaj przy odłożonym fakturowaniu (D3) dałoby efekt
+    // ZADEKLAROWANY I NIEZREALIZOWANY, czyli trwale czerwoną bramkę udającą dług.
+    // Wybrano wariant (b) z R7: efekt przenosi się do zakresu FNL-2PHASE-INVOICE i
+    // WRACA TUTAJ, gdy tamto wymaganie będzie realizowane (wymaga ADR-013: faktury,
+    // płatności, PDF i Field App to cztery osobne podsystemy, żaden nie istnieje).
+    // Tabela `invoices` nie istnieje — nie ma dziś czego tym efektem utworzyć.
+    effects: ['N8a', 'do:openPhaseTwoBooking'],
+    req: ['FNL-2PHASE', 'FNL-2PHASE-BOOKING'], status: 'STABLE',
+    // manualEquivalent (C.4, konsekwencja D3 z 2026-09-16): po zawężeniu zakresu etap I
+    // zamyka OPERATOR PANELU B2B (dyspozytor/administrator), a `actor` pozostaje
+    // INSTALLER jako opis ścieżki DOCELOWEJ (monter w Field App, faza 3+). Bez tej flagi
+    // kryterium K1 klasyfikowałoby KAŻDE zamknięcie etapu I jako `manual_status_change`
+    // w audit_log — czyli normalna, docelowa ścieżka procesu byłaby stale logowana jako
+    // obejście reguły i zaszumiłaby audyt dokładnie tam, gdzie ma wykrywać nadużycia.
+    // Flaga jest legalna wg R30: INSTALLER nie jest operatorem panelu. Wzorzec: T08.
+    manualEquivalent: true,
+    note: 'Ekipa zamyka etap I w mieszkaniu deweloperskim. Klient dostaje fakturę za etap I i link do rezerwacji etapu II. ZAKRES REALIZOWANY 2026-09-16 (WO FNL-2PHASE-BOOKING-MECHANICS, decyzja Michała D3) jest WĘŻSZY niż ta nota: powstaje wyłącznie mechanika rezerwacji w panelu B2B, a etap I zamyka dyspozytor lub administrator. Faktura za etap I jest odłożona w całości do FNL-2PHASE-INVOICE — nota opisuje CEL, nie stan zaimplementowany.',
   },
 
   // --- Wyjścia z bucketu Zimnych leadów (ADR-004, rozstrzygnięte 2026-08-18) ---

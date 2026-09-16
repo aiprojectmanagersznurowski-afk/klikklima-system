@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T06:39:40.827Z",
+  "generatedAt": "2026-09-16T07:01:35.150Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -224,7 +224,7 @@
     "insert_6000_leads_part3.sql::adr002-pl-columns": 12,
     "insert_6000_leads_part3.sql::adr002-pl-tables": 12,
     "packages/database/prisma/schema.prisma::adr002-pl-columns": 56,
-    "packages/database/prisma/schema.prisma::adr002-pl-tables": 53,
+    "packages/database/prisma/schema.prisma::adr002-pl-tables": 54,
     "packages/scheduling/src/available-slots.ts::adr002-pl-tables": 2,
     "setup_combinations.sql::adr002-pl-columns": 6,
     "supabase/migrations/00000000000000_baseline.sql::adr002-pl-columns": 47,
@@ -247,7 +247,8 @@
     "supabase/migrations/20260910100100_crm_lead_project_number.sql::adr002-pl-tables": 7,
     "supabase/migrations/20260910101000_fld_auditor_radius_rename.sql::adr002-pl-tables": 4,
     "supabase/migrations/20260912220000_crm_readable_identifiers.sql::adr002-pl-tables": 41,
+    "supabase/migrations/20260916060000_fnl_2phase_booking_mechanics.sql::adr002-pl-tables": 5,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2528
+  "total": 2534
 }

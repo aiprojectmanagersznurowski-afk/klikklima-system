@@ -58,7 +58,7 @@ stateDiagram-v2
 | `T12` | HARDWARE_IN_TRANSIT | ROLLBACK_RESCHEDULING | `rollback` | DISPATCHER | — | N_ROLLBACK, I4, do:releaseCrewSlot, do:suspendLogisticsSla | FNL-ROLLBACK | — | — |
 | `T13` | AWAITING_INSTALLATION | ROLLBACK_RESCHEDULING | `rollback` | CLIENT | — | N_ROLLBACK, I4, do:releaseCrewSlot, do:suspendLogisticsSla | FNL-ROLLBACK | — | — |
 | `T14` | ROLLBACK_RESCHEDULING | AWAITING_CREW_ASSIGNMENT | `rebookInstallation` | CLIENT | slotAvailable | do:reserveInstallationSlot | FNL-ROLLBACK-EXIT | — | — |
-| `T17` | AWAITING_INSTALLATION | AWAITING_INSTALLATION | `completePhaseOne` | INSTALLER | installationIsTwoPhase, phaseOneNotCompleted | N8a, do:issuePhaseOneInvoice, do:openPhaseTwoBooking | FNL-2PHASE | — | — |
+| `T17` | AWAITING_INSTALLATION | AWAITING_INSTALLATION | `completePhaseOne` | INSTALLER | installationIsTwoPhase, phaseOneNotCompleted | N8a, do:openPhaseTwoBooking | FNL-2PHASE, FNL-2PHASE-BOOKING | — | TAK (K1 anulowane) |
 | `T15` | QUOTE_REJECTED | AUDIT_COMPLETED | `returnToFunnel` | DISPATCHER | quoteRefreshedIfStale | do:refreshQuoteValidity | CRM-ZIMNE-AC2 | — | — |
 | `T16` | QUOTE_REJECTED | ARCHIVED_LOST | `archiveLost` | DISPATCHER | lostReasonProvided | do:recordLostReasonForAnalytics | CRM-ZIMNE-AC3 | — | — |
 

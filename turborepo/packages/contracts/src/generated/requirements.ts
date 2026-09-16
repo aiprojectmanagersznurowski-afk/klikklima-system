@@ -284,7 +284,7 @@ export const REQUIREMENTS = [
     "domain": "funnel",
     "status": "TODO",
     "risk": "HIGH",
-    "source": "ADR-005",
+    "source": "ADR-005; ZMIANA NOŚNIKA 2026-09-16 — decyzja Michała D1 w WO FNL-2PHASE-BOOKING-MECHANICS: tryb montażu mieszka na instalacji (instalacje.installation_type, migracja 20260916060000), NIE na leadzie i NIE na nieistniejącej tabeli `quotes`. Wariant „obie kolumny, kopiowane\" odrzucony jako druga droga do tej samej prawdy. NASTĘPSTWO ŚWIADOMIE OTWARTE (R4 w WO): wiersz instalacji powstaje dopiero przy przypisaniu ekipy, więc audytor nie ma dziś ŚCIEŻKI ZAPISU trybu w chwili wyceny — kryterium 2 ma od 2026-09-16 NOŚNIK, ale domyka się dopiero razem z UI audytora, co jest osobnym zadaniem",
     "statement": "Mieszkanie w stanie deweloperskim realizowane jest w dwóch etapach: przygotowanie instalacji przed wykończeniem, montaż jednostek po wykończeniu."
   },
   {
@@ -292,7 +292,7 @@ export const REQUIREMENTS = [
     "domain": "funnel",
     "status": "TODO",
     "risk": "HIGH",
-    "source": "ADR-005",
+    "source": "ADR-005; PRZENIESIENIE KRYTERIUM 2026-09-16 (okno FNL-2PHASE-BOOKING-SCHEMA-2, decyzja Michała D3 w WO FNL-2PHASE-BOOKING-MECHANICS): kryterium 7 („ZALEŻNOŚĆ POZA TYM WYMAGANIEM\", zgłoszone 2026-09-10) opisywało rozszerzenie N8a o handover_protocol, amount i rozdzielenie `link` na booking_link + payment_link. Treść NIE ZOSTAŁA SKASOWANA — przeniesiona w całości do FNL-2PHASE-INVOICE, bo dotyczy faktury i protokołu odbioru, a te zależą od czterech nieistniejących podsystemów (Field App, upload zdjęć, generowanie PDF, płatności) i wymagają ADR-013. To wymaganie zawęża się do MECHANIKI REZERWACJI w panelu B2B i domyka się bez tamtej zmiany katalogu powiadomień; konsekwencja przyjęta świadomie: dopóki N8a niesie jeden `link`, jest to link do rezerwacji etapu II",
     "statement": "Każdy etap montażu ma własną rezerwację terminu — klient rezerwuje etap II dopiero po zakończeniu etapu I."
   },
   {
@@ -300,7 +300,7 @@ export const REQUIREMENTS = [
     "domain": "funnel",
     "status": "TODO",
     "risk": "MEDIUM",
-    "source": "ADR-005",
+    "source": "ADR-005; PRZYJĘCIE KRYTERIUM 2026-09-16 (okno FNL-2PHASE-BOOKING-SCHEMA-2): kryterium 4 przeniesione z FNL-2PHASE-BOOKING (tam kryterium 7, zgłoszone 2026-09-10). PRZYJĘTO TU TAKŻE EFEKT do:issuePhaseOneInvoice, usunięty 2026-09-16 z T17.effects (rozstrzygnięcie R7, wariant (b)): efekt domenowy jest obowiązkową zmianą stanu sprawdzaną testem kontraktowym, a tabela `invoices` nie istnieje — zostawienie go na T17 dałoby efekt zadeklarowany i niezrealizowany. Efekt WRACA na T17 razem z realizacją tego wymagania",
     "statement": "Po zakończeniu etapu I klient otrzymuje fakturę za ten etap."
   },
   {
