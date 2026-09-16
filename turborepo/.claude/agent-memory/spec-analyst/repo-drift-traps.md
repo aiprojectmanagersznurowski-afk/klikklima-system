@@ -123,4 +123,9 @@ Dopisane 2026-09-15 (WO `CAL-SCHEDULING-CONFIG-UI`):
 - **Trigger `bookings_pool_matches_basket_trg` pilnuje REZERWACJI, nie koszyka** — zmiana `visit_duration_baskets.pool` nie jest blokowana przez bazę i po cichu rozjeżdża rezerwacje już zawarte. Jedyną obroną jest zamknięta lista pól w Server Action.
 - **`bookings.visit_basket_id` przyjmuje wartość tylko w `bookings/actions.ts:31`, a ŻADEN komponent `.tsx` jej nie ustawia** (`grep "basket" apps/b2b-web/src --include=*.tsx` = 0). AC „audytor wybiera koszyk przy wycenie" pozostaje niespełnione niezależnie od prac nad administracją słownika.
 
+Dopisane 2026-09-16 (WO `FNL-2PHASE-ROLLBACK-RELEASE`):
+- **Rollback lejka (T10–T13) nie zwalnia ŻADNEJ rezerwacji w `bookings`.** `releaseCrewSlot` operuje wyłącznie na legacy `instalacje` (`status PLANNED -> CANCELLED`, `zespol_id`/`data_planowana` na null) i nie zna ani `bookings`, ani `installation_phases`. Aktywna rezerwacja zostaje i blokuje podmiot przez `bookings_one_active_per_subject` — to jest klasa błędu szersza niż montaż dwuetapowy. Dwa równoległe światy rezerwacji (`instalacje` vs `bookings`) trzeba wypisywać osobno w każdym WO o slotach.
+- **Nie ma funkcji `releaseBooking`.** Konwencja zwalniania to wprost `status = 'RELEASED'` na wierszu `bookings`, w tej samej transakcji, przed wstawieniem nowej rezerwacji. Brak kolumny `released_at` — nie wymyślać jej.
+- **`assignCrewToLead` reużywa wiersz `instalacje` bez filtra statusu** (`findFirst({ where: { lead_id } })`) i ustawia tylko `zespol_id`. Po rollbacku instalacja zostaje `CANCELLED` na zawsze, mimo powrotu leada do lejka.
+
 - **`bind.transition` w `notifications.contract.mjs` bywa stringiem z pipe'ami** (`'T10|T11|T12|T13'` dla `N_ROLLBACK` i `I4`), nie tablicą. Nie ma w repo helpera, który by to parsował — to ukryta praca w każdej wycenie „podepnij powiadomienia do przejścia".
