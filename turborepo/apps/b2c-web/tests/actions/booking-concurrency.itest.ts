@@ -169,9 +169,29 @@ describe('createBooking na ścieżce B2C — B2C-BOOKING-SLOT AC1/AC4, żywy Pos
       expect(failures).toHaveLength(1);
       if (failures[0]!.ok) throw new Error('unreachable');
 
-      // AC4 — kod domenowy SLOT_TAKEN, NIE SUBJECT_ALREADY_BOOKED (dwa różne podmioty —
-      // przypadek brzegowy "idempotencja / podwójne kliknięcie", D-6 wariant (a)).
-      expect(failures[0]!.error.code).toBe('SLOT_TAKEN');
+      // AC4 — kod domenowy SLOT_TAKEN ALBO SLOT_NOT_OFFERED, NIGDY SUBJECT_ALREADY_BOOKED
+      // (dwa różne podmioty — przypadek brzegowy "idempotencja / podwójne kliknięcie", D-6
+      // wariant (a) — to rozróżnienie jest istotą AC4 i zostaje bez zmian).
+      //
+      // Oba pierwsze kody są RÓWNOWAŻNYM dowodem tej samej właściwości domenowej, różnym
+      // tylko etapem, na którym przegrany odkrył porażkę — `createBooking` (packages/
+      // scheduling/src/create-booking.ts) najpierw woła `findAvailableSlots` (same SELECT-y,
+      // BEZ blokady/`FOR UPDATE`), a rywalizacja realna zaczyna się dopiero na
+      // `prisma.booking.create()`. `Promise.all` gwarantuje jedynie wspólny start w tym samym
+      // ticku JS — NIE gwarantuje, że odpowiadające zapytania SQL trafią do Postgresa w tym
+      // samym momencie. Jeśli zwycięzca zdąży w pełni zacommitować swój `INSERT` PRZED tym,
+      // jak przegrany wykona swój `findAvailableSlots`, przegrany zobaczy `candidates.length
+      // === 0` i dostanie `SLOT_NOT_OFFERED` (silnik nie ma tu błędu — to prawidłowa
+      // odpowiedź "ten termin już nie jest wolny", odkryta wcześniej niż na etapie INSERT-u).
+      // Jeśli obie strony zdążą dotrzeć do `INSERT`-u, o wyniku rozstrzyga ograniczenie
+      // `bookings_no_overlap_per_resource` i przegrany dostaje `SLOT_TAKEN` — tak samo
+      // nondeterministyczne jak rozróżnienie 23P01/40P01 opisane w komentarzu przy
+      // `extractSqlState` w `create-booking.ts`. Zaakceptowane oba, bo test dowodzi
+      // WŁAŚCIWOŚCI DOMENOWEJ ("drugie żądanie na ten sam termin nie może się powtórnie
+      // udać"), nie DOKŁADNEGO ETAPU wykrycia — na tym etapie nie da się go kontrolować z
+      // poziomu testu bez wstrzykiwania opóźnień do silnika, co jest zakazane
+      // (implementer-server, nie test-author, jest właścicielem `create-booking.ts`).
+      expect(['SLOT_TAKEN', 'SLOT_NOT_OFFERED']).toContain(failures[0]!.error.code);
       expect(failures[0]!.error.alternatives.length).toBeGreaterThan(0);
 
       const serializedError = JSON.stringify(failures[0]!.error);
@@ -218,18 +238,23 @@ describe('createBooking na ścieżce B2C — B2C-BOOKING-SLOT AC1/AC4, żywy Pos
       expect(outcomes.filter((r) => r.ok)).toHaveLength(1);
       expect(outcomes.filter((r) => !r.ok)).toHaveLength(1);
 
+      // Przegrany dostaje SLOT_TAKEN ALBO SLOT_NOT_OFFERED — patrz uzasadnienie przy teście
+      // AC1/AC4 powyżej (ten sam `Promise.all` bez blokady na odczycie w `createBooking`,
+      // ta sama nondeterministyczna granica między "przegrał na SELECT-cie" i "przegrał na
+      // INSERT-cie"). Rozróżnienie, które NIE jest tu zniesione: przegrany NIGDY nie dostaje
+      // SUBJECT_ALREADY_BOOKED — to są dwa różne podmioty (leadClient/leadDispatcher).
       if (clientResult.ok) {
         expect(clientResult.booking.bookedBy).toBe('CLIENT');
         expect(clientResult.booking.leadId).toBe(leadClient.id);
       } else {
-        expect(clientResult.error.code).toBe('SLOT_TAKEN');
+        expect(['SLOT_TAKEN', 'SLOT_NOT_OFFERED']).toContain(clientResult.error.code);
       }
 
       if (dispatcherResult.ok) {
         expect(dispatcherResult.booking.bookedBy).toBe('DISPATCHER');
         expect(dispatcherResult.booking.leadId).toBe(leadDispatcher.id);
       } else {
-        expect(dispatcherResult.error.code).toBe('SLOT_TAKEN');
+        expect(['SLOT_TAKEN', 'SLOT_NOT_OFFERED']).toContain(dispatcherResult.error.code);
       }
 
       const rowsForThisSlot = await prisma.booking.count({

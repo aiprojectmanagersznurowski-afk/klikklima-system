@@ -317,8 +317,17 @@ test w żywej ścieżce) → AC2, AC3, AC11.
   więc `bookings_one_active_per_subject` (23505) nie ma tu czego złapać — to jest zamierzone,
   nie luka. Test potwierdza: dwa żądania, dwa leady, obie rezerwacje na TEN SAM slot i TĄ SAMĄ
   pulę nadal przechodzą przez zwykłą ścieżkę współbieżności `bookings_no_overlap_per_resource`
-  (23P01) — jedna wygrywa, druga dostaje `SLOT_TAKEN`, nie `SUBJECT_ALREADY_BOOKED` (bo to dwa
-  różne podmioty).
+  (23P01) — jedna wygrywa, druga dostaje `SLOT_TAKEN` **ALBO** `SLOT_NOT_OFFERED`, nigdy
+  `SUBJECT_ALREADY_BOOKED` (bo to dwa różne podmioty — to rozróżnienie jest istotą tego
+  kryterium i zostaje). DOPRECYZOWANIE 2026-09-16 (realny przebieg CI, `integracja`): który
+  z dwóch pierwszych kodów dostanie przegrany zależy od etapu, na którym odkrył porażkę —
+  `findAvailableSlots` (SELECT bez blokady) w `createBooking` biegnie PRZED
+  `prisma.booking.create()` (INSERT, gdzie dopiero rywalizuje ograniczenie bazy). `Promise.all`
+  w teście gwarantuje wyłącznie wspólny start w JS, nie synchronizację zapytań SQL — jeśli
+  zwycięzca zdąży w pełni zacommitować `INSERT` przed tym, jak przegrany wykona swój
+  `findAvailableSlots`, przegrany zobaczy slot jako już niewolny i dostanie `SLOT_NOT_OFFERED`,
+  nie `SLOT_TAKEN`. Oba są poprawną odpowiedzią domenową na „ten termin już nie jest wolny" —
+  test asercjonuje zbiór dwóch dopuszczalnych kodów, nie jeden.
 - **Parametry zamiast uprawnień (bo `can()` tu nie ma):** żądanie z `visitBasketId`, `bookedBy`,
   `leadId`, `resource_id`, `status`, `scheduledEnd` doklejonymi do payloadu. Każde ignorowane
   albo odrzucane (AC5, AC7).
