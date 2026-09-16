@@ -1,10 +1,14 @@
 # WO: FLD-QUOTE-BASKET-SELECT — wybór koszyka czasu trwania przy tworzeniu rezerwacji
 
-**Status Work Ordera: WSTRZYMANY — WYMAGA DECYZJI CZŁOWIEKA (patrz sekcja „Sprzeczności").**
-Sekcje „Kontekst kodu", „Kryteria akceptacji" i „Przypadki brzegowe" są kompletne i gotowe do
-przekazania test-authorowi **natychmiast po** rozstrzygnięciu D-1 i D-2. Dopóki nie ma decyzji,
-nie da się wskazać jednej ścieżki pliku komponentu, bo ekran, o którym mówi wymaganie, nie ma
-dziś gospodarza w repozytorium.
+**Status Work Ordera: ROZSTRZYGNIĘTY 2026-09-16 — gotowy do przekazania test-authorowi.**
+Decyzja Michała: **D-1 = (A)** (ekran powstaje w panelu B2B, dla dyspozytora/admina, teraz —
+ścieżka Field App/ADR-013 zostaje na później, tym samym słownikiem) i **D-2 = (a)** (RBAC bez
+zmian; osoba, która dziś tworzy rezerwację — `admin`/`dyspozytor` — wybiera koszyk; brzmienie
+wymagania koryguje się z „audytor wybiera" na „osoba tworząca rezerwację wybiera", zgodnie
+z resztą architektury tej sesji, gdzie audytor zarządza wyłącznie własną dostępnością na
+`/me/schedule`, nie rezerwacjami). Sekcje „Kontekst kodu", „Kryteria akceptacji" i „Przypadki
+brzegowe" (napisane pod wariant D-1=(A)/(C), D-2=(a)) obowiązują bez zmian — to była już
+jedyna ścieżka zgodna z dzisiejszą strukturą repo.
 
 ## Wymagania
 
