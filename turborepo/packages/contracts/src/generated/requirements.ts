@@ -965,7 +965,7 @@ export const REQUIREMENTS = [
     "status": "TODO",
     "risk": "MEDIUM",
     "source": "WYNIESIONE 2026-09-15 z CAL-VISIT-DURATION-BASKETS, kryterium AC2 (okno CAL-SCHEDULING-CONFIG-CLOSE) — połowa dotycząca KONSUMENTA słownika, podczas gdy tamten wpis opisuje sam słownik; docs/architecture/FIELD-APP-PLAN.md 6.4 R1; decyzja Michała 2026-09-09",
-    "statement": "Audytor przy wycenie WYBIERA koszyk czasu trwania z listy — ekran wyceny nie ma pola na dowolną liczbę godzin ani minut."
+    "statement": "Osoba tworząca rezerwację (dziś admin albo dyspozytor w panelu B2B) WYBIERA koszyk czasu trwania z listy — ekran wyceny nie ma pola na dowolną liczbę godzin ani minut. BRZMIENIE SKORYGOWANE 2026-09-16 (okno FLD-QUOTE-BASKET-WORDING) na podstawie decyzji Michała D-1 = (A) i D-2 = (a) z docs/workorders/FLD-QUOTE-BASKET-SELECT.md: ekran powstaje w panelu B2B, dla dyspozytora/admina, TERAZ — bez czekania na Field App i ADR-013 — a macierz uprawnień zostaje BEZ ZMIAN, to znaczy audytor NIE dostaje bookings.create (dziś create: admin, dyspozytor). Poprzednie brzmienie („Audytor przy wycenie WYBIERA koszyk\") zakładało ekran w Field App, która jako aplikacja nie istnieje, i tym samym wskazywało aktora niewykonalnego w dzisiejszym kontrakcie uprawnień — createBookingAction odmówiłaby audytorowi przed jakimkolwiek zapytaniem do bazy. Ścieżka audytora w Field App zostaje na później i użyje TEGO SAMEGO słownika koszyków. ŻADNE z czterech kryteriów akceptacji nie zostało przy tej korekcie zmienione: trzy pierwsze mówią o „ekranie wyceny\" i „wyborze\" bezosobowo, a „wizyta audytora\" w kryterium czwartym dotyczy PRZEDMIOTU wizyty i puli AUDITOR, nie operatora ekranu — nie wolno jej przepisywać tą decyzją."
   },
   {
     "id": "FLD-BASE-LOCATION-EDIT",
