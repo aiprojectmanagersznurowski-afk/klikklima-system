@@ -43,6 +43,27 @@ function timeOfDay(hhmm: string): Date {
   return new Date(`1970-01-01T${hhmm}:00.000Z`);
 }
 
+/**
+ * Sobota WZGLĘDNA do prawdziwego "teraz" w chwili wykonania, nigdy zaszyty literał
+ * kalendarzowy — inaczej `findAvailableSlots`/`createBooking` (CAL-SLOT-ENGINE, filtr
+ * `start < nowMs` na rzeczywistym zegarze systemowym w tym pliku `.itest.ts`, BEZ
+ * mockowania `now`) odrzuca cały slot jako `SLOT_NOT_OFFERED` zanim test dotrze do
+ * scenariusza współbieżności, który miał sprawdzić. `weeksFromNow` przesuwa najpierw o
+ * pełne tygodnie (żeby data była odpowiednio odległa i testy pozostały niezależne), a
+ * następnie dociąga do NAJBLIŻSZEJ soboty NIE WCZEŚNIEJSZEJ niż ten punkt — czyli wynik
+ * jest zawsze w przyszłości względem `new Date()` w momencie wywołania, niezależnie od
+ * tego, kiedy CI faktycznie uruchomi ten plik.
+ */
+function futureSaturday(weeksFromNow: number, hhmm: string): Date {
+  const base = new Date();
+  base.setUTCDate(base.getUTCDate() + weeksFromNow * 7);
+  const day = base.getUTCDay(); // 0=niedziela … 6=sobota
+  const diffToSaturday = (6 - day + 7) % 7;
+  base.setUTCDate(base.getUTCDate() + diffToSaturday);
+  const dateStr = base.toISOString().slice(0, 10);
+  return localMoment(dateStr, hhmm);
+}
+
 let createdAuditorIds: string[] = [];
 let createdLeadIds: string[] = [];
 
@@ -123,7 +144,7 @@ describe('createBooking na ścieżce B2C — B2C-BOOKING-SLOT AC1/AC4, żywy Pos
       const leadA = await createTestLead();
       const leadB = await createTestLead();
 
-      const startAt = localMoment('2026-12-05', '08:00'); // sobota
+      const startAt = futureSaturday(4, '08:00'); // sobota, względna do "teraz"
 
       const [resultA, resultB] = await Promise.all([
         createBooking({
@@ -176,7 +197,7 @@ describe('createBooking na ścieżce B2C — B2C-BOOKING-SLOT AC1/AC4, żywy Pos
       const leadClient = await createTestLead();
       const leadDispatcher = await createTestLead();
 
-      const startAt = localMoment('2026-12-12', '08:00'); // inna sobota — testy niezależne
+      const startAt = futureSaturday(5, '08:00'); // inna sobota — testy niezależne, względna do "teraz"
 
       const [clientResult, dispatcherResult] = await Promise.all([
         createBooking({
@@ -228,7 +249,7 @@ describe('createBooking na ścieżce B2C — B2C-BOOKING-SLOT AC1/AC4, żywy Pos
       const leadA = await createTestLead();
       const leadB = await createTestLead();
 
-      const firstStart = localMoment('2026-12-19', '08:00'); // kolejna, niezależna sobota
+      const firstStart = futureSaturday(6, '08:00'); // kolejna, niezależna sobota, względna do "teraz"
 
       const firstResult = await createBooking({
         visitBasketId: auditBasketId,
@@ -278,8 +299,9 @@ describe('createBooking na ścieżce B2C — B2C-BOOKING-SLOT AC1/AC4, żywy Pos
       await createTestSaturdayRule(auditor.id, '08:00', '16:00');
       const lead = await createTestLead();
 
-      // 20:00 jest POZA regułą 08:00-16:00 tego audytora, w tej samej sobocie.
-      const offeredHoursSaturday = localMoment('2026-12-26', '20:00');
+      // 20:00 jest POZA regułą 08:00-16:00 tego audytora, w tej samej sobocie (data
+      // względna do "teraz" — patrz `futureSaturday`).
+      const offeredHoursSaturday = futureSaturday(7, '20:00');
 
       const result = await createBooking({
         visitBasketId: auditBasketId,
@@ -309,7 +331,10 @@ describe('createBooking na ścieżce B2C — B2C-BOOKING-SLOT AC1/AC4, żywy Pos
       await createTestSaturdayRule(auditor.id, '08:00', '16:00');
       const lead = await createTestLead();
 
-      // Sobota w PRZESZŁOŚCI względem "teraz" (data pisania tego testu: 2026-09-14).
+      // Sobota w PRZESZŁOŚCI względem "teraz" — literał ZAMIERZONY (nie `futureSaturday`):
+      // zegar systemowy tylko idzie do przodu, więc ta data pozostanie przeszłością na
+      // zawsze od chwili napisania tego testu (2026-09-14) i nie wymaga wyliczenia
+      // względnego jak pozostałe przypadki w tym pliku.
       const pastSaturday = localMoment('2026-08-01', '08:00');
 
       const result = await createBooking({
