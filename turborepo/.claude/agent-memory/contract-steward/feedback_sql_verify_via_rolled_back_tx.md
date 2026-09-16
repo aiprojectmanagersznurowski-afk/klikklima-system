@@ -14,3 +14,10 @@ Nie ma lokalnego Dockera ani `psql`, więc `supabase start` nie odtworzy śwież
 - Wzorzec: `cd packages/database && node --env-file=.env -e '...'`, klient przez `require("@prisma/client")`, `prisma.$transaction(async tx => { ...; throw new Error("ROLLBACK_CELOWY") })`.
 - Pułapka cytowania: JS owinięty w POJEDYNCZE cudzysłowy basha — każdy `'` w SQL-u urywa łańcuch i dostajesz mylące `42P01 missing FROM-clause entry for table "public"`. Literały SQL pisz dollar-quotingiem (`$q$public.tabela$q$::regclass`).
 - Po rollbacku dołóż kontrolę: atrapa `to_regclass(...)` ma być `null`, a komentarz/stan produkcji bajtowo bez zmian.
+
+**Weryfikacja CAŁEGO pliku migracji, nie pojedynczego bloku (2026-09-16, FNL-2PHASE-BOOKING-MECHANICS) — trzy przeszkody, każda z gotowym obejściem:**
+1. **`pg` NIE JEST zainstalowane** w tym monorepo i `psql` nie istnieje. Nie szukaj ich (`find /` po node_modules wisi ponad 2 min i trzeba go ubijać) — od razu `require('@prisma/client')`; wygenerowany klient leży w `node_modules/.prisma/client`, a `.env` parsuj ręcznie i podstaw `DATABASE_URL = DIRECT_URL` (pooler bez directUrl potrafi odmówić DDL).
+2. **`$executeRawUnsafe` NIE przyjmuje wielu poleceń naraz** — `42601 cannot insert multiple commands into a prepared statement`. Trzeba własnego splittera po `;`, który pomija średniki wewnątrz `$$ … $$` (blok `DO`) i wewnątrz apostrofów, i który wycina linie `--` (komentarz z apostrofem w polskim słowie, np. „nie ma", rozjeżdża liczenie cudzysłowów).
+3. **Pierwszy błąd ABORTUJE całą transakcję** (`25P02`), więc sprawdzenie ograniczenia negatywnego — „czy CHECK odrzuci śmieć" — zabija wszystkie następne asercje. Każdy przypadek negatywny owijaj w `SAVEPOINT sp` / `ROLLBACK TO SAVEPOINT sp`. Bez tego z listy dziesięciu asercji wykonają się dwie i wygląda to jak błąd migracji.
+
+Ten sam przebieg dowodzi przy okazji IDEMPOTENCJI: wykonaj listę statementów dwa razy w tej samej transakcji. Warto, bo `ADD CONSTRAINT` nie ma wariantu `IF NOT EXISTS` i wymaga `DO $$ … pg_constraint … $$`, o czym łatwo zapomnieć przy `ADD COLUMN IF NOT EXISTS` obok.

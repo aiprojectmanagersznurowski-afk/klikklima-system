@@ -1,10 +1,13 @@
 # Pamięć agenta: contract-steward
 
+- [Deklaracja o otwartym oknie to nie stan okna](feedback_window_claim_is_not_window_state.md) — zlecenie może twierdzić „okno otwarte", gdy tokenu nie ma; status PRZED czymkolwiek, przy migracji proś o --minutes 60.
+
 - [Migracja musi działać w OBU porządkach](feedback_migration_both_run_orders.md) — replay wg nazw plików vs ręczne uruchomienie poza kolejnością; nazwa nieznana statycznie -> dynamiczny COMMENT.
 - [audit_log_resource_check to PODZBIÓR RESOURCES](project_audit_log_resource_check_subset_of_resources.md) — nowy zasób nie trafia tam sam, żadna bramka nie wykryje; ŻYWO 15 wartości, migracja 20260915120000 URUCHOMIONA 2026-09-15.
 - [Weryfikacja SQL bez Dockera](feedback_sql_verify_via_rolled_back_tx.md) — blok na żywej bazie w transakcji z celowym ROLLBACK przez `node -e`; guard-paths blokuje pliki skryptowe.
 - [FLD-AVAIL-SELF / FLD-AVAIL-RESTORE zamknięte](project_fld_avail_self_restore_verified_awaiting_window.md) — 2026-09-15 DONE, 13/13 AC; AC1 dowiedziony na żywej bazie (6 kolumn, CHECK jednego właściciela), dwa AC pod tagiem rodzeństwa.
 
+- [FNL-2PHASE nośniki postawione, status TODO](project_fnl_2phase_booking_mechanics_carriers.md) — 2026-09-16; R7 wariant (b), RBAC świadomie odłożone, brak `@unique` na bookingId jest celowy.
 - [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, audytorzy MAJĄ promień, timestamp ≠ kolejność uruchomienia, migracje LIVE.
 - [FLD-AVAIL-WEEKLY-RULES: AC szersze niż WO](project_fld_avail_weekly_rules_ac_wider_than_wo.md) — 2026-09-10 DOMKNIĘTE na DONE (4075fdd); AC7/AC8 wyniesione do CAL-SLOT-ENGINE i CAL-POOL-AGGREGATE.
 - [FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT zamknięte](project_booking_one_active_per_subject.md) — 2026-09-14 DONE (dd69d56); podział kryteriów wg PRZEDMIOTU: kod -> atrapa, indeks -> żywy Postgres.
