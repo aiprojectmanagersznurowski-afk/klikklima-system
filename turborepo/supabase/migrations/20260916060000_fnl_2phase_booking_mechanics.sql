@@ -8,6 +8,28 @@
 -- ŹRÓDŁO DECYZJI: docs/workorders/FNL-2PHASE-BOOKING-MECHANICS.md,
 -- decyzje Michała D1/D2/D3 z 2026-09-16, ADR-005.
 --
+-- ╔══════════════════════════════════════════════════════════════════════════════════════╗
+-- ║  STAN: TA MIGRACJA ZOSTAŁA URUCHOMIONA NA ŻYWEJ BAZIE 2026-09-16.                     ║
+-- ║  Napisana 2026-09-16, zacommitowana najpierw jako plik świadomie NIEZAAPLIKOWANY.     ║
+-- ║  Uruchomiona po osobnej, jawnej zgodzie Michała, w tym samym trybie co 20260910103000 ║
+-- ║  i 20260915120000 (nie db push, nie migrate reset).                                   ║
+-- ║  Weryfikacja po fakcie, read-only, wykonana niezależnie przez contract-steward         ║
+-- ║  2026-09-16 na information_schema / pg_constraint / pg_indexes / pg_class:            ║
+-- ║    installation_phases  -> 7 kolumn w kolejności id, installation_id, phase_number,   ║
+-- ║                            booking_id, completed_at, created_at, updated_at           ║
+-- ║    pg_constraint        -> 5 ograniczeń: FK booking_id (ON DELETE SET NULL),          ║
+-- ║                            FK installation_id (ON DELETE CASCADE), CHECK              ║
+-- ║                            phase_number = ANY (ARRAY[1,2]), PK, UNIQUE                ║
+-- ║                            (installation_id, phase_number)                            ║
+-- ║    pg_indexes           -> installation_phases_booking_id_key jako UNIQUE CZĘŚCIOWY   ║
+-- ║                            (WHERE booking_id IS NOT NULL) + indeks na installation_id ║
+-- ║    pg_class             -> relrowsecurity = true, zero polityk (deny-by-default)      ║
+-- ║    instalacje           -> kolumna installation_type typu text, is_nullable = YES     ║
+-- ║  Treść poniżej opisuje więc stan FAKTYCZNY bazy, a nie stan postulowany.              ║
+-- ║  Tabela jest pusta (0 wierszy) — nośnik istnieje, danych jeszcze nie ma, bo ścieżka   ║
+-- ║  zapisu trybu przez audytora jest świadomie poza zakresem (R4 w WO).                  ║
+-- ╚══════════════════════════════════════════════════════════════════════════════════════╝
+--
 -- ZAKRES ZAWĘŻONY (D3, decyzja Michała 2026-09-16): wyłącznie mechanika rezerwacji
 -- w panelu B2B. Field App, upload zdjęć, generowanie PDF i integracja płatności są
 -- odłożone W CAŁOŚCI i wymagają własnego ADR-013. Dlatego w tej tabeli NIE MA i nie
