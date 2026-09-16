@@ -153,6 +153,37 @@ describe('create-booking-dialog.tsx — bookedBy jest zawsze DISPATCHER (WO, "Ks
   });
 });
 
+describe('create-booking-dialog.tsx — AC2 (payload jest budowany WYŁĄCZNIE przez buildCreateBookingPayload)', () => {
+  // Ciąg dalszy domykania FLD-QUOTE-BASKET-SELECT (rozstrzygnięcie contract-steward,
+  // 2026-09-16, dziura 1): `buildCreateBookingPayload` z `basket-select.ts` istnieje i jest
+  // dowiedziona wykonywalnie w `booking-basket-select-logic.test.ts` (6 testów), ale przed tą
+  // asercją ŻADEN test nie sprawdzał, że dialog faktycznie ją WOŁA — `onSubmit` mógł budować
+  // payload inline ({ visitBasketId: values.visitBasketId, ... }), i podmiana
+  // `value={basket.id}` na `value={basket.code}` w JSX przeszłaby cały pakiet, bo żadna
+  // funkcja domenowa nie stoi między formularzem a `createBookingAction`.
+  // @REQ: FLD-QUOTE-BASKET-SELECT
+  it('źródło importuje buildCreateBookingPayload z modułu basket-select', () => {
+    const content = readDialog();
+    const importMatch = content.match(
+      /import\s*\{([^}]*)\}\s*from\s*["'][^"']*lib\/schedule\/basket-select["']/,
+    );
+    expect(importMatch).not.toBeNull();
+    expect(importMatch![1]).toMatch(/\bbuildCreateBookingPayload\b/);
+  });
+
+  // Wołanie musi WCHODZIĆ w wywołanie createBookingAction — nie wystarczy sam import bez
+  // użycia. Sprawdzamy, że argument przekazany do createBookingAction JEST wywołaniem
+  // buildCreateBookingPayload(...), nie obiektem literalnym budowanym inline w handlerze.
+  // @REQ: FLD-QUOTE-BASKET-SELECT
+  it('createBookingAction jest wołane z wynikiem buildCreateBookingPayload(...), nie z obiektem budowanym inline w onSubmit', () => {
+    const content = readDialog();
+    const callIdx = content.indexOf('createBookingAction(');
+    expect(callIdx).toBeGreaterThan(-1);
+    const window = content.slice(callIdx, callIdx + 500);
+    expect(window).toMatch(/createBookingAction\(\s*buildCreateBookingPayload\(/);
+  });
+});
+
 describe('create-booking-dialog.tsx — ikony wyłącznie lucide-react (ADR-001/zakazy CLAUDE.md)', () => {
   // @REQ: FLD-QUOTE-BASKET-SELECT
   it('jedyny import ikon w pliku pochodzi z "lucide-react"', () => {

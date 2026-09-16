@@ -37,6 +37,7 @@ const {
   AssignAuditorMock,
   CreateBookingDialogMock,
   visitDurationBasketFindManyMock,
+  bookingFindManyMock,
   getCurrentActorRoleMock,
   getCurrentUserMock,
   createClientMock,
@@ -47,6 +48,14 @@ const {
   AssignAuditorMock: vi.fn(() => null),
   CreateBookingDialogMock: vi.fn(() => null),
   visitDurationBasketFindManyMock: vi.fn(),
+  // Kontynuacja domykania FLD-QUOTE-BASKET-SELECT (dziura 2, contract-steward,
+  // 2026-09-16): `page.tsx` dostanie NOWE zapytanie `prisma.booking.findMany(...)` dla listy
+  // rezerwacji leada (`lead-bookings-list-props.test.ts`). Ten plik nie testuje tamtej
+  // funkcji, ale bez tego wpisu w mocku `@repo/database` przyszła implementacja wywali
+  // WSZYSTKIE testy tego pliku błędem "Cannot read properties of undefined (reading
+  // 'findMany')" — złym powodem RED, bo test nie dotyczy tej ścieżki. Domyślna wartość []
+  // w beforeEach jest neutralna dla wszystkich istniejących asercji tego pliku.
+  bookingFindManyMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   getCurrentUserMock: vi.fn(),
   createClientMock: vi.fn(),
@@ -56,6 +65,7 @@ vi.mock('@repo/database', () => ({
   prisma: {
     leady: { findUnique: leadFindUniqueMock },
     visitDurationBasket: { findMany: visitDurationBasketFindManyMock },
+    booking: { findMany: bookingFindManyMock },
   },
 }));
 vi.mock('../src/app/(dashboard)/leads/actions', () => ({
@@ -161,6 +171,7 @@ describe('leads/[id]/page.tsx — integracja <CreateBookingDialog> (FLD-QUOTE-BA
     AssignAuditorMock.mockClear();
     CreateBookingDialogMock.mockClear();
     visitDurationBasketFindManyMock.mockReset();
+    bookingFindManyMock.mockReset();
     getCurrentActorRoleMock.mockReset();
     createClientMock.mockReset();
 
@@ -168,6 +179,7 @@ describe('leads/[id]/page.tsx — integracja <CreateBookingDialog> (FLD-QUOTE-BA
     getAuditorsMock.mockResolvedValue([]);
     signStoragePathsMock.mockResolvedValue({});
     visitDurationBasketFindManyMock.mockResolvedValue(SEVEN_BASKETS);
+    bookingFindManyMock.mockResolvedValue([]);
     getCurrentActorRoleMock.mockResolvedValue('dyspozytor');
   });
 
