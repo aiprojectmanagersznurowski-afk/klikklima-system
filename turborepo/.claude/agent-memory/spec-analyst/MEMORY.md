@@ -18,3 +18,6 @@
 - [Dwa klienty bazodanowe w jednym przepływie B2C](b2c-two-db-clients-one-flow.md) — supabase-js pisze leada, Prisma booking; brak transakcji blokuje B2C-LEAD-ATOMIC
 - [CHECK audit_log.resource został w tyle za RBAC](audit-log-resource-check-lags-rbac.md) — logowanie na nowym zasobie wymaga osobnej migracji; inaczej wywraca całą Server Action
 - [Dwie żywe ścieżki UI do T10-T13](funnel-advance-status-dual-rollback-path.md) — przycisk „Rollback (Problem)" w Kanbanie i panel logistyki wołają różne funkcje; jedna nie woła efektów
+- [Dokumenty, które kłamią](docs-that-lie.md) — `FIELD-APP-PLAN.md` opisuje koszyk 2-dniowy świadomie usunięty i Field App jako byt istniejący; ADR-013 niewydany, `apps/` ma tylko b2b-web/b2c-web.
+- [RBAC blokuje role w wymaganiach](rbac-blokuje-role-w-wymaganiach.md) — zdanie „<rola> robi <czynność>" sprawdź wobec `rbac.contract.mjs` przed planowaniem ekranu; przypadek FLD-QUOTE-BASKET-SELECT (audytor nie ma `bookings:create`).
+- [Zależność N8a (faktura/protokół/płatność)](project_n8a_payment_dependency.md) — czeka na decyzję księgową (proforma vs zaliczkowa); dotyka FNL-2PHASE-BOOKING AC7 i FNL-2PHASE-INVOICE, nie planować bez niej.
