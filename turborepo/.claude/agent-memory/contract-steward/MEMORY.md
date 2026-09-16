@@ -13,6 +13,7 @@
 - [Przebieg itestów w CI unieważnia domknięcia po tsc](feedback_ci_itest_run_invalidates_tsc_closures.md) — cofaj status, nie doklejaj wyjaśnień; kolejni kandydaci do upadku to oba FLD-BOOKING-*.
 - [CAL-POOL-AGGREGATE zamknięte](project_cal_pool_aggregate_done.md) — 2026-09-14 DONE; kryteria mówią „Klient widzi", a konsumenta B2C nie ma — warstwę kliencką przejęło B2C-BOOKING-SLOT.
 - [B2C-BOOKING-SLOT zamknięte](project_b2c_booking_slot_done.md) — 2026-09-14 DONE (74bd07c); Google Calendar odpięty od odczytu, itest współbieżności NIEURUCHOMIONY, B2C-LEAD-ATOMIC zostaje otwarte.
+- [FLD-QUOTE-BASKET-SELECT: aktor rozstrzygnięty](project_fld_quote_basket_select_actor_decided.md) — 2026-09-16 admin/dyspozytor w B2B, nie audytor; „wizyta audytora" w AC4 to PRZEDMIOT, nie operator.
 - [CAL-SCHEDULING-CONFIG: koszyki i bufor zamknięte](project_cal_scheduling_config_closed.md) — 2026-09-15 DONE (9073232); AC2 rozdzielone: nośnik zostaje, ekran wyceny -> FLD-QUOTE-BASKET-SELECT.
 - [Pokrycie bywa pod tagiem rodzeństwa](feedback_coverage_may_sit_under_sibling_req_tag.md) — brak testu przy @REQ ≠ brak pokrycia; szukaj po pojęciu domenowym, nie po ID (grupa T bufora).
 - [B2C: żywe źródło slotów vs martwy route.ts](project_b2c_slots_live_source_vs_dead_route.md) — 2026-09-14; `api/calendar/slots/route.ts` ma zero konsumentów, żyje `actions/calendar.ts` -> `Step8Booking.tsx`.
