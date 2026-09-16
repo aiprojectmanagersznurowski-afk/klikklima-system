@@ -30,10 +30,11 @@ import { isManualStatusChange } from '../src/lib/audit/manual-status-classifier'
  * Oczekiwana klasyfikacja dla WSZYSTKICH 17 przejść z dzisiejszego kontraktu
  * (2026-09-04), wyliczona ręcznie z K1/K3/K4 — NIE z tego samego algorytmu co
  * implementacja, żeby test rzeczywiście dowodził czegoś, a nie odbijał się od
- * własnego lustra. Trzy przejścia są "normalną pracą dyspozytora/admina": T01
- * (assignAuditor, ADMIN, STAGE→STAGE), T05 (assignCrew, ADMIN, STAGE→STAGE),
- * T06 (shipByCourier, DISPATCHER, STAGE→STAGE) — żadne z K1/K3/K4 ich nie łapie.
- * Wszystkie pozostałe 13 są "ręczne" z co najmniej jednego powodu:
+ * własnego lustra. Cztery przejścia są "normalną pracą operatora/procesu docelowego":
+ * T01 (assignAuditor, ADMIN, STAGE→STAGE), T05 (assignCrew, ADMIN, STAGE→STAGE),
+ * T06 (shipByCourier, DISPATCHER, STAGE→STAGE) — żadne z K1/K3/K4 ich nie łapie —
+ * oraz T17 (completePhaseOne, patrz niżej, wyjęte spod K1 przez `manualEquivalent`).
+ * Wszystkie pozostałe 12 są "ręczne" z co najmniej jednego powodu:
  *   T02 sendQuote — actor AUDITOR (K1)
  *   T03 acceptQuoteAndBook — actor CLIENT (K1)
  *   T04 expireQuote — actor SYSTEM (K1)
@@ -48,9 +49,15 @@ import { isManualStatusChange } from '../src/lib/audit/manual-status-classifier'
  *   T10-T12 rollback — actor DISPATCHER, ale `to` = ROLLBACK_RESCHEDULING (BUCKET) → K3
  *   T13 rollback (z AWAITING_INSTALLATION) — actor CLIENT (K1) I `to` BUCKET (K3)
  *   T14 rebookInstallation — actor CLIENT (K1) I `from` ROLLBACK_RESCHEDULING (BUCKET) (K3)
- *   T17 completePhaseOne — actor INSTALLER (K1)
  *   T15 returnToFunnel — `from` QUOTE_REJECTED (BUCKET) (K3)
  *   T16 archiveLost — `from` QUOTE_REJECTED (BUCKET) i `to` ARCHIVED_LOST (BUCKET) (K3)
+ *
+ * T17 completePhaseOne — actor INSTALLER formalnie spełnia K1, ale
+ *   `manualEquivalent: true` (funnel.contract.mjs, decyzja C.4/D3 2026-09-16, WO
+ *   FNL-2PHASE-BOOKING-MECHANICS) anuluje WYŁĄCZNIE K1, wzorem T08 (D4, 2026-09-04):
+ *   zamknięcie etapu I przez operatora panelu B2B jest normalną pracą, nie ma
+ *   zaszumiać audytu. from/to = AWAITING_INSTALLATION (STAGE→STAGE) nie łapie K3,
+ *   brak `override` nie łapie K4 — klasyfikuje się jako `false`.
  */
 const EXPECTED_CLASSIFICATION: Record<string, boolean> = {
   T01: false,
@@ -67,7 +74,16 @@ const EXPECTED_CLASSIFICATION: Record<string, boolean> = {
   T12: true,
   T13: true,
   T14: true,
-  T17: true,
+  // T17 completePhaseOne — actor INSTALLER formalnie spełnia K1, ale
+  // `manualEquivalent: true` (funnel.contract.mjs, decyzja C.4/D3 2026-09-16,
+  // WO FNL-2PHASE-BOOKING-MECHANICS) anuluje WYŁĄCZNIE K1 dla TEGO przejścia —
+  // wzorzec identyczny z T08 (D4, 2026-09-04): zamknięcie etapu I przez
+  // operatora panelu B2B (dyspozytor/administrator) w normalnym przebiegu nie
+  // ma być logowane jako `manual_status_change`. from/to = AWAITING_INSTALLATION
+  // (STAGE→STAGE) nie łapie K3, brak `override` nie łapie K4 — klasyfikuje się
+  // jako `false`. TEST-DEFECT (naprawione): wcześniejsze `true` było prawdziwe
+  // PRZED dodaniem `manualEquivalent: true` do T17 w tej samej sesji.
+  T17: false,
   T15: true,
   T16: true,
 };

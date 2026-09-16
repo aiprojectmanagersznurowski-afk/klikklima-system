@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T07:01:35.150Z",
+  "generatedAt": "2026-09-16T13:02:27.667Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -40,6 +40,7 @@
     "apps/b2b-web/src/app/(dashboard)/installations/actions.ts::adr002-pl-columns": 7,
     "apps/b2b-web/src/app/(dashboard)/installations/actions.ts::adr002-pl-tables": 5,
     "apps/b2b-web/src/app/(dashboard)/installations/installations-client.tsx::adr002-pl-tables": 1,
+    "apps/b2b-web/src/app/(dashboard)/installations/two-phase-actions.ts::adr002-pl-tables": 2,
     "apps/b2b-web/src/app/(dashboard)/layout.tsx::adr002-pl-tables": 2,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/actions.ts::adr002-pl-columns": 9,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/actions.ts::adr002-pl-tables": 11,
@@ -112,6 +113,10 @@
     "apps/b2b-web/tests/customers-read-authz.test.ts::adr002-pl-tables": 3,
     "apps/b2b-web/tests/fld-base-location-edit-audit-log.test.ts::adr002-pl-columns": 9,
     "apps/b2b-web/tests/fld-base-location-edit-audit-log.test.ts::adr002-pl-tables": 4,
+    "apps/b2b-web/tests/fnl-2phase-advance-status-defense.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/fnl-2phase-complete-phase-one.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/fnl-2phase-create-booking-preference.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/fnl-2phase-db-constraints.itest.ts::adr002-pl-tables": 7,
     "apps/b2b-web/tests/fnl-advance-status-rollback-dedup.test.ts::adr002-pl-columns": 1,
     "apps/b2b-web/tests/fnl-advance-status-rollback-dedup.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/global-search.test.ts::adr002-pl-columns": 4,
@@ -250,5 +255,5 @@
     "supabase/migrations/20260916060000_fnl_2phase_booking_mechanics.sql::adr002-pl-tables": 5,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2534
+  "total": 2549
 }
