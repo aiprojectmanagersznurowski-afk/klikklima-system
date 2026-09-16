@@ -9,4 +9,9 @@ Rozszerzenie powiadomienia `N8a` (`handover_protocol`, `amount`, rozdzielenie `l
 
 **Why:** dokumenty (`FIELD-APP-PLAN.md` 6.4a, `database_model.md` „Montaż dwuetapowy") opisują przepływ dokumentów i płatności, ale żaden Work Order ani ADR go nie planuje; wybór rodzaju dokumentu przesądza o modelu danych faktur, więc zgadnięcie kosztuje migrację.
 
-**How to apply:** nie planuj implementacji dokumentów/płatności etapu I bez tej decyzji; w Work Orderach traktuj ją jako blokadę i wypisz jako `WYMAGA DECYZJI`. Wymagania dotknięte: `FNL-2PHASE-BOOKING` (kryterium 7), `FNL-2PHASE-INVOICE`. Powiązane: [[dwuetapowy-montaz-nieistniejacy-fundament]].
+**How to apply:** nie planuj implementacji dokumentów/płatności etapu I bez tej decyzji; w Work Orderach traktuj ją jako blokadę i wypisz jako `WYMAGA DECYZJI`. Wymagania dotknięte: `FNL-2PHASE-BOOKING` (kryterium 7), `FNL-2PHASE-INVOICE`. Powiązane: [[docs-that-lie]].
+
+**Rozstrzygnięcie zakresowe 2026-09-16 (Michał):** `FNL-2PHASE-BOOKING` podzielone na mechanikę
+rezerwacji (WO `docs/workorders/FNL-2PHASE-BOOKING-MECHANICS.md`, robione teraz) i dokumenty/płatności
+(odłożone). UWAGA: wpis `FNL-2PHASE-INVOICE` JUŻ ISTNIEJE w rejestrze (`contracts/requirements.contract.mjs:161`)
+— kryterium 7 się do niego DOPISUJE, nie tworzy drugiego wpisu.
