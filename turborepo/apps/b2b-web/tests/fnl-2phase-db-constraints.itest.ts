@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
+import { randomUUID } from 'node:crypto';
 import { prisma } from '@repo/database';
 
 /**
@@ -28,11 +29,27 @@ import { prisma } from '@repo/database';
  */
 
 let createdLeadIds: string[] = [];
+let createdCrewIds: string[] = [];
 
 async function createTestLead(): Promise<{ id: string }> {
   const lead = await prisma.leady.create({ data: {} });
   createdLeadIds.push(lead.id);
   return lead;
+}
+
+// Wzorzec 1:1 z `create-booking-concurrency.itest.ts` (przeszedł w tym samym przebiegu
+// CI): `bookings_one_assignee` (`num_nonnulls(auditor_id, crew_id) = 1`) i
+// `bookings_resource_kind_check` wymagają, żeby dla `resourceKind: 'CREW'` był ustawiony
+// `crewId`, inaczej `prisma.booking.create()` odbija się od CHECK-a (23514).
+async function createTestCrew(): Promise<{ id: string }> {
+  const suffix = randomUUID();
+  const crew = await prisma.zespoly_monterskie.create({
+    data: {
+      nazwa: `ITEST FNL-2PHASE-BOOKING ${suffix}`,
+    },
+  });
+  createdCrewIds.push(crew.id);
+  return crew;
 }
 
 async function createTestInstallation(leadId: string, installationType: string | null): Promise<{ id: string }> {
@@ -51,6 +68,14 @@ afterEach(async () => {
     await prisma.leady.deleteMany({ where: { id: { in: createdLeadIds } } });
   }
   createdLeadIds = [];
+  if (createdCrewIds.length > 0) {
+    // `booking.crew_id` -> `zespoly_monterskie` jest RESTRICT (patrz
+    // `create-booking-concurrency.itest.ts`), więc sprzątamy rezerwacje testowe PRZED
+    // usunięciem ekipy — nawet jeśli konkretny test już usunął swój booking jawnie.
+    await prisma.booking.deleteMany({ where: { crewId: { in: createdCrewIds } } });
+    await prisma.zespoly_monterskie.deleteMany({ where: { id: { in: createdCrewIds } } });
+  }
+  createdCrewIds = [];
 });
 
 describe('installation_phases — ograniczenia bazy (AC1, kształt DB)', () => {
@@ -117,11 +142,13 @@ describe('installation_phases — booking_id, unikalność częściowa (installa
 
     const basket = await prisma.visitDurationBasket.findFirst({ where: { code: 'INSTALL_PHASE_1' } });
     if (!basket) throw new Error('Fixture błędna: koszyk INSTALL_PHASE_1 nie jest zaseedowany.');
+    const crew = await createTestCrew();
 
     const booking = await prisma.booking.create({
       data: {
         leadId: leadA.id,
         resourceKind: 'CREW',
+        crewId: crew.id,
         visitBasketId: basket.id,
         scheduledStart: new Date('2026-11-01T08:00:00Z'),
         scheduledEnd: new Date('2026-11-01T16:00:00Z'),
