@@ -42,6 +42,13 @@ export type CreateBookingParams = {
   bookedBy: "CLIENT" | "DISPATCHER"
   alternativesRange?: { from: Date; to: Date }
   now?: Date
+  // FNL-2PHASE-BOOKING kryt. 6 (AC7, WO FNL-2PHASE-BOOKING-MECHANICS): PREFERENCJA,
+  // nie warunek. Po `orderCandidates` (reguła D-1, NIETKNIĘTA), kandydat o
+  // `resource_id === preferredResourceId` jest przesuwany na start listy WYNIKOWEJ,
+  // jeśli w niej istnieje (czyli jest wolny w żądanym terminie) — kolejność D-1
+  // pozostałych kandydatów zostaje zachowana. Gdy preferowany kandydat NIE występuje
+  // w wyniku D-1 (niedostępny), lista wraca niezmieniona — rezerwacja i tak się udaje.
+  preferredResourceId?: string
 }
 
 export type CreateBookingErrorCode =
@@ -290,7 +297,20 @@ export async function createBooking(params: CreateBookingParams): Promise<Create
     )
   }
 
-  const orderedCandidates = await orderCandidates(resourceKind, candidates, params.startAt)
+  let orderedCandidates = await orderCandidates(resourceKind, candidates, params.startAt)
+
+  // AC7/kryt. 6: preselekcja, nie filtr. Jeśli kandydat preferowany jest w wyniku D-1
+  // (czyli wolny w tym terminie), przesuwamy go na start listy bez zmiany względnej
+  // kolejności pozostałych. Jeśli nie jest w wyniku (niedostępny/poza pulą), lista
+  // wraca niezmieniona — pętla poniżej i tak spróbuje innych kandydatów.
+  if (params.preferredResourceId) {
+    const preferredIndex = orderedCandidates.findIndex((c) => c.resource_id === params.preferredResourceId)
+    if (preferredIndex > 0) {
+      const [preferred] = orderedCandidates.splice(preferredIndex, 1)
+      orderedCandidates = [preferred, ...orderedCandidates]
+    }
+  }
+
   const scheduledEnd = new Date(startAtMs + basket.durationMinutes * MS_PER_MINUTE)
 
   for (const candidate of orderedCandidates) {
