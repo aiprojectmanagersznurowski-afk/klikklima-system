@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { AssignAuditor } from "./assign-auditor";
 import { EditLeadModal } from "./edit-lead-modal";
 import { DeleteLeadButton } from "./delete-lead-button";
+import { CreateBookingDialog } from "./create-booking-dialog";
 import { getAuditors } from "../actions";
 import { getLeadDetail } from "./actions";
 import { getCurrentActorRole } from "../../../../utils/supabase/server";
@@ -17,6 +18,7 @@ import { formatDate } from "@/lib/format-date";
 import { formatLeadStatus } from "@/lib/format-status";
 import { EMPTY_VALUE } from "@/lib/empty-value";
 import type { LeadStatus } from "@repo/database";
+import { prisma } from "@repo/database";
 
 export const dynamic = "force-dynamic";
 
@@ -92,6 +94,19 @@ export default async function LeadDetailsPage({
     imie_i_nazwisko: auditor.imie_i_nazwisko,
     avatarUrl: auditor.zdjecie_url ? signedUrlsMap[auditor.zdjecie_url as string] : null,
   }));
+
+  // FLD-QUOTE-BASKET-SELECT (WO, "Kształt zmiany"): KOMPLET koszyków (aktywne i wycofane) —
+  // filtrowanie po puli/aktywności jest zadaniem `selectableBaskets` (lib/schedule/basket-select),
+  // nie tego Server Component. Wzorzec identyczny z `settings/calendar/page.tsx`. Zapytanie
+  // opakowane w try/catch tak jak `actorRole` powyżej — to dodatek do karty leada (dialog
+  // rezerwacji), nie krytyczna ścieżka odczytu; awaria tego zapytania nie ma wywalać całej
+  // strony szczegółu leada.
+  let baskets: Awaited<ReturnType<typeof prisma.visitDurationBasket.findMany>> = [];
+  try {
+    baskets = await prisma.visitDurationBasket.findMany();
+  } catch {
+    baskets = [];
+  }
 
   return (
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-300">
@@ -253,6 +268,12 @@ export default async function LeadDetailsPage({
             leadId={lead.id}
             currentAuditorId={lead.audytor_id}
             auditors={auditorsWithAvatars}
+            actorRole={actorRole}
+          />
+          <CreateBookingDialog
+            baskets={baskets}
+            leadId={lead.id}
+            subject={{ kind: "LEAD", leadId: lead.id }}
             actorRole={actorRole}
           />
         </div>

@@ -16,6 +16,7 @@ import {
   type UpdateVisitDurationBasketInput,
   type UpdateTravelBufferInput,
 } from "../../../../lib/schedule/scheduling-config-schema"
+import { POOL_LABELS, type ScheduleBasket } from "../../../../lib/schedule/basket-select"
 import { updateVisitDurationBasketAction, updateTravelBufferAction } from "./actions"
 
 /**
@@ -28,25 +29,14 @@ import { updateVisitDurationBasketAction, updateTravelBufferAction } from "./act
  * ani przełącznik nie jest trzymane przez `useState` na pojedynczym polu.
  */
 
-export type CalendarSettingsBasket = {
-  id: string
-  code: string
-  labelPl: string
-  pool: string
-  durationMinutes: number
-  isActive: boolean
-  sortOrder: number
-}
+// Wyniesione do `apps/b2b-web/src/lib/schedule/basket-select.ts` (WO FLD-QUOTE-BASKET-SELECT,
+// "Kształt zmiany") — re-eksport dla zgodności z dotychczasowymi importami tego modułu.
+export type CalendarSettingsBasket = ScheduleBasket
 
 export type CalendarSettingsClientProps = {
   baskets: CalendarSettingsBasket[]
   travelBufferMinutes: number | null
   actorRole: Role
-}
-
-const POOL_LABELS: Record<string, string> = {
-  AUDITOR: "Audytor",
-  CREW: "Ekipa",
 }
 
 /**
