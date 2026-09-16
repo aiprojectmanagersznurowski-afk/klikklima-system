@@ -8,6 +8,8 @@
 - [FLD-AVAIL-SELF / FLD-AVAIL-RESTORE zamknięte](project_fld_avail_self_restore_verified_awaiting_window.md) — 2026-09-15 DONE, 13/13 AC; AC1 dowiedziony na żywej bazie (6 kolumn, CHECK jednego właściciela), dwa AC pod tagiem rodzeństwa.
 
 - [FNL-2PHASE nośniki postawione, status TODO](project_fnl_2phase_booking_mechanics_carriers.md) — 2026-09-16; R7 wariant (b), RBAC świadomie odłożone, brak `@unique` na bookingId jest celowy.
+- [FNL-2PHASE-BOOKING zamknięte](project_fnl_2phase_booking_done.md) — 2026-09-16 DONE (3c1e306); koszyki dowiedzione danymi z produkcji, `do:openPhaseTwoBooking` bez wykonawcy, FNL-2PHASE zostaje 3/5.
+- [Dług-sierota wymaga nowego ID](feedback_orphaned_debt_needs_new_id.md) — punkt poza kryteriami: sprawdź STATUS właściciela; właściciel DONE = nikt tego nie przeczyta, zakładaj ID.
 - [Kalendarz: model promieniowy zamiast regionów](project_calendar_foundation_radius_model.md) — 2026-09-10; `regions` nigdy nie powstanie, audytorzy MAJĄ promień, timestamp ≠ kolejność uruchomienia, migracje LIVE.
 - [FLD-AVAIL-WEEKLY-RULES: AC szersze niż WO](project_fld_avail_weekly_rules_ac_wider_than_wo.md) — 2026-09-10 DOMKNIĘTE na DONE (4075fdd); AC7/AC8 wyniesione do CAL-SLOT-ENGINE i CAL-POOL-AGGREGATE.
 - [FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT zamknięte](project_booking_one_active_per_subject.md) — 2026-09-14 DONE (dd69d56); podział kryteriów wg PRZEDMIOTU: kod -> atrapa, indeks -> żywy Postgres.
