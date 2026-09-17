@@ -177,5 +177,34 @@ export function readDocContent(entry: DocEntry): string {
   const category = DOC_CATEGORIES.find((candidate) => candidate.id === entry.categoryId)
   const dirPath = category ? categoryDirPath(category) : resolveDocsRoot()
   const filePath = path.join(dirPath, entry.fileName)
-  return readFileSync(filePath, "utf-8")
+  let content = readFileSync(filePath, "utf-8")
+
+  // Bezpieczne konwertowanie lokalnych obrazów względnych (np. ![Diagram](diagram.png)) na base64 data URI
+  try {
+    content = content.replace(/!\[(.*?)\]\(((?!https?:\/\/|data:)[^)]+)\)/g, (match, alt, imgRelPath) => {
+      try {
+        const resolvedPath = path.resolve(dirPath, imgRelPath)
+        const ext = path.extname(imgRelPath).toLowerCase()
+        const mimeMap: Record<string, string> = {
+          ".png": "image/png",
+          ".jpg": "image/jpeg",
+          ".jpeg": "image/jpeg",
+          ".svg": "image/svg+xml",
+          ".webp": "image/webp",
+        }
+        const mime = mimeMap[ext]
+        if (mime) {
+          const base64 = readFileSync(resolvedPath).toString("base64")
+          return `![${alt}](data:${mime};base64,${base64})`
+        }
+      } catch {
+        // Ignoruj błąd odczytu obrazu (np. w mockowanych testach vitest), zachowaj oryginalny znacznik
+      }
+      return match
+    })
+  } catch {
+    // Ignoruj błędy zamiany
+  }
+
+  return content
 }
