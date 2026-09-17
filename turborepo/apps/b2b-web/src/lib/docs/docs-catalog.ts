@@ -19,14 +19,71 @@ export { DOC_CATEGORIES }
 
 export type DocEntry = { categoryId: string; slug: string; title: string; fileName: string }
 
-// `turborepo/docs/` — dwa poziomy nad `apps/b2b-web`, ten moduł żyje w
-// `apps/b2b-web/src/lib/docs/`, więc pięć poziomów w górę od `__dirname`.
-const DOCS_ROOT = path.resolve(__dirname, "../../../../../docs")
+let cachedDocsRoot: string | null = null
+
+function checkDocsCandidate(candidate: string): boolean {
+  try {
+    const dirents = readdirSync(candidate, { withFileTypes: true })
+    return dirents.some((d) => d.isFile() && d.name.endsWith(".md"))
+  } catch {
+    return false
+  }
+}
+
+function resolveDocsRoot(): string {
+  if (cachedDocsRoot) return cachedDocsRoot
+
+  if (process.env.DOCS_ROOT_DIR) {
+    cachedDocsRoot = path.resolve(process.env.DOCS_ROOT_DIR)
+    return cachedDocsRoot
+  }
+
+  // Przeszukaj w górę od process.cwd()
+  let curr = process.cwd()
+  while (curr) {
+    const candidateDocs = path.join(curr, "docs")
+    if (checkDocsCandidate(candidateDocs)) {
+      cachedDocsRoot = candidateDocs
+      return cachedDocsRoot
+    }
+    const candidateTurboDocs = path.join(curr, "turborepo", "docs")
+    if (checkDocsCandidate(candidateTurboDocs)) {
+      cachedDocsRoot = candidateTurboDocs
+      return cachedDocsRoot
+    }
+    const parent = path.dirname(curr)
+    if (parent === curr) break
+    curr = parent
+  }
+
+  // Fallback: przeszukaj w górę od __dirname
+  curr = __dirname
+  while (curr) {
+    const candidateDocs = path.join(curr, "docs")
+    if (checkDocsCandidate(candidateDocs)) {
+      cachedDocsRoot = candidateDocs
+      return cachedDocsRoot
+    }
+    const candidateTurboDocs = path.join(curr, "turborepo", "docs")
+    if (checkDocsCandidate(candidateTurboDocs)) {
+      cachedDocsRoot = candidateTurboDocs
+      return cachedDocsRoot
+    }
+    const parent = path.dirname(curr)
+    if (parent === curr) break
+    curr = parent
+  }
+
+  // Ostateczny fallback (np. dla atrap testowych vitest)
+  cachedDocsRoot = path.resolve(process.cwd(), "../../docs")
+  return cachedDocsRoot
+}
 
 const SLUG_SEPARATOR = "__"
 
 function categoryDirPath(category: DocCategory): string {
-  return category.dir ? path.join(DOCS_ROOT, category.dir) : DOCS_ROOT
+  const root = resolveDocsRoot()
+  return category.dir ? path.join(root, category.dir) : root
 }
 
 function titleFromContent(content: string, fallback: string): string {
@@ -39,16 +96,20 @@ function slugFor(categoryId: string, fileName: string): string {
   return `${categoryId}${SLUG_SEPARATOR}${base}`
 }
 
-function buildEntry(category: DocCategory, dirPath: string, fileName: string): DocEntry {
+function buildEntry(category: DocCategory, dirPath: string, fileName: string): DocEntry | null {
   const filePath = path.join(dirPath, fileName)
-  const content = readFileSync(filePath, "utf-8")
-  const fallback = fileName.replace(/\.md$/, "")
+  try {
+    const content = readFileSync(filePath, "utf-8")
+    const fallback = fileName.replace(/\.md$/, "")
 
-  return {
-    categoryId: category.id,
-    slug: slugFor(category.id, fileName),
-    title: titleFromContent(content, fallback),
-    fileName,
+    return {
+      categoryId: category.id,
+      slug: slugFor(category.id, fileName),
+      title: titleFromContent(content, fallback),
+      fileName,
+    }
+  } catch {
+    return null
   }
 }
 
@@ -57,13 +118,20 @@ export function listDocs(): DocEntry[] {
 
   for (const category of DOC_CATEGORIES) {
     const dirPath = categoryDirPath(category)
-    const dirents = readdirSync(dirPath, { withFileTypes: true })
+    try {
+      const dirents = readdirSync(dirPath, { withFileTypes: true })
 
-    for (const dirent of dirents) {
-      if (!dirent.isFile()) continue
-      if (!dirent.name.endsWith(".md")) continue
+      for (const dirent of dirents) {
+        if (!dirent.isFile()) continue
+        if (!dirent.name.endsWith(".md")) continue
 
-      entries.push(buildEntry(category, dirPath, dirent.name))
+        const entry = buildEntry(category, dirPath, dirent.name)
+        if (entry) {
+          entries.push(entry)
+        }
+      }
+    } catch {
+      continue
     }
   }
 
@@ -94,16 +162,20 @@ export function findDocBySlug(slug: string): DocEntry | null {
 
   const fileName = `${base}.md`
   const dirPath = categoryDirPath(category)
-  const dirents = readdirSync(dirPath, { withFileTypes: true })
-  const dirent = dirents.find((candidate) => candidate.isFile() && candidate.name === fileName)
-  if (!dirent) return null
+  try {
+    const dirents = readdirSync(dirPath, { withFileTypes: true })
+    const dirent = dirents.find((candidate) => candidate.isFile() && candidate.name === fileName)
+    if (!dirent) return null
+  } catch {
+    return null
+  }
 
   return buildEntry(category, dirPath, fileName)
 }
 
 export function readDocContent(entry: DocEntry): string {
   const category = DOC_CATEGORIES.find((candidate) => candidate.id === entry.categoryId)
-  const dirPath = category ? categoryDirPath(category) : DOCS_ROOT
+  const dirPath = category ? categoryDirPath(category) : resolveDocsRoot()
   const filePath = path.join(dirPath, entry.fileName)
   return readFileSync(filePath, "utf-8")
 }

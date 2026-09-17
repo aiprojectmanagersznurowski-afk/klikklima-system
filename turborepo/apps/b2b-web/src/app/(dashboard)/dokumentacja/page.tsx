@@ -3,6 +3,8 @@ import { getCurrentActorRole } from "../../../utils/supabase/server"
 import { listDocs } from "../../../lib/docs/docs-catalog"
 import { DocsListClient } from "./docs-list-client"
 
+export const dynamic = "force-dynamic"
+
 /**
  * Przeglądarka dokumentacji projektu w panelu B2B (decyzje Michała, 2026-09-17), widoczna
  * i dostępna WYŁĄCZNIE dla roli `admin`. "Dokumentacja" nie jest zasobem w
@@ -23,7 +25,12 @@ export default async function DocsListScreen() {
     return
   }
 
-  const entries = listDocs()
+  let entries: ReturnType<typeof listDocs> = []
+  try {
+    entries = listDocs()
+  } catch (error) {
+    console.error("Failed to load docs list:", error)
+  }
 
   return <DocsListClient entries={entries} />
 }

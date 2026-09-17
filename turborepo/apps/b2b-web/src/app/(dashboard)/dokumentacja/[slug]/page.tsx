@@ -3,6 +3,8 @@ import { getCurrentActorRole } from "../../../../utils/supabase/server"
 import { findDocBySlug, readDocContent } from "../../../../lib/docs/docs-catalog"
 import { DocMarkdown } from "../doc-markdown"
 
+export const dynamic = "force-dynamic"
+
 /**
  * Widok jednego dokumentu (decyzje Michała, 2026-09-17), widoczny i dostępny WYŁĄCZNIE dla
  * roli `admin`. Bramka PRZED `await params` i przed `findDocBySlug`/`readDocContent` —
@@ -29,7 +31,14 @@ export default async function DocDetailScreen({ params }: { params: Promise<{ sl
     return
   }
 
-  const content = readDocContent(entry)
+  let content = ""
+  try {
+    content = readDocContent(entry)
+  } catch (error) {
+    console.error(`Failed to read doc content for ${slug}:`, error)
+    notFound()
+    return
+  }
 
   return <DocMarkdown content={content} />
 }
