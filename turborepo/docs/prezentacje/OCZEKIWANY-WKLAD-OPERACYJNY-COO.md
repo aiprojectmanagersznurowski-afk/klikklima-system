@@ -4,8 +4,9 @@
 **Rola:** Dyrektor Operacyjny (COO / Managing Partner ds. Operacji i Rozwoju Rynku)  
 **Dokumenty powiązane:**  
 - [System KPI i Bramki Decyzyjne](file:///Users/michalsznurowski/Developemnt/klikklima-system/klikklima-system/turborepo/docs/prezentacje/SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md) (Główne źródło prawdy dla metryk)  
+- [Prognoza Finansowa i Budżet GTM](file:///Users/michalsznurowski/Developemnt/klikklima-system/klikklima-system/turborepo/docs/prezentacje/PROGNOZA-FINANSOWA-I-KOSZTY-GTM.md) (Model finansowy do 100 montaży/mc)  
 - [Raport Wartości IP i Technologii](file:///Users/michalsznurowski/Developemnt/klikklima-system/klikklima-system/turborepo/docs/prezentacje/RAPORT-WARTOSCI-IP-I-TECHNOLOGII.md)  
-- [Koszyki Usług i Modele Rozliczeniowe](file:///Users/michalsznurowski/Developemnt/klikklima-system/klikklima-system/turborepo/docs/KOSZYKI-USLUG-I-MODELE-ROZLICZENIOWE.md)  
+- [Koszyki Usług i Modele Rozliczeniowe](file:///Users/michalsznurowski/Developemnt/klikklima-system/klikklima-system/turborepo/docs/prezentacje/KOSZYKI-USLUG-I-MODELE-ROZLICZENIOWE.md)  
 - [Roadmapa GTM i Prognoza Developmentu](file:///Users/michalsznurowski/Developemnt/klikklima-system/klikklima-system/turborepo/docs/prezentacje/ROADMAP-GTM-I-PROGNOZA-DEVELOPMENTU.md)  
 **Cel dokumentu:** Precyzyjne zdefiniowanie wkładu pracy, konkretnych zadań, odpowiedzialności i mierzalnych wyników (KPI), których spółka wymaga od wspólnika operacyjnego, aby zrównoważyć wniesiony przez Michała kapitał technologiczny (własność intelektualna i platforma o rynkowej wycenie 260 000 – 360 000 PLN).
 
@@ -20,24 +21,31 @@ Zgodnie z ustaleniami założycielskimi model biznesowy KlikKlima opiera się na
 2. **Finansowanie spółki z bieżących wpływów (Samofinansujący się Cash Flow):**
    * Spółka nie może wymagać ciągłego dopłacania kapitału na zakup urządzeń.
    * **Zadaniem COO jest zaprojektowanie i egzekucja takiego modelu zaliczkowego i marżowego**, w którym wpłata zaliczki od klienta natychmiastowo finansuje zakup klimatyzatora w hurtowni, a pozostała część marży pokrywa montaż i zysk spółki.
+3. **Przekazanie dotychczasowej bazy klientów i budowa strumienia MRR:**
+   * Piotr przekazuje do KlikKlima całą swoją dotychczasową bazę klientów instalacyjnych.
+   * System pozyskuje od nich zgody RODO i marketingowe, a KlikKlima przejmuje ich cykliczny roczny serwis gwarancyjny i pogwarancyjny, tworząc stabilną bazę powtarzalnych przychodów (MRR).
+4. **Gwarancja zaangażowania czasowego na minimum pierwsze 2 lata:**
+   * Budowa skalowalnej sieci i operacji wymaga stałego nadzoru. Piotr zobowiązuje się wygospodarować priorytetową przestrzeń w swoim grafiku (min. 140–160 h/miesięcznie od 01.12.2026 r.) na realizację obowiązków COO w KlikKlima przez minimum pierwsze 2 lata istnienia spółki.
 
 ---
 
 ## 2. Kluczowe Obszary Odpowiedzialności i Oczekiwane Wyniki (KPI)
 
-```
-                                  MAPA ODPOWIEDZIALNOŚCI COO
-   ┌────────────────────────────────────────────────────────────────────────────────────────┐
-   │ OBSZAR 1: MODEL FINANSOWO-MARŻOWY (Cash-flow positive, zaliczki, prowizje ekip)        │
-   ├────────────────────────────────────────────────────────────────────────────────────────┤
-   │ OBSZAR 2: ŁAŃCUCH DOSTAW (Dystrybutorzy HVAC, rabaty B2B, dostawy Just-In-Time)        │
-   ├────────────────────────────────────────────────────────────────────────────────────────┤
-   │ OBSZAR 3: SIEĆ WYKONAWCZA (Rekrutacja, weryfikacja F-gaz/SEP, kontraktowanie ekip)     │
-   ├────────────────────────────────────────────────────────────────────────────────────────┤
-   │ OBSZAR 4: CODZIENNA DYSPOZYTORNIA (Prowadzenie zleceń w CRM, SLA, eskalacje, odbiory)  │
-   ├────────────────────────────────────────────────────────────────────────────────────────┤
-   │ OBSZAR 5: FORMALNOŚCI, UDT I GWARANCJE (Certyfikat UDT, CRO, polisy OC, reklamacje)   │
-   └────────────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    COO["<b>DYREKTOR OPERACYJNY (COO)</b><br/><i>Piotr — Zarządzanie Operacjami i Wzrostem</i>"]
+
+    O1["<b>OBSZAR 1: MODEL FINANSOWO-MARŻOWY</b><br/>• Cash-flow positive i model zaliczkowy 40–50%<br/>• Sztywny taryfikator prowizji ekip z koszyków<br/>• Gwarantowana marża brutto spółki 25–35%"]
+    O2["<b>OBSZAR 2: ŁAŃCUCH DOSTAW HVAC</b><br/>• Negocjacje rabatów dystrybutorskich min. 35–45%<br/>• Logistyka Just-In-Time z hurtowni na budowę<br/>• Zerowy kapitał zamrożony w magazynie"]
+    O3["<b>OBSZAR 3: SIEĆ WYKONAWCZA I MONTERZY</b><br/>• Rekrutacja i selekcja ekip monterskich<br/>• Weryfikacja uprawnień F-gaz, SEP i polis OC<br/>• Egzekucja standardu 4 zdjęć w Field App"]
+    O4["<b>OBSZAR 4: CODZIENNA DYSPOZYTORNIA</b><br/>• Prowadzenie zleceń w CRM i kontrola statusów<br/>• Dotrzymywanie progów SLA i dyspozytornia 360<br/>• Zarządzanie eskalacjami i odbiorami prac"]
+    O5["<b>OBSZAR 5: FORMALNOŚCI, UDT I GWARANCJE</b><br/>• Uzyskanie i utrzymanie Certyfikatu UDT<br/>• Wpisy do bazy CRO i procedury F-gaz<br/>• Obsługa rękojmi i protokołów gwarancyjnych"]
+
+    COO --> O1
+    COO --> O2
+    COO --> O3
+    COO --> O4
+    COO --> O5
 ```
 
 ---

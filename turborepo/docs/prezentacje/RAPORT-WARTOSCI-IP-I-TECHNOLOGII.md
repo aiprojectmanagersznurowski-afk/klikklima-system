@@ -22,19 +22,18 @@ Wkład Michała nie polegał na tradycyjnym programowaniu pojedynczych widoków 
 
 ## 2. Architektura Majątku Spółki: 5 Warstw Chronionego IP i Technologii
 
-```
-                                  EKOSYSTEM KLIKKLIMA (PROPRIETARY IP)
-   ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-   │ WARSTWA 5: APLIKACJE FRONT-ENDOWE B2C & B2B (Konfigurator, Triage, CRM, Kalendarze, Kartoteki)   │
-   ├──────────────────────────────────────────────────────────────────────────────────────────────────┤
-   │ WARSTWA 4: ARCHITEKTURA DANYCH & BEZPIECZEŃSTWO (schema.prisma, 28 migracji SQL, RLS, RODO)     │
-   ├──────────────────────────────────────────────────────────────────────────────────────────────────┤
-   │ WARSTWA 3: AUTORSKA FABRYKA AGENTOWA CDAL (kk-codegen, kk-selftest, strażnicy uprawnień)        │
-   ├──────────────────────────────────────────────────────────────────────────────────────────────────┤
-   │ WARSTWA 2: CYFROWE DNA BIZNESOWE (Maszyna stanów lejka, SLA, RBAC, Katalog powiadomień)         │
-   ├──────────────────────────────────────────────────────────────────────────────────────────────────┤
-   │ WARSTWA 1: WŁASNE SILNIKI ALGORYTMICZNE (Pula terminów, kalendarz, umowy cyfrowe, faktury)       │
-   └──────────────────────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart BT
+    subgraph IP["EKOSYSTEM KLIKKLIMA (PROPRIETARY IP) — ARCHITEKTURA 5 WARSTW"]
+        direction BT
+        L1["<b>WARSTWA 1: WŁASNE SILNIKI ALGORYTMICZNE</b><br/>• Pula terminów i silnik slotów (@klikklima/scheduling)<br/>• Obsługa montażu 2-fazowego deweloperskiego<br/>• Silnik umów i protokołów cyfrowych (@klikklima/contracts)"]
+        L2["<b>WARSTWA 2: CYFROWE DNA BIZNESOWE</b><br/>• Deterministyczna maszyna stanów lejka (Funnel State Machine)<br/>• Sztywne reguły SLA i matryca uprawnień RBAC<br/>• Centralny katalog powiadomień SMS / E-mail"]
+        L3["<b>WARSTWA 3: AUTORSKA FABRYKA AGENTOWA CDAL</b><br/>• Generator kodu i sprawdzania spójności (kk-codegen)<br/>• Samotestujące bramki jakości i strażnicy (kk-selftest)<br/>• 5x szybszy i 10x tańszy development z AI"]
+        L4["<b>WARSTWA 4: ARCHITEKTURA DANYCH I BEZPIECZEŃSTWO</b><br/>• Relacyjna baza PostgreSQL + schemat Prisma (30+ tabel)<br/>• Row Level Security (RLS) chroniący bazę klientów przed ekipami<br/>• Niezaprzeczalny rejestr zdarzeń (AuditLog) i pełne RODO"]
+        L5["<b>WARSTWA 5: APLIKACJE FRONT-ENDOWE B2C I B2B</b><br/>• Portal Klienta B2C (Konfigurator, Triage, rezerwacja online)<br/>• CRM B2B Dyspozytora (Widok Leada 360, Kanban, grafiki)<br/>• Field App Montera (mobilna checklista z 4 zdjęciami i podpisem)"]
+
+        L1 --> L2 --> L3 --> L4 --> L5
+    end
 ```
 
 ---

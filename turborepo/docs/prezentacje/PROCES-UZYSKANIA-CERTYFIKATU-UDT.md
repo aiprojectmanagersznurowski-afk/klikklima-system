@@ -21,25 +21,16 @@ Posiadanie certyfikatu dla przedsiębiorców wydanego przez Urząd Dozoru Techni
 ## 2. Strategia: Wariant Ekonomiczny (*Smart Asset-Light*)
 
 Zamiast zamrażać na starcie 10 000 – 15 000 zł w zakup własnych narzędzi oraz zatrudniać instalatora na pełny etat (generując koszty stałe przed jakimkolwiek przychodem ze sprzedaży), KlikKlima wdraża **sprawdzony wariant ekonomiczny dopuszczony przez UDT**:
+```mermaid
+flowchart TD
+    KK["<b>KLIKKLIMA SP. Z O.O.</b><br/><i>Wnioskodawca w portalu eUDT</i>"]
 
-```
-                              STRATEGIA ASSET-LIGHT KLIKKLIMA
-   ┌────────────────────────────────────────────────────────────────────────────────────────┐
-   │                                  KLIKKLIMA SP. Z O.O.                                  │
-   │                               (Wnioskodawca w portalu eUDT)                            │
-   └───────────────────────────┬────────────────────────────────┬───────────────────────────┘
-                               │                                │
-                Tytuł prawny do aparatury        Formalny personel spółki
-                               │                                │
-                               ▼                                ▼
-   ┌────────────────────────────────────────┐       ┌───────────────────────────────────────┐
-   │     UMOWA NAJMU SPRZĘTU TECHNICZNEGO   │       │       UMOWA ZLECENIE / PERSONEL       │
-   │    (Podwykonawca / Ekipa Piotra)       │       │    (Certyfikowany Instalator F-gaz)   │
-   ├────────────────────────────────────────┤       ├───────────────────────────────────────┤
-   │ • Sprzęt fizycznie sprawdzony w UDT    │       │ • Certyfikat personalny Kat. I        │
-   │ • Aktualne świadectwa wzorcowania      │       │ • Oświadczenie o dyspozycyjności      │
-   │ • Koszt: symboliczny czynsz 100-300 zł │       │ • Koszt: zadaniowy / ryczałt gotowości│
-   └────────────────────────────────────────┘       └───────────────────────────────────────┘
+    NAJEM["<b>UMOWA NAJMU SPRZĘTU TECHNICZNEGO</b><br/><i>(Podwykonawca / Ekipa Piotra)</i><br/>• Sprzęt fizycznie sprawdzony w UDT<br/>• Aktualne świadectwa wzorcowania wagi i detektora<br/>• Koszt: symboliczny czynsz 100–300 zł/mc"]
+
+    PERSONEL["<b>UMOWA ZLECENIE / PERSONEL</b><br/><i>(Certyfikowany Instalator F-gaz)</i><br/>• Certyfikat personalny Kat. I (F-gaz)<br/>• Oświadczenie o dyspozycyjności technicznej<br/>• Koszt: zadaniowy / ryczałt gotowości"]
+
+    KK -->|"Tytuł prawny do aparatury"| NAJEM
+    KK -->|"Formalny personel spółki"| PERSONEL
 ```
 
 ---
@@ -167,16 +158,15 @@ Dzięki zastosowaniu modelu najmu aparatury spółka **oszczędza na starcie ok.
 
 ## 5. Harmonogram Odpowiedzialności (Timeline Listopad 2026 – Luty 2027)
 
-```
-   LISTOPAD 2026                       GRUDZIEŃ 2026                 STYCZEŃ 2027              LUTY 2027               MARZEC 2027
-   ┌──────────────────────────────────┬─────────────────────────────┬─────────────────────────┬───────────────────────┬──────────────┐
-   │ 01.11 - 15.11: Formalności       │ 01.12 - 20.12: Kontrola     │ 05.01 - 15.01: Rejestr  │ 01.02 - 28.02.2027:   │ 01.03.2027:  │
-   │ • Umowa najmu sprzętu (Piotr)    │ • Przygotowanie sprzętu     │ • Wpis certyfikatu      │ Onboarding i szkolenia│ PUBLICZNY    │
-   │ • Umowa z instalatorem (Piotr)   │ • Kontrola inspektora UDT   │   do bazy online        │ ekip z Field App      │ GO-LIVE      │
-   │ • Oświadczenie zarządu (Michał)  │ • Podpisanie protokołu      │ • Rejestracja w bazach  │ i standardu 4 zdjęć   │ Z PEŁNYM     │
-   │ 16.11 - 20.11: Złożenie wniosku  │   z wynikiem pozytywnym     │   hurtowni HVAC         │ • Weryfikacja umów    │ CERTYFIKATEM │
-   │ • Opłata 3 885 zł + wniosek eUDT │                             │ • Spełnienie GATE-3.1   │   i polis OC ekip     │ UDT!         │
-   └──────────────────────────────────┴─────────────────────────────┴─────────────────────────┴───────────────────────┴──────────────┘
+```mermaid
+flowchart LR
+    M1["<b>LISTOPAD 2026</b><br/><b>Formalności i wniosek:</b><br/>• Umowa najmu sprzętu (Piotr)<br/>• Umowa z instalatorem (Piotr)<br/>• Oświadczenie zarządu (Michał)<br/>• Opłata 3 885 zł + wniosek eUDT"]
+    M2["<b>GRUDZIEŃ 2026</b><br/><b>Kontrola inspektora:</b><br/>• Przygotowanie sprzętu i dokumentów<br/>• Wizyta inspektora UDT<br/>• Podpisanie protokołu z wynikiem pozytywnym"]
+    M3["<b>STYCZEŃ 2027</b><br/><b>Rejestr i certyfikat:</b><br/>• Wpis certyfikatu do bazy UDT<br/>• Rejestracja kont w hurtowniach HVAC<br/>• Zaliczenie bramki GATE-3.1"]
+    M4["<b>LUTY 2027</b><br/><b>Onboarding ekip:</b><br/>• Szkolenia z Field App<br/>• Egzekucja standardu 4 zdjęć<br/>• Weryfikacja certyfikatów F-gaz i polis OC"]
+    M5["<b>MARZEC 2027</b><br/><b>PUBLICZNY GO-LIVE:</b><br/>• Pełny Certyfikat UDT<br/>• Start kampanii reklamowych<br/>• Realizacja zleceń w skali"]
+
+    M1 --> M2 --> M3 --> M4 --> M5
 ```
 
 ---

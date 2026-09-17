@@ -59,27 +59,23 @@ W pierwotnej koncepcji rozważano koszyk *„Montaż duży = 2 dni”*. Został 
 
 Koszyk w systemie KlikKlima jest zwornikiem łączącym cztery strony transakcji gospodarczej:
 
-```
-                                ANATOMIA KOSZYKA ROZLICZENIOWEGO
-   ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-   │                                   KOSZYK TECHNOLOGICZNY                                 │
-   │                        (np. INSTALL_STANDARD: 480 min / Pula CREW)                      │
-   └────────────────────────────────────────────┬────────────────────────────────────────────┘
-                                                │
-             ┌──────────────────────────────────┼──────────────────────────────────┐
-             ▼                                  ▼                                  ▼
-   1. DLA KLIENTA (B2C)              2. DLA HURTOWNI (COGS)            3. DLA PODWYKONAWCY (B2B)
-   • Transparentna cena ryczałtowa   • Zakup klimatyzatorów z rabatem  • Sztywny taryfikator za koszyk
-   • Zaliczka online 40–50% (PayU)     B2B min. 35–45% katalogu        • Płatność TYLKO za protokół
-   • Płatność reszty po odbiorze     • W 100% finansowany z zaliczki     i 4 zdjęcia w Field App
-             │                                  │                                  │
-             └──────────────────────────────────┼──────────────────────────────────┘
-                                                │
-                                                ▼
-                                  4. DLA SPÓŁKI KLIKKLIMA (ZYSK)
-                                  • Zablokowana marża brutto: 25–35%
-                                  • Ujemny cykl konwersji gotówki (zero magazynu)
-                                  • Brak ryzyka dopłat za „dodatkowe godziny”
+```mermaid
+flowchart TD
+    KOSZYK["<b>KOSZYK TECHNOLOGICZNY</b><br/><i>np. INSTALL_STANDARD: 480 min / Pula CREW</i>"]
+
+    B2C["<b>1. DLA KLIENTA (B2C)</b><br/>• Transparentna cena ryczałtowa<br/>• Zaliczka online 40–50% (PayU)<br/>• Płatność reszty po odbiorze"]
+    COGS["<b>2. DLA HURTOWNI (COGS)</b><br/>• Zakup klimatyzatorów z rabatem B2B min. 35–45%<br/>• W 100% finansowany z zaliczki (JIT)"]
+    B2B["<b>3. DLA PODWYKONAWCY (B2B)</b><br/>• Sztywny taryfikator za koszyk<br/>• Płatność TYLKO za protokół i 4 zdjęcia w Field App"]
+
+    ZYSK["<b>4. DLA SPÓŁKI KLIKKLIMA (ZYSK)</b><br/>• Zablokowana marża brutto: 25–35%<br/>• Ujemny cykl konwersji gotówki (zero magazynu)<br/>• Brak ryzyka dopłat za dodatkowe godziny"]
+
+    KOSZYK --> B2C
+    KOSZYK --> COGS
+    KOSZYK --> B2B
+
+    B2C --> ZYSK
+    COGS --> ZYSK
+    B2B --> ZYSK
 ```
 
 ### 1. Strona Klienta (Cennik B2C i Doświadczenie Zakupowe)

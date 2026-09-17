@@ -8,8 +8,9 @@
 - Raport Wartości IP i Technologii (`RAPORT-WARTOSCI-IP-I-TECHNOLOGII.md`)  
 - Zakres Odpowiedzialności i Wkład Operacyjny COO (`OCZEKIWANY-WKLAD-OPERACYJNY-COO.md`)  
 - System KPI i Bramki Decyzyjne (`SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md`)  
+- Prognoza Finansowa i Budżet GTM (`PROGNOZA-FINANSOWA-I-KOSZTY-GTM.md`)  
 - Przewodnik Uzyskania Certyfikatu UDT (`PROCES-UZYSKANIA-CERTYFIKATU-UDT.md`)  
-- Koszyki Usług i Modele Rozliczeniowe (`docs/KOSZYKI-USLUG-I-MODELE-ROZLICZENIOWE.md`)  
+- Koszyki Usług i Modele Rozliczeniowe (`KOSZYKI-USLUG-I-MODELE-ROZLICZENIOWE.md`)  
 - Główny Backlog Projektu (`docs/BACKLOG.md`)
 
 ---
@@ -62,15 +63,19 @@ Development technologiczny musi zostać ukończony przed startem testów bojowyc
 
 Kanały pozyskiwania ruchu (Google Ads, Meta Ads, SearchGPT / AEO) wymagają precyzyjnej hierarchii budżetowej. **Wszystkie kampanie, kreacje graficzne, frazy i grupy docelowe konfigurujemy podczas testów bojowych i przygotowania ekip (grudzień–luty), a budżety odpalamy w dniu publicznego Go-Live (marzec 2027 r.).**
 
-```
-                     STRUKTURA LEJKA POZYSKIWANIA KLIENTA KLIKKLIMA
-   ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
-   │ GORĄCY POPYT (Najwyższa intencja): Google Ads (Search) + Wizytówka Google (Mapy) ➔ 60% Budżetu   │
-   ├─────────────────────────────────────────────────────────────────────────────────────────────────┤
-   │ POPYT ŚWIADOMY / RETARGETING: Meta Ads (Facebook + Instagram – domy / deweloperka) ➔ 35% Budżetu│
-   ├─────────────────────────────────────────────────────────────────────────────────────────────────┤
-   │ INNOWACJA I WYSZUKIWARKI AI: ChatGPT Ads / AEO (Odpowiedzi w modelach LLM)       ➔ 5% Budżetu   │
-   └─────────────────────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    BUDGET["<b>STRUKTURA LEJKA POZYSKIWANIA KLIENTA KLIKKLIMA</b><br/><i>Hierarchia kanałów marketingowych (Go-Live marzec 2027)</i>"]
+
+    C1["<b>GORĄCY POPYT (Najwyższa intencja) — 60% Budżetu</b><br/>• Google Ads (Search & Performance Max)<br/>• Wizytówka Google Moja Firma (Mapy & Recenzje foto)<br/>• Cel: natychmiastowa rezerwacja w kalkulatorze Triage"]
+
+    C2["<b>POPYT ŚWIADOMY I RETARGETING — 35% Budżetu</b><br/>• Meta Ads (Facebook & Instagram)<br/>• Kampanie geolokalizacyjne na nowe osiedla deweloperskie<br/>• Promocja funkcji grzania jesień/zima + dynamiczny retargeting"]
+
+    C3["<b>INNOWACJA I WYSZUKIWARKI AI — 5% Budżetu</b><br/>• ChatGPT Ads & Answer Engine Optimization (AEO)<br/>• Optymalizacja pod wyszukiwarki LLM (Perplexity, SearchGPT)<br/>• Pozycja pierwszej rekomendowanej marki HVAC w AI"]
+
+    BUDGET --> C1
+    BUDGET --> C2
+    BUDGET --> C3
 ```
 
 ### 1. Google Ads (Search & Performance Max) — 60% Budżetu (Główny Filar Sprzedaży)
@@ -90,6 +95,21 @@ Kanały pozyskiwania ruchu (Google Ads, Meta Ads, SearchGPT / AEO) wymagają pre
 ---
 
 ## 3. Szczegółowa Roadmapa Faza po Fazie (5 Faz Wdrożenia)
+
+```mermaid
+flowchart LR
+    F1["<b>FAZA 1: FUNDAMENTY</b><br/><i>do 30.11.2026</i><br/>Spółka, UDT, 100% IT, PayU"]
+    G1{{"Gate 1<br/>30.11"}}
+    F2["<b>FAZA 2: DRY RUN</b><br/><i>01.12.26 – 31.01.27</i><br/>Testy bojowe na klientach Piotra"]
+    G2{{"Gate 2<br/>31.01"}}
+    F3["<b>FAZA 3: ONBOARDING</b><br/><i>01.02 – 28.02.2027</i><br/>Szkolenia 4–6 ekip, Field App"]
+    G3{{"Gate 3<br/>28.02"}}
+    F4["<b>FAZA 4: GO-LIVE</b><br/><i>01.03.2027</i><br/>Start publiczny i kampanie Ads"]
+    G4{{"Gate 4<br/>31.03"}}
+    F5["<b>FAZA 5: SKALOWANIE</b><br/><i>Kwiecień – Sierpień 2027+</i><br/><b>ULTIMATE GOAL: 100 montaży/mc</b>"]
+
+    F1 --> G1 --> F2 --> G2 --> F3 --> G3 --> F4 --> G4 --> F5
+```
 
 ---
 
@@ -183,6 +203,22 @@ Przejście do etapu przygotowania sieci i publicznego startu następuje **wyłą
 | **Skalowanie Sprzedaży** | 1. Zwiększanie budżetów na najlepiej konwertujące słowa kluczowe i grupy odbiorców.<br>2. Skalowanie ruchu z wyszukiwarek AI (AEO / SearchGPT). | 1. Utrzymanie płynności dostaw i montaży na poziomie **25–40 instalacji miesięcznie**.<br>2. Rygorystyczne egzekwowanie wskaźnika 100% terminowości wizyt. |
 | **PUNKT DECYZYJNY** | — | **GŁÓWNY GO/NO-GO NA DALSZĄ EKSPANSJĘ REGIONALNĄ. Po osiągnięciu progu aktywacji finansowej następuje uruchomienie wypłat dywidendy wspólników.** |
 
+#### 🎯 Ścieżka Dojścia do Celu Strategicznego (Ultimate Goal: 100 Montaży / Miesiąc)
+
+Zarząd ustala **100 montaży miesięcznie** jako nadrzędny, docelowy cel skali operacyjnej platformy KlikKlima. Dojście do tej skali opiera się na 4 filarach wykonawczych:
+
+1. **Flota Wykonawcza (Sieć Monterów):**
+   * Do obsługi 100 zleceń/mc (średnio 4–5 montaży dziennie) wymagana jest aktywna sieć **10–14 sprawdzonych, certyfikowanych ekip podwykonawczych** (średnio 7–10 montaży na ekipę miesięcznie).
+   * Standaryzacja pracy w Field App i automatyczna rezerwacja slotów eliminują wąskie gardła dyspozytorskie.
+2. **Skalowanie Budżetu Marketingowego (GTM):**
+   * Przy benchmarkowym koszcie pozyskania klienta $\text{CAC} \approx 350–450\ \text{PLN}$, obsługa 100 montaży wymaga comiesięcznego budżetu marketingowego na poziomie **35 000 – 45 000 PLN** (60% Google Ads, 35% Meta Ads, 5% AEO/AI).
+   * Finansowanie marketingu w całości z bieżących zysków generowanych przez zlecenia (samofinansujący się lejek).
+3. **Ekonomia Skali i Siła Zakupowa:**
+   * Przy wolumenie 100 jednostek/mc KlikKlima staje się kluczowym partnerem hurtowni HVAC, uzyskując maksymalne progi rabatowe (do 45–50% od cen katalogowych).
+   * Generowane przychody rzędu **~600 000 – 650 000 PLN brutto miesięcznie** przynoszą marżę brutto na poziomie **~180 000 – 205 000 PLN miesięcznie**.
+4. **Kumulacyjny Strumień Serwisów Rocznych (MRR):**
+   * Każde 100 montaży powiększa bazę klientów do corocznego serwisu. W połączeniu z bazą wniesioną przez Piotra, po 12 miesiącach spółka generuje powtarzalny przychód z przeglądów na poziomie kilkudziesięciu tysięcy złotych miesięcznie przy marży jednostkowej $\ge 50\%$.
+
 ---
 
 ## 4. Warstwa Finansowa: Kapitał Obrotowy i Polityka Gotówki
@@ -229,25 +265,26 @@ W okresie przedstartowym (**listopad 2026 r. – luty 2027 r.**) spółka musi s
 
 ## 6. Podsumowanie Zobowiązań Wzajemnych
 
-```
-   PARYTET PARTNERSKI KLIKKLIMA — SPÓŁKA LISTOPAD 2026, START BOJOWY 01.12.2026
-   ┌────────────────────────────────────────────────────────────────────────────┐
-   │ MICHAŁ (Wkład technologiczny: ~460–500 h łącznie):                         │
-   │  • Ponad 360 h pracy już zrealizowanej (kapitał IP wyceniony na >300 tys.) │
-   │  • ~163 h na domknięcie całego ekosystemu + PayU + katalog do 30.11.2026 r.│
-   │  • Rola: CTO, stabilność platformy, analityka, narzędzia dla ekip          │
-   ├────────────────────────────────────────────────────────────────────────────┤
-   │ PIOTR (Wkład operacyjny: pełny etat 140–160 h/miesiąc od 01.12.2026 r.):    │
-   │  • Listopad: rejestracja spółki, wniosek UDT, umowy podwykonawcze, cenniki │
-   │  • Grudzień–Styczeń: testy bojowe na realnych klientach, asysta kontroli UDT│
-   │  • Luty: pełny onboarding, warsztaty i zakontraktowanie sieci 4–6 ekip     │
-   │  • Marzec+: 100% odpowiedzialności za dyspozytornię, logistykę i montaże   │
-   ├────────────────────────────────────────────────────────────────────────────┤
-   │ WSPÓLNE DECYZJE I FINANSE:                                                 │
-   │  • Kapitał obrotowy zabezpieczony (listopad 2026 – luty 2027 r.)           │
-   │  • Budżet reklamowy (Google/Meta) finansowany w parytecie 50/50            │
-   │  • Brama decyzyjna weryfikująca 10 KPI przed startem publicznym            │
-   └────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph PARYTET["PARYTET PARTNERSKI KLIKKLIMA — SPÓŁKA LISTOPAD 2026 (START BOJOWY 01.12.2026)"]
+        direction TB
+
+        subgraph M["MICHAŁ — CTO & Head of Product<br/>(Wkład technologiczny: ~460–500 h łącznie)"]
+            M_C["• Ponad 360 h pracy inżynieryjnej zrealizowanej (IP wycenione na >300 tys. PLN)<br/>• ~163 h na domknięcie ekosystemu + PayU + katalogu do 30.11.2026 r.<br/>• Odpowiedzialność: architektura, stabilność platformy, analityka, narzędzia ekip"]
+        end
+
+        subgraph P["PIOTR — COO & Head of Operations<br/>(Wkład operacyjny: pełny etat 140–160 h/mc od 01.12.2026 r.)"]
+            P_C["• Listopad: rejestracja spółki, wniosek UDT, umowy podwykonawcze, cenniki<br/>• Grudzień–Styczeń: testy bojowe na klientach, asysta w kontroli UDT<br/>• Luty: onboarding i zakontraktowanie sieci 4–6 ekip monterskich<br/>• Marzec+: 100% odpowiedzialności za dyspozytornię, logistykę i montaże"]
+        end
+
+        subgraph W["WSPÓLNE DECYZJE I FINANSE ZAŁOŻYCIELSKIE"]
+            W_C["• Kapitał obrotowy zabezpieczony (listopad 2026 – luty 2027 r.)<br/>• Budżet reklamowy (Google/Meta) finansowany w parytecie 50/50<br/>• Brama decyzyjna weryfikująca 10 twardych kryteriów KPI przed startem"]
+        end
+
+        M --- W
+        P --- W
+    end
 ```
 
 ---

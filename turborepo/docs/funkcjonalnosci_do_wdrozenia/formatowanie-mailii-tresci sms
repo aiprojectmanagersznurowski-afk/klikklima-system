@@ -1,0 +1,45 @@
+# Standaryzacja Szablonów Transakcyjnych E-mail (HTML) i Treści SMS
+
+> **Identyfikator zadania Trello:** `NTF-TEMPLATES`  
+> **Kategoria:** Admin B2B (CRM & Logistyka) / Notyfikacje  
+> **Status:** DO WDROŻENIA  
+> **Szacowany czas prac:** 14–18 roboczogodzin  
+
+---
+
+## 1. Cel i Wymagania Komunikacyjne
+
+Zastąpienie surowych wiadomości tekstowych profesjonalnymi, responsywnymi szablonami e-mail i zoptymalizowanymi wiadomościami SMS budującymi zaufanie klienta i zapewniającymi maksymalną konwersję na każdym etapie lejka:
+
+1. **Szablony E-mail (HTML):**
+   - Spójna identyfikacja wizualna marki KlikKlima (nowoczesny minimalizm, logo, kolory firmowe),
+   - Wyrazisty przycisk Call To Action (CTA): np. *„Zobacz wycenę i wybierz termin”*, *„Opłać zaliczkę online”*, *„Pobierz protokół odbioru”*,
+   - Pełna responsywność na smartfonach (60%+ odczytów na telefonach),
+   - Wersja fallback `text/plain` dla klientów pocztowych blokujących format HTML.
+2. **Treści SMS:**
+   - Zwięzłość (maksymalnie 160 znaków lub precyzyjnie 2 segmenty SMS),
+   - Bezpieczne, krótkie linki transakcyjne (`https://klikklima.pl/r/token`),
+   - Jasne komunikaty o terminach wizyt, doręczeniach kurierskich i przypomnieniach o serwisie.
+
+---
+
+## 2. Matryca Szablonów Powiadomień (zgodna z `notifications.contract.mjs`)
+
+| ID | Zdarzenie Lejka | Odbiorca | Kanał | Kluczowy Komunikat / Akcja |
+| :--- | :--- | :--- | :---: | :--- |
+| `N1` | Potwierdzenie leada B2C | Klient | E-mail + SMS | Podsumowanie zgłoszenia i informacja o terminie audytu. |
+| `N2` | Przypomnienie o audycie (24h) | Klient | SMS | Przypomnienie o jutrzejszej wizycie audytora. |
+| `N4` | Wysłanie wyceny po audycie | Klient | E-mail + SMS | Link do oferty z wariantami i opcją akceptacji online. |
+| `N5` | Nadanie przesyłki kurierskiej | Klient | E-mail + SMS | Numer przesyłki (DPD/DHL) i link do śledzenia. |
+| `N6` | Przypomnienie o montażu (48h) | Klient | SMS | Potwierdzenie wizyty ekipy monterskiej. |
+| `N8` | Zakończenie montażu | Klient | E-mail | Protokół zdawczo-odbiorczy, karta gwarancyjna, certyfikat. |
+| `N8a`| Zakończenie etapu I (deweloperski)| Klient | E-mail | Protokół prac podtynkowych + link do rezerwacji etapu II. |
+| `N10`| Przypomnienie o serwisie (30 dni)| Klient | E-mail + SMS | Informacja o upływie 1 roku gwarancji i link do rezerwacji. |
+| `I1–I7`| Powiadomienia wewnętrzne | Audytor/Ekipa | E-mail / Push | Nowe zlecenia, alerty SLA, eskalacje usterek krytycznych. |
+
+---
+
+## 3. Stos Technologiczny
+- **React Email (`@react-email/components`)**: pisanie szablonów jako komponentów TSX z automatycznym inlinowaniem CSS,
+- **Silnik wysyłki:** integracja z Resend / SendGrid / Postmark dla e-mail oraz SMSAPI dla SMS,
+- **Testy:** snapshoty wygenerowanego HTML i weryfikacja poprawności linków.

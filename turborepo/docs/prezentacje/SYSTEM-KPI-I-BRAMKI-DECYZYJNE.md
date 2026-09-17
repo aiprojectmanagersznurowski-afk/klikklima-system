@@ -15,17 +15,23 @@ Aby przekształcić KlikKlima w skalowalną organizację technologiczną (Asset-
 
 Model KPI KlikKlima opiera się na adaptacji klasycznej **Zrównoważonej Karty Wyników (Balanced Scorecard)** do realiów dwustronnego marketplace'u usług instalacyjnych:
 
-```
-                            ZRÓWNOWAŻONA KARTA WYNIKÓW KLIKKLIMA
-   ┌────────────────────────────────────────────────────────────────────────────────────────┐
-   │ 1. PERSPEKTYWA FINANSOWA (FIN): Płynność, samofinansowanie COGS, marża brutto koszyków │
-   ├────────────────────────────────────────────────────────────────────────────────────────┤
-   │ 2. PERSPEKTYWA KLIENTA (CUST/MKT): CAC, konwersja lejka, NPS, recenzje Google ze zdjęciem│
-   ├────────────────────────────────────────────────────────────────────────────────────────┤
-   │ 3. PERSPEKTYWA OPERACJI I FLOTY (OPS - COO): JIT OTIF, protokoły z 4 foto, SLA dyspozytorni│
-   ├────────────────────────────────────────────────────────────────────────────────────────┤
-   │ 4. PERSPEKTYWA TECHNOLOGII I PRODUKTU (TECH - CTO): Uptime, zero P1, Core Web Vitals, PWA│
-   └────────────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph BSC["ZRÓWNOWAŻONA KARTA WYNIKÓW KLIKKLIMA (BALANCED SCORECARD)"]
+        direction TB
+
+        FIN["<b>1. PERSPEKTYWA FINANSOWA (FIN)</b><br/>• Płynność i samofinansowanie COGS z zaliczek 40–50%<br/>• Marża brutto koszyków >= 28–35%<br/>• Zero zamrożonego kapitału w magazynie (dostawy JIT)"]
+
+        CUST["<b>2. PERSPEKTYWA KLIENTA I RYNKU (CUST / MKT)</b><br/>• Efektywny koszt pozyskania klienta (CAC < 450 PLN)<br/>• Konwersja lejka Triage i atomowa rezerwacja slotu<br/>• Ocena w Google >= 4.95 (min. 40% ze zdjęciem) oraz NPS >= +75"]
+
+        OPS["<b>3. PERSPEKTYWA OPERACJI I FLOTY (OPS — COO)</b><br/>• Wskaźnik terminowości dostaw JIT OTIF >= 95%<br/>• 100% odbiorów z cyfrowym protokołem i standardem 4 zdjęć<br/>• Reakcja dyspozytorni SLA < 15 min i profesjonalna obsługa"]
+
+        TECH["<b>4. PERSPEKTYWA TECHNOLOGII I PRODUKTU (TECH — CTO)</b><br/>• Dostępność platformy Uptime >= 99.8% i zero błędów P1/Blocker<br/>• Szybkość ładowania Core Web Vitals (LCP < 1.5s, INP < 100ms)<br/>• Niezawodność Field App offline PWA i bezpieczeństwo RLS/RODO"]
+
+        FIN --- CUST
+        CUST --- OPS
+        OPS --- TECH
+    end
 ```
 
 ### Hierarchia Wskaźników:
@@ -48,7 +54,13 @@ $$\text{NFMI} = \text{Liczba montaży zrealizowanych w miesiącu spełniających
 
 * **Cel w fazie pilotażu (Dry Run – grudzień 2026 r. – styczeń 2027 r.):** $\ge 3$ instalacje testowe.
 * **Cel w fazie startu publicznego (marzec 2027 r.):** $\ge 12–15$ instalacji/miesiąc.
-* **Cel w szczycie sezonu (kwiecień – sierpień 2027 r.):** $\ge 25–40$ instalacji/miesiąc.
+* **Cel w szczycie pierwszego sezonu (kwiecień – sierpień 2027 r.):** $\ge 30–50$ instalacji/miesiąc.
+* **ULTIMATE GOAL SPÓŁKI (Docelowa Skala Dojrzałości Biznesowej):**
+  $$\mathbf{NFMI_{\text{target}} = 100\ \text{montaży w miesiącu}}$$
+  * **100 bezbłędnych instalacji miesięcznie** przy utrzymaniu zablokowanej marży brutto $\ge 28–35\%$,
+  * Obsługa przez zoptymalizowaną regionalną sieć **10–14 aktywnych, certyfikowanych ekip monterskich**,
+  * Finansowanie COGS w 100% z zaliczek klientów (ujemny cykl konwersji gotówki, brak zamrożonego kapitału),
+  * Równoległa obsługa bazy ponad **500+ cyklicznych serwisów rocznych (MRR)** z bazy własnej i pozyskanej.
 
 ---
 
@@ -103,13 +115,19 @@ Wskaźniki monitorowane wspólnie, stanowiące podstawę do optymalizacji budże
 
 Przejście między etapami rozwoju biznesu nie odbywa się automatycznie na podstawie upływu czasu, lecz **wymaga 100% zaliczenia kryteriów twardej bramki decyzyjnej**.
 
-```
-                           OŚ CZASU I BRAMKI DECYZYJNE (STAGE-GATES)
-    XI 2026              XII 2026 – I 2027              II 2027               III 2027          IV–VIII 2027
-  ┌───────────┐         ┌─────────────────┐       ┌─────────────────┐       ┌───────────┐      ┌─────────────┐
-  │  FAZA 1   │  Gate 1 │     FAZA 2      │ Gate 2│     FAZA 3      │ Gate 3│  FAZA 4   │Gate 4│   FAZA 5    │
-  │Fundamenty │ ──────> │    Dry Run      │ ────> │Onboarding Ekip  │ ────> │  Go-Live  │────> │ Skalowanie  │
-  └───────────┘ 30.11.26└─────────────────┘31.01.27└─────────────────┘28.02.27└───────────┘01.03.26(Dywidenda)
+```mermaid
+flowchart LR
+    F1["<b>FAZA 1: FUNDAMENTY</b><br/><i>XI 2026</i><br/>Spółka, UDT, 100% IT, PayU"]
+    G1{{"Gate 1<br/>30.11.2026"}}
+    F2["<b>FAZA 2: DRY RUN</b><br/><i>XII 2026 – I 2027</i><br/>Pilotaż na klientach Piotra"]
+    G2{{"Gate 2<br/>31.01.2027"}}
+    F3["<b>FAZA 3: ONBOARDING</b><br/><i>II 2027</i><br/>Kontraktowanie 4–6 ekip"]
+    G3{{"Gate 3<br/>28.02.2027"}}
+    F4["<b>FAZA 4: GO-LIVE</b><br/><i>III 2027</i><br/>Publiczny start i kampanie"]
+    G4{{"Gate 4<br/>31.03.2027"}}
+    F5["<b>FAZA 5: SKALOWANIE</b><br/><i>IV – VIII 2027+</i><br/><b>ULTIMATE GOAL: 100 montaży/mc</b>"]
+
+    F1 --> G1 --> F2 --> G2 --> F3 --> G3 --> F4 --> G4 --> F5
 ```
 
 ---

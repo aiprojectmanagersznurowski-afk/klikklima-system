@@ -17,18 +17,26 @@ Tradycyjny rynek klimatyzacji w Polsce opiera się na przestarzałych, analogowy
 
 **KlikKlima** to kompletny, wertykalnie zintegrowany ekosystem cyfrowy, który łączy klienta końcowego, dyspozytornię firmy, hurtownie chłodnicze oraz monterów w terenie w jeden spójny, zautomatyzowany proces.
 
-```
-   ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-   │                                   EKOSYSTEM KLIKKLIMA                                   │
-   ├─────────────────────────────┬─────────────────────────────┬─────────────────────────────┤
-   │      1. DLA KLIENTA         │    2. DLA DYSPOZYTORA       │     3. DLA MONTERA          │
-   │      (Portal B2C Web)       │       (Panel CRM B2B)       │       (Field App)           │
-   ├─────────────────────────────┼─────────────────────────────┼─────────────────────────────┤
-   │ • Konfigurator doboru mocy  │ • Widok Leada 360 & Kanban  │ • Cyfrowa lista zleceń      │
-   │ • Transparentna cena „od”   │ • Silnik slotów i grafików  │ • Nawigacja do klienta      │
-   │ • Rezerwacja slotu online   │ • Kontrola SLA i marżowości │ • Protokół montażu z foto   │
-   │ • Płatność zaliczki online  │ • Zarządzanie flotą i F-gaz │ • Cyfrowy podpis klienta    │
-   └─────────────────────────────┴─────────────────────────────┴─────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph EKO["EKOSYSTEM KLIKKLIMA — ZINTEGROWANA PLATFORMA HVAC"]
+        direction LR
+
+        subgraph B2C["1. DLA KLIENTA<br/>(Portal B2C Web)"]
+            B2C_C["• Konfigurator doboru mocy<br/>• Transparentna cena od ręki<br/>• Atomowa rezerwacja slotu<br/>• Płatność zaliczki PayU"]
+        end
+
+        subgraph B2B["2. DLA DYSPOZYTORA<br/>(Panel CRM B2B)"]
+            B2B_C["• Widok Leada 360 i Kanban<br/>• Silnik slotów i grafików<br/>• Kontrola SLA i marżowości<br/>• Zarządzanie flotą i F-gaz"]
+        end
+
+        subgraph FLD["3. DLA MONTERA<br/>(Field App)"]
+            FLD_C["• Cyfrowa lista zleceń<br/>• Nawigacja do klienta<br/>• Protokół montażu ze zdjęciami<br/>• Cyfrowy podpis klienta"]
+        end
+    end
+
+    B2C <--> B2B
+    B2B <--> FLD
 ```
 
 ---

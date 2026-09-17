@@ -1,0 +1,98 @@
+# Ekosystem Asystentów AI w KlikKlima — B2C, B2B i Field App
+
+> **Identyfikator zadania Trello:** `AI-CHAT-SUITE`  
+> **Kategoria:** Admin B2B (CRM & Logistyka) / Landing Page (B2C) / Field App  
+> **Status:** DO WDROŻENIA  
+> **Szacowany czas prac:** 24–30 roboczogodzin  
+
+---
+
+## 1. Architektura Globalna (Trzy Poziomy Dostępowe)
+
+W systemie KlikKlima wdrażana jest architektura RAG (Retrieval-Augmented Generation) oparta o bazę wiedzy w Postgresie (rozszerzenie `pgvector`) z modelem Google `text-embedding-004` oraz model generatywny `Gemini 1.5 Flash` (niski koszt, wysokie okno kontekstowe, obsługa multimodalności — analiza zdjęć tabliczek znamionowych i rozdzielnic).
+
+System obsługuje trzy odrębne poziomy dostępowe (`access_level`):
+1. `public` — Doradca na Landing Page (B2C),
+2. `internal_dispatcher` / `internal_admin` — Asystent Operacyjny w Panelu CRM (B2B),
+3. `field_tech` — Wsparcie Techniczne dla Monterów i Audytorów w terenie (Field App).
+
+---
+
+## 2. Architektura Bazy Danych i Wyszukiwania Wektorowego (SQL)
+
+```sql
+-- 1. Włączenie rozszerzenia wektorowego
+create extension if not exists vector;
+
+-- 2. Tabela bazy wiedzy z podziałem na uprawnienia
+create table public.knowledge_base (
+  id uuid primary key default gen_random_uuid(),
+  content text not null,
+  metadata jsonb default '{}'::jsonb,
+  access_level text not null check (access_level in ('public', 'field_tech', 'internal_dispatcher', 'internal_admin')),
+  embedding vector(768), -- Wymiarowość dla modelu text-embedding-004 od Google
+  created_at timestamptz default now()
+);
+
+-- 3. Indeks HNSW do szybkiego wyszukiwania podobieństwa kosinusowego
+create index on public.knowledge_base
+using hnsw (embedding vector_cosine_ops);
+
+-- 4. Funkcja wyszukiwania z uwzględnieniem poziomu dostępu
+create or replace function match_knowledge_base (
+  query_embedding vector(768),
+  match_threshold float,
+  match_count int,
+  allowed_levels text[]
+)
+returns table (
+  id uuid,
+  content text,
+  metadata jsonb,
+  similarity float
+)
+language plpgsql
+stable
+as $$ 
+begin   
+  return query   
+  select     
+    kb.id,     
+    kb.content,     
+    kb.metadata,     
+    1 - (kb.embedding <=> query_embedding) as similarity   
+  from public.knowledge_base kb   
+  where kb.access_level = any(allowed_levels)     
+    and 1 - (kb.embedding <=> query_embedding) > match_threshold   
+  order by kb.embedding <=> query_embedding   
+  limit match_count; 
+end; 
+$$;
+```
+
+---
+
+## 3. Asystent B2C — Wirtualny Doradca Klienta (Landing Page)
+- **Cel:** Przeprowadzenie klienta przez pytania doboru klimatyzacji, orientacyjna kalkulacja zapotrzebowania na moc chłodniczą (1 kW na 10 m2) i skierowanie do formularza rezerwacji audytu,
+- **Zabezpieczenia:** Brak autoryzacji, rate limiting per IP (15 zapytań / 10 min), blokada prompt injection,
+- **Zakres bazy wiedzy:** Cechy urządzeń (Daikin, Fuji, Gree), definicja montażu standardowego, cennik bazowy, FAQ (zgody spółdzielni, czas montażu, dotacje).
+
+---
+
+## 4. Asystent B2B — Wsparcie Dyspozytora i Administratora
+- **Cel:** Natychmiastowa weryfikacja procedur operacyjnych (SOP), kosztorysów prac niestandardowych, analiza sporów montażowych, interpretacja statusów w maszynie stanów lejka,
+- **Autoryzacja:** Wymagany nagłówek JWT, role: `admin` lub `dispatcher`,
+- **Zakres bazy wiedzy:** Procedury wewnętrzne, taryfikatory robocizny i materiałów, regulaminy kooperacji z podwykonawcami.
+
+---
+
+## 5. Asystent Terenowy (Field App) — Wsparcie Techniczne i Wizja Komputerowa
+- **Cel:** Asysta dla instalatorów i audytorów na obiekcie: instrukcje DTR, kody błędów i diagnostyka usterek, kalkulator dopełnienia czynnikiem chłodniczym R32 (w gramach powyżej długości fabrycznej),
+- **Multimodalność:** Bezpośrednie przesyłanie zdjęć tabliczek znamionowych, schematów elektrycznych i rozdzielnic do analizy przez Gemini pod kątem poprawności zabezpieczeń i przekrojów przewodów (np. 3x2.5mm2 zasilanie, 4x1.5mm2 komunikacja).
+
+---
+
+## 6. Kryteria Akceptacji
+- [ ] Funkcja wyszukiwania wektorowego poprawnie filtruje wiedzę wg poziomu uprawnień (B2C nie widzi stawek podwykonawców).
+- [ ] Chat B2C skutecznie kieruje rozmowę do rezerwacji audytu i wylicza szacunkową moc klimatyzatora.
+- [ ] Analiza zdjęcia tabliczki znamionowej w Field App poprawnie odczytuje model, moc i fabryczną ilość freonu.

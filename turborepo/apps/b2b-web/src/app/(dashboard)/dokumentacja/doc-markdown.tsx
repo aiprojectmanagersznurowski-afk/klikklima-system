@@ -15,6 +15,9 @@ import {
 } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
+import "katex/dist/katex.min.css"
 import { Button } from "../../../components/ui/button"
 import { MermaidDiagram } from "./mermaid-diagram"
 
@@ -198,7 +201,8 @@ export function DocMarkdown({ content }: DocMarkdownProps) {
 
       <div className="prose-none text-base leading-7 text-foreground">
         <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
           components={{
             h1: ({ className, node, ...props }) => (
               <h1

@@ -11,10 +11,12 @@
 
 **Domena Piotrka (Operacje, Know-how, Wykonawstwo – COO):**
 * Wniesienie 8 lat doświadczenia i wiedzy branżowej.
+* **Przekazanie dotychczasowej bazy klientów:** Piotrek przekazuje całą swoją dotychczasową bazę klientów do systemu KlikKlima. Zbieramy od nich zgody RODO i marketingowe, a spółka KlikKlima przejmuje ich cykliczny serwis roczny (gwarancyjny i pogwarancyjny), budując stabilny fundament powtarzalnych przychodów (MRR).
+* **Zobowiązanie czasowe (Horyzont min. 2 lat):** Przez pierwsze 2 lata działalności spółki (od 01.12.2026 r.) Piotrek zobowiązuje się wygospodarować stałą, priorytetową przestrzeń w swoim grafiku (min. 140–160 h/miesięcznie) na pełnienie obowiązków COO i realizację zadań w KlikKlima.
 * Rekrutacja i weryfikacja zewnętrznych ekip monterskich.
 * Wdrażanie i pilnowanie standardów jakości montażu w całej sieci KlikKlima.
 * Szkolenia, wsparcie (druga linia) i rozwiązywanie problemów technicznych na budowach.
-* Prowadzenie najbardziej skomplikowanych audytów u klientów.
+* Prowadzenie najbardziej skomplikowanych audytów u klientów oraz osobisty udział w procedurze certyfikacji UDT.
 
 ---
 
@@ -48,6 +50,8 @@ Podział ról gwarantujący jasność hierarchii decyzyjnej. KlikKlima ponosi od
 | **Charakter współpracy** | Dwa niezależne biznesy (KlikKlima i Kort Klima) wspierające się nawzajem. | Budowa wspólnej firmy jako równi partnerzy, z rynkowym zabezpieczeniem decyzyjnym. | Pełne współdzielenie każdej decyzji, kosztu i procesu w firmie. |
 | **Domena Michała (IT, System, Biznes)** | **Właściciel platformy.** Tworzy kod, opłaca serwery, generuje leady i bierze na siebie ryzyko przed klientem. | **CEO / CTO.** Buduje system IT, automatyzuje procesy. W razie absolutnego pata ma decydujący głos ("złoty 1%"). | Współzarządza całością. Wymaga formalnej wyceny pracy programistycznej, by uzasadnić równe udziały. |
 | **Domena Piotrka (Operacje, Wykonawstwo)** | **Niezależny Ekspert.** Robi audyty i montaże jako główny partner za wyższe stawki. Skupia się na terenie. | **COO (Dyrektor Operacyjny).** Wnosi know-how z 8 lat pracy. Rekrutuje inne ekipy, wdraża standardy montażu. | Współzarządza całością. Dzieli 100% odpowiedzialności za strategię i błędy (także poza swoimi kompetencjami). |
+| **Przekazanie bazy klientów i serwisy** | **Brak.** Kort Klima zachowuje własnych klientów i rozlicza serwisy samodzielnie. | **Warunek konieczny:** Przekazanie dotychczasowych klientów do KlikKlima, pozyskanie zgód RODO i przejęcie serwisów rocznych przez spółkę (strumień MRR). | Wniesienie bazy klientów jako element wyceny wkładu aportowego. |
+| **Zobowiązanie czasowe i horyzont** | Zleceniowo / dorywczo w miarę wolnych mocy przerobowych. | **Gwarancja na min. 2 lata:** Obowiązek wygospodarowania priorytetowej przestrzeni w grafiku na realizację zadań COO w KlikKlima. | Wymóg 100% wyłączności czasowej od dnia rejestracji spółki. |
 | **Status Kort Klima** | Pełna niezależność. Samodzielna decyzja, ile czasu poświęca na zlecenia z systemu, a ile na własne. | Ścisła integracja z KlikKlima. Skupienie wszystkich sił na zbudowaniu jednej, potężnej marki na rynku. | Pełna integracja. Przeniesienie 100% sił operacyjnych do KlikKlima. |
 | **Rozwiązywanie sporów (Decyzyjność)** | Czysty układ: dostawca-odbiorca. Jeśli komuś układ nie pasuje, po prostu się nie zlecamy. | Szybkie decyzje. Różnica 51/49 działa jako techniczny bezpiecznik (tie-breaker) chroniący przed paraliżem. | Ryzyko paraliżu (deadlock). Przy braku zgody firma blokuje się w miejscu. |
 | **Podejście Inwestorów (Fundusze VC)** | Nie dotyczy (Michał skaluje platformę na własnych zasadach). | **Wysoka atrakcyjność.** VC oczekują jasnego lidera. Układ 51% to dla nich bezpieczny standard umożliwiający finansowanie. | **Czerwona flaga.** Fundusze VC z zasady odrzucają spółki 50/50 przez widmo nieusuwalnych konfliktów. |

@@ -1,0 +1,44 @@
+# Generator Umów Montażowych i Protokołów Odbioru (PDF)
+
+> **Identyfikator zadania Trello:** `DOC-GEN-PDF`  
+> **Kategoria:** Admin B2B (CRM & Logistyka) / Field App  
+> **Status:** DO WDROŻENIA  
+> **Szacowany czas prac:** 18–22 roboczogodziny  
+
+---
+
+## 1. Zakres Funkcjonalny
+
+Moduł odpowiada za automatyczne generowanie gotowych do podpisu, prawnie wiążących dokumentów PDF:
+1. **Umowa Montażu Klimatyzacji:**
+   - Preambuła: dane stron (spółka KlikKlima Sp. z o.o., NIP, KRS vs Klient B2C/B2B),
+   - Przedmiot umowy: model jednostki wewnętrznej i zewnętrznej, akcesoria,
+   - Harmonogram: termin montażu, data realizacji,
+   - Finanse: cena brutto, stawka VAT (8% dla lokali mieszkalnych <150m2 / 23% dla firm), kwota zaliczki (40-50%), kwota pozostała,
+   - Załączniki: Ogólne Warunki Umowy (OWU), Regulamin i zgody RODO.
+2. **Protokół Zdawczo-Odbiorczy:**
+   - Dane instalacji i numer zlecenia (`L-000123`),
+   - Numery seryjne zamontowanych urządzeń,
+   - Protokół parametrów technicznych: próba ciśnieniowa azotem (np. 35 bar przez 30 min), próżnia (< 500 mikronów), pomiar temperatur nawiewu/wywiewu,
+   - Potwierdzenie przeszkolenia klienta z obsługi pilota i aplikacji WiFi,
+   - Podpisy instalatora i klienta.
+3. **Karta Gwarancyjna:**
+   - Warunki gwarancji producenta i rękojmi instalacyjnej (np. 5 lat pod warunkiem corocznego serwisu),
+   - Tabela wpisów przeglądów okresowych.
+
+---
+
+## 2. Stos Technologiczny
+
+- **Silnik generowania:** `@react-pdf/renderer` (komponenty React renderujące dokumenty PDF po stronie Node.js) lub Puppeteer w Supabase Edge Functions,
+- **Szablony dokumentów:** modułowe komponenty `packages/documents` z ostylowaniem zgodnym z identyfikacją wizualną KlikKlima,
+- **Magazynowanie:** zapis wygenerowanych plików PDF w buckecie `contracts-and-protocols` w Supabase Storage z szyfrowaniem w spoczynku,
+- **Dystrybucja:** automatyczne dołączanie linków do pobrania dokumentów w powiadomieniach N8/N8a.
+
+---
+
+## 3. Kryteria Akceptacji
+- [ ] Wywołanie `generateContractPdf(quoteId)` generuje poprawny dokument PDF ze wszystkimi danymi wyceny.
+- [ ] Dokument zawiera poprawną kalkulację podatku VAT (8% vs 23%) i kwot zaliczkowych.
+- [ ] Wygenerowany plik zapisuje się w Supabase Storage i zwraca publiczny lub podpisany adres URL.
+- [ ] Protokół odbioru zawiera miejsce na wklejenie złożonego podpisu elektronicznego klienta.

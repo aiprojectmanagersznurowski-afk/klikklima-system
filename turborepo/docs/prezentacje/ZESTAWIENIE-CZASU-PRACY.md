@@ -21,19 +21,22 @@ Niniejszy raport stanowi całościowe, zintegrowane podsumowanie nakładu pracy 
    * Praca w repozytoriach kodu (`KlimApp`, `klikklima-system`, `turborepo`), orkiestracja wirtualnego zespołu inżynieryjnego AI (Claude Code, Antigravity IDE) w metodyce CDAL, budowa kontraktów, silników rezerwacji, bezpieczeństwa bazy danych PostgreSQL oraz aplikacji B2C i B2B.
    * **Łączny czas inżynierii (Standard gap 90m):** **360,7 godzin** (wariant konserwatywny: **336,5 h**, wariant elastyczny: **388,2 h**).
 
-```
-   ┌────────────────────────────────────────────────────────────────────────────────────────┐
-   │                    ŁĄCZNY WKŁAD PRACY MICHAŁA (MAJ – WRZESIEŃ 2026)                    │
-   ├────────────────────────────────────────────────────────────────────────────────────────┤
-   │  Realizacja Inżynieryjna & Orkiestracja AI (Git, Claude, Antigravity):      360,7 h    │
-   │  Zaangażowanie Koncepcyjne, Architektoniczne & Badania R&D (HVAC/AI):     + 106,0 h    │
-   ├────────────────────────────────────────────────────────────────────────────────────────┤
-   │  ŁĄCZNY UDOKUMENTOWANY CZAS PRACY:                                          466,7 h    │
-   │  (Przedział szacunkowy: 432 h – 505 h w zależności od wariantu bezczynności)           │
-   ├────────────────────────────────────────────────────────────────────────────────────────┤
-   │  Równowartość etatowa:   ~58–60 pełnych 8-godzinnych dni roboczych (~3 miesiące etatu)│
-   │  Ekwiwalent rynkowy:     330 000 – 450 000 PLN netto (stawki Senior Architect / CTO)   │
-   └────────────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph TOTAL["ŁĄCZNY WKŁAD PRACY MICHAŁA (MAJ – WRZESIEŃ 2026)"]
+        direction TB
+
+        INZ["<b>Realizacja Inżynieryjna & Orkiestracja AI</b><br/>• Git, Claude Code, Antigravity IDE, CDAL<br/>• Czas pracy: <b>360,7 h</b>"]
+        RD["<b>Zaangażowanie Koncepcyjne & Badania R&D</b><br/>• Architektura HVAC, silniki slotów, procesy B2B<br/>• Czas pracy: <b>106,0 h</b>"]
+
+        SUMA["<b>ŁĄCZNY UDOKUMENTOWANY CZAS PRACY: 466,7 h</b><br/><i>(Przedział szacunkowy: 432 h – 505 h)</i>"]
+
+        EQUIV["<b>EKWIWALENT RYNKOWY I ETATOWY:</b><br/>• ~58–60 pełnych dni roboczych (~3 miesiące etatu)<br/>• 330 000 – 450 000 PLN netto (stawki rynkowe Senior Architect / CTO)"]
+
+        INZ --> SUMA
+        RD --> SUMA
+        SUMA --> EQUIV
+    end
 ```
 
 ---
