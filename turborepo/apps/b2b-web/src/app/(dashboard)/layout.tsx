@@ -8,11 +8,12 @@ import type { Role } from '@klikklima/contracts'
 import {
   LayoutDashboard, Users, UserCheck, Wrench, Bell, Search, LogOut,
   ChevronLeft, ChevronRight, Thermometer, X, FolderKanban, Box, Settings,
-  ChevronDown, CalendarDays, BarChart3
+  ChevronDown, CalendarDays, BarChart3, BookOpen
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { isScheduleNavItemVisible } from '../../lib/schedule/nav-visibility'
+import { isDocsNavItemVisible } from '../../lib/docs/nav-visibility'
 import { getActorRoleForNavAction } from './nav-role.actions'
 import { GlobalSearch } from '@/components/global-search/global-search'
 
@@ -286,9 +287,23 @@ export default function DashboardLayout({
     ? { id: 'my-schedule', label: 'Mój grafik', icon: CalendarDays, href: '/me/schedule' }
     : null;
 
-  const items: NavItem[] = scheduleNavItem
+  const itemsWithSchedule: NavItem[] = scheduleNavItem
     ? [navItems[0], scheduleNavItem, ...navItems.slice(1)]
     : navItems;
+
+  // Narzędzie wewnętrzne (przeglądarka dokumentacji projektu) — bez ID wymagania,
+  // bez wpisu w `RESOURCES`. Widoczna wyłącznie dla `admin`, tak jak zdecydował
+  // Michał 2026-09-17 — porównanie roli, nie `can()`.
+  const showDocsNavItem = isDocsNavItemVisible(actorRole);
+  const docsNavItem: NavItem | null = showDocsNavItem
+    ? { id: 'docs', label: 'Dokumentacja', icon: BookOpen, href: '/dokumentacja' }
+    : null;
+
+  const itemsWithDocs: NavItem[] = docsNavItem
+    ? [...itemsWithSchedule, docsNavItem]
+    : itemsWithSchedule;
+
+  const items: NavItem[] = itemsWithDocs;
 
   const handleLogout = async () => {
     const supabase = createClient();
