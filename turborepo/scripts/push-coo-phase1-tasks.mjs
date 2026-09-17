@@ -232,6 +232,66 @@ Termin realizacji: 30 listopada 2026 r.
 Odpowiedzialny: Piotr (COO)
 Dokument źródłowy: OCZEKIWANY-WKLAD-OPERACYJNY-COO.md (Obszar O5).`,
   },
+  {
+    name: "[COO-14] Metoda wyceny w Triage B2C: Algorytm cen „od” i definicja montażu standardowego",
+    desc: `Cel: Precyzyjne zdefiniowanie parametrów kalkulatora B2C Triage oraz twardej granicy montażu standardowego, na bazie której system prezentuje klientowi cenę „od”.
+
+Zakres działań:
+1. Potwierdzenie definicji „Montażu Standardowego” zawartego w cenie bazowej konfiguratora:
+   - Długość instalacji chłodniczej freonowej: do 3 metrów bieżących,
+   - Przewiert przez ścianę: 1 otwór w ścianie murowanej do 40 cm (bez żelbetu),
+   - Montaż jednostki zewnętrznej: do wysokości 2,5 m na standardowym wsporniku ściennym lub stopach podłogowych z wibroizolacją,
+   - Odprowadzenie skroplin: grawitacyjne do 5 metrów,
+   - Zasilanie elektryczne: doprowadzenie do istniejącego gniazda/punktu elektrycznego do 3 metrów,
+   - Próba szczelności azotem (min. 35 bar), próżnia (< 270 Pa) i uruchomienie.
+2. Opracowanie i zatwierdzenie metody wyceny w Triage:
+   - Zasady doboru mocy w konfiguratorze (powierzchnia/kubatura m3, stopień nasłonecznienia południe/zachód, piętro/poddasze, przeszklenia),
+   - Ustalenie narzutu buforowego dla cen prezentowanych w internecie (ochrona marży spółki przed wizją lokalną).
+
+Termin realizacji: 22 listopada 2026 r.
+Odpowiedzialny: Piotr (COO)
+Dokument powiązany: KOSZYKI-USLUG-I-MODELE-ROZLICZENIOWE.md oraz B2C-PRICE-FROM.`,
+  },
+  {
+    name: "[COO-15] Metoda wyceny w Field App: Formularz audytorski i katalog prac dodatkowych",
+    desc: `Cel: Standaryzacja pracy audytora technicznego na wizji lokalnej i wdrożenie w Field App sztywnego cennika pozycji niestandardowych.
+
+Zakres działań:
+1. Opracowanie checklisty audytorskiej w Field App:
+   - Pomiary kubatury, dobór trasy chłodniczej, weryfikacja podłoża i nośności ścian,
+   - Weryfikacja instalacji elektrycznej (obciążalność bezpieczników, uziemienie).
+2. Zdefiniowanie katalogu i stawek za prace dodatkowe wykraczające poza montaż standardowy:
+   - Dopłata za każdy dodatkowy metr instalacji freonowej powyżej 3m (rura miedziana w otulinie + przewód sterujący + korytko),
+   - Kucie bruzd podtynkowych pod instalację (w cegle, porothermie oraz w betonie/żelbecie),
+   - Zastosowanie pompki skroplin (pompka ścienna / podtynkowa + zasilanie),
+   - Przewierty przez stropy lub ściany żelbetowe,
+   - Montaż jednostki zewnętrznej na wysokości pow. 2,5 m (konieczność rusztowania lub zwyżki/podnośnika koszowego),
+   - Specjalne wsporniki dachowe, klatki antykradzieżowe, przedłużanie kabli zasilających.
+3. Zatwierdzenie procedury natychmiastowego generowania wiążącej oferty handlowej w Field App do cyfrowego podpisu przez klienta.
+
+Termin realizacji: 26 listopada 2026 r.
+Odpowiedzialny: Piotr (COO)
+Dokument powiązany: OCZEKIWANY-WKLAD-OPERACYJNY-COO.md (Obszar O1) oraz FLD-QUOTE-BASKET-SELECT.md.`,
+  },
+  {
+    name: "[COO-16] Polityka wynagradzania podwykonawców: Prowizje z prac dodatkowych i audytów",
+    desc: `Cel: Wdrożenie przejrzystego regulaminu finansowego dla ekip montażowych i audytorów, eliminującego konflikty i spory rozliczeniowe.
+
+Zakres działań:
+1. Ustalenie podziału przychodów z prac dodatkowych (powyżej montażu standardowego):
+   - Procentowy split między ekipą a KlikKlima z dopłat za dodatkowe metry instalacji, bruzdowanie i pompki (np. 70–80% dla ekipy za robociznę / 20–30% marży handlowej spółki na materiałach),
+2. Zasady wynagradzania audytorów za wizję lokalną:
+   - Wynagrodzenie ryczałtowe za audyt (np. 150 zł brutto),
+   - Mechanizm rozliczenia, gdy klient podpisuje umowę (wliczenie audytu w cenę) vs gdy rezygnuje,
+3. System premiowo-motywacyjny dla ekip (Quality Bonus):
+   - Premia kwartalna za brak usterek montażowych, wzorowe 4 zdjęcia i wysoki NPS,
+4. Twarde zasady potrąceń i kar umownych:
+   - Koszt ponownego dojazdu do usterki z winy montażysty (bezpłatna naprawa w 24–48h na koszt ekipy).
+
+Termin realizacji: 27 listopada 2026 r.
+Odpowiedzialny: Piotr (COO)
+Dokument powiązany: KOSZYKI-USLUG-I-MODELE-ROZLICZENIOWE.md i OCZEKIWANY-WKLAD-OPERACYJNY-COO.md.`,
+  },
 ];
 
 async function run() {

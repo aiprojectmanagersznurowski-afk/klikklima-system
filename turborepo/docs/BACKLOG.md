@@ -139,6 +139,12 @@ Lista zadań przypisana bezpośrednio do Piotra w dedykowanej kolumnie Trello `�
     _Wykupienie polisy OC spółki na sumę min. 500 000 – 1 000 000 zł._
 13. **[COO-13] Założenie konta spółki w rejestrze CRO (Centralny Rejestr Operatorów)** _(Termin: 30.11.2026)_  
     _Rejestracja w CRO i przygotowanie Kart Urządzeń pod wymogi ustawy F-gazowej._
+14. **[COO-14] Metoda wyceny w Triage B2C: Algorytm cen „od” i definicja montażu standardowego** _(Termin: 22.11.2026)_  
+    _Zdefiniowanie twardych granic montażu standardowego (do 3m freonu, 1 przewiert, do 2,5m wys., skropliny grawitacyjne) i doboru mocy w Triage._
+15. **[COO-15] Metoda wyceny w Field App: Formularz audytorski i katalog prac dodatkowych** _(Termin: 26.11.2026)_  
+    _Katalog stawek za prace niestandardowe (freon >3m, bruzdy, żelbet, pompki skroplin, zwyżka) i kalkulator oferty na żywo w Field App._
+16. **[COO-16] Polityka wynagradzania podwykonawców: Prowizje z prac dodatkowych i audytów** _(Termin: 27.11.2026)_  
+    _Regulamin prowizyjny ekip: split z prac dodatkowych (70–80% ekipa / 20–30% spółka), stawka za audyt, Quality Bonus i potrącenia za usterki._
 
 ---
 
