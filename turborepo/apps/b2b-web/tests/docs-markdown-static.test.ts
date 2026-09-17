@@ -93,3 +93,12 @@ describe('doc-markdown.tsx — style/klasy dla elementów tabeli (table/thead/th
     expect(iconImportLines).toEqual([]);
   });
 });
+
+describe('doc-markdown.tsx — nawigacja wstecz do listy dokumentów', () => {
+  it('zawiera link powrotny do /dokumentacja z ikoną ArrowLeft i etykietą Wstecz', () => {
+    const content = readDocMarkdown();
+    expect(content).toMatch(/href\s*=\s*['"]\/dokumentacja['"]/);
+    expect(content).toMatch(/ArrowLeft/);
+    expect(content).toMatch(/Wstecz/);
+  });
+});

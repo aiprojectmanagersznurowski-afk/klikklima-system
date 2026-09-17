@@ -1,7 +1,10 @@
 "use client"
-
+ 
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { Button } from "../../../components/ui/button"
 
 /**
  * Renderer Markdown dla przeglądarki dokumentacji projektu w panelu B2B (decyzje Michała,
@@ -25,6 +28,19 @@ export type DocMarkdownProps = {
 export function DocMarkdown({ content }: DocMarkdownProps) {
   return (
     <article className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-6">
+        <Link href="/dokumentacja">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground -ml-2.5 gap-2"
+          >
+            <ArrowLeft className="size-4" />
+            Wstecz
+          </Button>
+        </Link>
+      </div>
+
       <div className="prose-none text-base leading-7 text-foreground">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
@@ -133,6 +149,19 @@ export function DocMarkdown({ content }: DocMarkdownProps) {
         >
           {content}
         </ReactMarkdown>
+      </div>
+
+      <div className="mt-12 border-t border-border pt-6">
+        <Link href="/dokumentacja">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground -ml-2.5 gap-2"
+          >
+            <ArrowLeft className="size-4" />
+            Wstecz do listy dokumentów
+          </Button>
+        </Link>
       </div>
     </article>
   )
