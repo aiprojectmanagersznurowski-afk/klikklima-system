@@ -20,19 +20,20 @@ import { formatLeadStatus } from "@/lib/format-status";
 import { EMPTY_VALUE } from "@/lib/empty-value";
 import type { LeadStatus } from "@repo/database";
 import { prisma } from "@repo/database";
+import { can } from "@klikklima/contracts";
 
 export const dynamic = "force-dynamic";
 
-export default async function LeadDetailsPage({ 
+export default async function LeadDetailsPage({
   params,
-  searchParams 
-}: { 
-  params: Promise<{ id: string }>,
-  searchParams: Promise<{ edit?: string }> 
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ edit?: string }>;
 }) {
   const { id } = await params;
   const { edit } = await searchParams;
-  const isEditMode = edit === 'true';
+  const isEditMode = edit === "true";
 
   const detailResult = await getLeadDetail(id);
 
@@ -53,7 +54,8 @@ export default async function LeadDetailsPage({
     actorRole = null;
   }
 
-  const triage: TriageAnswers = (lead.odpowiedzi_triage as TriageAnswers | null) || {};
+  const triage: TriageAnswers =
+    (lead.odpowiedzi_triage as TriageAnswers | null) || {};
 
   const name = lead.klient?.imie_i_nazwisko || EMPTY_VALUE;
   const phone = lead.klient?.telefon || EMPTY_VALUE;
@@ -63,12 +65,24 @@ export default async function LeadDetailsPage({
   const location = triage.location || EMPTY_VALUE;
   const buildingState = triage.buildingState || EMPTY_VALUE;
   const roomCount = triage.roomCount || EMPTY_VALUE;
-  const hasBalcony = triage.hasBalcony !== undefined ? (triage.hasBalcony ? "Tak" : "Nie") : EMPTY_VALUE;
+  const hasBalcony =
+    triage.hasBalcony !== undefined
+      ? triage.hasBalcony
+        ? "Tak"
+        : "Nie"
+      : EMPTY_VALUE;
   const floorNumber = triage.floor;
-  const floorDisplay = floorNumber === 0 ? "Parter" : floorNumber !== null && floorNumber !== undefined ? `Piętro ${floorNumber}` : EMPTY_VALUE;
+  const floorDisplay =
+    floorNumber === 0
+      ? "Parter"
+      : floorNumber !== null && floorNumber !== undefined
+        ? `Piętro ${floorNumber}`
+        : EMPTY_VALUE;
 
   const roomSizes = triage.roomSizes
-    ? Object.entries(triage.roomSizes).map(([key, value]) => `Pokój ${key}: ${value}`).join(", ")
+    ? Object.entries(triage.roomSizes)
+        .map(([key, value]) => `Pokój ${key}: ${value}`)
+        .join(", ")
     : EMPTY_VALUE;
 
   const estimatedQuote = lead.estymowana_wycena || EMPTY_VALUE;
@@ -85,16 +99,23 @@ export default async function LeadDetailsPage({
 
   // Bulk generate signed URLs for auditors
   const auditorPaths = audytorzy
-    .map(a => a.zdjecie_url)
+    .map((a) => a.zdjecie_url)
     .filter((url): url is string => Boolean(url));
 
-  const signedUrlsMap = await signStoragePaths("audytorzy", auditorPaths, 60 * 60);
+  const signedUrlsMap = await signStoragePaths(
+    "audytorzy",
+    auditorPaths,
+    60 * 60,
+  );
 
-  const auditorsWithAvatars = audytorzy.map((auditor) => ({
-    id: auditor.id,
-    imie_i_nazwisko: auditor.imie_i_nazwisko,
-    avatarUrl: auditor.zdjecie_url ? signedUrlsMap[auditor.zdjecie_url as string] : null,
-  }));
+  const auditorsWithAvatars = audytorzy.map((auditor) => {
+    const photo = auditor.zdjecie_url;
+    return {
+      id: auditor.id,
+      imie_i_nazwisko: auditor.imie_i_nazwisko,
+      avatarUrl: photo ? signedUrlsMap[photo as string] : null,
+    };
+  });
 
   // FLD-QUOTE-BASKET-SELECT (WO, "Kształt zmiany"): KOMPLET koszyków (aktywne i wycofane) —
   // filtrowanie po puli/aktywności jest zadaniem `selectableBaskets` (lib/schedule/basket-select),
@@ -102,33 +123,43 @@ export default async function LeadDetailsPage({
   // opakowane w try/catch tak jak `actorRole` powyżej — to dodatek do karty leada (dialog
   // rezerwacji), nie krytyczna ścieżka odczytu; awaria tego zapytania nie ma wywalać całej
   // strony szczegółu leada.
-  let baskets: Awaited<ReturnType<typeof prisma.visitDurationBasket.findMany>> = [];
-  try {
-    baskets = await prisma.visitDurationBasket.findMany();
-  } catch {
-    baskets = [];
+  let baskets: Awaited<ReturnType<typeof prisma.visitDurationBasket.findMany>> =
+    [];
+  if (actorRole && can(actorRole, "visit_duration_baskets", "read") === "yes") {
+    try {
+      baskets = await prisma.visitDurationBasket.findMany();
+    } catch {
+      baskets = [];
+    }
   }
 
   // FLD-QUOTE-BASKET-SELECT (dziura 2, contract-steward): rezerwacje TEGO leada, zmapowane na
   // kontrakt {id, scheduledStart, basketId} — etykieta koszyka jest znajdowana przez
   // `<LeadBookingsList>` (findBasketById), nigdy wyliczana tutaj.
   let bookings: LeadBookingRow[] = [];
-  try {
-    const bookingRows = await prisma.booking.findMany({ where: { leadId: lead.id } });
-    bookings = bookingRows.map((booking) => ({
-      id: booking.id,
-      scheduledStart: booking.scheduledStart,
-      basketId: booking.visitBasketId,
-    }));
-  } catch {
-    bookings = [];
+  if (actorRole && can(actorRole, "bookings", "read") !== "no") {
+    try {
+      const bookingRows = await prisma.booking.findMany({
+        where: { leadId: lead.id },
+      });
+      bookings = bookingRows.map((booking) => ({
+        id: booking.id,
+        scheduledStart: booking.scheduledStart,
+        basketId: booking.visitBasketId,
+      }));
+    } catch {
+      bookings = [];
+    }
   }
 
   return (
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-300">
       <div className="mb-6">
         <Link href="/leads">
-          <Button variant="ghost" className="text-muted-foreground hover:text-foreground -ml-4 gap-2">
+          <Button
+            variant="ghost"
+            className="text-muted-foreground hover:text-foreground -ml-4 gap-2"
+          >
             <ArrowLeft size={16} /> Powrót do tablicy
           </Button>
         </Link>
@@ -144,7 +175,11 @@ export default async function LeadDetailsPage({
                 <StatusPill
                   className="text-sm px-4 py-1"
                   label={formatLeadStatus(lead.status)}
-                  tone={lead.status ? LEAD_STATUS_TONE[lead.status as LeadStatus] : "neutral"}
+                  tone={
+                    lead.status
+                      ? LEAD_STATUS_TONE[lead.status as LeadStatus]
+                      : "neutral"
+                  }
                 />
               </h1>
               <div className="flex items-center gap-2">
@@ -164,17 +199,22 @@ export default async function LeadDetailsPage({
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-8 pb-8 border-b border-border">
-              ID: {lead.id} • Utworzono: {formatDate(lead.created_at, "dd.MM.yyyy HH:mm")}
+              ID: {lead.id} • Utworzono:{" "}
+              {formatDate(lead.created_at, "dd.MM.yyyy HH:mm")}
             </p>
 
             <div className="space-y-12">
               {/* Sekcja: Wybrane urządzenia i wycena (TERAZ NA GÓRZE) */}
               <section>
-                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-border">Preferencje urządzeń i Wycena</h3>
+                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-border">
+                  Preferencje urządzeń i Wycena
+                </h3>
                 <div className="bg-secondary rounded-xl p-6 border border-border">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-6">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Preferowany termin audytu</p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        Preferowany termin audytu
+                      </p>
                       <p className="font-medium text-lg">
                         {lead.data_rezerwacji
                           ? formatDate(lead.data_rezerwacji, "dd.MM.yyyy HH:mm")
@@ -184,24 +224,39 @@ export default async function LeadDetailsPage({
                   </div>
 
                   <div className="mb-6 p-4 bg-card rounded-lg border border-primary/10">
-                    <p className="text-sm text-muted-foreground mb-3 font-semibold">Wybrany zestaw (Triage):</p>
+                    <p className="text-sm text-muted-foreground mb-3 font-semibold">
+                      Wybrany zestaw (Triage):
+                    </p>
                     {extUnit || intUnits.length > 0 ? (
                       <div className="space-y-4">
                         {extUnit && (
                           <div>
-                            <span className="text-xs font-bold uppercase text-muted-foreground/60">Jednostka zewnętrzna:</span>
+                            <span className="text-xs font-bold uppercase text-muted-foreground/60">
+                              Jednostka zewnętrzna:
+                            </span>
                             <div className="font-medium text-foreground mt-1">
-                              {extUnit.brand} {extUnit.model_code} <span className="text-muted-foreground font-normal">({extUnit.cooling_capacity_kw} kW)</span>
+                              {extUnit.brand} {extUnit.model_code}{" "}
+                              <span className="text-muted-foreground font-normal">
+                                ({extUnit.cooling_capacity_kw} kW)
+                              </span>
                             </div>
                           </div>
                         )}
                         {intUnits.length > 0 && (
                           <div>
-                            <span className="text-xs font-bold uppercase text-muted-foreground/60">Jednostki wewnętrzne ({intUnits.length}):</span>
+                            <span className="text-xs font-bold uppercase text-muted-foreground/60">
+                              Jednostki wewnętrzne ({intUnits.length}):
+                            </span>
                             <ul className="mt-1 space-y-2">
                               {intUnits.map((iu: any, idx: number) => (
-                                <li key={idx} className="font-medium text-foreground flex items-center gap-2 before:content-['•'] before:text-primary">
-                                  {iu.brand} {iu.series_name || iu.model_code} <span className="text-muted-foreground font-normal">({iu.cooling_capacity_kw} kW, {iu.color})</span>
+                                <li
+                                  key={idx}
+                                  className="font-medium text-foreground flex items-center gap-2 before:content-['•'] before:text-primary"
+                                >
+                                  {iu.brand} {iu.series_name || iu.model_code}{" "}
+                                  <span className="text-muted-foreground font-normal">
+                                    ({iu.cooling_capacity_kw} kW, {iu.color})
+                                  </span>
                                 </li>
                               ))}
                             </ul>
@@ -209,27 +264,40 @@ export default async function LeadDetailsPage({
                         )}
                       </div>
                     ) : (
-                      <p className="font-medium text-lg">{triage.selectedDeviceLine || "Nie wybrano konkretnej linii (zdano się na audytora)"}</p>
+                      <p className="font-medium text-lg">
+                        {triage.selectedDeviceLine ||
+                          "Nie wybrano konkretnej linii (zdano się na audytora)"}
+                      </p>
                     )}
                   </div>
-                  
+
                   <div className="mt-6 pt-6 border-t border-border">
-                    <p className="text-sm text-muted-foreground mb-1">Estymowana wycena z Triage</p>
-                    <p className="text-2xl font-bold font-mono text-primary">{estimatedQuote}</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Estymowana wycena z Triage
+                    </p>
+                    <p className="text-2xl font-bold font-mono text-primary">
+                      {estimatedQuote}
+                    </p>
                   </div>
                 </div>
               </section>
 
               {/* Sekcja: Dane kontaktowe */}
               <section>
-                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-border">Dane kontaktowe i Adres</h3>
+                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-border">
+                  Dane kontaktowe i Adres
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Imię i nazwisko</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Imię i nazwisko
+                    </p>
                     <p className="font-medium text-lg">{name}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Telefon</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Telefon
+                    </p>
                     <p className="font-medium text-lg">{phone}</p>
                   </div>
                   <div>
@@ -237,7 +305,9 @@ export default async function LeadDetailsPage({
                     <p className="font-medium text-lg">{email}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Adres montażu</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Adres montażu
+                    </p>
                     <p className="font-medium text-lg">{address}</p>
                   </div>
                 </div>
@@ -245,22 +315,32 @@ export default async function LeadDetailsPage({
 
               {/* Sekcja: Informacje o obiekcie */}
               <section>
-                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-border">Informacje o obiekcie (Triage)</h3>
+                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-border">
+                  Informacje o obiekcie (Triage)
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Rodzaj obiektu</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Rodzaj obiektu
+                    </p>
                     <p className="font-medium text-lg">{location}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Stan wykończenia</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Stan wykończenia
+                    </p>
                     <p className="font-medium text-lg">{buildingState}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Liczba pomieszczeń</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Liczba pomieszczeń
+                    </p>
                     <p className="font-medium text-lg">{roomCount}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Wielkości pokoi</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Wielkości pokoi
+                    </p>
                     <p className="font-medium text-lg">{roomSizes}</p>
                   </div>
                   <div>
@@ -268,12 +348,13 @@ export default async function LeadDetailsPage({
                     <p className="font-medium text-lg">{floorDisplay}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Możliwy agregat na balkonie</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Możliwy agregat na balkonie
+                    </p>
                     <p className="font-medium text-lg">{hasBalcony}</p>
                   </div>
                 </div>
               </section>
-
             </div>
           </div>
         </div>
