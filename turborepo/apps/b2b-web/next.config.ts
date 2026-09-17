@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
     // is the same config minus tests/.
     tsconfigPath: "./tsconfig.build.json",
   },
+  // Przeglądarka dokumentacji (`/dokumentacja`) czyta pliki `.md` z `turborepo/docs/`
+  // przez `node:fs` (`src/lib/docs/docs-catalog.ts`) — katalog leży POZA `apps/b2b-web`,
+  // więc domyślne śledzenie plików Vercela (`@vercel/nft`) go nie widzi. Wartości globów
+  // są rozwiązywane względem katalogu projektu Next (`apps/b2b-web`), klucze to globy tras.
+  outputFileTracingIncludes: {
+    "/dokumentacja": ["../../docs/**/*.md"],
+    "/dokumentacja/[slug]": ["../../docs/**/*.md"],
+  },
 };
 
 export default nextConfig;
