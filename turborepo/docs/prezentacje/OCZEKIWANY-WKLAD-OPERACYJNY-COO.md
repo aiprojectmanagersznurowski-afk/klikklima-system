@@ -30,6 +30,9 @@ Zgodnie z ustaleniami założycielskimi model biznesowy KlikKlima opiera się na
    * System pozyskuje od nich zgody RODO i marketingowe, a KlikKlima przejmuje ich cykliczny roczny serwis gwarancyjny i pogwarancyjny, tworząc stabilną bazę powtarzalnych przychodów (MRR).
 4. **Gwarancja zaangażowania czasowego na minimum pierwsze 2 lata:**
    * Budowa stabilnej sieci monterskiej i procedur wymaga stałego nadzoru. Piotr zobowiązuje się wygospodarować priorytetową przestrzeń w swoim grafiku (min. 140–160 h/miesięcznie od 01.12.2026 r.) na realizację obowiązków COO w KlikKlima przez minimum pierwsze 2 lata istnienia spółki.
+5. **Bezpiecznik decyzyjny („Złoty 1%” — podział 51/49) i ochrona przed paraliżem spółki:**
+   * Michał posiada większościowy pakiet 51% udziałów, co stanowi bezpiecznik decyzyjny (tzw. tie-breaker) eliminujący ryzyko impasu i paraliżu decyzyjnego (*deadlock*).
+   * Jest to jednocześnie rynkowy standard preferowany przez fundusze Venture Capital / Private Equity oraz inwestorów strategicznych (M&A), którzy odrzucają podmioty o symetrycznym podziale 50/50 ze względu na ryzyko paraliżu zarządczego w sytuacjach spornych.
 
 ---
 
@@ -262,7 +265,36 @@ Reputacja marki KlikKlima, organiczne rekomendacje oraz prawo do corocznego pobi
 
 ---
 
-## 5. Oczekiwany Wymiar Czasu Pracy i Zaangażowania Wspólników
+## 5. Macierz Odpowiedzialności RACI (Podział Ról w Ekosystemie)
+
+Struktura zarządzania procesami w KlikKlima opiera się na bezwzględnej jasności hierarchii decyzyjnej. Spółka KlikKlima ponosi całościową odpowiedzialność formalno-prawną i wizerunkową przed klientem końcowym (**A**), natomiast fizyczną realizację i ryzyko operacyjne (**R**) w całości deleguje na certyfikowane ekipy monterskie oraz Dyrektora Operacyjnego.
+
+### Definicje Ról w Macierzy:
+* **R (Responsible)** – Wykonawca (fizycznie i operacyjnie realizuje zadanie).
+* **A (Accountable)** – Decydent (zatwierdza, rozlicza, podejmuje decyzję ostateczną i odpowiada prawnie; dokładnie 1 osoba/organ na proces).
+* **C (Consulted)** – Konsultant (opiniuje merytorycznie przed podjęciem decyzji).
+* **I (Informed)** – Informowany (otrzymuje automatyczne powiadomienie o statusie w systemie).
+
+### Macierz Odpowiedzialności Procesowej:
+
+| Proces / Zadanie operacyjne | KlikKlima (System / CEO Michał) | Dyrektor Operacyjny (COO Piotr) | Ekipa Monterska B2B | Klient Końcowy |
+| :--- | :---: | :---: | :---: | :---: |
+| **Utrzymanie praw i licencji do oprogramowania (IP)** | **A / R** | I | — | — |
+| **Zarządzanie kampaniami Ads i pozyskanie leada** | **A / R** | I | — | — |
+| **Fizyczna wizyta audytowa u klienta** | **A** | **R** | I | C |
+| **Akceptacja wyceny i podpisanie umowy online** | **A** | I | I | **R** |
+| **Weryfikacja certyfikatów F-gaz i polis OC ekip** | **A / R** | C | **R** | — |
+| **Fizyczny montaż klimatyzacji na obiekcie** | **A** | I | **R** | I |
+| **Protokół odbioru i rozliczenie transzy B2B** | **A / R** | I | I | — |
+| **Obsługa zgłoszenia reklamacyjnego i kontakt z klientem** | I | **A / R** | — | C |
+| **Fizyczne usunięcie usterki z tytułu rękojmi** | I | **A** | **R** | C |
+| **Rekrutacja i kontraktowanie podwykonawców** | **A / R** | C | — | — |
+| **Zarządzanie Certyfikatem UDT i audyt F-gaz** | **A** | **R** | C | — |
+| **Prowadzenie procesu transakcyjnego (Exit M&A)** | **A / R** | C | — | — |
+
+---
+
+## 6. Oczekiwany Wymiar Czasu Pracy i Zaangażowania Wspólników
 
 Równowaga partnerska opiera się na proporcjonalnym zaangażowaniu obu członków Zarządu:
 
@@ -276,7 +308,7 @@ Równowaga partnerska opiera się na proporcjonalnym zaangażowaniu obu członk�
 
 ---
 
-## 6. Harmonogram Odbioru Wkładu Wspólników (Zgodny z Bramkami Decyzyjnymi)
+## 7. Harmonogram Odbioru Wkładu Wspólników (Zgodny z Bramkami Decyzyjnymi)
 
 | Horyzont | Etap Roadmapy | Wkład Technologiczny i Strategiczny (Michał - CEO/CTO) | Wkład Operacyjny i Rynkowy (Piotr - COO) | Kryterium Zaliczenia Bramki (SSOT) |
 | :--- | :--- | :--- | :--- | :--- |
