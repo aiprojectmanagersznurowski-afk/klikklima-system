@@ -9,7 +9,8 @@
 > - Migracja bazowa: `supabase/migrations/20260910100000_fld_calendar_foundation.sql`  
 > - Silnik rezerwacji i slotów: `packages/scheduling/src/create-booking.ts`  
 > - Logika wyboru w B2B CRM: `apps/b2b-web/src/lib/schedule/basket-select.ts`  
-> - Wymaganie domenowe: `FLD-QUOTE-BASKET-SELECT` (Work Order: `docs/workorders/FLD-QUOTE-BASKET-SELECT.md`)
+> - Wymaganie domenowe: `FLD-QUOTE-BASKET-SELECT` (Work Order: `docs/workorders/FLD-QUOTE-BASKET-SELECT.md`)  
+> - Dokument powiązany: [Skład i Definicja Montażu Standardowego w Triage](DEFINICJA-MONTAZU-STANDARDOWEGO.md)
 
 ---
 

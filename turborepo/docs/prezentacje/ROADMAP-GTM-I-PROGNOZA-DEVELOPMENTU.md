@@ -9,6 +9,7 @@
 
 - Modele Współpracy Wspólników (`model_wspolpracy.md`)
 - Polityka Dywidend i Dystrybucji Gotówki (`POLITYKA-DYWIDEND-I-DYSTRYBUCJI-GOTOWKI.md`)
+- Skład i Definicja Montażu Standardowego w Triage (`DEFINICJA-MONTAZU-STANDARDOWEGO.md`)
 - Raport Wartości IP i Technologii (`RAPORT-WARTOSCI-IP-I-TECHNOLOGII.md`)
 - Zakres Odpowiedzialności i Wkład Operacyjny COO (`OCZEKIWANY-WKLAD-OPERACYJNY-COO.md`)
 - System KPI i Bramki Decyzyjne (`SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md`)

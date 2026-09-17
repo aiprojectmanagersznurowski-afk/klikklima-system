@@ -12,6 +12,7 @@
 - Roadmapa GTM i Harmonogram Wdrożenia (`ROADMAP-GTM-I-PROGNOZA-DEVELOPMENTU.md`)
 - Prognoza Finansowa i Koszty GTM (`PROGNOZA-FINANSOWA-I-KOSZTY-GTM.md`)
 - Koszyki Usług i Modele Rozliczeniowe (`KOSZYKI-USLUG-I-MODELE-ROZLICZENIOWE.md`)
+- Skład i Definicja Montażu Standardowego w Triage (`DEFINICJA-MONTAZU-STANDARDOWEGO.md`)
 - System KPI i Bramki Decyzyjne (`SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md`)
 
 ---
