@@ -7,7 +7,9 @@
 **Dokumenty powiązane:**  
 - Raport Wartości IP i Technologii (`RAPORT-WARTOSCI-IP-I-TECHNOLOGII.md`)  
 - Zakres Odpowiedzialności i Wkład Operacyjny COO (`OCZEKIWANY-WKLAD-OPERACYJNY-COO.md`)  
+- System KPI i Bramki Decyzyjne (`SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md`)  
 - Przewodnik Uzyskania Certyfikatu UDT (`PROCES-UZYSKANIA-CERTYFIKATU-UDT.md`)  
+- Koszyki Usług i Modele Rozliczeniowe (`docs/KOSZYKI-USLUG-I-MODELE-ROZLICZENIOWE.md`)  
 - Główny Backlog Projektu (`docs/BACKLOG.md`)
 
 ---
@@ -18,7 +20,7 @@
 2. **Zakończenie prac technologicznych do 30 listopada 2026 r.:** Cały development systemu zostaje domknięty w listopadzie. Od 1 grudnia nie dopisujemy nowych funkcji — wchodzimy w fazę testów na żywym organizmie. W grudniu i styczniu realizowane są wyłącznie hotfiksy i stabilizacja.
 3. **Komplet fundamentów operacyjnych do 30 listopada 2026 r.:** Do końca listopada gotowe są: wzory umów podwykonawczych, **wszystkie modele rozliczeniowe** (zaliczki 40–50%, siatka marż, taryfikator stawek montażowych) wdrożone w kodzie, oraz **odświeżony katalog produktów i cennik**.
 4. **Faza Testów Bojowych (Dry Run) przez 2 miesiące (grudzień 2026 r. – styczeń 2027 r.):** Realizacja zleceń na realnych klientach Piotra — **całkowicie BEZ publicznego landing page i BEZ zbierania leadów**. Klienci są wprowadzani do systemu ręcznie i przechodzą pełną ścieżkę operacyjną. To ciche testy bojowe procedur, a nie publiczny start rynkowy.
-5. **Brama Decyzyjna po testach (koniec stycznia 2027 r.):** Szczegółowa weryfikacja 10 twardych wskaźników KPI (brak błędów krytycznych, pełne finansowanie sprzętu z zaliczek, terminowość JIT, protokoły).
+5. **Brama Decyzyjna po testach (koniec stycznia 2027 r.):** Szczegółowa weryfikacja 10 twardych kryteriów Gate 2 zdefiniowanych w [SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md](SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md) (brak błędów krytycznych TECH-02, pełne finansowanie sprzętu z zaliczek OPS-01, terminowość JIT OPS-04, protokoły OPS-06).
 6. **Dedykowana Faza Onboardingu Ekip (luty 2027 r., 1 miesiąc):** Po pomyślnym zaliczeniu testów bojowych przeznaczamy **cały luty na profesjonalne przygotowanie sieci wykonawczej przed sezonem**. To czas na rekrutację, szkolenia stacjonarne i terenowe z aplikacji mobilnej (Field App), wdrożenie standardu 4 zdjęć i checklist oraz podpisanie umów z ekipami.
 7. **Publiczne Uruchomienie Rynku (Go-Live w marcu 2027 r.):** Start publicznego landing page, włączenie kampanii reklamowych (Google Ads, Meta Ads) oraz obsługa masowego napływu leadów przez wdrożoną w lutym sieć instalatorów.
 8. **Certyfikat UDT jako zależność krytyczna:** Złożenie wniosku następuje w listopadzie 2026 r., kontrola stacjonarna w grudniu, a wpis do rejestru UDT w styczniu 2027 r. — przed rozpoczęciem onboardingu ekip i startem komercyjnym.
@@ -123,20 +125,20 @@ Kanały pozyskiwania ruchu (Google Ads, Meta Ads, SearchGPT / AEO) wymagają pre
 
 ### 🚦 BRAMA DECYZYJNA — WERYFIKACJA WYNIKÓW DRY RUN (koniec stycznia 2027 r.)
 
-Przejście do etapu przygotowania sieci i publicznego startu następuje **wyłącznie po spełnieniu 10 twardych kryteriów akceptacyjnych**:
+Przejście do etapu przygotowania sieci i publicznego startu następuje **wyłącznie po spełnieniu 10 twardych kryteriów akceptacyjnych Gate 2** (zgodnie ze źródłem prawdy w [`SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md`](SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md)):
 
-| # | Wskaźnik Sukcesu (KPI) | Wymagany Próg Zaliczenia |
-| :---: | :--- | :--- |
-| **1** | Montaże testowe zrealizowane pełną ścieżką w systemie | **Minimum 3–5 zakończonych instalacji** |
-| **2** | Otwarte błędy krytyczne (P1/Blocker) w platformie | **Bezwzględne 0 błędów** (system w 100% stabilny) |
-| **3** | Model zaliczkowy potwierdzony w praktyce | **100% zakupu urządzeń sfinansowane z zaliczek klientów** |
-| **4** | Realna marża brutto na zleceniach pilotażowych | **Osiągnięty poziom ≥25–35% marży** |
-| **5** | Terminowość logistyki i dostaw hurtowych JIT | **Minimum 95% dostaw na czas** |
-| **6** | Generowanie protokołów montażowych i 4 zdjęć | **100% zleceń posiada kompletne protokoły i fotodokumentację** |
-| **7** | Działanie linii wsparcia klienta i dyspozytorni | **Średni czas kontaktu z klientem <30–60 minut** |
-| **8** | Certyfikat Przedsiębiorstwa UDT | **Certyfikat wpisany do oficjalnego rejestru online** |
-| **9** | Baza produktów, cenniki i matryca uprawnień | **Zablokowane i wdrożone bez rozbieżności w systemie** |
-| **10**| Gotowość materiałów reklamowych i landing page | **Wszystkie kampanie skonfigurowane, gotowe do włączenia** |
+| # | Wskaźnik Sukcesu (KPI / ID) | Wymagany Próg Zaliczenia | Weryfikacja (SSOT) |
+| :---: | :--- | :--- | :--- |
+| **1** | Montaże testowe pełną ścieżką cyfrową | **Minimum 3–5 zakończonych instalacji** na klientach Piotra | Baza danych (`bookings`) |
+| **2** | Otwarte błędy krytyczne (**TECH-02**) | **Bezwzględne 0 błędów P1/Blocker** (system w 100% stabilny) | Sentry / GitHub Issues |
+| **3** | Model zaliczkowy w praktyce (**OPS-01**) | **100% zakupu urządzeń sfinansowane z zaliczek klientów** | Księgowość / Rachunek spółki |
+| **4** | Realna marża brutto pilotażu (**OPS-02**) | **Osiągnięty poziom marży brutto $\ge 25–35\%$** | Moduł rozliczeń B2B CRM |
+| **5** | Terminowość logistyki JIT (**OPS-04**) | **Minimum 95% dostaw na czas** przed slotem montażowym | Karty dostaw WZ |
+| **6** | Standard 4 zdjęć i protokołów (**OPS-06**) | **100% zleceń posiada kompletne protokoły i 4 zdjęcia** | Repozytorium zdjęć S3 / CRM |
+| **7** | Dyspozytornia i czas kontaktu (**OPS-03**) | **Średni czas kontaktu z klientem < 45 minut** | Logi połączeń / AuditLog |
+| **8** | Certyfikat Przedsiębiorstwa UDT (Gate-1.3) | **Kontrola stacjonarna UDT zakończona protokołem pozytywnym** | Protokół inspektora UDT |
+| **9** | Baza produktów i koszyków (Gate-1.5) | **Zablokowane i wdrożone bez rozbieżności w systemie** | Słownik `visit_duration_baskets` |
+| **10**| Gotowość materiałów reklamowych | **Kampanie Google Ads i Meta Ads w 100% skonfigurowane** | Ads Manager (wstrzymane) |
 
 ---
 

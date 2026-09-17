@@ -77,8 +77,8 @@ KlikKlima opiera się na **wysokomarżowym modelu z ujemnym cyklem konwersji got
 
 ## 6. Status Projektu i Najbliższe Kamienie Milowe
 
-* **Stan obecny:** Zbudowany i przetestowany rdzeń technologiczny (**360+ godzin pracy architektonicznej**, gotowy silnik slotów, CRM B2B, modele urządzeń i baza RODO).
-* **Najbliższe 30–60 dni:**
-  1. Domknięcie bramek płatności online i testy w terenie (3–5 montaży pilotażowych).
-  2. Podpisanie umów z dystrybutorami HVAC i zakontraktowanie pierwszych ekip monterskich.
-  3. Start kampanii Google Ads i Meta Ads przed szczytem sezonu.
+* **Stan obecny:** Zbudowany i przetestowany rdzeń technologiczny (**470 godzin pracy architektoniczno-inżynieryjnej**, wycena IP: 260 000 – 360 000 PLN, gotowy silnik slotów, CRM B2B, modele urządzeń i baza RODO).
+* **Najbliższe 30–60 dni (zgodnie z [SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md](SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md)):**
+  1. Domknięcie bramek płatności online i testy w terenie (Gate 2: 3–5 montaży pilotażowych).
+  2. Podpisanie umów z dystrybutorami HVAC i zakontraktowanie pierwszych certyfikowanych ekip monterskich (Gate 3).
+  3. Start kampanii Google Ads i Meta Ads w marcu 2027 r. tuż przed szczytem sezonu (Gate 4).

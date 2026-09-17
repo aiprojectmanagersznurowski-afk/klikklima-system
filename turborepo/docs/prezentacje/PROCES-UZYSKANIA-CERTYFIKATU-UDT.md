@@ -4,7 +4,7 @@
 **Spółka:** KlikKlima Sp. z o.o. (w organizacji / zarejestrowana)  
 **Odpowiedzialność wykonawcza:** Piotr (COO / Dyrektor Operacyjny) — w ramach *Obszaru 5: Formalności, UDT i Gwarancje* ([`OCZEKIWANY-WKLAD-OPERACYJNY-COO.md`](file:///Users/michalsznurowski/Developemnt/klikklima-system/klikklima-system/turborepo/docs/prezentacje/OCZEKIWANY-WKLAD-OPERACYJNY-COO.md))  
 **Wsparcie:** Michał (CTO) — formalności zarządu, dostęp do kont spółki i ePUAP/KRS  
-**Krytyczny punkt w harmonogramie:** Zgłoszenie wniosku w **Listopadzie 2026 r.**, finalizacja przed Go-Live (Brama KPI nr 8 w [`ROADMAP-GTM-I-PROGNOZA-DEVELOPMENTU.md`](file:///Users/michalsznurowski/Developemnt/klikklima-system/klikklima-system/turborepo/docs/prezentacje/ROADMAP-GTM-I-PROGNOZA-DEVELOPMENTU.md))  
+**Krytyczny punkt w harmonogramie:** Zgłoszenie wniosku w **Listopadzie 2026 r.** (Gate 1), finalizacja i wpis przed publicznym Go-Live (kryterium **GATE-3.1** w [`SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md`](file:///Users/michalsznurowski/Developemnt/klikklima-system/klikklima-system/turborepo/docs/prezentacje/SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md))  
 **Podstawa prawna:** Ustawa z dnia 15 maja 2015 r. o substancjach zubożających warstwę ozonową oraz o niektórych fluorowanych gazach cieplarnianych (Dz.U. 2015 poz. 881 z późn. zm.)
 
 ---
@@ -14,7 +14,7 @@
 Posiadanie certyfikatu dla przedsiębiorców wydanego przez Urząd Dozoru Technicznego (UDT) jest **warunkiem bezwzględnym i prawnym fundamentem działania KlikKlima**:
 1. **Legalny zakup urządzeń i czynnika:** Hurtownie HVAC mają ustawowy zakaz sprzedaży klimatyzatorów oraz butli z czynnikiem chłodniczym podmiotom nieposiadającym wpisu do rejestru UDT.
 2. **Legalny montaż pod marką KlikKlima:** Spółka firmuje umowy z klientami B2C i wystawia faktury za montaż — bez certyfikatu przedsiębiorstwa każda instalacja stanowi przestępstwo skarbowo-środowiskowe (kary WIOŚ do 50 000 zł za każdy montaż bez uprawnień).
-3. **Brama Go-Live (KPI nr 8):** Wdrożenie publiczne platformy (luty 2027 r.) i start kampanii reklamowych może nastąpić **wyłącznie po uzyskaniu certyfikatu** lub posiadaniu udokumentowanej, weryfikowalnej ścieżki w UDT.
+3. **Brama Go-Live (Kryterium GATE-3.1):** Wdrożenie publiczne platformy (marzec 2027 r.) i start kampanii reklamowych może nastąpić **wyłącznie po uzyskaniu certyfikatu i wpisie do rejestru UDT** (zgodnie z `SYSTEM-KPI-I-BRAMKI-DECYZYJNE.md`).
 
 ---
 
@@ -168,15 +168,15 @@ Dzięki zastosowaniu modelu najmu aparatury spółka **oszczędza na starcie ok.
 ## 5. Harmonogram Odpowiedzialności (Timeline Listopad 2026 – Luty 2027)
 
 ```
-   LISTOPAD 2026                       GRUDZIEŃ 2026                 STYCZEŃ 2027              LUTY 2027
-   ┌──────────────────────────────────┬─────────────────────────────┬─────────────────────────┬──────────────┐
-   │ 01.11 - 15.11: Formalności       │ 01.12 - 20.12: Kontrola     │ 05.01 - 15.01: Rejestr  │ 01.02.2027:  │
-   │ • Umowa najmu sprzętu (Piotr)    │ • Przygotowanie sprzętu     │ • Wpis certyfikatu      │ PUBLICZNY    │
-   │ • Umowa z instalatorem (Piotr)   │ • Kontrola inspektora UDT   │   do bazy online        │ GO-LIVE      │
-   │ • Oświadczenie zarządu (Michał)  │ • Podpisanie protokołu      │ • Rejestracja w bazach  │ Z PEŁNYM     │
-   │ 16.11 - 20.11: Złożenie wniosku  │   z wynikiem pozytywnym     │   hurtowni HVAC         │ CERTYFIKATEM │
-   │ • Opłata 3 885 zł + wniosek eUDT │                             │ • Spełnienie KPI nr 8   │ UDT!         │
-   └──────────────────────────────────┴─────────────────────────────┴─────────────────────────┴──────────────┘
+   LISTOPAD 2026                       GRUDZIEŃ 2026                 STYCZEŃ 2027              LUTY 2027               MARZEC 2027
+   ┌──────────────────────────────────┬─────────────────────────────┬─────────────────────────┬───────────────────────┬──────────────┐
+   │ 01.11 - 15.11: Formalności       │ 01.12 - 20.12: Kontrola     │ 05.01 - 15.01: Rejestr  │ 01.02 - 28.02.2027:   │ 01.03.2027:  │
+   │ • Umowa najmu sprzętu (Piotr)    │ • Przygotowanie sprzętu     │ • Wpis certyfikatu      │ Onboarding i szkolenia│ PUBLICZNY    │
+   │ • Umowa z instalatorem (Piotr)   │ • Kontrola inspektora UDT   │   do bazy online        │ ekip z Field App      │ GO-LIVE      │
+   │ • Oświadczenie zarządu (Michał)  │ • Podpisanie protokołu      │ • Rejestracja w bazach  │ i standardu 4 zdjęć   │ Z PEŁNYM     │
+   │ 16.11 - 20.11: Złożenie wniosku  │   z wynikiem pozytywnym     │   hurtowni HVAC         │ • Weryfikacja umów    │ CERTYFIKATEM │
+   │ • Opłata 3 885 zł + wniosek eUDT │                             │ • Spełnienie GATE-3.1   │   i polis OC ekip     │ UDT!         │
+   └──────────────────────────────────┴─────────────────────────────┴─────────────────────────┴───────────────────────┴──────────────┘
 ```
 
 ---
