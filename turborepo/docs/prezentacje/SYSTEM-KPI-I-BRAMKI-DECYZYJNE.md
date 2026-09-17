@@ -1,4 +1,4 @@
-# KlikKlima — Zintegrowany System KPI, Metryk Efektywności i Bramek Decyzyjnych (Go/No-Go)
+# System KPI i Bramki Decyzyjne
 ## Strategiczny Model Zarządzania Wynikami (Deloitte Advisory Framework)
 
 > **Status:** Jedyne Źródło Prawdy (Single Source of Truth – SSOT) dla metryk biznesowych, operacyjnych i technologicznych  

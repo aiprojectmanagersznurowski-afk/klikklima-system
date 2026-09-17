@@ -1,4 +1,4 @@
-# KlikKlima — Koszyki Usług, Architektura Harmonogramu i Modele Rozliczeniowe
+# Koszyki Usług i Modele Rozliczeniowe
 
 > **Status:** Dokumentacja referencyjna architektury biznesowo-technologicznej  
 > **Projekt:** System Cyfrowy KlikKlima  

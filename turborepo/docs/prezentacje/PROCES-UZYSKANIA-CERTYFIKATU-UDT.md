@@ -1,4 +1,4 @@
-# Przewodnik Operacyjny: Uzyskanie Certyfikatu UDT dla Przedsiębiorców (F-gazy)
+# Certyfikat UDT dla Przedsiębiorstwa
 ## Model Ekonomiczny: Wynajem Wyposażenia i Współpraca z Personelem Certyfikowanym
 
 **Spółka:** KlikKlima Sp. z o.o. (w organizacji / zarejestrowana)  

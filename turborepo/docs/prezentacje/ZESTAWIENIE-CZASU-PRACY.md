@@ -1,4 +1,4 @@
-# Zintegrowane Zestawienie Czasu Pracy i Wkładu Kapitałowego (Sweat Equity)
+# Zestawienie Czasu Pracy i Wkładu Kapitałowego
 ## Projekt Systemu Cyfrowego KlikKlima (Maj – Wrzesień 2026 r.)
 
 **Autor wkładu:** Michał Sznurowski (Rola: CTO / Główny Architekt Biznesowo-Technologiczny)  
@@ -179,17 +179,3 @@ Poniższa dekompozycja łączy wypracowane godziny z rynkową wyceną prac archi
 | **5. Bezpieczeństwo Enterprise, Baza Danych, RLS i RODO** | **50,0 h** | 11% | **35 000 – 50 000 PLN** |
 | **6. Aplikacje Użytkowe B2C Portal & B2B CRM** | **55,7 h** | 12% | **40 000 – 55 000 PLN** |
 | **ŁĄCZNIE (CAŁY SYSTEM)** | **466,7 h** | **100%** | **330 000 – 450 000 PLN netto** |
-
----
-
-## 7. Kluczowe Wnioski dla Wspólnika (Podsumowanie Negocjacyjne)
-
-1. **Rzeczywisty Wkład Kapitałowy (Sweat Equity):**
-   * Michał wniósł do spółki **466,7 godziny udokumentowanej pracy** na poziomie Głównego Architekta i CTO.
-   * Rynkowa wartość wytworzonego oprogramowania, autorskich silników, bazy danych i procedur prawnych to **od 330 000 do 450 000 zł netto**. Spółka nie poniosła z tego tytułu żadnych kosztów gotówkowych.
-2. **Dynamika i Zaangażowanie Osobiste:**
-   * Projekt nie był pobocznym hobby — zaangażowanie rosło systematycznie z miesiąca na miesiąc: od fazy badań w maju (~28 h), przez prototyp w czerwcu (~93 h), budowę CRM w lipcu (~86 h), architekturę kontraktową w sierpniu (~130 h), po **pełnoetatowy sprint we wrześniu (~130 h w 16 dni, średnio ponad 10 h dziennie)**.
-3. **Majątek Trwały Spółki (Moat):**
-   * Wytworzona technologia nie jest „stroną internetową”, lecz instytucjonalnym systemem operacyjnym. Zapewnia skalowanie 10x bez konieczności powiększania biura, bezkartkowe zamykanie sprzedaży w 60 sekund, ochronę płynności finansowej (fakturowanie 2-fazowe) oraz bankowe bezpieczeństwo bazy klientów.
-4. **Podstawa do Ustaleń Partnerskich:**
-   * Aby zachować partnerską równowagę w spółce, wkład operacyjny wspólnika (COO) powinien równoważyć wniesiony kapitał technologiczny o wartości ponad 350 tys. zł poprzez wdrożenie procesów rynkowych, pozyskanie sieci montażystów, zarządzanie bieżącą logistyką i realizację założonych celów sprzedażowych (zgodnie z dokumentem `OCZEKIWANY-WKLAD-OPERACYJNY-COO.md`).

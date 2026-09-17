@@ -1,4 +1,4 @@
-# Klik Klima — Korporacyjny Style Guide do Prezentacji PPTX
+# Księga Stylu Prezentacji (Style Guide)
 
 > **Cel dokumentu:** to jest specyfikacja referencyjna przeznaczona do przekazywania innym agentom AI (np. przy poleceniu „wygeneruj prezentację PPTX w stylu Klik Klima”). Agent generujący prezentację powinien stosować się do wszystkich wartości liczbowych, kolorów i układów podanych poniżej bez ich modyfikowania, chyba że użytkownik jawnie poprosi o odstępstwo.
 

@@ -10,10 +10,10 @@
 export type DocCategory = { id: string; label: string; dir: string }
 
 export const DOC_CATEGORIES: readonly DocCategory[] = [
+  { id: "prezentacje", label: "Materiały biznesowe", dir: "prezentacje" },
   { id: "root", label: "Zasady i decyzje", dir: "" },
   { id: "architecture", label: "Architektura systemu", dir: "architecture" },
   { id: "workflows", label: "Procesy i przepływy", dir: "workflows" },
   { id: "workorders", label: "Zlecenia wdrożeniowe", dir: "workorders" },
   { id: "testing", label: "Scenariusze testowe", dir: "testing" },
-  { id: "prezentacje", label: "Materiały biznesowe", dir: "prezentacje" },
 ]

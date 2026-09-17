@@ -1,4 +1,4 @@
-# KlikKlima — Prognoza Finansowa, Budżet GTM i Ścieżka Rentowności do 100 Montaży Miesięcznie
+# Prognoza Finansowa i Budżet GTM (100 montaży/mc)
 ## Model Finansowy, Koszty Formalno-Prawne, UDT i Unit Economics (2026–2027)
 
 > **Status:** Wiążący Model Finansowy i Budżetowy (Single Source of Truth – SSOT)  

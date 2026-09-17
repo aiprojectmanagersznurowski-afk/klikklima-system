@@ -162,12 +162,12 @@ describe('DOC_CATEGORIES — kontrakt UI (dosłowne polskie etykiety, ustalona k
 
     expect(DOC_CATEGORIES).toHaveLength(6);
     expect(DOC_CATEGORIES.map((category: { dir: string }) => category.dir)).toEqual([
+      'prezentacje',
       '',
       'architecture',
       'workflows',
       'workorders',
       'testing',
-      'prezentacje',
     ]);
   });
 
@@ -175,12 +175,12 @@ describe('DOC_CATEGORIES — kontrakt UI (dosłowne polskie etykiety, ustalona k
     const { DOC_CATEGORIES } = await import('../src/lib/docs/docs-catalog');
 
     expect(DOC_CATEGORIES.map((category: { label: string }) => category.label)).toEqual([
+      'Materiały biznesowe',
       'Zasady i decyzje',
       'Architektura systemu',
       'Procesy i przepływy',
       'Zlecenia wdrożeniowe',
       'Scenariusze testowe',
-      'Materiały biznesowe',
     ]);
   });
 });

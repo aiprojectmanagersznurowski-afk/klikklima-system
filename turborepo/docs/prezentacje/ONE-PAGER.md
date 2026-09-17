@@ -1,4 +1,4 @@
-# KlikKlima — Cyfrowy Ekosystem Instalacji Klimatyzacji (One-Pager)
+# One-Pager Biznesowy
 
 > **Misja:** Zastąpić tradycyjny, chaotyczny proces zakupu i montażu klimatyzacji w pełni zautomatyzowanym, transparentnym ekosystemem cyfrowym — działającym w modelu *Uber dla instalacji HVAC*.
 

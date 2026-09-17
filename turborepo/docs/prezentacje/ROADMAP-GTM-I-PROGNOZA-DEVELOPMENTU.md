@@ -1,4 +1,4 @@
-# Prognoza Ukończenia Ekosystemu, Roadmapa Go-To-Market i Podział Ról
+# Roadmapa GTM i Harmonogram Wdrożenia
 ## Strategia Wdrożenia Biznesowego KlikKlima (Listopad 2026 r. – Sierpień 2027 r.)
 
 **Projekt:** KlikKlima  

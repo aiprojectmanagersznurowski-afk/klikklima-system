@@ -1,4 +1,4 @@
-# KlikKlima – Modele Współpracy, Podział Ról i Macierz RACI
+# Modele Współpracy Wspólników
 
 ## 1. Podział Obowiązków (Wariant Rekomendowany: Wspólnicy - Opcja B)
 
@@ -17,6 +17,7 @@
 * Wdrażanie i pilnowanie standardów jakości montażu w całej sieci KlikKlima.
 * Szkolenia, wsparcie (druga linia) i rozwiązywanie problemów technicznych na budowach.
 * Prowadzenie najbardziej skomplikowanych audytów u klientów oraz osobisty udział w procedurze certyfikacji UDT.
+* **Obsługa zgłoszeń reklamacyjnych, usterek i bezpośredni kontakt z klientem:** Prowadzenie pierwszej linii wsparcia klienta po montażu, telefoniczny triage techniczny, koordynacja i nadzór nad natychmiastowym usuwaniem usterek przez ekipy (SLA do 24–48h) oraz dbanie o satysfakcję pozakupową i wysoki wskaźnik NPS.
 
 ---
 
@@ -38,7 +39,8 @@ Podział ról gwarantujący jasność hierarchii decyzyjnej. KlikKlima ponosi od
 | Weryfikacja certyfikatów F-Gaz i polis OC ekip | **A / R** | C | **R** | - |
 | Fizyczny montaż instalacji | **A** | I | **R** | I |
 | Protokół odbioru i rozliczenie transzy B2B | **A / R** | I | I | - |
-| Fizyczne usunięcie usterki z tytułu rękojmi | **A** | I | **R** | C |
+| Obsługa zgłoszenia reklamacyjnego i kontakt z klientem | I | **A / R** | - | C |
+| Fizyczne usunięcie usterki z tytułu rękojmi | I | **A** | **R** | C |
 | Pozyskiwanie (rekrutacja) nowych podwykonawców | **A / R** | C | - | - |
 
 ---

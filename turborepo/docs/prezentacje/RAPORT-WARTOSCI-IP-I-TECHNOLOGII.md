@@ -1,4 +1,4 @@
-# Raport Wartości Biznesowej, Technologii i Własności Intelektualnej (IP)
+# Raport Wyceny Technologii i IP
 
 **Projekt:** System Cyfrowy KlikKlima  
 **Autor wkładu:** Michał Sznurowski (Rola: CTO / Główny Architekt Biznesowo-Technologiczny)  
@@ -162,16 +162,3 @@ Michał stworzył autorską platformę orkiestracji wirtualnego zespołu inżyni
    Podwykonawcy nie mają wglądu w bazę klientów (RLS), a audytorzy nie mogą zawyżać ani zaniżać cen (sztywne koszyki wycen).
 5. **Drastycznie niższy koszt innowacji:**
    Dzięki metodyce CDAL kolejne moduły (np. aplikacja mobilna montera, integracje hurtowni) powstaną w kilka tygodni, a nie kwartałów.
-
----
-
-## 5. Tezy Negocjacyjne do Rozmowy ze Wspólnikiem
-
-1. **O kapitale początkowym:**
-   > *„Wniosłem do spółki technologię o rynkowej wartości ponad 300 000 zł, na którą składa się 5 warstw gotowego kodu: zaawansowany silnik puli slotów w czasie rzeczywistym, bezkartkowe podpisywanie umów, automatyczne fakturowanie 2-fazowe oraz bankowe bezpieczeństwo bazy. Gdybyśmy zlecili to na rynku, spółka wydałaby cały budżet i czekała 8 miesięcy na wersję beta.”*
-2. **O roli w spółce:**
-   > *„Mój wkład nie był pracą wykonawcy zadań. Pełniłem rolę architekta całego modelu operacyjnego firmy — to ja rozwiązałem problem montaży deweloperskich, automatycznego agregowania kalendarzy, cyfrowych umów i wycen, które bezpośrednio decydują o naszej rentowności i konwersji.”*
-3. **O unikalnym aktywie (IP):**
-   > *„Kod, algorytmy puli terminów, moduły prawne i fabryka agentowa są prawną własnością naszej spółki. To one budują wycenę KlikKlima w oczach potencjalnych inwestorów jako skalowalnego software-driven biznesu HVAC, a nie tradycyjnej firmy instalacyjnej.”*
-4. **O pełnym zaangażowaniu:**
-   > *„Przepracowałem na rzecz spółki ponad 470 godzin, z czego we wrześniu poświęcałem ponad 10 godzin w każdy roboczy dzień. System dysponuje kompletną infrastrukturą transakcyjną — od wejścia klienta na stronę, przez wybór terminu, podpisanie umowy, po montaż i fakturę.”*
