@@ -8,7 +8,7 @@ import type { Role } from '@klikklima/contracts'
 import {
   LayoutDashboard, Users, UserCheck, Wrench, Bell, Search, LogOut,
   ChevronLeft, ChevronRight, Thermometer, X, FolderKanban, Box, Settings,
-  ChevronDown, CalendarDays, BarChart3, BookOpen
+  ChevronDown, CalendarDays, BarChart3, BookOpen, Sparkles
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -77,6 +77,7 @@ const navItems: NavItem[] = [
       { id: 'auditors_analytics', label: 'Audyty & Audytorzy', href: '/analytics/auditors' },
     ]
   },
+  { id: 'chat', label: 'Asystent AI', icon: Sparkles, href: '/chat' },
   { id: 'notifications', label: 'Centrum Powiadomień', icon: Bell, href: '/notifications', comingSoon: true },
   {
     id: 'settings',
