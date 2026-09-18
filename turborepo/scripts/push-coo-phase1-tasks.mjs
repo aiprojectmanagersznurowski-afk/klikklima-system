@@ -5,7 +5,8 @@
  */
 
 const apiKey = "6c97357d3659db40dfc1674beb00fa1d";
-const token = "ATTAb2d94c6bb94c24e4f00c2520c259b927540da2fe972a464c189be6f1177edb9dA1E30578";
+const token =
+  "ATTAb2d94c6bb94c24e4f00c2520c259b927540da2fe972a464c189be6f1177edb9dA1E30578";
 const PIOTR_MEMBER_ID = "6aaa484e9e96d7531e228b40"; // piosznu
 const COO_LIST_ID = "6aac2b032c20c2c5e9fb31b9";
 
@@ -292,12 +293,45 @@ Termin realizacji: 27 listopada 2026 r.
 Odpowiedzialny: Piotr (COO)
 Dokument powiązany: KOSZYKI-USLUG-I-MODELE-ROZLICZENIOWE.md i OCZEKIWANY-WKLAD-OPERACYJNY-COO.md.`,
   },
+  {
+    name: "[COO-17] Uzupełnienie cen dla elementów cennika (kluczowy element wycen w Field App i Triage)",
+    desc: `Cel: Dokończenie uzupełnienia stawek kosztów zakupu netto oraz cen sprzedaży brutto/netto dla wszystkich pozycji cennika kosztorysowego (35 pozycji materiałów, robocizny i prac dodatkowych), stanowiącego fundament silnika wycen w Field App (audyt na żywo) oraz konfiguratorze Triage B2C (wycena „od” i pozycje ponadstandardowe).
+
+Kontekst biznesowo-techniczny:
+Zgodnie ze specyfikacją FIELD-APP-PLAN.md (sekcja 4.3) oraz DEFINICJA-MONTAZU-STANDARDOWEGO.md, zaliczki i umowy w KlikKlima opierają się na precyzyjnym koszcie zakupu i cenie sprzedaży, a nie na sztywnym procencie. Zaliczka pobierana przed montażem = Urządzenia + Pozycje z flagą FZ (materiały zamawiane JIT), a robocizna rozliczana jest na fakturze końcowej. Brak kompletnego cennika blokuje automatyczną wycenę na audycie i kalkulator Triage.
+
+Zakres działań Piotra (COO):
+1. Uzupełnienie stawek w arkuszu „Formularz wyceny” / katalogu 35 pozycji:
+   - Koszt zakupu netto dla spółki (ceny hurtowe materiałów po rabatach),
+   - Cena sprzedaży netto i brutto dla klienta B2C (gwarantująca marżę brutto spółki min. 28–35%),
+   - Jednostka miary (JM: szt., mb, kpl., ryczałt).
+2. Podział na kategorie i oznaczenie flagi zaliczkowej (FZ):
+   - Kategoria: Mat (Materiał), Rob (Robocizna), MR (Materiał + Robocizna),
+   - Flaga FZ (Faktura Zaliczkowa): oznaczenie pozycji wymagających wcześniejszego zakupu materiałów (np. 9 z 35 pozycji: pompki, przejścia dachowe, rury powyżej standardu, nietypowe wsporniki).
+3. Wycena kluczowych pozycji niestandardowych (zgodnie z DEFINICJA-MONTAZU-STANDARDOWEGO.md):
+   - Instalacja chłodnicza pow. 3 mb (stawka za mb dla 1/4"-3/8" oraz 1/4"-1/2"),
+   - Pompka skroplin (cicha pompka ścienna / podtynkowa + montaż i zasilanie),
+   - Kucie bruzd podtynkowych w ścianie (stawka za mb w cegle/gazobetonie vs w zbrojonym żelbecie),
+   - Przewiert w zbrojonym żelbecie wiertnicą diamentową,
+   - Dedykowana linia zasilająca z rozdzielnicy (przewód 3x2.5 mm² + montaż bezpiecznika B16/RCBO),
+   - Wsporniki dachowe na dach skośny oraz klatki zabezpieczające agregat.
+4. Przekazanie kompletnego cennika do Michała:
+   - Gotowy arkusz trafia do zasilenia tabeli price_list_items / cennik_uslug w PostgreSQL i spięcia z kodem kalkulatorów.
+
+Termin realizacji: 24 listopada 2026 r.
+Odpowiedzialny: Piotr (COO)
+Dokumenty źródłowe: DEFINICJA-MONTAZU-STANDARDOWEGO.md, FIELD-APP-PLAN.md (sekcja 4.3), KOSZYKI-USLUG-I-MODELE-ROZLICZENIOWE.md.`,
+  },
 ];
 
 async function run() {
-  console.log("=== 1. Aktualizacja i przenoszenie istniejących zadań do listy COO ===");
+  console.log(
+    "=== 1. Aktualizacja i przenoszenie istniejących zadań do listy COO ===",
+  );
   for (const card of EXISTING_CARDS_TO_UPDATE) {
-    console.log(`Przenoszenie i przypisywanie karty: "${card.name}" (${card.id})...`);
+    console.log(
+      `Przenoszenie i przypisywanie karty: "${card.name}" (${card.id})...`,
+    );
     const url = `https://api.trello.com/1/cards/${card.id}?idList=${COO_LIST_ID}&name=${encodeURIComponent(card.name)}&desc=${encodeURIComponent(card.desc)}&idMembers=${PIOTR_MEMBER_ID}&key=${apiKey}&token=${token}`;
     const res = await fetch(url, { method: "PUT" });
     if (!res.ok) {
@@ -308,7 +342,9 @@ async function run() {
     await sleep(250);
   }
 
-  console.log("\n=== 2. Tworzenie nowych zadań COO dla Fazy 1 (do 30.11.2026) ===");
+  console.log(
+    "\n=== 2. Tworzenie nowych zadań COO dla Fazy 1 (do 30.11.2026) ===",
+  );
   for (const task of NEW_COO_TASKS) {
     console.log(`Tworzenie zadania: "${task.name}"...`);
     const url = `https://api.trello.com/1/cards?idList=${COO_LIST_ID}&name=${encodeURIComponent(task.name)}&desc=${encodeURIComponent(task.desc)}&idMembers=${PIOTR_MEMBER_ID}&key=${apiKey}&token=${token}`;
@@ -317,12 +353,16 @@ async function run() {
       console.error(` -> Błąd tworzenia [${res.status}]:`, await res.text());
     } else {
       const created = await res.json();
-      console.log(` -> Utworzono kartę ID: ${created.id}, przypisano do: ${created.idMembers.join(", ")}`);
+      console.log(
+        ` -> Utworzono kartę ID: ${created.id}, przypisano do: ${created.idMembers.join(", ")}`,
+      );
     }
     await sleep(250);
   }
 
-  console.log("\n✅ Wszystkie zadania COO dla Fazy 1 zostały pomyślnie utworzone i przypisane do Piotra!");
+  console.log(
+    "\n✅ Wszystkie zadania COO dla Fazy 1 zostały pomyślnie utworzone i przypisane do Piotra!",
+  );
 }
 
 run().catch((err) => {

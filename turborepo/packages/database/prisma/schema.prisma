@@ -1119,3 +1119,18 @@ model InstallationPhase {
   @@index([installationId], map: "installation_phases_installation_id_idx")
   @@map("installation_phases")
 }
+
+/// Tabela wektorowej bazy wiedzy AI (pgvector)
+model KnowledgeBase {
+  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content     String
+  metadata    Json?                  @default("{}")
+  accessLevel String                 @map("access_level")
+  embedding   Unsupported("vector")?
+  createdAt   DateTime?              @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([accessLevel])
+  @@index([embedding], map: "knowledge_base_embedding_hnsw_idx")
+  @@map("knowledge_base")
+}
+

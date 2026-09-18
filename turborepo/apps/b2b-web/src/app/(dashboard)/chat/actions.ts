@@ -2,74 +2,82 @@
 
 import { google } from '@ai-sdk/google'
 import { generateText } from 'ai'
-import { listDocs, readDocContent } from '../../../lib/docs/docs-catalog'
+import { prisma } from '@repo/database'
+
+export type SourceItem = {
+  file: string
+  category: string
+  header: string
+  similarity: number
+}
 
 export type AskAiActionResult = {
   success: boolean
   content: string
   error?: string
+  sources?: SourceItem[]
 }
 
-function getKnowledgeBaseContext(userQuery: string): string {
-  try {
-    const allDocs = listDocs()
-    // Pomijamy obszerne zlecenia programistyczne (workorders) i logi testów (testing),
-    // aby nie przekraczać limitu tokenów na minutę (250k w darmowym planie Google AI Studio).
-    const businessDocs = allDocs.filter(
-      d => d.categoryId !== 'workorders' && d.categoryId !== 'testing'
-    )
+async function generateQueryEmbedding(text: string, apiKey: string, retries = 2): Promise<number[]> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`
 
-    const queryWords = userQuery
-      .toLowerCase()
-      .replace(/[^a-z0-9ąćęłńóśźż]/gi, ' ')
-      .split(/\s+/)
-      .filter(w => w.length > 2)
-
-    // Punktowanie dokumentów po trafności zapytania
-    const scored = businessDocs.map(doc => {
-      let score = 0
-      const titleLower = (doc.title + ' ' + doc.fileName).toLowerCase()
-      for (const word of queryWords) {
-        if (titleLower.includes(word)) {
-          score += 5
-        }
-      }
-      if (doc.categoryId === 'prezentacje' || doc.categoryId === 'architecture') {
-        score += 1
-      }
-      return { doc, score }
+  for (let attempt = 1; attempt <= retries + 1; attempt++) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'models/gemini-embedding-001',
+        outputDimensionality: 768,
+        content: { parts: [{ text }] }
+      })
     })
 
-    scored.sort((a, b) => b.score - a.score)
-
-    let context = 'Poniżej znajduje się baza wiedzy (dokumentacja z repozytorium KlikKlima):\n\n'
-    let totalLength = 0
-    // Limit długości kontekstu (~30k tokenów), gwarantujący bezpieczny zapas poniżej 250k tokenów/min
-    const MAX_CONTEXT_LENGTH = 120000
-
-    for (const item of scored) {
-      try {
-        const content = readDocContent(item.doc)
-        if (content) {
-          if (totalLength + content.length > MAX_CONTEXT_LENGTH) {
-            const remaining = MAX_CONTEXT_LENGTH - totalLength
-            if (remaining > 1000) {
-              context += `--- DOKUMENT: ${item.doc.title} (${item.doc.fileName}) ---\n${content.slice(0, remaining)}...\n\n`
-            }
-            break
-          }
-          context += `--- DOKUMENT: ${item.doc.title} (${item.doc.fileName}) ---\n${content}\n\n`
-          totalLength += content.length
-        }
-      } catch (err) {
-        console.warn(`Nie udało się odczytać dokumentu: ${item.doc.fileName}`, err)
-      }
+    if (res.status === 429 && attempt <= retries) {
+      await new Promise(r => setTimeout(r, 2000 * attempt))
+      continue
     }
 
-    return context
-  } catch (error) {
-    console.error('Błąd podczas ładowania bazy wiedzy:', error)
-    return 'Baza wiedzy chwilowo niedostępna.'
+    if (!res.ok) {
+      const errorText = await res.text()
+      throw new Error(`Błąd generowania wektora zapytania (${res.status}): ${errorText}`)
+    }
+
+    const data = await res.json()
+    if (!data.embedding?.values) {
+      throw new Error(`Brak wektora w odpowiedzi modelu embeddingów.`)
+    }
+
+    return data.embedding.values
+  }
+
+  throw new Error('Przekroczono limit prób generowania wektora zapytania.')
+}
+
+async function searchKnowledgeBase(
+  query: string,
+  apiKey: string,
+  allowedLevels: string[] = ['public', 'internal_dispatcher', 'internal_admin']
+) {
+  try {
+    const embedding = await generateQueryEmbedding(query, apiKey)
+    const vectorStr = `[${embedding.join(',')}]`
+
+    const results = await prisma.$queryRawUnsafe<Array<{
+      id: string
+      content: string
+      metadata: { file?: string; category?: string; header?: string } | null
+      similarity: number
+    }>>(
+      `SELECT id, content, metadata, similarity 
+       FROM public.match_knowledge_base($1::vector, 0.25, 7, $2::text[])`,
+      vectorStr,
+      allowedLevels
+    )
+
+    return results
+  } catch (err) {
+    console.error('Błąd podczas wyszukiwania wektorowego w pgvector:', err)
+    return []
   }
 }
 
@@ -83,23 +91,60 @@ export async function askAiAssistantAction(
     return {
       success: false,
       content: '',
-      error: 'Brak klucza GOOGLE_GENERATIVE_AI_API_KEY w konfiguracji środowiska produkcyjnego (Vercel). Dodaj zmienną środowiskową w panelu Vercel i wykonaj Redeploy.'
+      error: 'Brak klucza GOOGLE_GENERATIVE_AI_API_KEY w konfiguracji środowiska. Upewnij się, że zmienna jest ustawiona w Vercel.'
     }
   }
 
   try {
     const latestUserMessage = [...messages].reverse().find(m => m.role === 'user')?.content || ''
-    const knowledgeContext = getKnowledgeBaseContext(latestUserMessage)
 
-    const systemPrompt = `Jesteś zaawansowanym asystentem AI dla administratorów i dyspozytorów systemu KlikKlima (panel B2B).
-Twoim zadaniem jest pomaganie użytkownikom poprzez dostarczanie precyzyjnych informacji na podstawie dokumentacji wewnętrznej, procedur oraz kontraktów.
-Używaj bogatego formatowania Markdown: tabel, list, pogrubień, a jeśli to uzasadnione, twórz wykresy Mermaid.
+    // Wyszukiwanie wektorowe pgvector w bazie wiedzy z filtrem uprawnień
+    const matchedChunks = await searchKnowledgeBase(latestUserMessage, apiKey, [
+      'public',
+      'internal_dispatcher',
+      'internal_admin'
+    ])
 
-Odpowiadaj ZAWSZE na podstawie poniższej bazy wiedzy. Jeżeli nie znasz odpowiedzi na podstawie tych dokumentów, powiedz o tym.
-Zawsze pisz w języku polskim, w profesjonalnym i pomocnym tonie.
+    let context = ''
+    const sources: SourceItem[] = []
 
-BAZA WIEDZY:
-${knowledgeContext}
+    if (matchedChunks.length > 0) {
+      context += 'Poniżej znajdują się najbardziej dopasowane fragmenty oficjalnej dokumentacji i procedur KlikKlima z bazy wektorowej:\n\n'
+      for (const match of matchedChunks) {
+        const file = match.metadata?.file || 'dokument'
+        const header = match.metadata?.header || 'Główna'
+        const category = match.metadata?.category || 'ogólne'
+        const simPercent = Math.round((match.similarity || 0) * 100)
+
+        context += `--- ŹRÓDŁO: ${file} | Sekcja: ${header} (Trafność: ${simPercent}%) ---\n`
+        context += `${match.content}\n\n`
+
+        if (!sources.some(s => s.file === file && s.header === header)) {
+          sources.push({
+            file,
+            header,
+            category,
+            similarity: match.similarity
+          })
+        }
+      }
+    } else {
+      context = 'Brak bezpośrednich dopasowań w bazie wiedzy dla tego zapytania.'
+    }
+
+    const systemPrompt = `Jesteś zaawansowanym, profesjonalnym asystentem AI dla administratorów i dyspozytorów systemu KlikKlima (panel B2B).
+Twoim celem jest dostarczanie precyzyjnych, wyczerpujących i estetycznie sformatowanych informacji na podstawie wewnętrznej bazy wiedzy, procedur i kontraktów.
+
+ZASADY FORMATOWANIA ODPOWIEDZI (BARDZO WAŻNE):
+1. Struktura i czytelność: Zawsze formatuj odpowiedzi przejrzyście w Markdown. Dziel dłuższe odpowiedzi na sekcje z nagłówkami (### lub ##).
+2. Wyróżnienia: Używaj pogrubień (**bold**) dla kluczowych terminów, liczb, kwot, statusów i progów czasowych (SLA).
+3. Tabele: Jeśli prezentujesz porównania, parametry techniczne, koszyki usług, stawki lub składniki pakietów, ZAWSZE twórz estetyczną tabelę Markdown.
+4. Listy: Używaj punktorów i numeracji dla list kroków, warunków lub wyliczeń. Unikaj monotonnych, zbitych bloków tekstu.
+5. Diagramy procesowe: Jeśli pytanie dotyczy przepływu statusów, procedur montażu, obsługi reklamacji lub logistyki, ZAWSZE dołącz wykres Mermaid (np. \`\`\`mermaid\nflowchart TD ... \`\`\`).
+6. Rzetelność: Odpowiadaj wyłącznie na podstawie poniższej bazy wiedzy KlikKlima. Jeśli czegoś w niej nie ma, zaznacz to otwarcie. Pisz zawsze w języku polskim.
+
+FRAGMENTY BAZY WIEDZY (PGVECTOR):
+${context}
 `
 
     const { text } = await generateText({
@@ -113,7 +158,8 @@ ${knowledgeContext}
 
     return {
       success: true,
-      content: text
+      content: text,
+      sources
     }
   } catch (err: any) {
     console.error('Błąd wywołania Gemini API w askAiAssistantAction:', err)

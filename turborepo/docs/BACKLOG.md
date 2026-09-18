@@ -145,6 +145,8 @@ Lista zadań przypisana bezpośrednio do Piotra w dedykowanej kolumnie Trello `�
     _Katalog stawek za prace niestandardowe (freon >3m, bruzdy, żelbet, pompki skroplin, zwyżka) i kalkulator oferty na żywo w Field App._
 16. **[COO-16] Polityka wynagradzania podwykonawców: Prowizje z prac dodatkowych i audytów** _(Termin: 27.11.2026)_  
     _Regulamin prowizyjny ekip: split z prac dodatkowych (70–80% ekipa / 20–30% spółka), stawka za audyt, Quality Bonus i potrącenia za usterki._
+17. **[COO-17] Uzupełnienie cen dla elementów cennika (kluczowy element wycen w Field App i Triage)** _(Termin: 24.11.2026)_  
+    _Dokończenie stawek zakupu netto i sprzedaży brutto/netto dla 35 pozycji cennika, kwalifikacja Mat/Rob/MR i flaga FZ (zaliczka)._
 
 ---
 
