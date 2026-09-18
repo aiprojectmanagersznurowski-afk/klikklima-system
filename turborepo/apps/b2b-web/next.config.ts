@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/dokumentacja": ["../../docs/**/*.md"],
     "/dokumentacja/[slug]": ["../../docs/**/*.md"],
+    "/chat": ["../../docs/**/*.md"],
   },
 };
 

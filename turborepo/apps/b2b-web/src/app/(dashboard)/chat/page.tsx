@@ -67,11 +67,22 @@ export default function ChatPage() {
         }))
       )
 
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.id === assistantId ? { ...msg, content: result.content } : msg
+      if (!result.success) {
+        setError(result.error || 'Wystąpił błąd podczas generowania odpowiedzi.')
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === assistantId
+              ? { ...msg, content: `⚠️ **Błąd:** ${result.error || 'Nie udało się wygenerować odpowiedzi.'}` }
+              : msg
+          )
         )
-      )
+      } else {
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === assistantId ? { ...msg, content: result.content } : msg
+          )
+        )
+      }
     } catch (err: any) {
       console.error('Chat error:', err)
       setError(err?.message || 'Wystąpił nieoczekiwany błąd podczas pobierania odpowiedzi.')

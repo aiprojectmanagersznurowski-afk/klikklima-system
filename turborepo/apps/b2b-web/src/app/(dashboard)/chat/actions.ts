@@ -2,45 +2,53 @@
 
 import { google } from '@ai-sdk/google'
 import { generateText } from 'ai'
-import fs from 'fs'
-import path from 'path'
+import { listDocs, readDocContent } from '../../../lib/docs/docs-catalog'
 
-function getKnowledgeBaseContext() {
-  let context = 'Poniżej znajduje się baza wiedzy (pliki z repozytorium):\n\n'
-  const workspaceRoot = path.join(process.cwd(), '../../')
+export type AskAiActionResult = {
+  success: boolean
+  content: string
+  error?: string
+}
 
-  const targets = [
-    'contracts',
-    'docs/funkcjonalnosci_do_wdrozenia',
-    'docs/architecture',
-    'docs/performance'
-  ]
+function getKnowledgeBaseContext(): string {
+  try {
+    let context = 'Poniżej znajduje się baza wiedzy (dokumentacja z repozytorium KlikKlima):\n\n'
+    const docs = listDocs()
 
-  for (const target of targets) {
-    const targetPath = path.join(workspaceRoot, target)
-    if (!fs.existsSync(targetPath)) continue
-
-    const files = fs.readdirSync(targetPath)
-    for (const file of files) {
-      if (file.endsWith('.md') || file.endsWith('.mjs')) {
-        const filePath = path.join(targetPath, file)
-        try {
-          const content = fs.readFileSync(filePath, 'utf-8')
-          context += `--- PLIK: ${target}/${file} ---\n${content}\n\n`
-        } catch (e) {
-          console.error(`Failed to read file ${filePath}:`, e)
+    for (const doc of docs) {
+      try {
+        const content = readDocContent(doc)
+        if (content) {
+          context += `--- DOKUMENT: ${doc.title} (${doc.fileName}) ---\n${content}\n\n`
         }
+      } catch (err) {
+        console.warn(`Nie udało się odczytać dokumentu: ${doc.fileName}`, err)
       }
     }
-  }
 
-  return context
+    return context
+  } catch (error) {
+    console.error('Błąd podczas ładowania bazy wiedzy:', error)
+    return 'Baza wiedzy chwilowo niedostępna.'
+  }
 }
 
 export async function askAiAssistantAction(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
-) {
-  const systemPrompt = `Jesteś zaawansowanym asystentem AI dla administratorów i dyspozytorów systemu KlikKlima (panel B2B).
+): Promise<AskAiActionResult> {
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
+
+  if (!apiKey) {
+    console.error('Błąd: Brak zmiennej GOOGLE_GENERATIVE_AI_API_KEY')
+    return {
+      success: false,
+      content: '',
+      error: 'Brak klucza GOOGLE_GENERATIVE_AI_API_KEY w konfiguracji środowiska produkcyjnego (Vercel). Dodaj zmienną środowiskową w panelu Vercel i wykonaj Redeploy.'
+    }
+  }
+
+  try {
+    const systemPrompt = `Jesteś zaawansowanym asystentem AI dla administratorów i dyspozytorów systemu KlikKlima (panel B2B).
 Twoim zadaniem jest pomaganie użytkownikom poprzez dostarczanie precyzyjnych informacji na podstawie dokumentacji wewnętrznej, procedur oraz kontraktów.
 Używaj bogatego formatowania Markdown: tabel, list, pogrubień, a jeśli to uzasadnione, twórz wykresy Mermaid.
 
@@ -51,14 +59,25 @@ BAZA WIEDZY:
 ${getKnowledgeBaseContext()}
 `
 
-  const { text } = await generateText({
-    model: google('gemini-1.5-pro'),
-    system: systemPrompt,
-    messages: messages.map(m => ({
-      role: m.role,
-      content: m.content
-    }))
-  })
+    const { text } = await generateText({
+      model: google('gemini-1.5-pro'),
+      system: systemPrompt,
+      messages: messages.map(m => ({
+        role: m.role,
+        content: m.content
+      }))
+    })
 
-  return { content: text }
+    return {
+      success: true,
+      content: text
+    }
+  } catch (err: any) {
+    console.error('Błąd wywołania Gemini API w askAiAssistantAction:', err)
+    return {
+      success: false,
+      content: '',
+      error: err?.message || 'Wystąpił błąd podczas komunikacji z modelem Google Gemini.'
+    }
+  }
 }
