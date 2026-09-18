@@ -107,7 +107,7 @@ export default function ChatPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Asystent AI (BETA)</h1>
           <p className="text-sm text-muted-foreground">
-            Oparty na Gemini 1.5 Pro. Odpowiada w oparciu o repozytorium i potrafi rysować diagramy procesowe.
+            Oparty na Gemini 3.6 Flash. Odpowiada w oparciu o repozytorium i potrafi rysować diagramy procesowe.
           </p>
         </div>
       </div>
