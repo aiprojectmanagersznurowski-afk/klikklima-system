@@ -185,8 +185,10 @@ export function AssignCrewDialog({
         )}
 
         <DialogFooter>
-          <DialogClose render={<Button variant="outline" className="rounded-md" disabled={isPending} />}>
-            Anuluj
+          <DialogClose asChild>
+            <Button variant="outline" className="rounded-md" disabled={isPending}>
+              Anuluj
+            </Button>
           </DialogClose>
           <Button
             className="rounded-md"

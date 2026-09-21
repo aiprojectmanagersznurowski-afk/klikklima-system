@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
+import { Providers } from "@/components/providers";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-sans",
@@ -26,10 +27,11 @@ export default function RootLayout({
   return (
     <html
       lang="pl"
+      suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${geistMono.variable} font-sans h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        {children}
+        <Providers>{children}</Providers>
         <Script
           src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`}
           strategy="beforeInteractive"

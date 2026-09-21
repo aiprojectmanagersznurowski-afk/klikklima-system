@@ -1,23 +1,33 @@
-"use client"
-import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
-import { useEffect, useState, Suspense } from 'react'
-import { createClient } from '@/utils/supabase/client'
-import type { User } from '@supabase/supabase-js'
-import type { Role } from '@klikklima/contracts'
+import { cookies } from "next/headers";
+import { Suspense } from "react";
 import {
-  LayoutDashboard, Users, UserCheck, Wrench, Bell, Search, LogOut,
-  ChevronLeft, ChevronRight, Thermometer, X, FolderKanban, Box, Settings,
-  ChevronDown, CalendarDays, BarChart3, BookOpen, Sparkles
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
-import { isScheduleNavItemVisible } from '../../lib/schedule/nav-visibility'
-import { isDocsNavItemVisible } from '../../lib/docs/nav-visibility'
-import { getActorRoleForNavAction } from './nav-role.actions'
-import { GlobalSearch } from '@/components/global-search/global-search'
+  LayoutDashboard,
+  Users,
+  FolderKanban,
+  Box,
+  BarChart3,
+  Sparkles,
+  Bell,
+  Settings,
+} from "lucide-react";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { CalendarDays, BookOpen } from "lucide-react";
+import type { Role } from "@klikklima/contracts";
+import { isScheduleNavItemVisible } from "../../lib/schedule/nav-visibility";
+import { isDocsNavItemVisible } from "../../lib/docs/nav-visibility";
+import { AppSidebar } from "./_components/sidebar/app-sidebar";
+import { DashboardBreadcrumbs } from "./_components/header/breadcrumbs";
+import { GlobalSearch } from "@/components/global-search/global-search";
+import { SearchDialog } from "./_components/header/search-dialog";
+import { ThemeSwitcher } from "./_components/header/theme-switcher";
+import { NotificationsButton } from "./_components/header/notifications-button";
 
-type NavItem = {
+export type NavItem = {
   id: string;
   label: string;
   icon: any;
@@ -26,7 +36,7 @@ type NavItem = {
   subItems?: { id: string; label: string; href: string; comingSoon?: boolean }[];
 };
 
-const navItems: NavItem[] = [
+export const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Pulpit', icon: LayoutDashboard, href: '/dashboard' },
   {
     id: 'leads',
@@ -35,8 +45,7 @@ const navItems: NavItem[] = [
     // Pozycje odpowiadają 1:1 tablicy `LEAD_STAGES` z `leads/leads-client.tsx`
     // (ta sama liczba etapów, ten sam tekst i ta sama kolejność). Zgodność
     // pilnuje `apps/b2b-web/tests/leads-nav-submenu.test.ts`, który parsuje oba
-    // pliki źródłowo i porówna listy — jeśli ktoś doda/zmieni etap w
-    // `LEAD_STAGES`, a zapomni zaktualizować listę poniżej, test poczerwienieje.
+    // pliki źródłowo i porówna listy.
     subItems: [
       { id: 'ALL', label: 'Wszystkie', href: '/leads?status=ALL' },
       { id: 'NEW_LEAD', label: '1. Nowy lead', href: '/leads?status=NEW_LEAD' },
@@ -64,7 +73,7 @@ const navItems: NavItem[] = [
       { id: 'crews', label: 'Zespoły', href: '/crews' },
       { id: 'cold_leads', label: 'Zimne leady', href: '/leads?bucket=cold' },
       { id: 'rejected_auto', label: 'Odrzucone (Brak akceptacji > 14 dni)', href: '/leads?bucket=rejected_auto' },
-    ]
+    ],
   },
   { id: 'logistics', label: 'Logistyka', icon: Box, href: '/logistics' },
   {
@@ -75,7 +84,7 @@ const navItems: NavItem[] = [
       { id: 'funnel', label: 'Lejek sprzedaży', href: '/analytics/funnel' },
       { id: 'crews_analytics', label: 'Montaże & Ekipy', href: '/analytics/crews' },
       { id: 'auditors_analytics', label: 'Audyty & Audytorzy', href: '/analytics/auditors' },
-    ]
+    ],
   },
   { id: 'chat', label: 'Asystent AI', icon: Sparkles, href: '/chat' },
   { id: 'notifications', label: 'Centrum Powiadomień', icon: Bell, href: '/notifications', comingSoon: true },
@@ -88,201 +97,11 @@ const navItems: NavItem[] = [
       { id: 'rbac', label: 'Użytkownicy i Uprawnienia', href: '/settings' },
       { id: 'calendar_settings', label: 'Kalendarz i wizyty', href: '/settings/calendar' },
       { id: 'notifications_settings', label: 'Parametry powiadomień', href: '/settings/notifications', comingSoon: true },
-    ]
-  }
+    ],
+  },
 ];
 
-function SidebarNavigation({ collapsed, setCollapsed, items }: { collapsed: boolean, setCollapsed: (val: boolean) => void, items: NavItem[] }) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-
-  const isActive = (href: string) => {
-    // Check if href is exactly matching pathname + searchParams
-    const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
-    return currentUrl === href || (href !== '/' && href !== '/leads' && currentUrl.startsWith(href));
-  };
-
-  const isExactActive = (href: string) => {
-    const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
-    return currentUrl === href;
-  };
-
-  const toggleGroup = (id: string) => {
-    if (collapsed) {
-      setCollapsed(false);
-      setOpenGroups(prev => ({ ...prev, [id]: true }));
-    } else {
-      setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }));
-    }
-  };
-
-  // Automatically open groups if a child is active
-  useEffect(() => {
-    if (collapsed) return;
-    const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
-
-    const newOpenGroups = { ...openGroups };
-    let changed = false;
-
-    items.forEach(item => {
-      if (item.subItems) {
-        const hasActiveChild = item.subItems.some(sub => currentUrl.startsWith(sub.href));
-        if (hasActiveChild && !newOpenGroups[item.id]) {
-          newOpenGroups[item.id] = true;
-          changed = true;
-        }
-      }
-    });
-
-    if (changed) {
-      setOpenGroups(newOpenGroups);
-    }
-  }, [pathname, searchParams, collapsed]);
-
-  return (
-    <nav className="flex-1 px-2 py-4 flex flex-col gap-1 overflow-y-auto">
-      {items.map((item) => {
-        const Icon = item.icon;
-        const hasSubItems = !!item.subItems;
-        const isOpen = !!openGroups[item.id];
-
-        // Determine active state
-        let isGroupActive = false;
-        if (hasSubItems) {
-          isGroupActive = item.subItems!.some(sub => {
-             const currentUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
-             return currentUrl === sub.href;
-          });
-        } else if (item.href) {
-          isGroupActive = isExactActive(item.href);
-        }
-
-        return (
-          <div key={item.id} className="flex flex-col gap-1">
-            {hasSubItems ? (
-              <button
-                onClick={() => toggleGroup(item.id)}
-                title={collapsed ? item.label : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-md text-sm font-medium transition-all duration-200 w-full border-l-2",
-                  collapsed ? "justify-center py-2.5 px-0" : "justify-between py-2.5 pl-[10px] pr-3",
-                  isGroupActive && !isOpen
-                    ? "bg-primary/10 text-primary font-semibold shadow-2xs border-primary"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className={cn("size-4 shrink-0 transition-colors", isGroupActive && !isOpen ? "text-primary" : "text-muted-foreground")} />
-                  {!collapsed && <span>{item.label}</span>}
-                </div>
-                {!collapsed && (
-                  <ChevronDown className={cn("size-4 transition-transform duration-200 text-muted-foreground", isOpen && "rotate-180")} />
-                )}
-              </button>
-            ) : item.comingSoon ? (
-              <div
-                aria-disabled="true"
-                title={collapsed ? `${item.label} (Wkrótce)` : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-md text-sm font-medium w-full cursor-not-allowed text-muted-foreground/60",
-                  collapsed ? "justify-center py-2.5 px-0" : "justify-start py-2.5 px-3"
-                )}
-              >
-                <Icon className="size-4 shrink-0 text-muted-foreground/60" />
-                {!collapsed && (
-                  <span className="flex items-center gap-2 min-w-0">
-                    <span className="truncate">{item.label}</span>
-                    <Badge variant="secondary" className="shrink-0">Wkrótce</Badge>
-                  </span>
-                )}
-              </div>
-            ) : (
-              <Link
-                href={item.href!}
-                title={collapsed ? item.label : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-md text-sm font-medium transition-all duration-200 w-full border-l-2",
-                  collapsed ? "justify-center py-2.5 px-0" : "justify-start py-2.5 pl-[10px] pr-3",
-                  isGroupActive
-                    ? "bg-primary/10 text-primary font-semibold shadow-2xs border-primary"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent"
-                )}
-              >
-                <Icon className={cn("size-4 shrink-0 transition-colors", isGroupActive ? "text-primary" : "text-muted-foreground")} />
-                {!collapsed && <span>{item.label}</span>}
-              </Link>
-            )}
-
-            {/* Sub Items Dropdown */}
-            {hasSubItems && isOpen && !collapsed && (
-              <div className="flex flex-col gap-1 pl-9 pr-2 mt-1 mb-2 animate-in slide-in-from-top-2 fade-in-50 duration-200">
-                {item.subItems!.map(sub => {
-                  const isSubActive = isExactActive(sub.href);
-                  if (sub.comingSoon) {
-                    return (
-                      <div
-                        key={sub.id}
-                        aria-disabled="true"
-                        className="flex items-center justify-between gap-2 py-2 px-3 rounded-md text-xs font-medium text-muted-foreground/60 cursor-not-allowed"
-                      >
-                        <span className="truncate">{sub.label}</span>
-                        <Badge variant="secondary" className="shrink-0">Wkrótce</Badge>
-                      </div>
-                    );
-                  }
-                  return (
-                    <Link
-                      key={sub.id}
-                      href={sub.href}
-                      className={cn(
-                        "flex items-center py-2 pl-[10px] pr-3 rounded-md text-xs font-medium transition-colors border-l-2",
-                        isSubActive
-                          ? "bg-primary/10 text-primary font-semibold shadow-2xs border-primary"
-                          : "text-muted-foreground hover:bg-secondary hover:text-foreground border-transparent"
-                      )}
-                    >
-                      {sub.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </nav>
-  );
-}
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const [user, setUser] = useState<User | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
-  const [actorRole, setActorRole] = useState<Role | null>(null);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUser(data.user);
-    });
-  }, []);
-
-  // FLD-AVAIL-WEEKLY-RULES (WO, blok C, AC-C5): rola aktora jest znana wyłącznie po
-  // stronie serwera (Prisma omija RLS) — `layout.tsx` jest client component (potrzebuje
-  // `useState`/`usePathname` dla stanu sidebaru), więc rolę pobieramy przez cienki
-  // Server Action (`getActorRoleForNavAction`), tak samo jak e-mail użytkownika wyżej
-  // jest pobierany przez `supabase.auth.getUser()`.
-  useEffect(() => {
-    getActorRoleForNavAction().then((role) => setActorRole(role));
-  }, []);
-
-  // Brak elementu w UI nie zastępuje bramki serwerowej w `setAvailabilityRuleAction`
-  // (AC-A2/AC-A3/AC-A4 z FLD-AVAIL-WEEKLY-RULES) — jest jej wymaganym uzupełnieniem.
+export function buildNavItems(actorRole: Role | null): NavItem[] {
   const showScheduleNavItem = isScheduleNavItemVisible(actorRole);
   const scheduleNavItem: NavItem | null = showScheduleNavItem
     ? { id: 'my-schedule', label: 'Mój grafik', icon: CalendarDays, href: '/me/schedule' }
@@ -292,137 +111,50 @@ export default function DashboardLayout({
     ? [navItems[0], scheduleNavItem, ...navItems.slice(1)]
     : navItems;
 
-  // Narzędzie wewnętrzne (przeglądarka dokumentacji projektu) — bez ID wymagania,
-  // bez wpisu w `RESOURCES`. Widoczna wyłącznie dla `admin`, tak jak zdecydował
-  // Michał 2026-09-17 — porównanie roli, nie `can()`.
   const showDocsNavItem = isDocsNavItemVisible(actorRole);
   const docsNavItem: NavItem | null = showDocsNavItem
     ? { id: 'docs', label: 'Dokumentacja', icon: BookOpen, href: '/dokumentacja' }
     : null;
 
-  const itemsWithDocs: NavItem[] = docsNavItem
-    ? [...itemsWithSchedule, docsNavItem]
-    : itemsWithSchedule;
+  return docsNavItem ? [...itemsWithSchedule, docsNavItem] : itemsWithSchedule;
+}
 
-  const items: NavItem[] = itemsWithDocs;
-
-  const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = '/login';
-  };
-
-  const getInitials = (email: string) => {
-    return email.substring(0, 2).toUpperCase();
-  };
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
-      <aside
-        style={{ width: collapsed ? 64 : 260 }}
-        className="flex flex-col shrink-0 bg-sidebar border-r border-border transition-[width] duration-300 ease-in-out z-20"
-      >
-        {/* Logo */}
-        <div className={cn(
-          "flex items-center gap-2.5 justify-center h-16 border-b border-border shrink-0",
-          collapsed ? "px-0 py-5" : "px-4 py-5"
-        )}>
-          {collapsed ? (
-            <div className="flex items-center justify-center shrink-0 rounded-xl size-8 bg-primary shadow-sm">
-              <Thermometer className="size-4 text-primary-foreground" />
-            </div>
-          ) : (
-            <Link href="/leads" className="flex items-center gap-3 flex-shrink-0 transition-opacity duration-200 hover:opacity-90">
-              <img
-                src="/logo.png"
-                alt="Klik Klima"
-                className="h-[40px] w-auto"
-              />
-            </Link>
-          )}
-        </div>
-
-        {/* Navigation wrapped in Suspense for useSearchParams */}
-        <Suspense fallback={<div className="flex-1" />}>
-          <SidebarNavigation collapsed={collapsed} setCollapsed={setCollapsed} items={items} />
-        </Suspense>
-
-        {/* Collapse toggle */}
-        <div className="px-2 pb-2">
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className={cn(
-              "flex items-center gap-2 rounded-md text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors w-full",
-              collapsed ? "justify-center py-2 px-0" : "justify-start py-2 px-3"
-            )}
-            title={collapsed ? "Rozwiń panel" : "Zwiń panel"}
-          >
-            {collapsed
-              ? <ChevronRight className="size-4" />
-              : <><ChevronLeft className="size-4" /><span>Zwiń panel</span></>
-            }
-          </button>
-        </div>
-
-        {/* User */}
-        <div className="border-t border-border p-3">
-          {collapsed ? (
-            <div className="flex flex-col items-center gap-2">
-              <div className="size-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-semibold shrink-0 shadow-xs">
-                {user && user.email ? getInitials(user.email) : 'AK'}
-              </div>
-              <button
-                onClick={handleLogout}
-                className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded-md"
-                title="Wyloguj się"
-              >
-                <LogOut className="size-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="size-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-semibold shrink-0 shadow-xs">
-                {user && user.email ? getInitials(user.email) : 'AK'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">
-                  {user ? user.email : 'Ładowanie...'}
-                </p>
-                <p className="text-xs text-muted-foreground font-medium">Administrator</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors p-1.5 rounded-md shrink-0"
-                title="Wyloguj się"
-              >
-                <LogOut className="size-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* Right panel */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        {/* Top bar */}
-        <header className="bg-card border-b border-border px-6 flex items-center gap-4 h-16 shrink-0 shadow-2xs">
-          <div className="flex-1 max-w-md">
-            <GlobalSearch />
+    <SidebarProvider defaultOpen={defaultOpen}>
+      <Suspense fallback={<div className="w-16 h-screen bg-sidebar border-r border-sidebar-border shrink-0" />}>
+        <AppSidebar />
+      </Suspense>
+      <SidebarInset className="overflow-hidden flex flex-col h-screen">
+        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 lg:px-6 shadow-2xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
+            <Separator orientation="vertical" className="mr-2 h-4 hidden sm:block" />
+            <DashboardBreadcrumbs />
           </div>
-          <div className="ml-auto flex items-center gap-3">
-            <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors rounded-md">
-              <Bell className="size-5" />
-              {/* Odznaka nieprzeczytanych powiadomień usunięta — Centrum Powiadomień to placeholder, brak logiki liczenia. Przywrócić po zbudowaniu modułu. */}
-            </button>
+
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="w-48 sm:w-72 md:w-80">
+              <GlobalSearch />
+            </div>
+            <SearchDialog />
+            <Separator orientation="vertical" className="h-4" />
+            <ThemeSwitcher />
+            <NotificationsButton />
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-background">
+        <main className="flex-1 overflow-y-auto bg-background p-4 md:p-6">
           {children}
         </main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

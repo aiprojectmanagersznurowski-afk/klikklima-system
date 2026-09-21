@@ -230,8 +230,10 @@ export function ReturnToFunnelDialog({
         </div>
 
         <DialogFooter>
-          <DialogClose render={<Button variant="outline" className="rounded-md" disabled={isPending} />}>
-            Anuluj
+          <DialogClose asChild>
+            <Button variant="outline" className="rounded-md" disabled={isPending}>
+              Anuluj
+            </Button>
           </DialogClose>
           {!requiresDecision && (
             <Button

@@ -47,3 +47,6 @@ playwright-report/
 
 # Supabase CLI local cache (nie mylić z supabase/migrations/, które JEST śledzone)
 supabase/.temp/
+
+# Reference templates
+next-shadcn-admin-dashboard-v1/

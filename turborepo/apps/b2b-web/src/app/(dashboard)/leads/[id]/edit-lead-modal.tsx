@@ -58,13 +58,11 @@ export function EditLeadModal({ leadId, initialData, defaultOpen = false, actorR
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {canUpdateLead && (
-        <DialogTrigger
-          render={
-            <Button variant="default" size="sm" className="gap-2">
-              <Edit size={14} /> Edytuj dane
-            </Button>
-          }
-        />
+        <DialogTrigger asChild>
+          <Button variant="default" size="sm" className="gap-2">
+            <Edit size={14} /> Edytuj dane
+          </Button>
+        </DialogTrigger>
       )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
