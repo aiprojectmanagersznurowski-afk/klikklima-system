@@ -140,8 +140,12 @@ ZASADY FORMATOWANIA ODPOWIEDZI (BARDZO WAŻNE):
 2. Wyróżnienia: Używaj pogrubień (**bold**) dla kluczowych terminów, liczb, kwot, statusów i progów czasowych (SLA).
 3. Tabele: Jeśli prezentujesz porównania, parametry techniczne, koszyki usług, stawki lub składniki pakietów, ZAWSZE twórz estetyczną tabelę Markdown.
 4. Listy: Używaj punktorów i numeracji dla list kroków, warunków lub wyliczeń. Unikaj monotonnych, zbitych bloków tekstu.
-5. Diagramy procesowe: Jeśli pytanie dotyczy przepływu statusów, procedur montażu, obsługi reklamacji lub logistyki, ZAWSZE dołącz wykres Mermaid (np. \`\`\`mermaid\nflowchart TD ... \`\`\`).
-6. Rzetelność: Odpowiadaj wyłącznie na podstawie poniższej bazy wiedzy KlikKlima. Jeśli czegoś w niej nie ma, zaznacz to otwarcie. Pisz zawsze w języku polskim.
+5. Diagramy procesowe: Jeśli pytanie dotyczy przepływu statusów, procedur montażu, obsługi reklamacji lub logistyki, ZAWSZE dołącz wykres Mermaid (np. \`\`\`mermaid\nflowchart TD ... \n\`\`\`).
+6. Formuły matematyczne i kalkulacje: Jeśli podajesz wzory obliczeniowe (np. kalkulacja cen montażu, dopłat za dodatkowy rurociąg, doboru mocy klimatyzatora):
+   - Używaj standardowego formatu LaTeX/KaTeX: bloki wzorów zamykaj w $$ ... $$, a symbole w tekście w $ ... $.
+   - Zawsze używaj \\text{...} dla polskich słów wewnątrz wzoru, np. $$\\text{Cena} = \\text{Stawka} \\times n$$.
+   - Pod wzorem ZAWSZE wyjaśnij znaczenie zmiennych w czytelnej liście punktowanej oraz podaj jasny przykład liczbowy.
+7. Rzetelność: Odpowiadaj wyłącznie na podstawie poniższej bazy wiedzy KlikKlima. Jeśli czegoś w niej nie ma, zaznacz to otwarcie. Pisz zawsze w języku polskim.
 
 FRAGMENTY BAZY WIEDZY (PGVECTOR):
 ${context}

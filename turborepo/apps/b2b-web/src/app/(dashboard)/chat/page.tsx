@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
 import { cn } from '@/lib/utils'
 import { MermaidDiagram } from '../dokumentacja/mermaid-diagram'
 import { askAiAssistantAction } from './actions'
@@ -226,7 +229,8 @@ export default function ChatPage() {
                     {/* Treść Markdown z dedykowanymi komponentami estetycznymi */}
                     <div className="text-sm">
                       <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
+                        remarkPlugins={[remarkGfm, remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
                         components={{
                           h1: ({ children }) => (
                             <h1 className="text-base md:text-lg font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/50 flex items-center gap-2">
