@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Search, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive, Wrench } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Search, Calendar, ExternalLink, UserPlus, Check, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRight, RotateCcw, AlertTriangle , ShieldAlert, Archive, Wrench, UserCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusPill, type StatusPillTone } from "@/components/ui/status-pill";
 import { LeadStatus } from "@repo/database";
 import { formatDate } from "@/lib/format-date";
-import { shortId } from "@/lib/format-id";
+import { shortId, formatDisplayId } from "@/lib/format-id";
 import { formatLeadStatus } from "@/lib/format-status";
 import { EMPTY_VALUE } from "@/lib/empty-value";
 import Link from "next/link";
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { updateLeadAuditor } from "./[id]/actions";
 import { advanceLeadStatus , deleteLeadAction } from "./actions";
-import type { getAuditors, GetLeadsResult } from "./actions";
+import type { getAuditors, GetLeadsResult, CrewFilterOption } from "./actions";
 import { rollbackLogisticsOrder } from "../logistics/actions";
 import { ReturnToFunnelDialog } from "./return-to-funnel-dialog";
 import { ArchiveLostDialog } from "./archive-lost-dialog";
@@ -31,6 +31,7 @@ import { can, type Role } from "@klikklima/contracts";
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog";
 import { ReasonJustificationDialog } from "@/components/reason-justification-dialog";
 import { getCompactPageNumbers, PAGE_ELLIPSIS } from "../customers/pagination-state";
+import { MultiSelectFilter } from "./components/MultiSelectFilter";
 
 /**
  * SEC-LEADS-LIST-SCALARS: wyprowadzone bezpośrednio z rzeczywistego zwracanego typu
@@ -130,6 +131,7 @@ const CONTEXT_ACTIONS: Record<LeadStatus, { label: string; target: LeadStatus; i
 export function LeadsClient({
   initialLeads,
   auditors,
+  crews = [],
   totalPages,
   currentPage,
   initialStatus,
@@ -138,6 +140,7 @@ export function LeadsClient({
 }: {
   initialLeads: Lead[];
   auditors: AuditorPoolEntry[];
+  crews?: CrewFilterOption[];
   totalPages: number;
   currentPage: number;
   initialStatus: StageFilter;
@@ -161,11 +164,27 @@ export function LeadsClient({
     setDeleteDialogLeadId(id);
   };
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedAuditorIds, setSelectedAuditorIds] = useState<string[]>([]);
+  const [selectedCrewNames, setSelectedCrewNames] = useState<string[]>([]);
   const [leads, setLeads] = useState(initialLeads);
 
   useEffect(() => {
     setLeads(initialLeads);
   }, [initialLeads]);
+
+  const auditorOptions = useMemo(() => {
+    return auditors.map((a) => ({
+      id: a.id,
+      label: a.imie_i_nazwisko,
+    }));
+  }, [auditors]);
+
+  const crewOptions = useMemo(() => {
+    return crews.map((c) => ({
+      id: c.nazwa,
+      label: c.nazwa,
+    }));
+  }, [crews]);
 
   const isShowingAll = initialStatus === "ALL";
 
@@ -177,8 +196,24 @@ export function LeadsClient({
       const q = searchQuery.toLowerCase();
       const clientName = (lead.klient?.imie_i_nazwisko || "").toLowerCase();
       const id = lead.id.toLowerCase();
-      if (!clientName.includes(q) && !id.includes(q)) return false;
+      const projectNumber = (lead.project_number || "").toLowerCase();
+      if (!clientName.includes(q) && !id.includes(q) && !projectNumber.includes(q)) return false;
     }
+
+    if (selectedAuditorIds.length > 0) {
+      const leadAuditorId = lead.audytor?.id;
+      const matchesUnassigned = selectedAuditorIds.includes("__unassigned__") && !leadAuditorId;
+      const matchesAuditor = leadAuditorId ? selectedAuditorIds.includes(leadAuditorId) : false;
+      if (!matchesUnassigned && !matchesAuditor) return false;
+    }
+
+    if (selectedCrewNames.length > 0) {
+      const leadCrewName = lead.instalacje?.[0]?.zespol?.nazwa;
+      const matchesUnassigned = selectedCrewNames.includes("__unassigned__") && !leadCrewName;
+      const matchesCrew = leadCrewName ? selectedCrewNames.includes(leadCrewName) : false;
+      if (!matchesUnassigned && !matchesCrew) return false;
+    }
+
     return true;
   }).sort((a, b) => {
     if (a.data_rezerwacji && b.data_rezerwacji) {
@@ -257,15 +292,47 @@ export function LeadsClient({
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Leady</h1>
           <p className="text-sm text-muted-foreground mt-1">Zarządzaj zapytaniami ofertowymi i przypisuj audytorów.</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <MultiSelectFilter
+            title="Audytor"
+            icon={<UserCheck className="size-3.5 text-primary" />}
+            options={auditorOptions}
+            selectedIds={selectedAuditorIds}
+            onSelectionChange={setSelectedAuditorIds}
+            unassignedLabel="Brak audytora"
+          />
+
+          <MultiSelectFilter
+            title="Ekipa montażowa"
+            icon={<Wrench className="size-3.5 text-primary" />}
+            options={crewOptions}
+            selectedIds={selectedCrewNames}
+            onSelectionChange={setSelectedCrewNames}
+            unassignedLabel="Brak ekipy"
+          />
+
+          {(selectedAuditorIds.length > 0 || selectedCrewNames.length > 0) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedAuditorIds([]);
+                setSelectedCrewNames([]);
+              }}
+              className="text-xs text-muted-foreground hover:text-destructive transition-colors px-2 py-1 rounded hover:bg-destructive/10 flex items-center gap-1 cursor-pointer"
+            >
+              <X className="size-3" />
+              Wyczyść filtry
+            </button>
+          )}
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
             <input 
               type="text" 
-              placeholder="Szukaj klienta..." 
+              placeholder="Szukaj klienta, ID..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-64 shadow-xs"
+              className="pl-10 pr-4 py-2 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary w-56 shadow-xs"
             />
           </div>
         </div>
@@ -339,7 +406,7 @@ export function LeadsClient({
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col">
-                            <span className="text-sm font-semibold font-mono tracking-tight text-foreground">{shortId(lead.id)}</span>
+                            <span className="text-sm font-semibold font-mono tracking-tight text-foreground">{formatDisplayId(lead.project_number, lead.id)}</span>
                             <span className="text-xs font-mono text-muted-foreground mt-0.5">{dateFormatted}</span>
                             {isDelayed && <span className="text-xs text-destructive font-semibold mt-1">Opóźniony (&gt;24h)</span>}
                           </div>

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, User, ArrowRight, ExternalLink } from "lucide-react";
 import { AssignAuditor } from "./assign-auditor";
 import { EditLeadModal } from "./edit-lead-modal";
 import { DeleteLeadButton } from "./delete-lead-button";
@@ -16,6 +16,7 @@ import { LEAD_STATUS_TONE } from "../leads-client";
 import { signStoragePaths } from "@/lib/storage/signed-urls";
 import type { TriageAnswers } from "@/lib/triage-answers";
 import { formatDate } from "@/lib/format-date";
+import { formatDisplayId } from "../../../../lib/format-id";
 import { formatLeadStatus } from "@/lib/format-status";
 import { EMPTY_VALUE } from "@/lib/empty-value";
 import type { LeadStatus } from "@repo/database";
@@ -199,7 +200,7 @@ export default async function LeadDetailsPage({
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-8 pb-8 border-b border-border">
-              ID: {lead.id} • Utworzono:{" "}
+              ID: {formatDisplayId(lead.project_number, lead.id)} • Utworzono:{" "}
               {formatDate(lead.created_at, "dd.MM.yyyy HH:mm")}
             </p>
 
@@ -284,15 +285,36 @@ export default async function LeadDetailsPage({
 
               {/* Sekcja: Dane kontaktowe */}
               <section>
-                <h3 className="text-xl font-semibold border-b pb-3 mb-6 border-border">
-                  Dane kontaktowe i Adres
-                </h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-3 mb-6 border-border gap-2">
+                  <h3 className="text-xl font-semibold">
+                    Dane kontaktowe i Adres
+                  </h3>
+                  {lead.klient?.id && (
+                    <Button variant="outline" size="sm" asChild className="gap-2 font-medium w-fit">
+                      <Link href={`/customers/${lead.klient.id}`}>
+                        <User className="size-4 text-primary" />
+                        <span>Karta klienta {lead.klient.client_number ? `(${lead.klient.client_number})` : ""}</span>
+                        <ArrowRight className="size-3.5 text-muted-foreground ml-0.5" />
+                      </Link>
+                    </Button>
+                  )}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">
                       Imię i nazwisko
                     </p>
-                    <p className="font-medium text-lg">{name}</p>
+                    {lead.klient?.id ? (
+                      <Link 
+                        href={`/customers/${lead.klient.id}`}
+                        className="inline-flex items-center gap-2 font-medium text-lg text-primary hover:underline group"
+                      >
+                        <span>{name}</span>
+                        <ExternalLink className="size-4 opacity-60 group-hover:opacity-100 transition-opacity" />
+                      </Link>
+                    ) : (
+                      <p className="font-medium text-lg">{name}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">

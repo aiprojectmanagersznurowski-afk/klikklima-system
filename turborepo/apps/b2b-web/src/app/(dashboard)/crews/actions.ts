@@ -696,3 +696,159 @@ export async function deleteCrewAction(
     return { success: false, error: "Wystąpił błąd podczas usuwania ekipy." };
   }
 }
+
+export type CrewWorkItem = {
+  id: string;
+  type: "INSTALLATION" | "INCIDENT";
+  business_number: string | null;
+  project_number: string | null;
+  client_name: string;
+  client_phone: string | null;
+  address: string | null;
+  status: string;
+  date: Date | null;
+  details?: string | null;
+};
+
+export type CrewDetailsData = {
+  crew: CrewSummary & {
+    crew_number: string | null;
+    nip: string | null;
+    kod_pocztowy_bazowy: string | null;
+    iban: string | null;
+    email: string | null;
+  };
+  scheduledWorks: CrewWorkItem[];
+  completedWorks: CrewWorkItem[];
+};
+
+export async function getCrewDetailsAction(
+  crewId: string
+): Promise<{ success: true; data: CrewDetailsData } | { success: false; error: string }> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Błąd weryfikacji uprawnień." };
+  }
+
+  if (!actorRole || can(actorRole, "crews", "read") !== "yes") {
+    return { success: false, error: "Brak uprawnień do odczytu danych ekipy." };
+  }
+
+  const crew = await prisma.zespoly_monterskie.findUnique({
+    where: { id: crewId },
+    include: {
+      instalacje: {
+        include: {
+          lead: {
+            include: {
+              klient: { select: { imie_i_nazwisko: true, telefon: true } },
+              adres: { select: { ulica_miasto: true } },
+            },
+          },
+        },
+        orderBy: [
+          { data_planowana: "asc" },
+          { created_at: "desc" },
+        ],
+      },
+      usterki_incidents: {
+        include: {
+          klient: { select: { imie_i_nazwisko: true, telefon: true } },
+          instalacja: {
+            include: {
+              lead: {
+                include: {
+                  adres: { select: { ulica_miasto: true } },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { created_at: "desc" },
+      },
+    },
+  });
+
+  if (!crew) {
+    return { success: false, error: "Nie znaleziono ekipy monterskiej." };
+  }
+
+  const scheduledWorks: CrewWorkItem[] = [];
+  const completedWorks: CrewWorkItem[] = [];
+
+  for (const inst of crew.instalacje) {
+    const item: CrewWorkItem = {
+      id: inst.id,
+      type: "INSTALLATION",
+      business_number: inst.installation_number,
+      project_number: inst.lead?.project_number || null,
+      client_name: inst.lead?.klient?.imie_i_nazwisko || "Nieznany Klient",
+      client_phone: inst.lead?.klient?.telefon || null,
+      address: inst.lead?.adres?.ulica_miasto || null,
+      status: inst.status,
+      date: inst.data_zakonczenia || inst.data_planowana || inst.created_at,
+      details: inst.installation_type ? `Tryb: ${inst.installation_type}` : null,
+    };
+
+    if (inst.status === "COMPLETED") {
+      completedWorks.push(item);
+    } else {
+      scheduledWorks.push(item);
+    }
+  }
+
+  for (const inc of crew.usterki_incidents) {
+    const isResolved = inc.status === "ROZWIAZANE" || inc.status === "ZAMKNIETE";
+    const item: CrewWorkItem = {
+      id: inc.id,
+      type: "INCIDENT",
+      business_number: inc.incident_number,
+      project_number: inc.instalacja?.lead?.project_number || null,
+      client_name: inc.klient?.imie_i_nazwisko || "Nieznany Klient",
+      client_phone: inc.klient?.telefon || null,
+      address: inc.instalacja?.lead?.adres?.ulica_miasto || null,
+      status: inc.status || "NOWE",
+      date: inc.created_at,
+      details: inc.opis_usterki,
+    };
+
+    if (isResolved) {
+      completedWorks.push(item);
+    } else {
+      scheduledWorks.push(item);
+    }
+  }
+
+  scheduledWorks.sort((a, b) => (a.date ? new Date(a.date).getTime() : 0) - (b.date ? new Date(b.date).getTime() : 0));
+  completedWorks.sort((a, b) => (b.date ? new Date(b.date).getTime() : 0) - (a.date ? new Date(a.date).getTime() : 0));
+
+  return {
+    success: true,
+    data: {
+      crew: {
+        id: crew.id,
+        crew_number: crew.crew_number,
+        nazwa: crew.nazwa,
+        nip: crew.nip,
+        email: crew.email,
+        telefon_kontaktowy: crew.telefon_kontaktowy,
+        koordynator_imie_nazwisko: crew.koordynator_imie_nazwisko,
+        certyfikat_fgaz: crew.certyfikat_fgaz,
+        uprawnienia_sep: crew.uprawnienia_sep,
+        kod_pocztowy_bazowy: crew.kod_pocztowy_bazowy,
+        promien_dzialania_km: crew.promien_dzialania_km,
+        liczba_brygad: crew.liczba_brygad,
+        aktywny: crew.aktywny,
+        zdjecie_url: crew.zdjecie_url,
+        iban: crew.iban,
+        installationsCount: completedWorks.filter((w) => w.type === "INSTALLATION").length,
+      },
+      scheduledWorks,
+      completedWorks,
+    },
+  };
+}
+

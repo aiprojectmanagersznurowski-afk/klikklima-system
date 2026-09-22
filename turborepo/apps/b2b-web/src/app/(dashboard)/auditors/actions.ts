@@ -701,3 +701,112 @@ export async function deleteAuditorAction(
 
   return result;
 }
+
+export type AuditorWorkItem = {
+  id: string;
+  project_number: string | null;
+  client_name: string;
+  client_phone: string | null;
+  address: string | null;
+  status: string;
+  date: Date | null;
+  estimated_quote: string | null;
+  final_quote_pln: number | null;
+};
+
+export type AuditorDetailsData = {
+  auditor: AuditorSummary & {
+    auditor_number: string | null;
+    is_active: boolean;
+    zdjecie_url: string | null;
+    sep_valid_until: Date | null;
+  };
+  scheduledWorks: AuditorWorkItem[];
+  completedWorks: AuditorWorkItem[];
+};
+
+export async function getAuditorDetailsAction(
+  auditorId: string
+): Promise<{ success: true; data: AuditorDetailsData } | { success: false; error: string }> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Błąd weryfikacji uprawnień." };
+  }
+
+  if (!actorRole || can(actorRole, "auditors", "read") !== "yes") {
+    return { success: false, error: "Brak uprawnień do odczytu danych audytora." };
+  }
+
+  const auditor = await prisma.audytorzy.findUnique({
+    where: { id: auditorId },
+  });
+
+  if (!auditor) {
+    return { success: false, error: "Nie znaleziono audytora." };
+  }
+
+  const leads = await prisma.leady.findMany({
+    where: { audytor_id: auditorId },
+    include: {
+      klient: { select: { imie_i_nazwisko: true, telefon: true } },
+      adres: { select: { ulica_miasto: true } },
+    },
+    orderBy: [
+      { data_rezerwacji: "asc" },
+      { created_at: "desc" },
+    ],
+  });
+
+  const scheduledStatuses = new Set(["NEW_LEAD", "AWAITING_AUDIT", "ROLLBACK_RESCHEDULING"]);
+
+  const scheduledWorks: AuditorWorkItem[] = [];
+  const completedWorks: AuditorWorkItem[] = [];
+
+  for (const lead of leads) {
+    const item: AuditorWorkItem = {
+      id: lead.id,
+      project_number: lead.project_number,
+      client_name: lead.klient?.imie_i_nazwisko || "Nieznany Klient",
+      client_phone: lead.klient?.telefon || null,
+      address: lead.adres?.ulica_miasto || null,
+      status: lead.status || "NEW_LEAD",
+      date: lead.data_rezerwacji || lead.created_at,
+      estimated_quote: lead.estymowana_wycena,
+      final_quote_pln: lead.finalna_wycena_pln ? Number(lead.finalna_wycena_pln) : null,
+    };
+
+    if (scheduledStatuses.has(lead.status as string)) {
+      scheduledWorks.push(item);
+    } else {
+      completedWorks.push(item);
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      auditor: {
+        id: auditor.id,
+        auditor_number: auditor.auditor_number,
+        imie_i_nazwisko: auditor.imie_i_nazwisko,
+        email: auditor.email,
+        telefon: auditor.telefon,
+        certyfikat_fgaz: auditor.certyfikat_fgaz,
+        uprawnienia_sep: auditor.uprawnienia_sep,
+        promien_dzialania_km: auditor.promien_dzialania_km,
+        preferowane_marki: auditor.preferowane_marki,
+        zdjecie_url: auditor.zdjecie_url,
+        is_active: auditor.is_active,
+        leadsCount: leads.length,
+        fgaz_valid_until: auditor.fgaz_valid_until,
+        sep_valid_until: auditor.sep_valid_until,
+      },
+      scheduledWorks,
+      completedWorks,
+    },
+  };
+}
+

@@ -28,6 +28,7 @@ import {
 import Link from "next/link"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 import { EMPTY_VALUE } from "@/lib/empty-value"
+import { CrewDetailsDialog } from "./components/CrewDetailsDialog"
 
 export type CrewSummaryWithAvatar = CrewSummary & { avatarUrl?: string | null };
 
@@ -51,6 +52,7 @@ export function CrewsClient({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editState, setEditState] = useState<EditState | null>(null)
   const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
+  const [detailsCrewId, setDetailsCrewId] = useState<string | null>(null)
 
   const canCreateCrews = !!actorRole && can(actorRole, "crews", "create") === "yes";
   const canUpdateCrews = !!actorRole && can(actorRole, "crews", "update") === "yes";
@@ -230,7 +232,11 @@ export function CrewsClient({
             </div>
           ) : (
             filtered.map(crew => (
-              <div key={crew.id} className={`flex flex-col bg-card rounded-2xl border ${crew.aktywny ? 'border-border' : 'border-destructive/30 opacity-75'} overflow-hidden shadow-sm hover:shadow-md transition-shadow relative`}>
+              <div 
+                key={crew.id} 
+                onClick={() => setDetailsCrewId(crew.id)}
+                className={`flex flex-col bg-card rounded-2xl border ${crew.aktywny ? 'border-border' : 'border-destructive/30 opacity-75'} overflow-hidden shadow-sm hover:shadow-md hover:border-primary/50 transition-all relative cursor-pointer group`}
+              >
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-4">
                     <div className="size-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 overflow-hidden relative">
@@ -246,7 +252,10 @@ export function CrewsClient({
                       )}
                     </div>
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                      <DropdownMenuTrigger 
+                        onClick={(e) => e.stopPropagation()}
+                        className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                      >
                         <MoreHorizontal size={16} />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
@@ -352,6 +361,12 @@ export function CrewsClient({
           }}
         />
       )}
+
+      <CrewDetailsDialog
+        crewId={detailsCrewId}
+        open={!!detailsCrewId}
+        onClose={() => setDetailsCrewId(null)}
+      />
     </div>
   );
 }

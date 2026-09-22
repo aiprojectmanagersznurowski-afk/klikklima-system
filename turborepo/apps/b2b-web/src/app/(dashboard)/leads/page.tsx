@@ -1,7 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import { LeadsClient } from "./leads-client";
-import { getLeads, getAuditors } from "./actions";
+import { getLeads, getAuditors, getAllCrewsForFilter } from "./actions";
 import { LeadStatus } from "@repo/database";
 import { getCurrentActorRole } from "@/utils/supabase/server";
 
@@ -20,7 +20,7 @@ export default async function LeadsPage(props: {
   
   const page = searchParams.page ? parseInt(searchParams.page, 10) : 1;
 
-  const [result, auditors, actorRole] = await Promise.all([
+  const [result, auditors, crews, actorRole] = await Promise.all([
     getLeads({
       status: bucket ? undefined : status,
       bucket,
@@ -28,6 +28,7 @@ export default async function LeadsPage(props: {
       limit: 50
     }),
     getAuditors(),
+    getAllCrewsForFilter(),
     getCurrentActorRole(),
   ]);
   // SEC-RLS-AUDITOR-SCOPE: getLeads() zwraca { success: false, error } dla ról
@@ -48,6 +49,7 @@ export default async function LeadsPage(props: {
     <LeadsClient 
       initialLeads={result.leads} 
       auditors={auditors} 
+      crews={crews}
       totalPages={result.totalPages}
       currentPage={page}
       initialStatus={activeStatus}

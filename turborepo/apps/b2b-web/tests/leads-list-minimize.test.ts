@@ -403,7 +403,7 @@ describe('getLeads() — minimalizacja pól zagnieżdżonych relacji (SEC-LEADS-
  * wrażliwymi (notatki_wewnetrzne, odpowiedzi_triage) wypełnionymi NIEPUSTĄ treścią, żeby
  * `null`/`""` nie mogło udawać dowodu zawężenia.
  */
-const LEAD_SCALAR_KEYS = ['id', 'status', 'created_at', 'data_rezerwacji', 'estymowana_wycena', 'quoted_at'];
+const LEAD_SCALAR_KEYS = ['id', 'project_number', 'status', 'created_at', 'data_rezerwacji', 'estymowana_wycena', 'quoted_at'];
 const LEAD_TOP_LEVEL_KEYS = [...LEAD_SCALAR_KEYS, 'klient', 'adres', 'instalacje', 'audytor'];
 
 /** Rekord leada TAKI, JAKI DZIŚ zwraca `select` wypisujący wszystkie 19 skalarów (mutant) —
@@ -411,6 +411,7 @@ const LEAD_TOP_LEVEL_KEYS = [...LEAD_SCALAR_KEYS, 'klient', 'adres', 'instalacje
  * pusta nie mogła udawać dowodu zawężenia (patrz WO, sekcja „Przypadki brzegowe"). */
 const fullLeadRecordWithAllScalars = (overrides: Record<string, unknown> = {}) => ({
   id: 'lead-1',
+  project_number: 'L-000001',
   klient_id: 'klient-1',
   adres_id: 'adres-1',
   odpowiedzi_triage: {

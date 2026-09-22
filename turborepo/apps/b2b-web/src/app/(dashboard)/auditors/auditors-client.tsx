@@ -14,6 +14,7 @@ import {
   getAuditorForEdit,
 } from "./actions"
 import { AddAuditorModal, type AddAuditorModalSaveResult } from "./components/AddAuditorModal"
+import { AuditorDetailsDialog } from "./components/AuditorDetailsDialog"
 import { can, type Role } from "@klikklima/contracts"
 import { createClient } from "@/utils/supabase/client"
 import {
@@ -45,6 +46,7 @@ export function AuditorsClient({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editState, setEditState] = useState<EditState | null>(null)
   const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null)
+  const [detailsAuditorId, setDetailsAuditorId] = useState<string | null>(null)
 
   const filtered = auditors.filter(a => {
     if (searchQuery) {
@@ -218,14 +220,21 @@ export function AuditorsClient({
               }
 
               return (
-                <div key={auditor.id} className="flex flex-col bg-card rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow relative">
+                <div 
+                  key={auditor.id} 
+                  onClick={() => setDetailsAuditorId(auditor.id)}
+                  className="flex flex-col bg-card rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md hover:border-primary/50 transition-all cursor-pointer relative group"
+                >
                   <div className="p-5 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
                       <div className="size-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
                         <UserCheck className="size-5 text-blue-600 dark:text-blue-500" />
                       </div>
                       <DropdownMenu>
-                        <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                        <DropdownMenuTrigger 
+                          onClick={(e) => e.stopPropagation()}
+                          className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+                        >
                           <MoreHorizontal size={16} />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
@@ -339,6 +348,12 @@ export function AuditorsClient({
           }}
         />
       )}
+
+      <AuditorDetailsDialog
+        auditorId={detailsAuditorId}
+        open={!!detailsAuditorId}
+        onClose={() => setDetailsAuditorId(null)}
+      />
     </div>
   );
 }

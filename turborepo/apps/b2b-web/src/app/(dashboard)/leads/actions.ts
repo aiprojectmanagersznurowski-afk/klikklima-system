@@ -176,6 +176,37 @@ export async function getCrews(installationDate: Date) {
   }
 }
 
+export type CrewFilterOption = {
+  id: string;
+  nazwa: string;
+};
+
+export async function getAllCrewsForFilter(): Promise<CrewFilterOption[]> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return [];
+  }
+  if (!actorRole || can(actorRole, "crews", "read") !== "yes") {
+    return [];
+  }
+
+  try {
+    return await prisma.zespoly_monterskie.findMany({
+      select: {
+        id: true,
+        nazwa: true,
+      },
+      orderBy: { nazwa: "asc" },
+    });
+  } catch (error) {
+    console.error("Failed to fetch crews for filter:", error);
+    return [];
+  }
+}
+
 /**
  * Przypisanie zespołu do leada (T05 assignCrew). Walidacja certyfikatów MUSI żyć
  * tutaj, nie tylko w getCrews() — certyfikat może wygasnąć między wyświetleniem
@@ -311,6 +342,7 @@ export type GetLeadsResult =
   | {
       leads: Array<{
         id: string;
+        project_number: string | null;
         status: LeadStatus | null;
         created_at: Date;
         data_rezerwacji: Date | null;
@@ -411,6 +443,7 @@ export async function getLeads(options?: {
         // i decyzji człowieka (patrz WO SEC-LEADS-LIST-SCALARS, rozstrzygnięcie AC10).
         select: {
           id: true,
+          project_number: true,
           status: true,
           created_at: true,
           data_rezerwacji: true,
@@ -447,13 +480,14 @@ export async function getLeads(options?: {
     const allCount = Object.values(stageCounts).reduce((sum, c) => sum + c, 0);
     stageCounts["ALL"] = allCount;
 
-    // SEC-LEADS-LIST-MINIMIZE / SEC-LEADS-LIST-SCALARS: reshape jawnie na wyjściu,
+    // SEC-LEADS-LIST-MINIMIZE / SEC-LEADS-LIST-SCALARS / CRM-PROJECT-NUMBER: reshape jawnie na wyjściu,
     // spójnie z getAuditors()/getCrews() w tym pliku — `select` zawęża zapytanie,
     // mapowanie jest drugą linią obrony (i jedyną, którą widać w testach mockujących
     // samo findMany()). Bez `...lead` — każde pole wypisane jawnie, żeby przyszłe
     // rozszerzenie `select` nie wyciekło do klienta bez niczyjej decyzji.
     const narrowedLeads = leads.map((lead) => ({
       id: lead.id,
+      project_number: lead.project_number,
       status: lead.status,
       created_at: lead.created_at,
       data_rezerwacji: lead.data_rezerwacji,

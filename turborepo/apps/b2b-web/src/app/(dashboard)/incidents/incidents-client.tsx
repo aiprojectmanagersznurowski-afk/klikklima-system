@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { formatDate } from "@/lib/format-date"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
-import { shortId } from "@/lib/format-id"
+import { shortId, formatDisplayId } from "@/lib/format-id"
 import { CreateIncidentDialog } from "./create-incident-dialog"
 import { ChangeStatusDialog } from "./change-status-dialog"
 import { AssignCrewDialog } from "./assign-crew-dialog"
@@ -105,112 +105,187 @@ export function IncidentsClient({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filtered.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-muted-foreground text-sm bg-card rounded-2xl border border-border">
-              Brak zgłoszeń w systemie.
-            </div>
-          ) : (
-            filtered.map((incident) => {
-              let priorityColor = "bg-secondary text-foreground";
-              if (incident.priorytet === "KRYTYCZNY") {
-                priorityColor = "bg-destructive/25 text-destructive border border-destructive/40 font-bold";
-              } else if (incident.priorytet === "WYSOKI") {
-                priorityColor = "bg-destructive/20 text-destructive border border-destructive/30";
-              } else if (incident.priorytet === "ŚREDNI") {
-                priorityColor = "bg-amber-500/20 text-amber-600 dark:text-amber-500 border border-amber-500/30";
-              }
+        <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-xs">
+          <table className="w-full text-left border-collapse text-sm">
+            <thead className="bg-muted/50 border-b border-border text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+              <tr>
+                <th className="px-5 py-3.5">ID / Projekt</th>
+                <th className="px-5 py-3.5">Klient</th>
+                <th className="px-5 py-3.5">Opis Usterki</th>
+                <th className="px-5 py-3.5">Priorytet</th>
+                <th className="px-5 py-3.5">SLA Reakcji</th>
+                <th className="px-5 py-3.5">Status</th>
+                <th className="px-5 py-3.5">Brygada Serwisowa</th>
+                <th className="px-5 py-3.5">Zgłoszono</th>
+                <th className="px-5 py-3.5 text-right">Akcje</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-12 text-center text-muted-foreground text-sm">
+                    Brak zgłoszeń w systemie spełniających kryteria.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((incident) => {
+                  let priorityBadge = "bg-secondary text-foreground";
+                  if (incident.priorytet === "KRYTYCZNY") {
+                    priorityBadge = "bg-destructive/20 text-destructive border border-destructive/40 font-bold";
+                  } else if (incident.priorytet === "WYSOKI") {
+                    priorityBadge = "bg-destructive/15 text-destructive border border-destructive/30 font-semibold";
+                  } else if (incident.priorytet === "ŚREDNI") {
+                    priorityBadge = "bg-amber-500/20 text-amber-600 dark:text-amber-500 border border-amber-500/30";
+                  } else {
+                    priorityBadge = "bg-muted text-muted-foreground border border-border/50";
+                  }
 
-              return (
-                <div key={incident.id} className="flex flex-col bg-card rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow relative">
-                  <div className="p-5 flex-1 flex flex-col">
-                    <div className="flex justify-between items-start mb-4">
-                      <span className={`px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider ${priorityColor}`}>
-                        PRIORYTET: {incident.priorytet}
-                      </span>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className="size-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors -mt-1 -mr-2">
-                          <MoreHorizontal size={16} />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel>Opcje Zgłoszenia</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setStatusDialogState({ id: incident.id, status: incident.status })}>
-                            Zmień Status
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setCrewDialogState({ id: incident.id, crewId: incident.zespol_id })}>
-                            Przydziel Brygadę Serwisową
-                          </DropdownMenuItem>
+                  const displayId = formatDisplayId(incident.numer_zgloszenia, incident.id);
 
-                              {canDeleteIncidents && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                    onClick={() => handleDelete(incident.id)}
-                                  >
-                                    <ShieldAlert className="mr-2 size-4" />
-                                    <span>Usuń (Tylko Admin)</span>
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    
-                    <h3 className="font-bold text-foreground line-clamp-1">{incident.klient_name}</h3>
-                    <p className="text-xs font-mono text-muted-foreground mt-0.5">
-                      {incident.numer_zgloszenia || shortId(incident.id)}
-                    </p>
+                  return (
+                    <tr 
+                      key={incident.id} 
+                      className="hover:bg-muted/30 transition-colors group"
+                    >
+                      {/* ID / Powiązana instalacja */}
+                      <td className="px-5 py-4 whitespace-nowrap align-top">
+                        <div className="flex flex-col">
+                          <span className="font-mono font-bold text-sm text-foreground">
+                            {displayId}
+                          </span>
+                          {incident.instalacja_model && (
+                            <span className="text-xs font-mono text-muted-foreground mt-0.5">
+                              {incident.instalacja_model}
+                            </span>
+                          )}
+                        </div>
+                      </td>
 
-                    {incident.sla && (
-                      <div className="mt-2.5 flex items-center gap-1.5">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-2xs font-semibold border ${incident.sla.uiBadgeClass}`}>
-                          {incident.sla.isBreached && <AlertTriangle className="size-3 shrink-0 text-destructive" />}
-                          {incident.sla.isPaused && <Clock className="size-3 shrink-0 text-amber-500" />}
-                          <span>Reakcja: {incident.sla.label}</span>
+                      {/* Klient */}
+                      <td className="px-5 py-4 whitespace-nowrap align-top">
+                        <div className="flex flex-col max-w-[200px]">
+                          {incident.klient_id ? (
+                            <a
+                              href={`/customers/${incident.klient_id}`}
+                              className="font-semibold text-foreground hover:text-primary hover:underline transition-colors truncate"
+                            >
+                              {incident.klient_name}
+                            </a>
+                          ) : (
+                            <span className="font-semibold text-foreground truncate">{incident.klient_name}</span>
+                          )}
+                          {incident.klient_telefon && (
+                            <span className="text-xs text-muted-foreground mt-0.5 font-mono">
+                              {incident.klient_telefon}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Opis usterki */}
+                      <td className="px-5 py-4 align-top">
+                        <div className="max-w-[320px]">
+                          <p className="text-xs text-foreground line-clamp-2 leading-relaxed">
+                            {incident.opis_usterki}
+                          </p>
+                          {incident.zdjecia_url && incident.zdjecia_url.length > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground mt-1 bg-secondary/60 px-2 py-0.5 rounded border border-border/50">
+                              <ImageIcon className="size-3 text-primary" />
+                              <span>Zdjęcia: {incident.zdjecia_url.length}</span>
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Priorytet */}
+                      <td className="px-5 py-4 whitespace-nowrap align-top">
+                        <span className={`inline-flex px-2 py-0.5 rounded text-xs uppercase tracking-wider font-medium ${priorityBadge}`}>
+                          {incident.priorytet}
                         </span>
-                      </div>
-                    )}
+                      </td>
 
-                    <div className="mt-4 flex-1">
-                      <p className="text-sm text-foreground line-clamp-3 bg-secondary/30 p-3 rounded-lg border border-border/50">
-                        {incident.opis_usterki}
-                      </p>
-                    </div>
+                      {/* SLA */}
+                      <td className="px-5 py-4 whitespace-nowrap align-top">
+                        {incident.sla ? (
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold border ${incident.sla.uiBadgeClass}`}>
+                            {incident.sla.isBreached && <AlertTriangle className="size-3 shrink-0 text-destructive" />}
+                            {incident.sla.isPaused && <Clock className="size-3 shrink-0 text-amber-500" />}
+                            <span>{incident.sla.label}</span>
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground font-mono">-</span>
+                        )}
+                      </td>
 
-                    {incident.zdjecia_url && incident.zdjecia_url.length > 0 && (
-                      <div className="mt-3 flex items-center gap-1.5 text-2xs text-muted-foreground bg-secondary/20 px-2.5 py-1 rounded-md border border-border/40">
-                        <ImageIcon className="size-3 text-primary" />
-                        <span>Załączniki zdjęciowe: {incident.zdjecia_url.length}</span>
-                      </div>
-                    )}
+                      {/* Status */}
+                      <td className="px-5 py-4 whitespace-nowrap align-top">
+                        <StatusPill
+                          label={formatIncidentStatus(incident.status)}
+                          tone={getIncidentStatusTone(incident.status)}
+                        />
+                      </td>
 
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center gap-2 text-xs">
-                        <Clock className="size-3.5 text-muted-foreground" />
-                        <span className="text-muted-foreground">Zgłoszono: <span className="font-medium text-foreground">{formatDate(incident.created_at, "dd.MM.yyyy HH:mm")}</span></span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs">
-                        <Wrench className="size-3.5 text-muted-foreground" />
-                        <span className="text-muted-foreground">Serwisant: {incident.zespol_name ? <span className="font-medium text-foreground">{incident.zespol_name}</span> : <span className="text-amber-600 dark:text-amber-500 font-medium">Brak przydziału</span>}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-secondary/50 border-t border-border px-5 py-3 flex justify-between items-center">
-                    <div className="text-xs font-semibold text-muted-foreground">
-                      Status:
-                    </div>
-                    <StatusPill
-                      label={formatIncidentStatus(incident.status)}
-                      tone={getIncidentStatusTone(incident.status)}
-                    />
-                  </div>
-                </div>
-              );
-            })
-          )}
+                      {/* Brygada */}
+                      <td className="px-5 py-4 whitespace-nowrap align-top">
+                        {incident.zespol_name ? (
+                          <div className="flex items-center gap-1.5 text-xs text-foreground font-medium">
+                            <Wrench className="size-3.5 text-primary shrink-0" />
+                            <span>{incident.zespol_name}</span>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setCrewDialogState({ id: incident.id, crewId: incident.zespol_id })}
+                            className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-500 hover:underline font-medium cursor-pointer"
+                          >
+                            <Wrench className="size-3 shrink-0" />
+                            <span>Przydziel brygadę</span>
+                          </button>
+                        )}
+                      </td>
+
+                      {/* Data zgłoszenia */}
+                      <td className="px-5 py-4 whitespace-nowrap align-top text-xs text-muted-foreground">
+                        {formatDate(incident.created_at, "dd.MM.yyyy HH:mm")}
+                      </td>
+
+                      {/* Akcje */}
+                      <td className="px-5 py-4 whitespace-nowrap align-top text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className="size-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer">
+                            <MoreHorizontal size={16} />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-52">
+                            <DropdownMenuLabel>Opcje Zgłoszenia</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setStatusDialogState({ id: incident.id, status: incident.status })}>
+                              Zmień Status
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCrewDialogState({ id: incident.id, crewId: incident.zespol_id })}>
+                              Przydziel Brygadę Serwisową
+                            </DropdownMenuItem>
+
+                            {canDeleteIncidents && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                  onClick={() => handleDelete(incident.id)}
+                                >
+                                  <ShieldAlert className="mr-2 size-4" />
+                                  <span>Usuń (Tylko Admin)</span>
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

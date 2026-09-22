@@ -6,6 +6,7 @@ import { addCustomerAddress } from "../actions"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { formatDate } from "@/lib/format-date"
+import { formatDisplayId } from "@/lib/format-id"
 import { formatLeadStatus, formatInstallationStatus, formatIncidentStatus } from "@/lib/format-status"
 
 export function Customer360Tabs({ customer }: { customer: any }) {
@@ -35,8 +36,9 @@ export function Customer360Tabs({ customer }: { customer: any }) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex gap-2 border-b border-border">
+    <div className="flex-1 flex flex-col p-6 max-w-[1800px] w-full mx-auto">
+      {/* Tabs navigation */}
+      <div className="flex border-b border-border mb-6">
         <button
           onClick={() => setActiveTab("historia")}
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
@@ -103,12 +105,9 @@ export function Customer360Tabs({ customer }: { customer: any }) {
                     <div className="flex justify-between items-center">
                       <div>
                         <div className="flex items-center gap-2">
-                          {lead.project_number && (
-                            <span className="font-mono font-bold text-sm text-foreground group-hover:text-primary transition-colors">
-                              {lead.project_number}
-                            </span>
-                          )}
-                          <span className="text-xs font-mono text-muted-foreground">ID: {lead.id.slice(0, 8)}...</span>
+                          <span className="font-mono font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                            {formatDisplayId(lead.project_number, lead.id)}
+                          </span>
                         </div>
                         <p className="font-semibold text-foreground mt-1">Status: {formatLeadStatus(lead.status)}</p>
                       </div>
@@ -146,7 +145,7 @@ export function Customer360Tabs({ customer }: { customer: any }) {
                     <MapPin className="size-5 text-primary shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-foreground">{adres.ulica_miasto}</p>
-                      <p className="text-xs text-muted-foreground mt-1 font-mono">ID: {adres.id}</p>
+                      <p className="text-xs text-muted-foreground mt-1 font-mono">ID: {formatDisplayId(adres.address_number, adres.id)}</p>
                     </div>
                   </div>
                 ))}
@@ -169,7 +168,12 @@ export function Customer360Tabs({ customer }: { customer: any }) {
                 {customer.leady.flatMap((l: any) => l.instalacje).map((inst: any) => (
                   <div key={inst.id} className="p-4 border border-border rounded-lg bg-background flex justify-between items-center">
                     <div>
-                      <p className="font-medium text-foreground">Montaż: {formatDate(inst.created_at, "dd MMM yyyy")}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-sm text-foreground">
+                          {formatDisplayId(inst.installation_number, inst.id)}
+                        </span>
+                        <span className="text-sm font-medium text-muted-foreground">• Montaż: {formatDate(inst.created_at, "dd MMM yyyy")}</span>
+                      </div>
                       <p className="text-xs text-muted-foreground mt-1">Status: {formatInstallationStatus(inst.status)}</p>
                     </div>
                   </div>
@@ -196,7 +200,12 @@ export function Customer360Tabs({ customer }: { customer: any }) {
                 {customer.usterki_incidents.map((ust: any) => (
                   <div key={ust.id} className="p-4 border border-border rounded-lg bg-card flex justify-between items-center">
                     <div>
-                      <p className="font-semibold text-foreground">{ust.opis_usterki || "Brak opisu"}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-sm text-foreground">
+                          {formatDisplayId(ust.incident_number, ust.id)}
+                        </span>
+                        <p className="font-semibold text-foreground">{ust.opis_usterki || "Brak opisu"}</p>
+                      </div>
                       <p className="text-xs text-muted-foreground mt-1">Zgłoszono: {formatDate(ust.created_at, "dd MMM yyyy")}</p>
                     </div>
                     <span className="px-3 py-1 bg-secondary text-secondary-foreground text-xs font-semibold rounded">
