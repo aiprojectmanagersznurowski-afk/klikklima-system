@@ -75,7 +75,12 @@ export function AppSidebar({
                     <img
                       src="/logo.png"
                       alt="Klik Klima"
-                      className="h-8 w-auto object-contain"
+                      className="h-8 w-auto object-contain dark:hidden"
+                    />
+                    <img
+                      src="/logo_dark.png"
+                      alt="Klik Klima"
+                      className="h-8 w-auto object-contain hidden dark:block"
                     />
                   </div>
                 )}
