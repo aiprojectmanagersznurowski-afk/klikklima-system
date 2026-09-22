@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import type { Role } from "@klikklima/contracts";
-import { Thermometer } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
 import { getActorRoleForNavAction } from "../../nav-role.actions";
 
@@ -64,26 +64,25 @@ export function AppSidebar({
             <SidebarMenuButton
               size="lg"
               asChild
-              className="hover:bg-transparent active:bg-transparent"
+              className="hover:bg-transparent active:bg-transparent h-12"
             >
-              <Link href="/dashboard" className="flex items-center gap-3">
-                <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs shrink-0">
-                  <Thermometer className="size-5" />
-                </div>
-                {!isCollapsed && (
-                  <div className="flex flex-col gap-0.5 leading-none">
-                    <img
-                      src="/logo.png"
-                      alt="Klik Klima"
-                      className="h-8 w-auto object-contain dark:hidden"
-                    />
-                    <img
-                      src="/logo_dark.png"
-                      alt="Klik Klima"
-                      className="h-8 w-auto object-contain hidden dark:block"
-                    />
-                  </div>
-                )}
+              <Link href="/dashboard" className="flex items-center">
+                <img
+                  src="/logo.png"
+                  alt="Klik Klima"
+                  className={cn(
+                    "object-contain dark:hidden transition-all",
+                    isCollapsed ? "h-8 w-auto max-w-[32px]" : "h-[45px] w-auto",
+                  )}
+                />
+                <img
+                  src="/logo_dark.png"
+                  alt="Klik Klima"
+                  className={cn(
+                    "object-contain hidden dark:block transition-all",
+                    isCollapsed ? "h-8 w-auto max-w-[32px]" : "h-[45px] w-auto",
+                  )}
+                />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

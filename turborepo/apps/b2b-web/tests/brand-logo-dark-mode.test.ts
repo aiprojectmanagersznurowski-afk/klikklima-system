@@ -34,6 +34,12 @@ describe("Brand Logo - Dark Mode w panelu B2B i na stronie logowania", () => {
     // Weryfikacja klas Tailwind dla dark mode
     expect(content).toMatch(/src="\/logo\.png"[\s\S]*?dark:hidden/);
     expect(content).toMatch(/src="\/logo_dark\.png"[\s\S]*?dark:block/);
+
+    // Weryfikacja usunięcia niebieskiej ikony z termometrem
+    expect(content).not.toContain("Thermometer");
+
+    // Weryfikacja powiększenia logo o 40% (z h-8 = 32px do h-[45px] = 45px)
+    expect(content).toContain("h-[45px]");
   });
 
   it("login/page.tsx renderuje wersję dark (/logo_dark.png) zarówno na ekranie powitalnym, jak i w formularzu", () => {
