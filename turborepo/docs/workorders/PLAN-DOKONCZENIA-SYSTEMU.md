@@ -84,8 +84,8 @@ Opisane szczegółowo jako moduł M9 w [zakresie Field App](FIELD-APP-I-PODPISY-
   `FLD-QUOTE-MANUAL-ITEM`, `FLD-QUOTE-PRICE-SNAPSHOT`, `FLD-QUOTE-VARIANTS`.
 - Szacunek: **18–26 MD** (o 2–3 MD więcej niż w dokumencie zakresu, przez regułę VAT z 2026-09-23).
 - Dane wejściowe: [cennik robocizny](../architecture/CENNIK-ROBOCIZNY.md), 39 pozycji, dostarczony.
-- Uwaga: `PRICE-VAT-RATE` wymaga **nowych danych o lokalu** (powierzchnia całego lokalu, przeznaczenie),
-  których Triage dziś nie zbiera. To dotyka formularza B2C, czyli strumienia P6.
+- Uwaga: `PRICE-VAT-RATE` wymaga jednego nowego pytania w Triage (przedział powierzchni, wybór z listy)
+  oraz wyboru rodzaju obiektu w formularzu audytora. To dotyka formularza B2C, czyli strumienia P8.
 
 ### P5: Aplikacja terenowa (Field App)
 
@@ -119,8 +119,8 @@ Opisane szczegółowo jako moduł M9 w [zakresie Field App](FIELD-APP-I-PODPISY-
 - Wymagania: `B2C-LEAD-ENTRY`, `B2C-LEAD-ATOMIC`, `B2C-CONSENT-RODO`, `B2C-RLS-PUBLIC`,
   `B2C-TRIAGE-STEPS`, `B2C-TRIAGE-CONDITIONAL`, `B2C-SOFT-LEAD`, `B2C-BOOKING-VALIDATION`,
   `B2C-PRICE-FROM`, `B2C-CATALOG-LIST`, `B2C-DEVICE-MODAL`, `B2C-CATALOG-VIEW-TRACKED`,
-  `B2C-CONTENT-PAGES`, `B2C-NAV-STATE`, **(nowe)** `B2C-PROPERTY-DATA` (powierzchnia i przeznaczenie
-  lokalu na potrzeby VAT), **(nowe)** `CATALOG-REFRESH` (odświeżenie katalogu i cen hurtowych,
+  `B2C-CONTENT-PAGES`, `B2C-NAV-STATE`, **(nowe)** `B2C-PROPERTY-AREA-BAND` (warunkowe pytanie
+  o przedział powierzchni lokalu, tylko dla `APARTMENT` i `HOUSE`, na potrzeby stawki VAT), **(nowe)** `CATALOG-REFRESH` (odświeżenie katalogu i cen hurtowych,
   Pakiet Dodatkowy B roadmapy).
 - Szacunek: **12–18 MD**.
 

@@ -481,7 +481,7 @@ cenę dla klienta:
 | Kto wycenia | Skąd rodzaj obiektu | Uwaga |
 |---|---|---|
 | **Audytor (Field App)** | zaznacza rodzaj obiektu w formularzu wyceny | dane z pierwszej ręki, audytor widzi lokal |
-| **Klient (Triage)** | z tego, co sam uzupełnił: rodzaj lokalu oraz pomieszczenia i ich powierzchnie; sumę powierzchni porównujemy z progiem 300 m² | dane deklarowane, obarczone błędem (patrz R20) |
+| **Klient (Triage)** | z pytania 1 (typ nieruchomości) i **dodatkowego pytania o przedział powierzchni**, które pojawia się tylko dla nieruchomości mieszkalnych | wybór z listy, nigdy wpisywanie metrażu (D17, 2026-09-23) |
 
 Wycena audytora ma pierwszeństwo: jeśli audytor zastanie inny obiekt, niż zadeklarował klient, to jego
 zaznaczenie nadpisuje stawkę w ofercie i na fakturze. Cena z Triage pozostaje ceną orientacyjną.
@@ -513,7 +513,28 @@ się pojawia.
 - [x] Zaliczka liczona po stawce obiektu: `netto × (1 + stawka_vat) × 1,1` (2026-09-23)
 - [x] Formularz wyceny: pozycje per pomieszczenie + osobna sekcja pozycji ogólnych (2026-09-23)
 - [ ] Potwierdzam podział 23/16 z `CENNIK-ROBOCIZNY.md` (uwaga na `Lutowanie` — dziś `ROOM`)
-- [ ] Do sprawdzenia u księgowego: czy próg 300 m² dotyczy także **lokali** mieszkalnych (patrz R21)
+- [x] Tabela stawek potwierdzona 2026-09-23 (R21 zamknięte): mieszkalne do 300 m² → 8%,
+      mieszkalne powyżej 300 m² → 23%, usługowe (komercyjne) → zawsze 23%. Próg dotyczy **mieszkań
+      i domów** jednakowo.
+
+**Jak to wygląda w Triage (doprecyzowanie 2026-09-23).** Kreator **już dziś** pyta o typ nieruchomości
+w pytaniu 1: `BUILDING_TYPES` = `APARTMENT` (Mieszkanie), `HOUSE` (Dom), `COMMERCIAL` (Lokal komercyjny),
+a `COMMERCIAL` jest regułą dyskwalifikującą `COMMERCIAL_PROPERTY` i kieruje na ekran eksperta. Wynika
+z tego przyjemna konsekwencja: **lokal komercyjny nigdy nie dostaje automatycznej wyceny w Triage**,
+więc stawka 23% dla niego dotyczy wyłącznie oferty audytora.
+
+Dokładamy jedno pytanie warunkowe, widoczne **tylko dla `APARTMENT` i `HOUSE`**:
+
+> **Powierzchnia lokalu:** ( ) do 300 m²  ( ) powyżej 300 m²
+
+Wybór z dwóch kafelków, **bez wpisywania metrażu** — tak jak reszta kreatora. To zamyka ryzyko R20:
+nie sumujemy powierzchni pomieszczeń i nie prosimy klienta o liczbę, której zwykle nie zna na pamięć.
+
+Zmiany w kontrakcie (etap 0): nowy słownik `PROPERTY_AREA_BANDS` (`UP_TO_300`, `ABOVE_300`), nowe pole
+`PROPERTY_AREA_BAND` w `TRIAGE_FIELDS`, kolumna na leadzie oraz próg 300 m² w kontrakcie SLA.
+
+**Jak to wygląda w Field App.** Audytor wybiera jedną z trzech wartości: mieszkalny do 300 m²,
+mieszkalny powyżej 300 m², komercyjny. Jego wybór nadpisuje deklarację klienta.
 
 ---
 
@@ -776,7 +797,7 @@ Zostaje ewentualnie jako informacja księgowa, ale nie jako mechanizm.
 | `FLD-QUOTE-CALC` | silnik wyceny: pozycje × ilości per pomieszczenie, suma netto/brutto, marża na pozycji, kwota zaliczki wg D8 |
 | `FLD-QUOTE-ROOMS` | wycena pomieszczeniami: dodaj pomieszczenie, uzupełnij ilości pozycji `ROOM`, dodaj kolejne (D17) |
 | `FLD-QUOTE-GENERAL-ITEMS` | osobna sekcja pozycji ogólnych całej instalacji, `scope = INSTALLATION` (D17) |
-| `PRICE-VAT-RATE` | stawka z obiektu: zaznaczenie audytora w Field App, dane klienta w Triage; próg 300 m² z kontraktu SLA |
+| `PRICE-VAT-RATE` | stawka z obiektu: trzy wartości u audytora, przedział powierzchni w Triage; próg 300 m² z kontraktu SLA |
 | `FLD-QUOTE-MANUAL-ITEM` | pozycja indywidualna poza cennikiem (stelaż, zwyżka), zawsze z opisem i ceną wpisaną ręcznie |
 | `FLD-QUOTE-PRICE-SNAPSHOT` | oferta i wycena z Triage pamiętają ceny z dnia wystawienia; późniejsza zmiana cennika nie zmienia tego, co klient dostał |
 
@@ -1010,8 +1031,8 @@ w panelu, dopóki etap 4 nie jest gotowy.
 | R16 | Zaliczka to 110% ceny brutto urządzeń (D8) | przy tanim montażu zaliczka może przekroczyć wartość całej oferty, a przy drogim — wyglądać na niespójną z „40–50%” z prezentacji | reguła kontrolna w `FLD-QUOTE-VARIANTS`: zaliczka nigdy większa niż wartość oferty; sprostowanie prezentacji |
 | R18 | Przepięcie Triage na wspólny cennik **podnosi cenę widoczną publicznie mniej więcej dwukrotnie** | dziś montaż to `'Montaż wzorcowy'` × liczba pomieszczeń (zapasowo 1200 zł/pom.), a z dostarczonego cennika standard wychodzi ok. **2 483 zł netto** za pierwsze pomieszczenie i ok. 1 828 zł za każde następne. To zmiana oferty, nie refaktoryzacja | porównanie cen przed i po na typowych konfiguracjach (1, 2, 3 pomieszczenia) jako kryterium `B2C-TRIAGE-PRICE-FROM-PRICE-LIST`; wdrożenie dopiero po skompletowaniu cennika i konfiguracji standardu |
 | R19 | Konfiguracja montażu standardowego rozjedzie się z `DEFINICJA-MONTAZU-STANDARDOWEGO.md` | klient dostanie ofertę niezgodną z tym, co firma obiecuje publicznie | dokument staje się opisem konfiguracji, a nie drugim źródłem prawdy; po wdrożeniu `doc-scribe` przepisuje go na odwołanie do ustawień |
-| R20 | W Triage stawkę VAT wyliczamy z **sumy powierzchni pomieszczeń**, a nie z powierzchni lokalu | klient podaje tylko pomieszczenia klimatyzowane, więc suma zaniża metraż i może dać 8% tam, gdzie należy się 23%; błąd w stawce to korekta faktury, nie poprawka w kodzie | osobne pole „łączna powierzchnia lokalu" w Triage albo jawne oświadczenie klienta; stawkę ostatecznie ustala zaznaczenie audytora, a cena z Triage jest orientacyjna (D17) |
-| R21 | Próg 300 m² może nie dotyczyć **lokali** mieszkalnych | przepisy o stawce 8% wymieniają 300 m² dla domów jednorodzinnych, a dla lokali mieszkalnych mówi się o niższym progu; jeśli tak jest, część wycen wyjdzie z błędną stawką | **pytanie do księgowego przed wdrożeniem `PRICE-VAT-RATE`**; próg trzymamy w kontrakcie SLA, więc zmiana to jedna wartość, nie przegląd kodu |
+| ~~R20~~ | ~~Stawka z sumy powierzchni pomieszczeń~~ | **ZAMKNIĘTE 2026-09-23:** Triage pyta wprost o przedział powierzchni lokalu (do 300 m² / powyżej), wyborem z listy, tylko dla nieruchomości mieszkalnych. Niczego nie sumujemy | — |
+| ~~R21~~ | ~~Próg 300 m² może nie dotyczyć lokali mieszkalnych~~ | **ZAMKNIĘTE 2026-09-23:** próg 300 m² obowiązuje tak samo dla mieszkań i domów, komercyjne zawsze 23%. Próg trzymamy w kontrakcie SLA, więc ewentualna korekta po rozmowie z księgowym to jedna wartość | — |
 | R17 | Wzory w `docs/legal/` to dziś lorem ipsum | ryzyko wysłania klientowi dokumentu z treścią zastępczą podczas prób | przyrostek `-lorem` w nazwie pliku + bramka przed wysyłką: dokument oznaczony jako roboczy nie może wyjść do klienta (kryterium w `FLD-CONTRACT-GENERATE`) |
 | R5 | EuroCert może wymagać zarejestrowanej spółki | podpis bez znacznika czasu na próbach grudniowych | sprawdzić warunki EuroCert **przed etapem 3**; awaryjnie: podpisy bez TSA i dostemplowanie po zawarciu umowy (wtedy R8) |
 | R6 | Brak wysyłki powiadomień (Z1) | protokół, `N8a` i link do podpisu nie dojdą do klienta | Z1 jako twarda zależność etapu 2 |

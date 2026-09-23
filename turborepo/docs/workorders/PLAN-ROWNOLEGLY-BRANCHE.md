@@ -37,6 +37,7 @@ Nie da się tego zrównoleglić i nie warto próbować.
 | `FLD-PHOTO-SET` na wzór 4+2n, `FNL-2PHASE-INVOICE` po etapie II, `N8a` bez faktury | `contracts/` |
 | `leads:create` dla audytora, zasoby na podpisy, zdjęcia, dokumenty | `contracts/rbac.contract.mjs` |
 | próg 300 m² dla stawki VAT | `contracts/sla.contract.mjs` |
+| słownik `PROPERTY_AREA_BANDS` i pole `PROPERTY_AREA_BAND` w Triage | `contracts/triage.contract.mjs` |
 | tabele: `price_list_items`, `quotes`, `quote_*`, `contracts`, `signatures`, `invoices`, `documents` | `packages/database/prisma/schema.prisma`, `supabase/migrations/` |
 | regeneracja | `packages/contracts/src/generated/**` |
 
@@ -132,5 +133,5 @@ Po scaleniu B3 zwolniony agent bierze B8, po B1 — B4.
 3. **Ochrona `main` w GitHub** — inaczej pierwszy agent, który nie przeczyta zasad, wypchnie na `main`.
 4. ~~Decyzja o stawce VAT przy zaliczce~~ **rozstrzygnięte 2026-09-23 (D17)**: stawka wynika z obiektu,
    zaliczka liczy się po stawce obiektu. B2 odblokowane.
-5. **Pytanie do księgowego** (nie blokuje startu B2, blokuje jej zamknięcie): czy próg 300 m² dotyczy
-   także lokali mieszkalnych, czy tylko domów jednorodzinnych (ryzyko R21 w dokumencie zakresu).
+5. ~~Pytanie do księgowego o próg 300 m²~~ **rozstrzygnięte 2026-09-23**: próg obowiązuje jednakowo
+   dla mieszkań i domów, lokal komercyjny zawsze 23%. B2 nie ma już otwartych blokad.
