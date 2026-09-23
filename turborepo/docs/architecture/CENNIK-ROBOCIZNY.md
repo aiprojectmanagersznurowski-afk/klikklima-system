@@ -17,6 +17,7 @@ Kolumny arkusza:
 | Opis | opis dla klienta | `description` |
 | Jednostka miary | `mb`, `szt`, `m` | `unit` |
 | KOSZT NETTO Ekip monterskich | ile płacimy ekipie albo ile kosztuje materiał | `crew_cost_net` |
+| (dodane przeze mnie, nie ma w arkuszu) | czy pozycja należy do pomieszczenia czy do całej instalacji | `scope` |
 | PRZYCHÓD NETTO KlikKlima do rozliczenia z ekipą monterską | cena sprzedaży netto | `sale_price_net` |
 
 ## Czego w arkuszu nie ma, a schemat będzie potrzebował
@@ -34,6 +35,24 @@ Kolumny arkusza:
    urządzeń) nie jest już potrzebna do liczenia zaliczki.
 5. **`wysokość jedn zew`** (250 zł za metr) oraz **`zwyżka`** to pozycje, które plan każe wyłączyć
    z automatycznego kalkulatora — wycena indywidualna.
+
+## Podział pozycji: pomieszczenie czy cała instalacja
+
+Kolumna `scope` w CSV (dodana 2026-09-23, **moja propozycja do zatwierdzenia**) mówi, czy pozycja
+należy do konkretnego pomieszczenia, czy do całej instalacji. Formularz wyceny audytora ma dwie
+części właśnie z tego powodu (patrz D17 w dokumencie zakresu).
+
+| `scope` | Ile pozycji | Co to jest | Przykłady |
+|---|---|---|---|
+| `ROOM` | 23 | wszystko, co idzie „na jednostkę wewnętrzną": trasa, odprowadzenie skroplin, przebicia, podłączenie | instalacja freonowa, koryta, przewiert, skropliny, syfon, pompka, podłączenie ściennej, bruzdowanie tras |
+| `INSTALLATION` | 16 | wszystko, co jest wspólne dla całego układu, niezależnie od liczby pomieszczeń | montaż jednostki zewnętrznej (5 wariantów), wysokość jedn. zew., zasilanie i jego bruzdowanie, wpięcie zasilania, uruchomienie, przejście dachowe, zabezpieczenie mieszkania, zwyżka |
+
+Dwie rzeczy warte uwagi przy zatwierdzaniu:
+
+1. **Zasilanie jest wspólne** (`dł przewodu zasilającego`, `wpięcie zasilania`, `bruzdowanie na przewód
+   zasilający`), bo idzie do jednostki zewnętrznej, a nie do każdego pomieszczenia z osobna.
+2. **`Lutowanie` zaliczyłem do pomieszczenia**, bo dotyczy łączenia rur na trasie. Jeśli w praktyce
+   liczysz je ryczałtem na całą instalację, przenieś do `INSTALLATION`.
 
 ## Ile wychodzi montaż standardowy
 

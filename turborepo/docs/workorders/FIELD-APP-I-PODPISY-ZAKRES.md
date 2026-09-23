@@ -467,11 +467,53 @@ cenę dla klienta:
   - Stawka jest atrybutem **wyceny i faktury**, a nie pozycji cennika: ta sama pozycja idzie raz na 8%,
     raz na 23%.
   - Granica 300 m² to reguła progowa — jak progi SLA, należy do kontraktu, nie do kodu.
-  - Zaliczka z D8 (`netto × 1,23 × 1,1`) zakłada sztywne 23%. **Przy lokalu mieszkalnym do 300 m² wzór
-    daje inną kwotę niż cena brutto zestawu urządzeń** — do rozstrzygnięcia, czy zaliczka liczy się
-    zawsze po 23% (urządzenia to dostawa towaru), czy po stawce obiektu.
+  - **Rozstrzygnięte 2026-09-23 (D17): zaliczka liczy się po stawce obiektu**, a nie zawsze po 23%.
+    Wzór z D8 przyjmuje więc postać ogólną: `zaliczka = cena_netto_zestawu × (1 + stawka_vat_obiektu) × 1,1`.
+    Dla lokalu usługowego i mieszkalnego powyżej 300 m² wychodzi to samo co wcześniej
+    (`× 1,23 × 1,1`), dla mieszkalnego do 300 m² — `× 1,08 × 1,1`.
 - [ ] Potwierdzam mapowanie montażu standardowego z `CENNIK-ROBOCIZNY.md` (ok. 2 483 zł netto
       za pierwsze pomieszczenie) albo podaję własne: ____________
+
+### D17: Skąd bierze się stawka VAT i jak wygląda formularz wyceny `[ROZSTRZYGNIĘTE 2026-09-23]`
+
+**Stawka VAT wynika z obiektu**, więc system musi wiedzieć, jaki to obiekt. Dwa źródła tej wiedzy:
+
+| Kto wycenia | Skąd rodzaj obiektu | Uwaga |
+|---|---|---|
+| **Audytor (Field App)** | zaznacza rodzaj obiektu w formularzu wyceny | dane z pierwszej ręki, audytor widzi lokal |
+| **Klient (Triage)** | z tego, co sam uzupełnił: rodzaj lokalu oraz pomieszczenia i ich powierzchnie; sumę powierzchni porównujemy z progiem 300 m² | dane deklarowane, obarczone błędem (patrz R20) |
+
+Wycena audytora ma pierwszeństwo: jeśli audytor zastanie inny obiekt, niż zadeklarował klient, to jego
+zaznaczenie nadpisuje stawkę w ofercie i na fakturze. Cena z Triage pozostaje ceną orientacyjną.
+
+**Formularz wyceny audytora — struktura potwierdzona 2026-09-23.** Dwie części:
+
+1. **Pozycje pomieszczenia.** Audytor dodaje pomieszczenie (nazwa, moc jednostki — wpisywana, nie
+   wyliczana, K7), uzupełnia przy nim ilości pozycji cennika, po czym dodaje kolejne pomieszczenie
+   i robi to samo. Pozycje o zasięgu `ROOM`: trasa freonowa, koryta, przewiert, skropliny, syfon,
+   pompka, bruzdowanie tras, podłączenie jednostki wewnętrznej.
+2. **Pozycje ogólne całej instalacji**, niededykowane żadnemu pomieszczeniu. Pozycje o zasięgu
+   `INSTALLATION`: montaż jednostki zewnętrznej (pięć wariantów), wysokość jedn. zewnętrznej, przewód
+   zasilający i jego bruzdowanie, wpięcie zasilania, uruchomienie, przejście dachowe, zabezpieczenie
+   mieszkania, zwyżka.
+
+Podział wszystkich 39 pozycji cennika na te dwa zasięgi jest w
+[CENNIK-ROBOCIZNY.md](../architecture/CENNIK-ROBOCIZNY.md): **23 pozycje `ROOM`, 16 pozycji
+`INSTALLATION`**. Ten sam podział działa już w wyliczeniu montażu standardowego (1 828 zł netto na każdą
+jednostkę wewnętrzną + 655 zł na układ), więc jedna reguła obsługuje Triage i formularz audytora.
+
+**Uczciwie o stanie dokumentów:** część „po pomieszczeniach" faktycznie była zapisana — `FIELD-APP-PLAN.md`
+§4.2 przewiduje tabele `quote_rooms` i `quote_items` (pozycja cennika × ilość, per pomieszczenie).
+**Pozycji ogólnych nie było nigdzie**, ani w planie, ani w wymaganiach. To realna luka, którą ta decyzja
+zamyka. Skutek dla schematu: `quote_items.room_id` musi być **opcjonalne** (brak pomieszczenia = pozycja
+ogólna), a `price_list_items` dostaje atrybut `scope` sterujący tym, w której części formularza pozycja
+się pojawia.
+
+- [x] Stawka VAT z obiektu; w Field App z zaznaczenia audytora, w Triage z danych klienta (2026-09-23)
+- [x] Zaliczka liczona po stawce obiektu: `netto × (1 + stawka_vat) × 1,1` (2026-09-23)
+- [x] Formularz wyceny: pozycje per pomieszczenie + osobna sekcja pozycji ogólnych (2026-09-23)
+- [ ] Potwierdzam podział 23/16 z `CENNIK-ROBOCIZNY.md` (uwaga na `Lutowanie` — dziś `ROOM`)
+- [ ] Do sprawdzenia u księgowego: czy próg 300 m² dotyczy także **lokali** mieszkalnych (patrz R21)
 
 ---
 
@@ -732,6 +774,9 @@ Zostaje ewentualnie jako informacja księgowa, ale nie jako mechanizm.
 | `STD-INSTALL-CONFIG` | ekran `/settings/standard-installation`: montaż standardowy jako zestaw pozycji cennika z ilościami; jedno źródło dla Triage i dla oferty |
 | `B2C-TRIAGE-PRICE-FROM-PRICE-LIST` | Triage liczy cenę montażu z cennika i konfiguracji standardu, zamiast z pozycji `'Montaż wzorcowy'` w `cennik_uslug` i literału 1200 zł |
 | `FLD-QUOTE-CALC` | silnik wyceny: pozycje × ilości per pomieszczenie, suma netto/brutto, marża na pozycji, kwota zaliczki wg D8 |
+| `FLD-QUOTE-ROOMS` | wycena pomieszczeniami: dodaj pomieszczenie, uzupełnij ilości pozycji `ROOM`, dodaj kolejne (D17) |
+| `FLD-QUOTE-GENERAL-ITEMS` | osobna sekcja pozycji ogólnych całej instalacji, `scope = INSTALLATION` (D17) |
+| `PRICE-VAT-RATE` | stawka z obiektu: zaznaczenie audytora w Field App, dane klienta w Triage; próg 300 m² z kontraktu SLA |
 | `FLD-QUOTE-MANUAL-ITEM` | pozycja indywidualna poza cennikiem (stelaż, zwyżka), zawsze z opisem i ceną wpisaną ręcznie |
 | `FLD-QUOTE-PRICE-SNAPSHOT` | oferta i wycena z Triage pamiętają ceny z dnia wystawienia; późniejsza zmiana cennika nie zmienia tego, co klient dostał |
 
@@ -965,6 +1010,8 @@ w panelu, dopóki etap 4 nie jest gotowy.
 | R16 | Zaliczka to 110% ceny brutto urządzeń (D8) | przy tanim montażu zaliczka może przekroczyć wartość całej oferty, a przy drogim — wyglądać na niespójną z „40–50%” z prezentacji | reguła kontrolna w `FLD-QUOTE-VARIANTS`: zaliczka nigdy większa niż wartość oferty; sprostowanie prezentacji |
 | R18 | Przepięcie Triage na wspólny cennik **podnosi cenę widoczną publicznie mniej więcej dwukrotnie** | dziś montaż to `'Montaż wzorcowy'` × liczba pomieszczeń (zapasowo 1200 zł/pom.), a z dostarczonego cennika standard wychodzi ok. **2 483 zł netto** za pierwsze pomieszczenie i ok. 1 828 zł za każde następne. To zmiana oferty, nie refaktoryzacja | porównanie cen przed i po na typowych konfiguracjach (1, 2, 3 pomieszczenia) jako kryterium `B2C-TRIAGE-PRICE-FROM-PRICE-LIST`; wdrożenie dopiero po skompletowaniu cennika i konfiguracji standardu |
 | R19 | Konfiguracja montażu standardowego rozjedzie się z `DEFINICJA-MONTAZU-STANDARDOWEGO.md` | klient dostanie ofertę niezgodną z tym, co firma obiecuje publicznie | dokument staje się opisem konfiguracji, a nie drugim źródłem prawdy; po wdrożeniu `doc-scribe` przepisuje go na odwołanie do ustawień |
+| R20 | W Triage stawkę VAT wyliczamy z **sumy powierzchni pomieszczeń**, a nie z powierzchni lokalu | klient podaje tylko pomieszczenia klimatyzowane, więc suma zaniża metraż i może dać 8% tam, gdzie należy się 23%; błąd w stawce to korekta faktury, nie poprawka w kodzie | osobne pole „łączna powierzchnia lokalu" w Triage albo jawne oświadczenie klienta; stawkę ostatecznie ustala zaznaczenie audytora, a cena z Triage jest orientacyjna (D17) |
+| R21 | Próg 300 m² może nie dotyczyć **lokali** mieszkalnych | przepisy o stawce 8% wymieniają 300 m² dla domów jednorodzinnych, a dla lokali mieszkalnych mówi się o niższym progu; jeśli tak jest, część wycen wyjdzie z błędną stawką | **pytanie do księgowego przed wdrożeniem `PRICE-VAT-RATE`**; próg trzymamy w kontrakcie SLA, więc zmiana to jedna wartość, nie przegląd kodu |
 | R17 | Wzory w `docs/legal/` to dziś lorem ipsum | ryzyko wysłania klientowi dokumentu z treścią zastępczą podczas prób | przyrostek `-lorem` w nazwie pliku + bramka przed wysyłką: dokument oznaczony jako roboczy nie może wyjść do klienta (kryterium w `FLD-CONTRACT-GENERATE`) |
 | R5 | EuroCert może wymagać zarejestrowanej spółki | podpis bez znacznika czasu na próbach grudniowych | sprawdzić warunki EuroCert **przed etapem 3**; awaryjnie: podpisy bez TSA i dostemplowanie po zawarciu umowy (wtedy R8) |
 | R6 | Brak wysyłki powiadomień (Z1) | protokół, `N8a` i link do podpisu nie dojdą do klienta | Z1 jako twarda zależność etapu 2 |

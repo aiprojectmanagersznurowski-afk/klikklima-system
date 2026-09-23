@@ -130,5 +130,7 @@ Po scaleniu B3 zwolniony agent bierze B8, po B1 — B4.
    a `kk-trace` nie ma czego śledzić.
 2. **Work Ordery** dla pierwszych czterech gałęzi (`/kk-plan` na wymaganie). Jeden WO na artefakt i rolę.
 3. **Ochrona `main` w GitHub** — inaczej pierwszy agent, który nie przeczyta zasad, wypchnie na `main`.
-4. **Decyzja o stawce VAT przy zaliczce** (D8 kontra D16): czy zaliczka liczy się zawsze po 23%,
-   czy po stawce obiektu. Blokuje B2.
+4. ~~Decyzja o stawce VAT przy zaliczce~~ **rozstrzygnięte 2026-09-23 (D17)**: stawka wynika z obiektu,
+   zaliczka liczy się po stawce obiektu. B2 odblokowane.
+5. **Pytanie do księgowego** (nie blokuje startu B2, blokuje jej zamknięcie): czy próg 300 m² dotyczy
+   także lokali mieszkalnych, czy tylko domów jednorodzinnych (ryzyko R21 w dokumencie zakresu).
