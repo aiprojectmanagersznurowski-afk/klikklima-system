@@ -1,0 +1,40 @@
+category,item_name,description,unit,crew_cost_net,sale_price_net
+Materiał,instalacja freonowa 1/4 i 3/8,"Rura miedziana w otulinie 1/4', rura miedziana w otulinie 3/8', przewód sterujący 4x1m2",mb,18.72,130.00
+Materiał,instalacja freonowa 1/4 i 1/2,"Rura miedziana w otulinie 1/4', rura miedziana w otulinie 1/2', przewód sterujący 4x1m2",mb,22.80,135.00
+Materiał,koryta na instalację freonową,Koryta plastikowe białe 60x80mm,mb,9.00,40.00
+Robocizna,bruzdowanie na instalację freonową,"Cięcie i kucie ścian, aby zmieścić podtynkowo instalację freonową",mb,,120.00
+Robocizna,bruzdowanie w żelbecie,"Cięcie i kucie ścian żelbetowych, aby zmieścić podtynkowo instalację freonową",mb,,220.00
+Robocizna,bruzdowanie na skropliny,"Cięcie i kucie ścian, aby zmieścić podtynkowo instalację odprowadzenia skroplin",mb,,40.00
+Robocizna,bruzdowanie na skropliny w żelbecie,"Cięcie i kucie ścian żelbetowych, aby zmieścić podtynkowo instalację odprowadzenia skroplin",mb,,80.00
+Robocizna,bruzdowanie na przewód zasilający,"Cięcie i kucie ścian, aby zmieścić podtynkowo przewód zasilający",mb,,40.00
+Robocizna,wycięcie rewizji + wstawienie wyciętego kawałka GK,"Wycięcie kawałka (np kwadrat 20x20cm) płyty gipsowo kartonowej, aby móc przeciągnąć instalację freonową/skroplin/elektryczną i następnie wstawienie tego kawałka spowrotem, bez szpachlowania",szt,20.00,80.00
+Robocizna,wstawienie rewizji,"Wstawienie drzwiczek plastikowych w miejsce wycięcia, aby mieć dostęp do instalacji ułożonej za płytą gipsowo kartonową",szt,150.00,350.00
+Robocizna,bruzdowanie na przewód zasilający w żelbecie,"Cięcie i kucie ścian żelbetowych, aby zmieścić podtynkowo przewód zasilający",mb,,80.00
+Materiał,jedn zew stoi na podstawach kauczukowych,Montaż jednostki zewnętrznej na antywibracyjnych podkładach kauczukowych,szt,77.00,120.00
+,jedn zew stoi na stojaku,,szt,350.00,550.00
+,jedn zew stoi na stelażu z profili,,szt,150.00,350.00
+,jedn zew wisi do 3m od podłoża,,szt,93.00,170.00
+,jedn zew wisi na kominie,,szt,120.00,240.00
+,wysokość jedn zew,,m,,250.00
+Materiał,skropliny grawitacyjnie giętkie,Odprowadzenie skroplin za pomocą elastycznego węża karbowanego,mb,2.00,6.00
+Materiał,skropliny na sztywno,Odprowadzenie skroplin za pomocą sztywnych rur plastikowych wymagających klejenia kształtek na zakrętach,mb,15.50,45.00
+Materiał,syfon,"Syfon przed wpięciem do kanalizacji, aby zapobiec wydobywaniu się nieprzyjemnych zapachów z klimatyzacji",szt,100.00,180.00
+Materiał,pompka skroplin,Pompka stosowana w przypadku braku możliwości zachowania spadku i wykonania odpływu skroplin grawitacyjnie,szt,315.00,600.00
+Robocizna,wpięcie skroplin do odpływu przez trójnik,Podłączenie odpływu skroplin od syfonu do odpływu kanalizacyjnego z zastosowaniem trójnika 45st fi50mm,szt,4.00,60.00
+Robocizna,wpięcie skroplin do odpływu przez siodło,"Podłączenie odpływu skroplin od syfonu do odpływu kanalizacyjnego z zastosowaniem trójnika siodła - robi się to w momencie, gdy nie możemy zastosować trójnika",szt,41.00,95.00
+Materiał,dł przewodu zasilającego,Ilość mb przewodu zasilającego,mb,4.50,15.00
+Robocizno-materiał,wpięcie zasilania do rozdzielni,Wpięcie przewodu zasilającego jednostkę zewnętrzną do rozdzielni dodając nowe zabezpieczenie elektryczne,szt,12.00,60.00
+Robocizno-materiał,wpięcie zasilania do gniazda na sztywno,"Wpięcie przewodu zasilającego jednostkę zewnętrzną do gniazda, łącząc przewody w puszce gniazdka",szt,,60.00
+Robocizno-materiał,wpięcie zasilania do gniazda na wtyczke,Wpięcie przewodu zasilającego jednostkę zewnętrzną do gniazda za pomocą wtyczki kątowej,szt,5.50,60.00
+Robocizna,podłączenie ściennej,"Montaż wspornika jednostki wewnętrznej ściennej na ścianie, wykonanie kielichów na rurach miedzianych, połączenie wykonanych kielichów z króćcami jednostki ściennej, podłączenie rury odprowadzającej skropliny do odpływu jednostki wewnętrznej, podłączenie przewodu sterującego, zamknięcie jednostki wewnętrznej",szt,,1000.00
+Robocizna,podłączenie kanałówki/kasety,"Montaż uchwytów montażowych w suficie, powieszenie na uchwytach jednostki wewnętrznej, wykonanie kielichów na rurach miedzianych, połączenie wykonanych kielichów z króćcami jednostki ściennej, podłączenie rury odprowadzającej skropliny do odpływu jednostki wewnętrznej, podłączenie przewodu sterującego, zamknięcie jednostki wewnętrznej",szt,,1300.00
+Robocizna,uruchomienie,"Ustawienie jednostki zewnętrznej w docelowym miejscu, wykonanie kielichów na rurach miedzianych, podłączenie rur miedzianych do przyłączy jednostki zewnętrznej, podłączenie przewodu sterującego, podłączenie przewodu zasilającego, wykonanie próżni w układzie freonowym, podanie zasilania, uruchomienie klimatyzacji, sprawdzenie parametrów",szt,,400.00
+Robocizna,przewiert,"Wykonanie przewiertu fi65 na przeprowadzenie instalacji freonowej, skroplin, zasilania",szt,,300.00
+Robocizna,przewiert w żelbecie,"Wykonanie przewiertu fi65 w ścianie żelbetowej na przeprowadzenie instalacji freonowej, skroplin, zasilania",szt,,550.00
+Robocizno-materiał,przejście dachowe,"Wykonanie otworu w dachu, montaż rury plastikowej zawiniętej do dołu, przełożenie instalacji freonowej, zabezpieczenie otworu (najczęściej zgrzewanie papy lub membrany pcv)",szt,300.00,700.00
+Robocizno-materiał,Lutowanie,"Łączenie rur miedzianych za pomocą lutowania twardego w osłonie azotu, z wykorzystaniem palnika i lutu miedzianego",szt,50.00,200.00
+Robocizna,Zabezpieczenie wykończonego mieszkania do bruzdowania,"Rozłożenie folii zabezpieczających mienie klienta, rozłożenie kartonów na podłogach",szt,100.00,300.00
+Materiał,plenum do kanałówki,Zamówienie na wymiar i montaż króćca do klimatyzacji kanałowej w przypadku gdy musimy rozdzielić 1 nawiew na kilka pomieszczeń,szt,200.00,400.00
+Materiał,kratki do kanałówki,"Zamówienie na wymiar i montaż naścienny lub sufitowy kratek nawiewnych, z których wieje zimne powietrze z jednostki wewnętrznej",szt,150.00,250.00
+Materiał,dł kanałów flex,Długość kanałów elastycznych nawiewno wyciągowych do montażu klimatyzacji kanałowej,mb,14.00,32.00
+Materiał,zwyżka,Zamówienie podnośnika koszowego do transportu i montażu jednostki zewnętrznej w miejsca niedostępne z drabiny,szt,450.00,700.00

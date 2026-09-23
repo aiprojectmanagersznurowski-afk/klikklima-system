@@ -1,12 +1,13 @@
 # Zakres projektu: Field App + podpis elektroniczny
 
-> **Status: CZĘŚCIOWO ZATWIERDZONY (2026-09-21).** D1–D4 oraz D10–D14 rozstrzygnięte przez Michała,
-> D5–D9 w trakcie weryfikacji. To nie jest Work Order i nie jest kontrakt. Nic z tego dokumentu nie
+> **Status: ZATWIERDZONY (2026-09-23).** D1–D14 rozstrzygnięte przez Michała. Otwarte pozostają wyłącznie
+> treści dokumentów prawnych i odpowiedzi na pytania prawne z D5 — nie blokują etapów 1–4. To nie jest Work Order i nie jest kontrakt. Nic z tego dokumentu nie
 > trafiło jeszcze do `contracts/`. Z zatwierdzonych punktów powstaną wpisy w rejestrze wymagań (okno
 > kontraktowe, `contract-steward`), a dopiero potem Work Ordery.
 >
 > Przygotował: `spec-analyst`, 2026-09-21. Stan repozytorium sprawdzony tego samego dnia.
-> Rozdziały 1, 5–11 przeliczone po decyzjach z 2026-09-21 (wariant React Native, obie ścieżki).
+> Rozdziały 1, 5–11 przeliczone po decyzjach z 2026-09-21 (wariant React Native, obie ścieżki)
+> i uzupełnione po decyzjach D5–D9 z 2026-09-23.
 
 **Jak czytać:** idziesz od góry do dołu i zaznaczasz `[x]` przy opcji, którą wybierasz, albo przy punkcie
 zakresu, który potwierdzasz. Pola bez zaznaczenia uznaję za **niezatwierdzone**, a nie za zgodę.
@@ -14,25 +15,26 @@ Identyfikatory techniczne są w nawiasach, żeby dało się je później odnale�
 
 ---
 
-## 0. Rozstrzygnięcia z 2026-09-21
+## 0. Rozstrzygnięcia z 2026-09-21 i 2026-09-23
 
 | Decyzja | Wybór | Skutek dla zakresu |
 |---|---|---|
 | **D1** Platforma | **C: React Native + Expo** (`apps/field-app`). Decyzja D1 z 2026-08-20 **zostaje w mocy** | Wracają: automatyczny SMS „w drodze” przy 3 km (geolokalizacja w tle), Skia do podpisu, `expo-sqlite` do pracy bez zasięgu. Dochodzą: warstwa API (D2), dystrybucja przez sklepy (EAS, TestFlight, Play Console), drugi zestaw testów (Jest + RNTL, E2E Maestro). Dokumenty mówiące o PWA (S1) są **dryfem** do sprostowania |
-| **D2** Warstwa zapisu | **Wariant dla React Native** z tabeli D2. Przyjmuję rekomendację **(b): Route Handlery współdzielące `can()` i Prismę**, jako aneks ADR-013 do ADR-001 | ⚠ **Do potwierdzenia jednym słowem:** odpowiedź „C” czytam jako „wiersz React Native z rekomendacją (b)”, a nie jako trzecie pole („`supabase-js` + RLS”). Nowe wymaganie `FLD-API-LAYER` |
+| **D2** Warstwa zapisu | **Route Handlery współdzielące `can()` i Prismę** — rekomendacja (b) dla wariantu React Native, jako aneks ADR-013 do ADR-001. **Potwierdzone 2026-09-23** | Odrzucone: `supabase-js` + RLS z urządzenia (druga implementacja uprawnień w SQL). Jedna funkcja domenowa obsługuje panel i aplikację. Nowe wymaganie `FLD-API-LAYER` |
 | **D3** Kolejność | **Obie ścieżki (audytor i monter) w pełnym zakresie**. Harmonogram może się przesunąć | Nowa kolejność etapów w rozdziale 7. Termin 30.11 nie jest już celem dla całości |
 | **D4** Podpis | **Wszystkie rekomendacje:** TSA obowiązkowy (D4.1); OTP SMS obowiązkowy w podpisie zdalnym, na miejscu nie (D4.2); klient podpisuje protokół odbioru i umowę montażu; protokół serwisowy i zgoda na zdjęcia w social media poza zakresem (D4.3) | Rodzina `FLD-SIGN-*` w całości, łącznie z `FLD-SIGN-REMOTE-OTP` |
-| **D5** Prawnik | **Zaparkowane**: Michał zbiera odpowiedzi | Blokuje: podpis zdalny (etap 5), umowę montażu (treść, pouczenie o odstąpieniu), trwały nośnik, `FLD-GPS-RODO` (lokalizacja w tle to teraz większe pytanie niż przy PWA) |
-| **D6** Dostawca TSA | W trakcie weryfikacji | Blokuje `FLD-SIGN-TSA` |
-| **D7** Zdjęcia | W trakcie weryfikacji | Blokuje `FLD-PHOTO-SET` i zamknięcie montażu |
-| **D8** Zaliczka | W trakcie weryfikacji | Blokuje M8 |
-| **D9** Księgowy | W trakcie weryfikacji | Blokuje M8, `FNL-2PHASE-INVOICE`, `N8a` z fakturą |
+| **D5** Dokumenty prawne (2026-09-23) | **Jeden pakiet:** umowa montażu, pouczenie o odstąpieniu, formularz odstąpienia, oświadczenie o żądaniu wcześniejszego montażu, karta podpisu, klauzule RODO, zgoda na doręczenie mailem. **Treści zaparkowane** — Michał je wypracuje i podmieni | Katalog `docs/legal/` utworzony, w nim 7 wzorów PDF z treścią zastępczą (lorem ipsum) i `README.md` z zasadami wersjonowania. Development nie czeka na treści: `DOC-PDF-RENDER` i podpis pracują na wzorach roboczych. **Nadal otwarte pytania prawne** (nie treści, tylko zasady): trwały nośnik przy „mailu z samym linkiem”, wartość dowodowa podpisu na telefonie, RODO lokalizacji w tle |
+| **D6** Dostawca TSA (2026-09-23) | **EuroCert** | `FLD-SIGN-TSA` odblokowane. Do sprawdzenia przed etapem 3: czy EuroCert zawrze umowę przed wpisem spółki do KRS |
+| **D7** Zdjęcia (2026-09-23) | **Zestaw zmienny.** Część stała: jednostka zewnętrzna, tabliczka znamionowa jednostki zewnętrznej, odpływ skroplin, manometr próby próżni. Do tego **2 zdjęcia na każdą jednostkę wewnętrzną**: montaż i tabliczka znamionowa. **Etap I** montażu dwuetapowego: zdjęcia tras przed zakryciem + manometr próby azotem. Parametry prób wpisywane **liczbowo**, niezależnie od zdjęcia | `FLD-PHOTO-SET` przechodzi ze stałych 4 zdjęć na wzór `4 + 2n` (zmiana kontraktu). Etap I dostaje własny, osobny komplet. Tabliczki znamionowe są źródłem numerów seryjnych do protokołu (K5), co zmniejsza ryzyko R9 |
+| **D8** Zaliczka (2026-09-23) | **`zaliczka = cena_netto_zestawu × 1,23 × 1,1`**, czyli 110% ceny brutto zestawu urządzeń. Wzór **potwierdzony 2026-09-23** | Odrzucone: stałe 40–50% z prezentacji i wariant „pozycje `FZ` + urządzenia” z planu §4.3 — oba dokumenty do sprostowania. Kwota zależy od wybranego wariantu oferty, więc wyliczenie należy do `FLD-QUOTE-VARIANTS`, a nie do faktury |
+| **D9** Dokumenty rozliczeniowe (2026-09-23) | **Łańcuch trzech dokumentów:** proforma lub wezwanie do zapłaty przed wpłatą → faktura zaliczkowa **automatycznie po wpłacie** → faktura rozliczeniowa po montażu. Narzędzie: **inFakt** (KSeF po stronie dostawcy) | `INV-ADVANCE` rozpada się na trzy wymagania. Automat po wpłacie wymaga idempotentnej obsługi powrotu z płatności (webhook PayU), inaczej podwójna faktura. Przy montażu dwuetapowym faktura rozliczeniowa wychodzi **po etapie II** (po zamontowaniu urządzeń), a nie po etapie I — to zmienia dzisiejsze `FNL-2PHASE-INVOICE` |
 | **D10** Zamknięcie montażu | **A**: monter zamyka, `N8` od razu, dyspozytor zatwierdza tylko wypłatę ekipy | Bez zmiany maszyny stanów. Nowe `FLD-INSTALL-PAYOUT-APPROVAL` |
 | **D11** Brak zasięgu | **Wersja wąska**: szkic lokalny + kolejka wysyłki | `FLD-OFFLINE-OUTBOX` na `expo-sqlite`. Bez przeglądania danych offline |
 | **D12** Sprzęt | **Telefon dla obu ról**, rysik niepotrzebny | Jeden układ ekranu (bez tabletu). Podpis palcem. Umowa czytana na małym ekranie, co trzeba uwzględnić w pytaniach do prawnika |
 | **D13** E-mail | **Mailtrap** | S11 rozstrzygnięte. Wzmianki o Resend w prezentacjach do sprostowania |
 | **D14** Lead od audytora | **W zakresie** | Zmiana kontraktu: drugie wejście do lejka (dziś `B2C-LEAD-ENTRY` mówi „jedyne legalne wejście”) + prawo `leads:create` dla audytora. Nowe `FLD-AUDIT-LEAD-CREATE` |
 | SMSAPI | **Pole nadawcy złożone i przetestowane** | Zależność zamknięta |
+| **D15** Kalkulator audytora (2026-09-23) | **A: pełny kalkulator.** Do tego: **jeden cennik robocizny** dla audytora i dla Triage (Triage bierze ilości z parametrów montażu standardowego), **konfiguracja cennika** i **konfiguracja montażu standardowego** w ustawieniach panelu B2B | Nowy moduł **M9**, największy pojedynczy przyrost zakresu od 21.09: ok. 16–23 MD. Znika ryzyko dwóch cenników, ale zmienia się sposób liczenia ceny widocznej publicznie w Triage (R18). Potrzebny plik z cennikiem robocizny od Michała (zależność Z2) |
 
 ---
 
@@ -56,23 +58,30 @@ w panelu; współrzędne adresów klientów. Szczegóły w rozdziale 4.
 PDF, podpisu, ofert i umów (tabela `quotes` nie istnieje), faktur, płatności oraz **wysyłki** powiadomień:
 kolejka zapisuje wiadomości, ale dziś żaden mail ani SMS nie wychodzi.
 
-**Jak (po decyzjach z 2026-09-21).** Natywna aplikacja **React Native + Expo** (`apps/field-app`) na
-**telefony** obu ról. Zapisuje dane przez nową warstwę API w panelu B2B (Route Handlery z tym samym `can()`
-i Prismą, ADR-013). Działa bez zasięgu w wersji wąskiej (szkic + kolejka). Audytor może sam założyć leada.
+**Jak (po decyzjach z 2026-09-21 i 2026-09-23).** Natywna aplikacja **React Native + Expo** (`apps/field-app`)
+na **telefony** obu ról. Zapisuje dane przez nową warstwę API w panelu B2B (Route Handlery z tym samym
+`can()` i Prismą, ADR-013). Działa bez zasięgu w wersji wąskiej (szkic + kolejka). Audytor może sam założyć leada.
 
 **Ile to jest.** Dokumenty rozjeżdżały się **od pięciu do dziesięciu razy** (rozdział 2, sprzeczność S2).
 Roadmapa GTM daje na całe Field App 28 h (Pakiet 4), a na podpis 16–20 h. `FIELD-APP-PLAN.md` szacuje
 sam podpis na 19–26 MD, a fazy 1–7 łącznie na 117–163 MD. Mój zgrubny szacunek pełnego zakresu
-w wariancie **React Native, obie ścieżki**, to **ok. 78–118 MD**. Obie ścieżki z podpisem na miejscu,
-bez podpisu zdalnego i bez faktur, to **ok. 57–88 MD**, a sama ścieżka montera **ok. 43–66 MD**. Rozbicie jest w rozdziale 6. Rzetelnie
+w wariancie **React Native, obie ścieżki**, to **ok. 98–147 MD** (z pełnym modułem wyceny M9). Obie ścieżki z podpisem na miejscu i pełną
+wyceną, bez podpisu zdalnego i bez faktur, to **ok. 73–111 MD**, a sama ścieżka montera **ok. 43–66 MD**. Rozbicie jest w rozdziale 6. Rzetelnie
 rozpisany jest wyłącznie podpis. Reszta to rząd wielkości, do kalibracji (D3).
 
 **Co blokuje start:** nic z decyzji Michała poza jednym potwierdzeniem przy D2 (rozdział 0). Etapy 1–4
 (fundament, montaż, podpis na miejscu bez TSA, audytor) mogą ruszyć od razu po rejestracji wymagań.
 
-**Co blokuje pojedyncze moduły (w trakcie weryfikacji):** prawnik (D5: podpis zdalny, treść umowy, RODO
-lokalizacji w tle), dostawca TSA (D6), standard zdjęć (D7: zamknięcie montażu), zaliczka i księgowy
-(D8, D9: faktury i płatności).
+**Co zostało otwarte po 2026-09-23** (żadne z tego nie blokuje etapów 1–4):
+
+- **Treści dokumentów prawnych** (D5). Wzory robocze z treścią zastępczą leżą w `docs/legal/`, więc kod
+  powstaje na nich, a prawdziwe treści podmienią pliki. Blokują tylko wysyłkę do prawdziwego klienta.
+- **Odpowiedzi na pytania prawne 1–8** (D5): trwały nośnik, podpis na telefonie, RODO lokalizacji w tle.
+  Blokują etap 5 (podpis zdalny, SMS „w drodze") i etap 6 (umowa).
+- **D16: braki w dostarczonym cenniku** — 13 pozycji bez kosztu ekipy, 5 bez kategorii, brak stawki VAT.
+  Nie blokuje startu, blokuje marżę na pozycji i rozliczenia ekip.
+- Poza tym nic. Wzór zaliczki (D8) i moment rozliczenia przy montażu dwuetapowym (D9) potwierdzone
+  2026-09-23.
 
 ---
 
@@ -87,9 +96,9 @@ co jest dziś wiążące według zasady zerowej (kontrakt > decyzje człowieka z
 | **S2** | **Wielkość prac** | Roadmapa: Field App **28 h**; `podpis-elektroniczny.md`: **16–20 h**; `generator-umow…`: 18–22 h | `FIELD-APP-PLAN.md` §5.4: sam podpis **19–26 MD**; §7: fazy 1–7 razem ok. 117–163 MD | Nic nie jest wiążące. Obie strony liczą co innego: roadmapa zakłada PWA bez znacznika czasu, bez offline'u i bez ścieżki audytora, a plan zakłada RN, offline i pełen zakres. |
 | **S3** | **Znacznik czasu przy podpisie** | `podpis-elektroniczny.md`, `BACKLOG.md` poz. 18: „stemplowanie SHA-256" (skrót liczony przez nas) | `FIELD-APP-PLAN.md` §5.4, decyzja 2026-09-09: **kwalifikowany znacznik czasu obowiązkowy**, „jedyny niezależny od nas dowód" | **Rozstrzygnięte 2026-09-21: TSA obowiązkowy (D4.1).** Skrót SHA-256 nie zastępuje kwalifikowanego znacznika czasu. |
 | **S4** | **SMS/OTP** | `RAPORT-WARTOSCI-IP…md` §2: podpis „przez akceptację **SMS/OTP** lub odręczny"; `ZESTAWIENIE-CZASU-PRACY.md`: „podpis SMS w 60 sekund"; `podpis-elektroniczny.md`: OTP „opcjonalnie" w trybie zdalnym | `FIELD-APP-PLAN.md` §5.4 (opcja B): rysik na miejscu + link mailem, **bez OTP** | **Rozstrzygnięte 2026-09-21 (D4.2):** OTP SMS to dodatkowy dowód tożsamości, obowiązkowy w podpisie zdalnym, na miejscu nie. Nie zastępuje podpisu odręcznego. |
-| **S5** | **Skład „4 zdjęć"** (trzy różne wersje) | `FLD-PHOTO-SET` (rejestr, BLOCKED) i `ONE-PAGER.md`: jedn. wewn., jedn. zewn., **budynek z oddali**, odpływ skroplin | `DEFINICJA-MONTAZU-STANDARDOWEGO.md` §6: jedn. wewn., jedn. zewn., odpływ, **manometry z próby próżni**; `KOSZYKI…md` §3: jedn. wewn. z korytkiem, jedn. zewn. z podkładkami, manometry, **uporządkowane stanowisko** | Rejestr (wersja 1), ale ze statusem BLOCKED. Do tego `FIELD-APP-PLAN.md` K6 rekomenduje **zmienną** liczbę (po jednym na każdą jednostkę wewnętrzną), a `BACKLOG.md` błędnie podaje K6 jako „rozstrzygnięte". **Decyzja D7.** |
-| **S6** | **Wysokość zaliczki** | Wszystkie prezentacje (`KOSZYKI`, `PROGNOZA`, `COO`, `DEFINICJA`), `payu-platnosci.md`, `generator-umow…`: **stałe 40–50%** | `FIELD-APP-PLAN.md` §4.3 (z transkrypcji): **suma pozycji `FZ` + cena urządzeń**; stały procent „odrzucono" wprost | Nic (żadne nie jest w kontrakcie). Prezentacje są nowsze (17.09), ale niczego nie odwołują. **Decyzja D8.** |
-| **S7** | **Faktura przy montażu dwuetapowym** | Prezentacje: zaliczka przy każdej rezerwacji | `FIELD-APP-PLAN.md` K9: przy dwuetapowym **bez faktury zaliczkowej**; `FNL-2PHASE-INVOICE`: faktura po etapie I | Rejestr (`FNL-2PHASE-INVOICE`, TODO, czeka na księgowego). **Decyzja D9.** |
+| **S5** | **Skład „4 zdjęć"** (trzy różne wersje) | `FLD-PHOTO-SET` (rejestr, BLOCKED) i `ONE-PAGER.md`: jedn. wewn., jedn. zewn., **budynek z oddali**, odpływ skroplin | `DEFINICJA-MONTAZU-STANDARDOWEGO.md` §6: jedn. wewn., jedn. zewn., odpływ, **manometry z próby próżni**; `KOSZYKI…md` §3: jedn. wewn. z korytkiem, jedn. zewn. z podkładkami, manometry, **uporządkowane stanowisko** | **Rozstrzygnięte 2026-09-23 (D7): zestaw zmienny `4 + 2n`** — część stała (jedn. zewn., tabliczka zewn., odpływ skroplin, manometr próżni) + 2 zdjęcia na każdą jedn. wewn. (montaż i tabliczka). Etap I: trasy przed zakryciem + manometr próby azotem. Żadna z trzech wersji z dokumentów nie obowiązuje. |
+| **S6** | **Wysokość zaliczki** | Wszystkie prezentacje (`KOSZYKI`, `PROGNOZA`, `COO`, `DEFINICJA`), `payu-platnosci.md`, `generator-umow…`: **stałe 40–50%** | `FIELD-APP-PLAN.md` §4.3 (z transkrypcji): **suma pozycji `FZ` + cena urządzeń**; stały procent „odrzucono" wprost | **Rozstrzygnięte 2026-09-23 (D8): 110% ceny brutto zestawu urządzeń** (netto + 23% VAT, plus 10% wartości brutto). Odrzucone oba warianty z dokumentów. |
+| **S7** | **Faktura przy montażu dwuetapowym** | Prezentacje: zaliczka przy każdej rezerwacji | `FIELD-APP-PLAN.md` K9: przy dwuetapowym **bez faktury zaliczkowej**; `FNL-2PHASE-INVOICE`: faktura po etapie I | **Rozstrzygnięte 2026-09-23 (D9):** łańcuch proforma → faktura zaliczkowa po wpłacie → faktura rozliczeniowa **po etapie II**, przez inFakt z KSeF. Po etapie I nie ma faktury — `FNL-2PHASE-INVOICE` i K9 do przepisania. |
 | **S8** | **Co zamyka montaż** | `podpis-elektroniczny.md` AC4: podpis protokołu **sam** wywołuje `INSTALLATION_COMPLETED` i `N8` | `KOSZYKI…md`, `DEFINICJA…md`, `COO…md`: dyspozytor **zatwierdza** zdjęcia i protokół w panelu, dopiero potem wypłata; `field_app_requirements.md` §12 pyt. 2: nierozstrzygnięte, czy między `T09` a `N8` jest krok człowieka | **Rozstrzygnięte 2026-09-21 (D10 = A):** monter zamyka (`T09`, `N8` od razu), dyspozytor zatwierdza tylko wypłatę ekipy. `podpis-elektroniczny.md` AC4 do sprostowania. |
 | **S9** | **Moduł podpisu w raporcie IP** | `RAPORT-WARTOSCI-IP…md` §2 przypisuje „Moduł Cyfrowego Podpisywania Umów" do `FLD-CONSENT-DOCS` i opisuje „mechanizmy podpisu w `apps/b2c-web` i `apps/b2b-web`" | `FLD-CONSENT-DOCS` to **zgody pracownicze**, nie podpis klienta. W kodzie nie ma żadnej implementacji podpisu (`signStoragePaths` to podpisane adresy plików w Storage, a nie podpis dokumentu) | Kod. Raport opisuje jako istniejące coś, czego nie ma. Ważne, jeśli raport trafia do inwestora albo do wyceny IP. |
 | **S10** | **Status zgód i edycji bazy pracownika** | `BACKLOG.md` §1: `FLD-CONSENT-ACCEPT`, `FLD-LEGAL-DOC-VERSION`, `FLD-BASE-LOCATION-EDIT` jako **Done** | Rejestr: wszystkie trzy **TODO** (mają testy, ale brakuje ścieżki pracownika w aplikacji terenowej) | Rejestr. Część panelowa i Server Actions istnieją, a ścieżki „z Field App" nie ma, bo nie ma aplikacji. |
@@ -161,7 +170,7 @@ Zależy od D1. ADR-013 nigdy nie został wydany i był wskazywany jako bloker `F
 | **C (React Native)** | (a) `supabase-js` z urządzenia pod RLS (druga implementacja uprawnień w SQL); (b) Route Handlery współdzielące `can()` i Prismę, jako formalny aneks do ADR-001 | **(b)**, jak w planie §3 A1 |
 
 - [ ] PWA: Server Actions + ADR-013 tylko o kolejce offline i idempotencji
-- [x] RN: Route Handlery + `can()` (aneks do ADR-001) — **przyjęte 2026-09-21 jako rekomendacja wiersza „C (React Native)”; do potwierdzenia**
+- [x] RN: Route Handlery + `can()` (aneks do ADR-001) — **potwierdzone 2026-09-23** (rekomendacja wiersza „C (React Native)”)
 - [ ] RN: `supabase-js` + RLS
 
 ### D3: Co musi działać 1 grudnia, a co w lutym `[BLOKUJE START]`
@@ -242,9 +251,19 @@ Pytania do prawnika. Nie rozstrzygam ich i nie cytuję przepisów jako pewnych, 
    przetwarzania i informacja dla pracownika. Przy PWA problem jest mniejszy, ale nie znika.
 6. Przetwarzanie danych w Mailtrap (USA, Data Privacy Framework), plan §5.4.
 
-- [ ] Zlecam konsultację prawną w tym zakresie. Termin odpowiedzi: ____________ (proponuję do 31.10.2026)
+- [x] Pakiet dokumentów ustalony (2026-09-23), treści w opracowaniu; katalog `docs/legal/` założony
+- [ ] Odpowiedzi na pytania 1–8 (zasady): termin ____________ (proponuję przed startem etapu 5)
 
-> **2026-09-21: zaparkowane.** Michał zbiera odpowiedzi. Po D1 = React Native dochodzi pytanie 7:
+> **2026-09-23: pakiet dokumentów ustalony, treści zaparkowane.** Prawnik ma opracować **jeden pakiet**:
+> umowa montażu, pouczenie o odstąpieniu, formularz odstąpienia, oświadczenie o żądaniu wcześniejszego
+> montażu, karta podpisu, klauzule RODO, zgoda na doręczenie mailem. Wzory robocze (lorem ipsum) leżą
+> w **`docs/legal/`** wraz z `README.md` opisującym nazewnictwo, wersjonowanie i pola podstawiane przez
+> system. Michał podmieni je, gdy wypracuje treści; numer wersji `1.0` to pierwsza treść od prawnika.
+>
+> Pytania 1–8 niżej **zostają otwarte** — dotyczą zasad, nie brzmienia dokumentów, i część z nich może
+> zmienić działanie systemu, a nie tylko tekst PDF.
+>
+> Po D1 = React Native dochodzi pytanie 7:
 > lokalizacja w tle (automatyczny SMS przy 3 km) to przetwarzanie danych pracownika poza samymi
 > zdarzeniami punktowymi, więc K4 jest trudniejsze niż przy PWA. Po D12 = telefon dochodzi pytanie 8:
 > czy czytanie i podpisywanie umowy na ekranie telefonu wystarcza, czy klient musi dostać treść wcześniej.
@@ -255,47 +274,78 @@ Kandydaci z planu: Certum, KIR (Szafir), EuroCert, CenCert. **Pytanie otwarte, k
 rozstrzygnąć:** czy umowę na usługę TSA można zawrzeć przed rejestracją spółki (KRS w listopadzie)?
 Jeśli nie, podpis ze znacznikiem na próbnych montażach od 1.12 zależy od terminu rejestracji.
 
-> **2026-09-21: w trakcie weryfikacji.**
+> **2026-09-23: EuroCert.**
 
-- [ ] Wybieram dostawcę: ____________
-- [ ] Proszę o porównanie API i formatu tokena u 2–3 dostawców przed wyborem (ok. 0,5 MD)
+- [x] Wybieram dostawcę: **EuroCert** (2026-09-23)
+- [ ] Sprawdzić przed etapem 3: czy EuroCert zawrze umowę przed wpisem spółki do KRS (R5)
+- [x] ~~Porównanie API u 2–3 dostawców~~ niepotrzebne, dostawca wybrany
 
-### D7: Standard zdjęć montażowych `[BLOKUJE moduł zdjęć]`
+### D7: Standard zdjęć montażowych `[ROZSTRZYGNIĘTE 2026-09-23]`
 
-> **2026-09-21: w trakcie weryfikacji.**
+> **2026-09-23: zestaw zmienny.** Żadna z trzech wersji z dokumentów nie obowiązuje — obowiązuje wzór niżej.
 
 Sprzeczność S5, trzy wersje „4 zdjęć". Do tego pytanie o liczbę stałą czy zmienną (K6) i o etap I
 montażu dwuetapowego (`FLD-PHOTO-SET` kryt. 5).
 
 - [ ] Wersja rejestru: jedn. wewn., jedn. zewn., budynek z oddali, odpływ skroplin
 - [ ] Wersja standardu montażu (prezentacje): jedn. wewn., jedn. zewn., odpływ, **manometry z próby próżni**
-- [ ] Inna: ____________
-- [ ] Liczba zmienna: po jednym zdjęciu na **każdą** jednostkę wewnętrzną (rekomendacja przy multi-splitach, K6)
-- [ ] Komplet obowiązuje także przy zamknięciu **etapu I** montażu dwuetapowego
-- [ ] Parametry próby próżni i ciśnienia wpisywane **liczbowo** do protokołu, niezależnie od zdjęcia
-      (rekomendacja: zdjęcie manometru nie jest danymi, a raport IP i KPI OPS-06 i tak liczą na danych)
+- [x] **Zestaw zmienny (2026-09-23):**
 
-### D8: Model zaliczki `[BLOKUJE moduł faktur i płatności, NIE blokuje ścieżki montera]`
+| Etap | Część stała | Na każdą jednostkę wewnętrzną | Razem |
+|---|---|---|---|
+| Zamknięcie montażu (`T09`) | jednostka zewnętrzna, tabliczka znamionowa jedn. zewn., odpływ skroplin, manometr próby próżni | montaż jednostki + tabliczka znamionowa | **4 + 2n** (split: 6, multi 3×: 10) |
+| Zamknięcie etapu I (`T17`) | manometr próby azotem | zdjęcia tras przed zakryciem (liczba zależna od instalacji) | **osobny komplet, minimum do ustalenia w WO** |
 
-> **2026-09-21: w trakcie weryfikacji.**
+- [x] Parametry prób (próżnia, ciśnienie, azot) wpisywane **liczbowo** do protokołu, niezależnie od zdjęcia
+- Skutek uboczny: tabliczki znamionowe wszystkich jednostek są fotografowane, więc numery seryjne i modele
+  do protokołu (K5) mają pokrycie w dowodzie. Zmniejsza to ryzyko R9 (błędy przy ręcznym wpisywaniu).
+- Do rozstrzygnięcia w Work Orderze (nie blokuje startu): minimalna liczba zdjęć tras przy etapie I —
+  „co najmniej jedno na trasę” czy jedna liczba dla całej instalacji.
+
+### D8: Model zaliczki `[ROZSTRZYGNIĘTE 2026-09-23]`
+
+> **2026-09-23 (potwierdzone):** `zaliczka = cena_netto_zestawu × 1,23 × 1,1`, czyli 110% ceny brutto
+> zestawu urządzeń.
+>
+> Przykład dla zestawu 8 000 zł netto: brutto 9 840 zł, zaliczka **10 824 zł**. Zaliczka jest więc
+> wyższa niż cena urządzeń: pokrywa sprzęt i bufor na robociznę. To celowe i różni się od obu wariantów
+> z dokumentów, więc prezentacje (`KOSZYKI`, `PROGNOZA`, `COO`, `DEFINICJA`, `payu-platnosci.md`)
+> i `FIELD-APP-PLAN.md` §4.3 wymagają sprostowania.
 
 Sprzeczność S6: stałe 40–50% (prezentacje, PayU) czy „pozycje `FZ` + urządzenia" (transkrypcja, plan §4.3,
 stały procent wprost odrzucony).
 
 - [ ] Stały procent: ____ %
 - [ ] Pozycje `FZ` + cena urządzeń (plan §4.3)
-- [ ] Do ustalenia z księgowym i Piotrem (COO-15, COO-17 w backlogu, termin 24–26.11)
+- [x] **110% ceny brutto zestawu urządzeń (2026-09-23)**
+- [x] Potwierdzam odczyt wzoru: `zaliczka = cena_netto_zestawu × 1,23 × 1,1` (2026-09-23)
 
-### D9: Pytanie księgowe: proforma czy faktura zaliczkowa `[BLOKUJE FNL-2PHASE-INVOICE i N8a]`
+### D9: Dokumenty rozliczeniowe `[ROZSTRZYGNIĘTE 2026-09-23]`
 
-> **2026-09-21: w trakcie weryfikacji.**
+> **2026-09-23: łańcuch trzech dokumentów** zamiast wyboru „proforma albo zaliczkowa":
+
+| Krok | Dokument | Wyzwalacz | Uwagi |
+|---|---|---|---|
+| 1 | proforma / wezwanie do zapłaty | wysłanie umowy albo akceptacja oferty | nie jest fakturą w rozumieniu VAT, nie trafia do KSeF |
+| 2 | faktura zaliczkowa | **automatycznie po zaksięgowaniu wpłaty** | wystawiana bez udziału człowieka, więc obsługa powrotu z płatności musi być idempotentna, inaczej podwójna faktura przy ponowionym webhooku |
+| 3 | faktura rozliczeniowa | zamknięcie montażu, czyli `T09` — także w wariancie dwuetapowym, bo etap I kończy `T17` (pętla na `AWAITING_INSTALLATION`), a `T09` wychodzi dopiero po zamontowaniu urządzeń | domyka VAT od pozostałej kwoty; po etapie I (`T17`) klient nie dostaje żadnej faktury |
+
+> Narzędzie: **inFakt** (2026-09-23), z KSeF po stronie dostawcy, bez własnej integracji z KSeF.
+>
+> **Montaż dwuetapowy (potwierdzone 2026-09-23):** rozliczenie następuje po etapie II, czyli po montażu
+> urządzeń — a to jest dokładnie to samo przejście `T09`, które zamyka montaż jednoetapowy. Reguła jest
+> więc jedna: **faktura rozliczeniowa przy `T09`, nigdy przy `T17`.** Między etapem I a II klient nie dostaje faktury, a firma pracuje na zaliczce (110% ceny brutto
+> urządzeń), która pokrywa sprzęt i bufor. Dzisiejsze `FNL-2PHASE-INVOICE` mówi o fakturze po etapie I,
+> więc wymaga przepisania, a `N8a` (powiadomienie po etapie I) traci załącznik z fakturą.
 
 Otwarte od 2026-09-10 (`FIELD-APP-PLAN.md` 6.4a, notatka w `FNL-2PHASE-INVOICE`). Jedno rozstrzygnięcie
 obsłuży zaliczkę w montażu jednoetapowym i dokument etapu I. Do tego pytanie o K9 (brak zaliczki przy
 dwuetapowym, S7) i o wybór narzędzia do faktur (plan §5.2: Fakturownia albo inFakt zamiast bezpośrednio KSeF).
 
-- [ ] Zlecam pytanie księgowemu. Termin: ____________
-- [ ] Faktury przez gotowe API (Fakturownia / inFakt), bez własnej integracji z KSeF (rekomendacja)
+- [x] Łańcuch: proforma → faktura zaliczkowa po wpłacie → faktura rozliczeniowa po montażu (2026-09-23)
+- [x] Faktury przez gotowe API z KSeF, bez własnej integracji z KSeF
+- [x] Wybieram narzędzie: **inFakt** (2026-09-23)
+- [x] Moment faktury rozliczeniowej przy montażu dwuetapowym: **po etapie II** (2026-09-23)
 
 ### D10: Kto zamyka montaż `[BLOKUJE moduł odbioru]`
 
@@ -342,6 +392,86 @@ ma dziś prawa `leads:create`. Na próbne montaże klientów wprowadza się ręc
 
 - [ ] Poza zakresem tego projektu; leady zakłada dyspozytor w panelu (rekomendacja)
 - [x] W zakresie (wymaga zmiany kontraktu: drugie wejście do lejka + prawo `leads:create` dla audytora) — **wybrane 2026-09-21**
+
+### D15: Kalkulator kosztorysowy audytora (moduł M9) `[NOWA DECYZJA, 2026-09-23]`
+
+Pytanie Michała z 2026-09-23: „a co z modułem wyceny dla audytora?". Wcześniej ten dokument traktował
+kalkulator jako opcję przy M7 i wymieniał go w rozdziale „poza zakresem". Skoro ścieżka audytora jest
+w zakresie (D3), to audytor musi mieć z czego policzyć cenę montażu — dziś w systemie nie ma ani cennika
+kosztorysowego, ani tabel oferty.
+
+| | **A. Pełny kalkulator od razu** | **B. Bez cennika: tylko pozycje ręczne** | **C. Etapowo (rekomendacja)** |
+|---|---|---|---|
+| Co dostaje audytor | cennik 35 pozycji w telefonie, pozycje × ilości per pomieszczenie, automatyczna suma i marża | puste pozycje: nazwa, ilość, cena wpisywane z ręki (albo z arkusza obok) | najpierw pozycje ręczne + ceny urządzeń z katalogu i zamrożenie cen w ofercie, potem cennik i automat |
+| Ryzyko błędu | najniższe | wysokie: ceny przepisywane z arkusza, brak kontroli marży | średnie na starcie, spada po dowiezieniu cennika |
+| Co zostaje w Google Sheets | nic | cały cennik | cennik do czasu drugiego kroku |
+| Szacunek | 10–15 MD w etapie 4 | 3–5 MD | 3–5 MD w etapie 4, potem 7–10 MD jako etap 4b |
+
+**Rekomendacja: C.** Uzasadnienie: na 3–5 montaży próbnych pozycje ręczne wystarczą, a zamrożenie cen
+w ofercie (`FLD-QUOTE-PRICE-SNAPSHOT`) trzeba mieć od pierwszej wysłanej oferty, bo bez niego oferta
+sprzed miesiąca przestaje się odtwarzać. Cennik i automat wchodzą, gdy ścieżka audytora już działa
+u realnych klientów — wtedy też widać, które z 35 pozycji faktycznie się powtarzają. Wszystkie
+wymagania rejestrujemy od razu, żeby nic nie wypadło z pola widzenia.
+
+- [x] **A**: pełny kalkulator w etapie 4 — **wybrane 2026-09-23**
+- [ ] **B**: bez cennika, tylko pozycje ręczne
+- [ ] **C**: etapowo — pozycje ręczne w etapie 4, cennik jako etap 4b (rekomendacja, odrzucona)
+
+**Rozszerzenie zakresu z 2026-09-23 (decyzja Michała), ważniejsze niż sam wybór wariantu:**
+
+1. **Jeden cennik robocizny dla audytora i dla Triage.** Audytor wpisuje ilości pozycji w formularzu.
+   Triage liczy z **tego samego** cennika, tylko ilości bierze z **parametrów montażu standardowego**
+   (pozycje w `m`, `mb`, `szt.`), a nie od użytkownika.
+2. **Konfiguracja cennika wyceny w ustawieniach panelu B2B** — pozycje i ceny prowadzi administrator,
+   nie programista.
+3. **Konfiguracja montażu standardowego w ustawieniach panelu B2B**, zbudowana **na pozycjach z cennika**:
+   które pozycje i w jakich ilościach składają się na standard.
+
+To rozstrzyga przy okazji ryzyko dwóch równoległych cenników, które opisywałem w M9: **jest jeden cennik,
+a `cennik_uslug` z dzisiejszą pozycją „Montaż wzorcowy" i literałem 1200 zł przestaje być źródłem ceny
+w Triage.** Cena „od" na stronie i cena od audytora zaczynają wychodzić z tego samego miejsca, co jest
+dokładnie tym, co `DEFINICJA-MONTAZU-STANDARDOWEGO.md` obiecuje klientowi.
+
+- [ ] Potwierdzam, że po wdrożeniu **Triage przestaje liczyć z `cennik_uslug`** i liczy z nowego cennika
+      oraz konfiguracji montażu standardowego (zmiana ceny widocznej publicznie — patrz ryzyko R18)
+
+### D16: Braki w dostarczonym cenniku `[NOWE, 2026-09-23 — nie blokuje startu]`
+
+Cennik dotarł i jest w repozytorium ([`CENNIK-ROBOCIZNY.md`](../architecture/CENNIK-ROBOCIZNY.md)).
+Po odczytaniu widać trzy braki, które trzeba uzupełnić, zanim kalkulator policzy coś więcej niż samą
+cenę dla klienta:
+
+1. **13 pozycji nie ma kosztu ekipy**, w tym wszystkie czysto robociznowe (`podłączenie ściennej`,
+   `podłączenie kanałówki/kasety`, `uruchomienie`, `przewiert`, `przewiert w żelbecie`, całe
+   `bruzdowanie`). Bez nich nie da się policzyć marży ani rozliczenia z ekipą, a `KOSZYKI…md` opiera
+   na tym wypłaty.
+2. **5 pozycji nie ma kategorii ani opisu** — grupa montażu jednostki zewnętrznej (`stojak`,
+   `stelaż z profili`, `wisi do 3m`, `wisi na kominie`, `wysokość jedn zew`). Opis jest tym, co widzi
+   klient w ofercie.
+3. **Brak stawki VAT.** Wszystkie kwoty są netto.
+
+- [ ] Uzupełnię koszty ekipy dla pozycji robociznowych
+- [ ] Uzupełnię kategorie i opisy dla 5 pozycji jednostki zewnętrznej
+- [x] **VAT: stawka wynika z obiektu, nie z pozycji cennika (2026-09-23):**
+
+| Obiekt | Stawka |
+|---|---|
+| Lokal mieszkalny do 300 m² | **8%** |
+| Lokal mieszkalny powyżej 300 m² | **23%** |
+| Lokal usługowy | **23%** |
+
+  Skutki, które to za sobą ciągnie (nowe wymaganie `PRICE-VAT-RATE`):
+  - **Powierzchnia lokalu i jego przeznaczenie stają się danymi wymaganymi do wyceny.** Dziś Triage pyta
+    o metraż **pomieszczeń**, a nie o powierzchnię całego lokalu, i nie zapisuje typu obiektu jako pola.
+    Bez tego nie da się wybrać stawki.
+  - Stawka jest atrybutem **wyceny i faktury**, a nie pozycji cennika: ta sama pozycja idzie raz na 8%,
+    raz na 23%.
+  - Granica 300 m² to reguła progowa — jak progi SLA, należy do kontraktu, nie do kodu.
+  - Zaliczka z D8 (`netto × 1,23 × 1,1`) zakłada sztywne 23%. **Przy lokalu mieszkalnym do 300 m² wzór
+    daje inną kwotę niż cena brutto zestawu urządzeń** — do rozstrzygnięcia, czy zaliczka liczy się
+    zawsze po 23% (urządzenia to dostawa towaru), czy po stawce obiektu.
+- [ ] Potwierdzam mapowanie montażu standardowego z `CENNIK-ROBOCIZNY.md` (ok. 2 483 zł netto
+      za pierwsze pomieszczenie) albo podaję własne: ____________
 
 ---
 
@@ -408,7 +538,7 @@ do Twojej akceptacji) i pole do potwierdzenia. Przy „Blokuje" podaję decyzję
   w każdym zapisie; aneks ADR-013), `FLD-APP-DISTRIBUTION` (EAS Build/Update, TestFlight, Play Console),
   `FLD-MOBILE-TEST-HARNESS` (Jest + RNTL, E2E Maestro, wpięcie w bramkę CI), `FLD-JOBS-OWN` (lista zleceń
   zawężona do pracownika, fail-closed).
-- Blokuje: nic (D1, D2 rozstrzygnięte; D2 do potwierdzenia). Ryzyko: konto Apple Developer dla organizacji
+- Blokuje: nic (D1 i D2 rozstrzygnięte). Ryzyko: konto Apple Developer dla organizacji
   wymaga numeru D-U-N-S spółki (R11).
 - [ ] Potwierdzam moduł M1
 
@@ -426,19 +556,20 @@ do Twojej akceptacji) i pole do potwierdzenia. Przy „Blokuje" podaję decyzję
 ### M3: Montaż: zlecenie, checklista, zdjęcia
 
 - **Monter:** otwiera zlecenie (adres, projekt z audytu, urządzenia), odhacza checklistę przedmontażową
-  (N15), robi zdjęcia ze słownika rodzajów. Zdjęcia są kompresowane na urządzeniu i wysyłają się ponownie
+  (N15), robi zdjęcia ze słownika rodzajów. Aplikacja **sama wie, ile zdjęć jest wymaganych**: część stała
+  plus 2 na każdą jednostkę wewnętrzną z projektu (D7), a przy etapie I osobny komplet (trasy, azot). Zdjęcia są kompresowane na urządzeniu i wysyłają się ponownie
   po powrocie zasięgu.
 - **Dyspozytor:** widzi zdjęcia w panelu.
 - Istniejące ID: `FLD-PHOTO-SET` (BLOCKED; zmiana kryteriów wg D7).
 - Nowe ID: `FLD-CHECKLIST-PREINSTALL`, `FLD-PHOTO-STORAGE` (osobny bucket i polityki, nie awatarowe),
   `FLD-PHOTO-UPLOAD-RESILIENT` (kompresja + ponawianie bez duplikatów; odpowiada backlogowemu `FLD-PHOTO-OPTIMIZE`).
-- Blokuje: D7 (w trakcie weryfikacji). D1 i D11 rozstrzygnięte.
+- Blokuje: nic (D1, D7, D11 rozstrzygnięte). Do ustalenia w WO: minimalna liczba zdjęć tras przy etapie I.
 - [ ] Potwierdzam moduł M3
 
 ### M4: Protokół odbioru i zamknięcie montażu
 
-- **Monter:** wypełnia protokół: numery seryjne i modele (K5), parametry próby ciśnienia i próżni,
-  potwierdzenie instruktażu. Klient podpisuje na ekranie (M5), monter zamyka montaż (`T09`) albo etap I
+- **Monter:** wypełnia protokół: numery seryjne i modele (K5, z tabliczek znamionowych fotografowanych
+  w M3), parametry próby ciśnienia, próżni i azotu **liczbowo** (D7), potwierdzenie instruktażu. Klient podpisuje na ekranie (M5), monter zamyka montaż (`T09`) albo etap I
   (`T17`). Bez kompletu zdjęć i podpisu serwer odmawia.
 - **Klient:** dostaje mailem protokół (PDF), a przy etapie I także link do rezerwacji etapu II (`N8a`
   już to robi).
@@ -449,7 +580,7 @@ do Twojej akceptacji) i pole do potwierdzenia. Przy „Blokuje" podaję decyzję
 - Nowe ID: `FLD-HANDOVER-PROTOCOL` (dane protokołu), `DOC-PDF-RENDER` (wspólny silnik PDF po stronie
   serwera dla protokołu, umowy i oferty), `FLD-INSTALL-PAYOUT-APPROVAL` (zatwierdzenie do wypłaty).
 - Zmiana kontraktu: usunięcie `warranty_card` z `N8` (K5), jeśli potwierdzisz kartę papierową.
-- Blokuje: D7 (w trakcie weryfikacji). D1 i D10 rozstrzygnięte.
+- Blokuje: nic (D1, D7, D10 rozstrzygnięte).
 - [ ] Potwierdzam moduł M4
 - [ ] Karta gwarancyjna jest papierowa; do systemu trafiają tylko numer seryjny, model i adres (K5)
 
@@ -471,14 +602,16 @@ do Twojej akceptacji) i pole do potwierdzenia. Przy „Blokuje" podaję decyzję
 | `FLD-SIGN-REMOTE` | publiczna strona podpisu: token o wysokiej entropii, jednorazowy, wygasający |
 | `FLD-SIGN-REMOTE-OTP` | obowiązkowy kod SMS w podpisie zdalnym (D4.2); SMSAPI, pole nadawcy gotowe |
 | `FLD-SIGN-AUDIT-TRAIL` | ślad append-only z łańcuchem skrótów między wpisami, karta podpisu w PDF |
-| `FLD-SIGN-TSA` | kwalifikowany znacznik czasu (RFC 3161), osadzenie i weryfikacja |
+| `FLD-SIGN-TSA` | kwalifikowany znacznik czasu (RFC 3161) z **EuroCert** (D6), osadzenie i weryfikacja |
 | `FLD-SIGN-DELIVERY-PROOF` | zdarzenie `delivery` z Mailtrap (D13) zapisane jako dowód, idempotentny callback |
 | `FLD-SIGN-ABUSE-GUARD` | limit prób, ochrona przed enumeracją tokenów, osobny przegląd bezpieczeństwa przed wdrożeniem |
 | `FLD-SIGN-DURABLE-COPY` | kopia podpisanego dokumentu dla klienta na trwałym nośniku (forma wg D5) |
 
-- Blokuje: D5 (część zdalna i `FLD-SIGN-DURABLE-COPY`), D6 (`FLD-SIGN-TSA`). D1 i D4 rozstrzygnięte.
-  Podpis na miejscu (`-DOC-FREEZE`, `-CAPTURE`, `-AUDIT-TRAIL`) może ruszyć bez D5 i D6; TSA dołącza później
-  i dostemplowuje podpisy złożone wcześniej (to też pytanie do prawnika, R8).
+- Wzory dokumentów: `docs/legal/` (D5). Dziś leżą tam wzory robocze z treścią zastępczą, co **wystarcza**
+  do zbudowania zamrażania dokumentu, podpisu i karty podpisu. Prawdziwe treści podmienią pliki bez
+  zmiany kodu, o ile zachowają listę pól `{{…}}` (zasady w `docs/legal/README.md`).
+- Blokuje: pytania prawne z D5 (część zdalna, `FLD-SIGN-DURABLE-COPY`). D1, D4 i D6 rozstrzygnięte.
+  Podpis na miejscu (`-DOC-FREEZE`, `-CAPTURE`, `-AUDIT-TRAIL`, `-TSA`) może ruszyć od razu.
 - Uwaga techniczna (pytanie, nie decyzja): przy podpisie na miejscu **bez zasięgu** znacznik czasu da się
   nadać dopiero po synchronizacji, więc będzie późniejszy niż sam podpis. Trzeba zapytać prawnika, czy to
   problem.
@@ -517,18 +650,103 @@ do Twojej akceptacji) i pole do potwierdzenia. Przy „Blokuje" podaję decyzję
   na tablecie (N5), kalkulator na 35-pozycyjnym cenniku (`price_list_items`).
 - Blokuje: luki nr 1 i 6 z rozdziału 4 (zmiany kontraktu). D1, D3, D11, D14 rozstrzygnięte. Podpis umowy
   na miejscu czeka na D5 (treść umowy konsumenckiej) i jest w M8.
-- [ ] Potwierdzam moduł M7 w wersji z koszykiem (bez kalkulatora 35 pozycji)
-- [ ] Kalkulator 35 pozycji w zakresie tego projektu
+- **Skąd bierze się cena:** patrz **M9**. M7 odpowiada za to, co audytor widzi i wysyła (formularz,
+  warianty, oferta), a M9 za to, z czego liczy się kwota (cennik kosztorysowy i silnik wyceny).
+- [ ] Potwierdzam moduł M7
 
 ### M8: Umowa, faktura, płatność
 
-- **Klient:** podpisuje umowę (M5), dostaje fakturę (zaliczkową albo proformę wg D9) i link do płatności.
+- **Klient:** podpisuje umowę (M5), dostaje **proformę albo wezwanie do zapłaty**, płaci (link), po
+  zaksięgowaniu wpłaty dostaje **automatycznie fakturę zaliczkową**, a po montażu **fakturę rozliczeniową**
+  (D9). Przy montażu dwuetapowym faktura rozliczeniowa wychodzi dopiero po etapie II. Kwota zaliczki to
+  110% ceny brutto zestawu urządzeń, czyli `cena_netto_zestawu × 1,23 × 1,1` (D8).
+- **Księgowość:** wszystko przez **inFakt**, KSeF po stronie dostawcy.
 - Istniejące ID: `FNL-E3-E4`, `FNL-2PHASE-INVOICE`, `B2C-CONSENT-RODO` (wersja regulaminu przy akceptacji).
-- Nowe ID: `FLD-CONTRACT-GENERATE` (umowa z oferty), `INV-ADVANCE` (faktura zaliczkowa/proforma),
-  `PAY-DEPOSIT-LINK` (link do płatności; styk z Pakietem Dodatkowym A: PayU).
-- Blokuje: D5, D8, D9, rejestracja spółki (PayU, TSA).
+- Nowe ID: `FLD-CONTRACT-GENERATE` (umowa z oferty na wzorze z `docs/legal/`), `INV-PROFORMA`,
+  `INV-ADVANCE-AUTO` (faktura zaliczkowa wystawiana automatycznie po wpłacie, idempotentnie),
+  `INV-FINAL` (faktura rozliczeniowa po montażu), `DOC-LEGAL-VERSION-REGISTRY` (rejestr wersji dokumentów
+  klienta w bazie — luka opisana w `docs/legal/README.md`), `PAY-DEPOSIT-LINK` (link do płatności;
+  styk z Pakietem Dodatkowym A: PayU).
+- Wyliczenie zaliczki (D8) należy do `FLD-QUOTE-VARIANTS` w M7, bo zależy od wybranego wariantu oferty,
+  a nie do faktury.
+- Blokuje: treści dokumentów i pytania prawne (D5), rejestracja spółki (PayU, konto inFakt).
 - [ ] Potwierdzam moduł M8 w zakresie **tego** projektu
 - [ ] M8 to osobny projekt (faktury + PayU); tutaj tylko umowa i podpis
+
+### M9: Wycena kosztorysowa i cennik (kalkulator audytora)
+
+Moduł **dopisany 2026-09-23** na pytanie „a co z modułem wyceny dla audytora?". Wcześniej był w tym
+dokumencie tylko jako pole wyboru przy M7 („kalkulator 35 pozycji w zakresie czy nie") i jako pozycja
+w rozdziale „poza zakresem". To była luka: bez niego audytor ma z czego **złożyć** ofertę, ale nie ma
+z czego **policzyć** ceny.
+
+**Stan faktyczny (sprawdzony w kodzie 2026-09-23):**
+
+| Element | Stan |
+|---|---|
+| `cennik_uslug` (tabela w bazie) | istnieje, ale ma tylko `nazwa_uslugi`, `jm`, `koszt_b2c_netto`, `koszt_b2b_netto` |
+| Kto ją czyta | **wyłącznie B2C**, zawsze jednym zapytaniem o `'Montaż wzorcowy'`, z zapasowym literałem 1200 zł |
+| `koszt_b2b_netto` | martwa kolumna, zero konsumentów |
+| Ceny urządzeń | są: `indoor_units`, `outdoor_units`, `available_combinations` (B2C już z nich liczy ceny zestawów) |
+| Cennik kosztorysowy (35 pozycji z arkusza „Formularz wyceny") | **nie istnieje w systemie**, żyje w Google Sheets |
+| `quotes`, `quote_variants`, `quote_items` | nie istnieją; wycena to dziś dwa pola tekstowe na `leady` |
+
+Czyli: cena urządzeń jest policzalna od dziś, a cena montażu nie. Plan (§4.2, §4.3) opisuje to jako
+„w 100% greenfield".
+
+**Co robi użytkownik (po decyzji D15 z 2026-09-23):**
+
+- **Audytor (aplikacja):** w formularzu wpisuje **ilości pozycji** z cennika (per pomieszczenie), widzi
+  sumę netto i brutto oraz kwotę zaliczki wg D8. Pozycje indywidualne („zwyżka", montaż na stelażu)
+  dodaje ręcznie — plan wprost wyklucza je z automatu, bo nie da się ich wycenić z formularza.
+- **Klient w Triage (B2C):** nic nie wpisuje. System sam podstawia **ilości z parametrów montażu
+  standardowego** (pozycje w `m`, `mb`, `szt.`) i liczy cenę z **tego samego** cennika co audytor.
+- **Administrator (panel B2B, ustawienia):** prowadzi **cennik wyceny** (pozycja, opis dla klienta, JM,
+  koszt zakupu netto, cena sprzedaży netto, VAT, kategoria) oraz **konfigurację montażu standardowego**:
+  które pozycje cennika i w jakich ilościach składają się na standard. Zmiana ceny jest wersjonowana
+  w czasie, bo oferta sprzed miesiąca musi dać się odtworzyć w cenach z dnia wystawienia.
+
+**Gdzie w panelu.** Dwa nowe ekrany w istniejącej sekcji `Ustawienia` (tam, gdzie dziś są „Kalendarz
+i wizyty" oraz „Użytkownicy i uprawnienia"): `/settings/pricing` (cennik) i `/settings/standard-installation`
+(montaż standardowy). Drugi ekran czyta pozycje z pierwszego, więc kolejność budowy jest wymuszona.
+
+**Montaż standardowy jako dane, nie jako tekst.** Dziś standard żyje w `DEFINICJA-MONTAZU-STANDARDOWEGO.md`
+jako tabela dla 1, 2 i 3 pomieszczeń (np. instalacja chłodnicza do 3 mb na jednostkę, koryta do 3 mb,
+1 przewiert na jednostkę). Po tej zmianie ta tabela staje się konfiguracją w bazie. Do rozstrzygnięcia
+w Work Orderze: czy ilości opisujemy wzorem „na każdą jednostkę wewnętrzną" (wtedy 1, 2 i 3 pomieszczenia
+wychodzą z jednej reguły), czy trzema osobnymi zestawami. Rekomenduję wzór na jednostkę, bo dokument
+i tak mnoży te same liczby przez liczbę pomieszczeń.
+
+**Co upraszcza decyzja D8.** Plan projektował cennik pod regułę „zaliczka = pozycje z flagą `FZ` +
+urządzenia", więc flaga `FZ` (9 z 35 pozycji) była elementem obowiązkowym. Po D8 zaliczka to `1,1 ×
+cena brutto zestawu urządzeń`, czyli **flaga `FZ` przestaje być potrzebna do liczenia zaliczki.**
+Zostaje ewentualnie jako informacja księgowa, ale nie jako mechanizm.
+
+**Nowe ID:**
+
+| Proponowane ID | Co gwarantuje |
+|---|---|
+| `PRICE-LIST-SCHEMA` | tabela `price_list_items`: koszt zakupu osobno od ceny sprzedaży, kategoria, wersjonowanie cen w czasie |
+| `PRICE-LIST-IMPORT` | import cennika robocizny z arkusza, z ujednoliceniem kategorii `MR`/`RM` (plan §4.3 pkt 2) |
+| `PRICE-LIST-ADMIN` | ekran `/settings/pricing`: prowadzenie cennika przez administratora, zmiana ceny jako nowa wersja, nigdy nadpisanie |
+| `STD-INSTALL-CONFIG` | ekran `/settings/standard-installation`: montaż standardowy jako zestaw pozycji cennika z ilościami; jedno źródło dla Triage i dla oferty |
+| `B2C-TRIAGE-PRICE-FROM-PRICE-LIST` | Triage liczy cenę montażu z cennika i konfiguracji standardu, zamiast z pozycji `'Montaż wzorcowy'` w `cennik_uslug` i literału 1200 zł |
+| `FLD-QUOTE-CALC` | silnik wyceny: pozycje × ilości per pomieszczenie, suma netto/brutto, marża na pozycji, kwota zaliczki wg D8 |
+| `FLD-QUOTE-MANUAL-ITEM` | pozycja indywidualna poza cennikiem (stelaż, zwyżka), zawsze z opisem i ceną wpisaną ręcznie |
+| `FLD-QUOTE-PRICE-SNAPSHOT` | oferta i wycena z Triage pamiętają ceny z dnia wystawienia; późniejsza zmiana cennika nie zmienia tego, co klient dostał |
+
+- **Cennik dostarczony 2026-09-23** i zapisany w repozytorium: [`cennik-robocizny.csv`](../architecture/cennik-robocizny.csv)
+  (dane do importu) oraz [`CENNIK-ROBOCIZNY.md`](../architecture/CENNIK-ROBOCIZNY.md) (opis, braki, wyliczenie
+  montażu standardowego). **39 pozycji**, jednostki `mb`, `szt`, `m`, kategorie `Materiał` / `Robocizna` /
+  `Robocizno-materiał`, kolumny: koszt ekipy netto i cena sprzedaży netto.
+- Blokuje: **D16** (braki w cenniku, niżej) — ale tylko marżę, rozliczenia ekip i pełny automat; schemat,
+  ekrany i wycena po cenach sprzedaży da się zrobić od razu.
+- Zależy od `FLD-QUOTE-VARIANTS` z M7 (tabele `quotes`).
+- Uwaga na kolejność: zmiana sposobu liczenia ceny w Triage dotyka **działającej, publicznej** ścieżki
+  sprzedaży. Powinna wejść dopiero, gdy cennik i konfiguracja standardu są kompletne, i wymaga
+  porównania cen przed i po na kilku typowych konfiguracjach (R18).
+- [ ] Potwierdzam moduł M9
+
 
 ---
 
@@ -565,7 +783,7 @@ MD = klasyczne dni pracy (patrz zastrzeżenie w D3). Szacunki dla wariantu **Rea
 | ID | Status | Uwaga | Moduł |
 |---|---|---|---|
 | `FNL-2PHASE` | TODO | kryt. 2: brak ścieżki zapisu trybu przez audytora; kryt. 1 należy do B2C | M7 |
-| `FNL-2PHASE-INVOICE` | TODO | czeka na księgowego (D9) i na ADR-013 (D2) | M8 |
+| `FNL-2PHASE-INVOICE` | TODO | **do przepisania:** dziś mówi o fakturze po etapie I, a D9 przesuwa rozliczenie za etap II | M8 |
 | `FNL-E2-E3` | TODO | wycena z Field App; tabela `quotes` nie istnieje | M7 |
 | `FNL-E3-E4` | TODO | akceptacja + rezerwacja; tu wpada podpis umowy | M8 |
 | `FNL-E7-E8` | TODO | zamknięcie montażu przez montera; `N8` z 3 załącznikami (K5) | M4 |
@@ -595,21 +813,32 @@ MD = klasyczne dni pracy (patrz zastrzeżenie w D3). Szacunki dla wariantu **Rea
 | `FLD-SIGN-DOC-FREEZE` | M5 | 3 | każdy podpis | R: 1–1,5 MD |
 | `FLD-SIGN-CAPTURE` | M5 | 3 | podpis palcem na telefonie (Skia) | R: 1,5–2 MD |
 | `FLD-SIGN-AUDIT-TRAIL` | M5 | 3 | dowód | R: 2–3 MD |
-| `FLD-SIGN-TSA` | M5 | 3 (po D6) | dowód niezależny od nas | R: 2–3 MD |
+| `FLD-SIGN-TSA` | M5 | 3 | dowód niezależny od nas (EuroCert, D6) | R: 2–3 MD |
 | (testy i bufor podpisu na miejscu wg planu §5.4) | M5 | 3 | — | R: 3 MD |
 | `FLD-AUDIT-LEAD-CREATE` | M7 | 4 | D14: lead zakładany przez audytora (zmiana kontraktu) | Z: 3–5 MD |
 | `FLD-AUDIT-FORM` | M7 | 4 | `FNL-E2-E3` | Z: 5–8 MD |
 | `FLD-AUDIT-INSTALL-TYPE` | M7 | 4 | `FNL-2PHASE` kryt. 2 | Z: 1–2 MD + zmiana uprawnień |
 | `FLD-QUOTE-BASKET-SELECT-AUDITOR` | M7 | 4 | spójny słownik koszyków | Z: 1 MD |
-| `FLD-QUOTE-VARIANTS` | M7 | 4 | K2, `N4` | Z: 4–6 MD (z tabelą `quotes`) |
+| `FLD-QUOTE-VARIANTS` | M7 | 4 | K2, `N4`, wyliczenie zaliczki wg D8 | Z: 4–6 MD (z tabelą `quotes`) |
+| `PRICE-LIST-SCHEMA` | M9 | 4 | cennik w bazie (koszt zakupu ≠ cena sprzedaży, wersje cen) | Z: 1–2 MD |
+| `PRICE-LIST-IMPORT` | M9 | 4 | import cennika robocizny z arkusza (Z2) | Z: 1 MD |
+| `PRICE-LIST-ADMIN` | M9 | 4 | ekran `/settings/pricing` w panelu B2B | Z: 3–4 MD |
+| `STD-INSTALL-CONFIG` | M9 | 4 | ekran `/settings/standard-installation`; wspólne źródło ilości dla Triage | Z: 3–4 MD |
+| `B2C-TRIAGE-PRICE-FROM-PRICE-LIST` | M9 | 4 | Triage liczy z tego samego cennika; koniec z literałem 1200 zł | Z: 2–3 MD |
+| `FLD-QUOTE-CALC` | M9 | 4 | automatyczna wycena z cennika, marża, kwota zaliczki wg D8 | Z: 4–6 MD |
+| `FLD-QUOTE-MANUAL-ITEM` | M9 | 4 | pozycja indywidualna poza cennikiem (stelaż, zwyżka) | Z: 1 MD |
+| `FLD-QUOTE-PRICE-SNAPSHOT` | M9 | 4 | odtworzenie wysłanej oferty i wyceny z Triage w cenach z dnia wystawienia | Z: 1–2 MD |
 | `FLD-SIGN-REMOTE` | M5 | 5 (po D5) | podpis zdalny | R: 5–7 MD |
 | `FLD-SIGN-REMOTE-OTP` | M5 | 5 | D4.2 (obowiązkowy) | Z: 1–2 MD |
 | `FLD-SIGN-DELIVERY-PROOF` | M5 | 5 | dowód doręczenia linku (Mailtrap) | Z: 1 MD (po Z1) |
 | `FLD-SIGN-ABUSE-GUARD` | M5 | 5 | wdrożenie strony publicznej | R: 1,5–2 MD |
 | `FLD-SIGN-DURABLE-COPY` | M5 | 5 | wg opinii prawnika | Z: 1 MD |
 | (testy i bufor podpisu zdalnego wg planu §5.4) | M5 | 5 | — | R: 1,5–2,5 MD |
-| `FLD-CONTRACT-GENERATE` | M8 | 6 (po D5) | `FNL-E3-E4` | Z: 2–3 MD |
-| `INV-ADVANCE` | M8 | 6 (po D8, D9) | `FNL-2PHASE-INVOICE`, zaliczka | Z: 4–6 MD (z gotowym API faktur) |
+| `FLD-CONTRACT-GENERATE` | M8 | 6 | umowa z oferty na wzorze z `docs/legal/`; `FNL-E3-E4` | Z: 2–3 MD |
+| `DOC-LEGAL-VERSION-REGISTRY` | M8 | 6 | wersjonowanie dokumentów klienta w bazie (luka z `docs/legal/README.md`) | Z: 1–2 MD |
+| `INV-PROFORMA` | M8 | 6 | proforma / wezwanie do zapłaty przed wpłatą (D9 krok 1) | Z: 2–3 MD |
+| `INV-ADVANCE-AUTO` | M8 | 6 | faktura zaliczkowa automatycznie po wpłacie, idempotentnie (D9 krok 2, inFakt) | Z: 3–4 MD |
+| `INV-FINAL` | M8 | 6 | faktura rozliczeniowa po montażu, przy dwuetapowym po etapie II (D9 krok 3) | Z: 2–3 MD |
 | `PAY-DEPOSIT-LINK` | M8 | 6 | model zaliczkowy | styk z Pakietem A (PayU), liczony tam |
 
 Usunięte po decyzjach z 2026-09-21: `FLD-GEO-DEPART` (potrzebne tylko przy PWA).
@@ -622,11 +851,12 @@ Usunięte po decyzjach z 2026-09-21: `FLD-GEO-DEPART` (potrzebne tylko przy PWA)
 | 2 | Montaż: zlecenie, checklista, zdjęcia, kolejka offline, protokół, PDF, zatwierdzenie wypłaty (M3, M4) | ok. 14–23 |
 | 3 | Podpis na miejscu + odblokowanie w promieniu 20 m (M5 bez części zdalnej, `FLD-GEO-UNLOCK`) | ok. 12–16 |
 | | **Ścieżka montera razem (etapy 1–3)** | **ok. 43–66** |
-| 4 | Ścieżka audytora z zakładaniem leada (M7 bez kalkulatora 35 pozycji) | ok. 14–22 |
-| | **Obie ścieżki z podpisem na miejscu (etapy 1–4)** | **ok. 57–88** |
+| 4 | Ścieżka audytora z zakładaniem leada (M7) | ok. 14–22 |
+| 4b | Cennik, konfiguracja montażu standardowego, silnik wyceny, przepięcie Triage (M9, D15 = A) | ok. 16–23 |
+| | **Obie ścieżki z podpisem na miejscu i pełną wyceną (etapy 1–4b)** | **ok. 73–111** |
 | 5 | Podpis zdalny + SMS „w drodze” w tle + RODO lokalizacji (po D5) | ok. 15–21 |
-| 6 | Umowa i faktury (M8 bez PayU, po D5, D8, D9) | ok. 6–9 |
-| | **Razem pełny zakres** | **ok. 78–118** |
+| 6 | Umowa, rejestr wersji dokumentów i trzy dokumenty rozliczeniowe (M8 bez PayU) | ok. 10–15 |
+| | **Razem pełny zakres** | **ok. 98–147** |
 
 Poza sumą: zależność Z1 (wysyłka powiadomień, Pakiet 3 roadmapy, `NTF-GATEWAY`, ok. 4–6 MD) oraz drobne
 zamknięcia niezależne od aplikacji (`FLD-CONSENT-TRIGGERS-INTEGRATION` ok. 1 MD, `FLD-GEO-COORDS` ok. 0,5 MD).
@@ -664,25 +894,29 @@ Etap 1  Fundament: M1 (Expo, API, dystrybucja, testy), M2  ┐
 Etap 2  Montaż: M3, M4 + DOC-PDF-RENDER + outbox           │  ok. 43–66 MD
    │                                                        │
 Etap 3  Podpis na miejscu: -DOC-FREEZE/-CAPTURE/            │
-   │    -AUDIT-TRAIL (+ -TSA po D6) + FLD-GEO-UNLOCK        ┘
+   │    -AUDIT-TRAIL/-TSA (EuroCert) + FLD-GEO-UNLOCK       ┘
    │
-Etap 4  Ścieżka audytora: M7 + FLD-AUDIT-LEAD-CREATE       ── ok. 14–22 MD; może iść równolegle
+Etap 4  Ścieżka audytora: M7 + FLD-AUDIT-LEAD-CREATE        ── ok. 14–22 MD; może iść równolegle
    │                                                           z etapami 2–3 po zakończeniu etapu 1
+   │
+Etap 4b Cennik, montaż standardowy, silnik wyceny (M9)      ── ok. 16–23 MD; wymaga cennika (Z2);
+   │    + przepięcie Triage na wspólny cennik                     przepięcie Triage na końcu etapu
    │
 Etap 5  Podpis zdalny (+OTP) + SMS „w drodze" w tle         ── po opinii prawnika (D5)
    │
-Etap 6  Umowa, faktury, płatność: M8                        ── po D5, D8, D9 i KRS spółki
+Etap 6  Umowa, faktury, płatność: M8                        ── po treściach z D5 i KRS spółki
 ```
 
 | Etap | Zależy od | Rodzaj szacunku | MD |
 |---|---|---|---|
 | 0 | potwierdzenie D2, okno kontraktowe | — | 1–2 |
 | 1 | etap 0 | Z | 17–27 |
-| 2 | etap 1, D7 (tylko skład zdjęć; reszta może ruszyć) | Z | 14–23 |
-| 3 | etap 2; D6 tylko dla `FLD-SIGN-TSA` | R (z planu §5.4, bez części zdalnej) | 12–16 |
+| 2 | etap 1 | Z | 14–23 |
+| 3 | etap 2; umowa z EuroCert podpisana | R (z planu §5.4, bez części zdalnej) | 12–16 |
 | 4 | etap 1, luki nr 1 i 6 (zmiany kontraktu) | Z | 14–22 |
+| 4b | etap 4, plik z cennikiem robocizny (Z2) | Z | 16–23 |
 | 5 | etap 3, D5, Z1 | R + Z | 15–21 |
-| 6 | etapy 4–5, D5, D8, D9, spółka | Z | 6–9 + PayU |
+| 6 | etapy 4–5, treści z D5, konto inFakt, spółka | Z | 10–15 + PayU |
 
 **Uczciwie o terminie (D3 dopuszcza przesunięcie):** obie ścieżki z podpisem na miejscu to ok. 57–88 MD
 w jednostkach tego dokumentu, czyli więcej niż 10 tygodni do 30.11. W jednostkach roadmapy (godziny pracy
@@ -701,8 +935,8 @@ w panelu, dopóki etap 4 nie jest gotowy.
 
 - Wersja na tablet i obsługa rysika (D12 = telefon).
 - Ciągłe śledzenie trasy pracownika, zawsze (wymóg `FLD-GPS-RODO`, nie wybór).
-- Rysowane adnotacje na zdjęciach (N4), katalog urządzeń na tablecie (N5), kalkulator mocy z 35 pozycji,
-  chyba że zaznaczysz w M7.
+- Rysowane adnotacje na zdjęciach (N4) i katalog urządzeń na tablecie (N5).
+- **Kalkulator kosztorysowy przestał być „poza zakresem" 2026-09-23** — jest modułem M9, patrz D15.
 - Komunikacja ekipa ↔ audytor (N13), uwagi w trzech kategoriach (N14), faza 8 planu.
 - Rozliczenia ekip i KSeF (N18, faza 9 planu).
 - Powiadomienia push (`NTF-PUSH-TOKEN`).
@@ -727,7 +961,12 @@ w panelu, dopóki etap 4 nie jest gotowy.
 | R12 | Przegląd Apple dla lokalizacji w tle | opóźnienie publikacji albo odrzucenie | geofencing systemowy zamiast ciągłego śledzenia, uzasadnienie w opisie; lokalizacja w tle dopiero w etapie 5 |
 | R13 | Druga ścieżka zapisu (Route Handlery obok Server Actions) | rozjazd uprawnień między panelem a aplikacją | jedna funkcja domenowa + `can()` wołana z obu ścieżek; test kontraktowy macierzy dla każdego Route Handlera; przegląd `rls-security-auditor` |
 | R14 | Umowa czytana i podpisywana na ekranie telefonu (D12) | zarzut, że klient nie mógł zapoznać się z treścią | pytanie 8 do prawnika; możliwość wysłania treści mailem przed podpisem |
-| R5 | TSA wymaga zarejestrowanej spółki | podpis bez znacznika na próbach grudniowych | D6: sprawdzić wymagania dostawcy teraz |
+| R15 | Faktura zaliczkowa wystawiana automatycznie po wpłacie (D9 krok 2) | podwójna faktura przy ponowionym webhooku płatności; korekta to praca księgowej, nie kliknięcie | klucz idempotencji na płatności i na dokumencie, test ponowionego webhooka jako kryterium `INV-ADVANCE-AUTO` |
+| R16 | Zaliczka to 110% ceny brutto urządzeń (D8) | przy tanim montażu zaliczka może przekroczyć wartość całej oferty, a przy drogim — wyglądać na niespójną z „40–50%” z prezentacji | reguła kontrolna w `FLD-QUOTE-VARIANTS`: zaliczka nigdy większa niż wartość oferty; sprostowanie prezentacji |
+| R18 | Przepięcie Triage na wspólny cennik **podnosi cenę widoczną publicznie mniej więcej dwukrotnie** | dziś montaż to `'Montaż wzorcowy'` × liczba pomieszczeń (zapasowo 1200 zł/pom.), a z dostarczonego cennika standard wychodzi ok. **2 483 zł netto** za pierwsze pomieszczenie i ok. 1 828 zł za każde następne. To zmiana oferty, nie refaktoryzacja | porównanie cen przed i po na typowych konfiguracjach (1, 2, 3 pomieszczenia) jako kryterium `B2C-TRIAGE-PRICE-FROM-PRICE-LIST`; wdrożenie dopiero po skompletowaniu cennika i konfiguracji standardu |
+| R19 | Konfiguracja montażu standardowego rozjedzie się z `DEFINICJA-MONTAZU-STANDARDOWEGO.md` | klient dostanie ofertę niezgodną z tym, co firma obiecuje publicznie | dokument staje się opisem konfiguracji, a nie drugim źródłem prawdy; po wdrożeniu `doc-scribe` przepisuje go na odwołanie do ustawień |
+| R17 | Wzory w `docs/legal/` to dziś lorem ipsum | ryzyko wysłania klientowi dokumentu z treścią zastępczą podczas prób | przyrostek `-lorem` w nazwie pliku + bramka przed wysyłką: dokument oznaczony jako roboczy nie może wyjść do klienta (kryterium w `FLD-CONTRACT-GENERATE`) |
+| R5 | EuroCert może wymagać zarejestrowanej spółki | podpis bez znacznika czasu na próbach grudniowych | sprawdzić warunki EuroCert **przed etapem 3**; awaryjnie: podpisy bez TSA i dostemplowanie po zawarciu umowy (wtedy R8) |
 | R6 | Brak wysyłki powiadomień (Z1) | protokół, `N8a` i link do podpisu nie dojdą do klienta | Z1 jako twarda zależność etapu 2 |
 | R7 | Prezentacje i backlog opisują stan inny niż kod (S5, S9, S10) | złe oczekiwania wspólnika i inwestora; raport IP opisuje nieistniejący podpis | po Twoich decyzjach poprawić dokumenty (`doc-scribe`) |
 | R8 | Podpis offline dostaje znacznik czasu dopiero po synchronizacji | pytanie o wartość dowodową | pytanie do prawnika (D5) |
@@ -743,18 +982,22 @@ Terminy z `ROADMAP-GTM-I-PROGNOZA-DEVELOPMENTU.md`: koniec developmentu **30.11.
 
 | Zależność | Kto | Blokuje | Najpóźniejszy sensowny termin | Uwagi |
 |---|---|---|---|---|
-| Decyzje D1–D4 | Michał | start całości | — | **rozstrzygnięte 2026-09-21**; D2 do potwierdzenia jednym słowem |
-| Konsultacja prawna (D5, zaparkowana) | prawnik | etap 5 (podpis zdalny, lokalizacja w tle), etap 6 (umowa) | odpowiedź przed startem etapu 5 | budżet prawny w `PROGNOZA…md` (~1 000 zł na regulamin i RODO) nie obejmuje podpisu ani umowy konsumenckiej; do weryfikacji |
-| Księgowy (D9) | księgowy | M8, `FNL-2PHASE-INVOICE` | **31.10.2026** | roadmapa: wybór biura księgowego w listopadzie; to może być za późno |
-| Dostawca TSA (D6) | Michał | M5 (`FLD-SIGN-TSA`) | umowa do **15.11.2026** | możliwa zależność od KRS spółki |
+| Decyzje D1–D4 | Michał | start całości | — | **rozstrzygnięte** (D1, D3, D4 — 2026-09-21; D2 — 2026-09-23) |
+| Treści dokumentów prawnych (D5) | Michał + prawnik | wysyłkę czegokolwiek do klienta na produkcji; **nie blokuje** etapów 1–4 | przed pierwszym prawdziwym klientem |
+| Odpowiedzi na pytania prawne 1–8 (D5) | prawnik | etap 5 (podpis zdalny, lokalizacja w tle), etap 6 (umowa) | przed startem etapu 5 | budżet prawny w `PROGNOZA…md` (~1 000 zł na regulamin i RODO) nie obejmuje podpisu ani umowy konsumenckiej; do weryfikacji |
+| Konto i klucz API inFakt (D9) | Michał | etap 6 (`INV-*`) | przed etapem 6 | narzędzie wybrane 2026-09-23; konto firmowe zapewne po wpisie spółki do KRS |
+| Przepisanie `FNL-2PHASE-INVOICE` (D9) | `contract-steward` | etap 6 | etap 0 (rejestracja wymagań) | rozliczenie po etapie II, bez faktury po etapie I |
+| Umowa z EuroCert (D6) | Michał | `FLD-SIGN-TSA` w etapie 3 | przed etapem 3 | sprawdzić, czy da się zawrzeć przed wpisem spółki do KRS (R5) |
 | Rejestracja spółki (KRS) | Michał, Piotr | PayU produkcyjne, być może TSA | listopad 2026 (roadmapa) | — |
 | Pole nadawcy SMS w SMSAPI | Michał | każdy SMS do klienta (N3/N7, OTP) | — | **złożone i przetestowane** (2026-09-21) |
 | Domena i DKIM/SPF/DMARC dla Mailtrap | Michał | dowód doręczenia linku | 31.10.2026 | — |
 | Wysyłka powiadomień (Z1, Pakiet 3) | development | etap 2 i 4 | przed etapem 2 | poza tym projektem, ale twarda zależność |
+| ~~Z2: plik z cennikiem robocizny~~ (D15) | Michał | — | — | **dostarczone 2026-09-23** (arkusz Google), zapisane w repozytorium: [`cennik-robocizny.csv`](../architecture/cennik-robocizny.csv) i [`CENNIK-ROBOCIZNY.md`](../architecture/CENNIK-ROBOCIZNY.md). **39 pozycji**, nie 35 |
+| Uzupełnienie braków w cenniku (D16) | Michał, Piotr | marża na pozycji, rozliczenia ekip, pełny automat wyceny | przed etapem 4b | 13 pozycji bez kosztu ekipy, 5 bez kategorii i opisu, brak stawki VAT |
 | Telefony testowe (D12) | Michał, Piotr | testy UX podpisu | przed etapem 3 | co najmniej jeden iPhone i jeden Android (dwie platformy React Native) |
 | Konta w sklepach (D1 = C) | Michał | dystrybucja (`FLD-APP-DISTRIBUTION`) | **przed końcem etapu 1** | Apple Developer: weryfikacja organizacji wymaga numeru D-U-N-S spółki (R11); Google Play Console |
 | Certyfikat UDT | Piotr | onboarding ekip, nie aplikację | wpis w styczniu 2027 | nie blokuje developmentu; blokuje użycie aplikacji przez ekipy na komercyjnych zleceniach |
-| Wzory umowy montażu i protokołu | prawnik + Piotr | `DOC-PDF-RENDER` dla umowy | 31.10.2026 | protokół może powstać na wzorze roboczym |
+| Wzory umowy i pozostałych dokumentów | prawnik + Piotr | produkcyjne użycie `FLD-CONTRACT-GENERATE` | przed pierwszym prawdziwym klientem | wzory robocze leżą w `docs/legal/`; development na nich nie stoi |
 
 ---
 
@@ -764,8 +1007,10 @@ Terminy z `ROADMAP-GTM-I-PROGNOZA-DEVELOPMENTU.md`: koniec developmentu **30.11.
    Czekam na jedno słowo przy D2 oraz na potwierdzenie modułów M1–M8 i kolejności etapów.
 2. `contract-steward` w oknie kontraktowym: rejestracja zatwierdzonych ID, zmiany statusów (np.
    `FLD-AUTH-BLOCKED` z BLOCKED na TODO), zmiana `FLD-PHOTO-SET` po D7, ewentualnie `N8` (K5), a z D14:
-   drugie wejście do lejka (`B2C-LEAD-ENTRY`) i `leads:create` dla audytora. Równolegle aneks ADR-013
+   drugie wejście do lejka (`B2C-LEAD-ENTRY`) i `leads:create` dla audytora. Z D7: `FLD-PHOTO-SET` ze
+   stałych 4 zdjęć na wzór `4 + 2n` plus osobny komplet dla etapu I. Z D9: przepisanie `FNL-2PHASE-INVOICE`
+   (rozliczenie po etapie II) i zdjęcie załącznika z fakturą z `N8a`. Równolegle aneks ADR-013
    w `docs/01-ADR-spec-conflicts.md`.
 3. Work Ordery w kolejności etapów, **po jednym na artefakt i rolę**, a nie jeden na moduł.
 4. Osobno, niezależnie od Field App: odblokowanie `FLD-CONSENT-TRIGGERS-INTEGRATION` (S15) i sprostowanie
-   dokumentów z S1 (PWA), S9, S10, S11 (Resend) i S13 (tablet).
+   dokumentów z S1 (PWA), S5 (zdjęcia), S6 (zaliczka 40–50%), S9, S10, S11 (Resend) i S13 (tablet).
