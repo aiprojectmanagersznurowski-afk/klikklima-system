@@ -66,16 +66,16 @@ model adresy {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   address_number String   @unique @default(dbgenerated("('A-'::text || lpad((nextval('addresses_address_number_seq'::regclass))::text, 6, '0'::text))"))
   klient_id      String?  @db.Uuid
-  klient       klienci? @relation(fields: [klient_id], references: [id], onDelete: SetNull)
-  ulica_miasto String?
+  klient         klienci? @relation(fields: [klient_id], references: [id], onDelete: SetNull)
+  ulica_miasto   String?
   // FLD-GEO-COORDS: współrzędne WGS84 (EPSG:4326) punktu docelowego wizyty.
   // Źródło: geokodowanie Google Places w kroku rezerwacji B2C. Nullable świadomie —
   // adresy sprzed tej migracji i adresy wpisane ręcznie w panelu B2B nie mają geokodowania.
   // Typ double precision, nie Decimal: te wartości służą do liczenia odległości
   // (Haversine / PostGIS), nigdy do porównań na równość. Patrz raport FLD-GEO-COORDS.
-  latitude     Float?   @db.DoublePrecision
-  longitude    Float?   @db.DoublePrecision
-  created_at   DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  latitude       Float?   @db.DoublePrecision
+  longitude      Float?   @db.DoublePrecision
+  created_at     DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
   leady   leady[]
   serwisy serwisy[]
@@ -134,14 +134,20 @@ model leady {
   // Nazwa angielska mimo polskiej nazwy tabeli: dług KK-NAMING-BASELINE jest ZAMROŻONY,
   // czyli obejmuje nazwy istniejące, a nie zwalnia z ADR-002 nowych kolumn.
   // Wartość nadaje baza z sekwencji leads_project_number_seq — Prisma jej NIE wylicza.
-  project_number            String      @unique @default(dbgenerated("('L-'::text || lpad((nextval('leads_project_number_seq'::regclass))::text, 6, '0'::text))"))
+  project_number String @unique @default(dbgenerated("('L-'::text || lpad((nextval('leads_project_number_seq'::regclass))::text, 6, '0'::text))"))
 
-  created_at                DateTime    @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  updated_at                DateTime    @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  created_at DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  updated_at DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
   instalacje           instalacje[]
   logistyka_zamowienia logistyka_zamowienia[]
   bookings             Booking[]
+
+  // ETAP 0 FIELD APP (2026-09-23): oferta, umowa i faktury wiszą na leadzie.
+  // Kaskada zgodna z DELETE_POLICIES w contracts/rbac.contract.mjs (leads: CASCADE).
+  quotes                Quote[]
+  installationContracts InstallationContract[]
+  invoices              Invoice[]
 
   @@index([status])
   @@index([created_at])
@@ -281,15 +287,15 @@ model instalacje {
   id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   installation_number String              @unique @default(dbgenerated("('I-'::text || lpad((nextval('installations_installation_number_seq'::regclass))::text, 6, '0'::text))"))
   lead_id             String              @db.Uuid
-  lead              leady               @relation(fields: [lead_id], references: [id], onDelete: Cascade)
-  zespol_id         String?             @db.Uuid
-  zespol            zespoly_monterskie? @relation(fields: [zespol_id], references: [id], onDelete: SetNull)
-  data_planowana    DateTime?           @db.Timestamptz(6)
-  data_zakonczenia  DateTime?           @db.Timestamptz(6)
-  protokol_url      String?
-  next_service_date DateTime?           @db.Date
-  status            InstallationStatus  @default(PLANNED)
-  created_at        DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  lead                leady               @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  zespol_id           String?             @db.Uuid
+  zespol              zespoly_monterskie? @relation(fields: [zespol_id], references: [id], onDelete: SetNull)
+  data_planowana      DateTime?           @db.Timestamptz(6)
+  data_zakonczenia    DateTime?           @db.Timestamptz(6)
+  protokol_url        String?
+  next_service_date   DateTime?           @db.Date
+  status              InstallationStatus  @default(PLANNED)
+  created_at          DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
 
   /// FNL-2PHASE kryt. 2 (D1, decyzja Michała 2026-09-16, migracja 20260916060000).
   /// Tryb montażu ustalony przez audytora na miejscu — wartość WIĄŻĄCA, deklaracja
@@ -302,9 +308,16 @@ model instalacje {
   /// po angielsku i snake_case, więc ADR-002 jest spełnione.
   installation_type String?
 
-  serwisy            serwisy[]
-  usterki_incidents  usterki_incidents[]
+  serwisy             serwisy[]
+  usterki_incidents   usterki_incidents[]
   installation_phases InstallationPhase[]
+
+  // ETAP 0 FIELD APP (2026-09-23): dokumentacja zdjęciowa kasuje się z instalacją (Cascade),
+  // umowa i faktura NIE — dokument rozliczeniowy przeżywa usunięcie rekordu montażu (SetNull),
+  // bo jest dowodem księgowym, a nie częścią opisu instalacji.
+  installationPhotos    InstallationPhoto[]
+  installationContracts InstallationContract[]
+  invoices              Invoice[]
 
   /// PERF-B2B-AUDIT: lead_id — zagnieżdżony select instalacje w getLeads() (WHERE lead_id
   /// IN (...)), findFirst({ where: { lead_id } }) w assignCrewToLead(), oraz kaskada
@@ -1134,3 +1147,440 @@ model KnowledgeBase {
   @@map("knowledge_base")
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// ETAP 0 FIELD APP / PODPISY / WYCENA — nośniki danych (2026-09-23, okno KK-IMPL-2026Q4)
+// Migracje: 20260925090000 (cennik i oferty), 20260925091000 (dokumenty, umowy, podpisy),
+//           20260925092000 (faktury, zdjęcia), 20260925093000 (audit_log CHECK).
+//
+// Wszystkie modele są NOWE, więc nazwy pól idą wg ADR-002 (camelCase + @map na snake_case),
+// tak jak AvailabilityDeclaration i InstallationPhase — nie dziedziczą zamrożonego długu
+// nazewniczego starych tabel. Odwołania do `leady` i `instalacje` wskazują nazwy FAKTYCZNE,
+// bo tamte tabele istnieją pod nimi (dług KK-NAMING-BASELINE, zamrożony).
+//
+// ZBIORY WARTOŚCI: text + CHECK, nie enumy Prisma — ten sam wybór co przy
+// instalacje.installation_type (migracja 20260916060000). Powód: rozszerzenie zbioru
+// jest wtedy zmianą CHECK w migracji addytywnej, a nie ALTER TYPE, którego nie da się
+// wycofać w transakcji. Dopuszczalne wartości są wypisane przy każdym polu.
+// ═══════════════════════════════════════════════════════════════════════════════════════
+
+/// PRICE-LIST-SCHEMA: pozycja cennika kosztorysowego (39 pozycji z docs/architecture/cennik-robocizny.csv).
+/// CENA NIE MIESZKA TUTAJ — mieszka w PriceListItemVersion, bo zmiana ceny nie może nadpisać
+/// wartości, na podstawie której wystawiono wcześniejszą ofertę (FLD-QUOTE-PRICE-SNAPSHOT).
+model PriceListItem {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// Nazwa pozycji z arkusza. UNIQUE, bo to jest klucz idempotencji importu (PRICE-LIST-IMPORT):
+  /// ponowny import ma aktualizować pozycję, nie tworzyć jej drugi raz.
+  name String @unique
+
+  /// Opis widziany przez klienta w ofercie. NULL dla 5 pozycji, których arkusz nie opisuje (D16 pkt 2).
+  description String?
+
+  /// Jednostka miary: 'mb' | 'szt' | 'm' (CHECK price_list_items_unit_check).
+  unit String
+
+  /// 'MATERIAL' | 'LABOR' | 'MATERIAL_LABOR' (CHECK). NULL dla 5 pozycji bez kategorii w arkuszu (D16 pkt 2).
+  /// Wartości ANGIELSKIE mimo polskiego arkusza — ADR-002; przekład robi import, nie schemat.
+  category String?
+
+  /// D17: 'ROOM' (23 pozycje) albo 'INSTALLATION' (16 pozycji). Decyduje, w której części
+  /// formularza wyceny pozycja się pojawia i czy jej pozycja w ofercie MUSI wskazywać pomieszczenie.
+  scope String
+
+  /// Wycofanie pozycji z użytku = przełączenie flagi, NIGDY DELETE: oferty historyczne muszą się
+  /// odtwarzać (dlatego macierz RBAC nie daje `delete` nikomu, łącznie z adminem).
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  versions   PriceListItemVersion[]
+  quoteItems QuoteItem[]
+
+  @@index([scope])
+  @@map("price_list_items")
+}
+
+/// PRICE-LIST-SCHEMA / FLD-QUOTE-PRICE-SNAPSHOT: wersja ceny pozycji, wzorem LegalDocumentVersion.
+/// Zmiana ceny to NOWY WIERSZ. Bez tego oferta sprzed miesiąca przelicza się po nowych cenach
+/// i przestaje zgadzać się z dokumentem, który klient dostał mailem.
+model PriceListItemVersion {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  priceListItemId String        @map("price_list_item_id") @db.Uuid
+  priceListItem   PriceListItem @relation(fields: [priceListItemId], references: [id], onDelete: Cascade)
+
+  /// Ile płacimy ekipie (albo ile kosztuje materiał). NULL = NIE ZNAMY — 13 pozycji arkusza
+  /// nie ma tej wartości (D16 pkt 1). NULL to nie zero: zero znaczyłoby „ekipa pracuje za darmo"
+  /// i zafałszowałoby marżę w drugą stronę niż w rzeczywistości.
+  crewCostNet Decimal? @map("crew_cost_net") @db.Decimal(12, 2)
+
+  /// Cena sprzedaży netto. NOT NULL — pozycja bez ceny sprzedaży nie ma czego wnieść do oferty.
+  salePriceNet Decimal @map("sale_price_net") @db.Decimal(12, 2)
+
+  validFrom DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("valid_from") @db.Timestamptz(6)
+
+  /// „Cena obowiązująca teraz". Częściowy indeks unikalny (price_list_item_versions_current_per_item_key,
+  /// WHERE is_current) dopuszcza DOKŁADNIE JEDNĄ taką wersję na pozycję — wymusza to baza, nie
+  /// kolejność zapisów w aplikacji, bo „sprawdź i ustaw" przegrywa wyścig dwóch publikacji cennika.
+  /// Prisma nie wyraża indeksów częściowych: ograniczenie żyje wyłącznie w SQL.
+  isCurrent Boolean @default(false) @map("is_current")
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+
+  quoteItems QuoteItem[]
+
+  @@index([priceListItemId])
+  @@map("price_list_item_versions")
+}
+
+/// FLD-QUOTE-VARIANTS / FNL-E2-E3: oferta. Do 2026-09-23 wycena była DWOMA POLAMI TEKSTOWYMI
+/// na leadzie (estymowana_wycena, finalna_wycena_pln) — ta tabela je zastępuje.
+model Quote {
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId String @map("lead_id") @db.Uuid
+  lead   leady  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  /// 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' (CHECK quotes_status_check).
+  status String @default("DRAFT")
+
+  /// PRICE-VAT-RATE: rodzaj obiektu ROZSTRZYGNIĘTY PRZEZ AUDYTORA — to on decyduje o stawce VAT
+  /// i ma pierwszeństwo przed deklaracją klienta z Triage (D17).
+  /// 'RESIDENTIAL_UP_TO_THRESHOLD' | 'RESIDENTIAL_ABOVE_THRESHOLD' | 'COMMERCIAL' (CHECK).
+  /// Próg powierzchni NIE JEST tu zapisany liczbą — mieszka w SLA.PROPERTY_AREA_VAT_THRESHOLD.
+  propertyKind String? @map("property_kind")
+
+  /// Stawka VAT ZAMROŻONA w chwili wystawienia (8 albo 23). Zapisana, a nie wyliczana przy
+  /// odczycie, bo zmiana tabeli stawek nie może zmienić dokumentu, który klient już dostał.
+  vatRatePercent Int? @map("vat_rate_percent")
+
+  /// Wariant wybrany przez klienta. FK dodawany po utworzeniu quote_variants (ON DELETE SET NULL).
+  /// Bez @unique: unikalność niesie indeks CZĘŚCIOWY quotes_selected_variant_id_key
+  /// (WHERE selected_variant_id IS NOT NULL), którego Prisma nie potrafi wyrazić — ten sam
+  /// przypadek co legal_document_versions_current_per_kind_key. Zadeklarowanie tu @unique
+  /// dałoby pełne ograniczenie UNIQUE i cichy dryf między schematem a bazą.
+  selectedVariantId String? @map("selected_variant_id") @db.Uuid
+
+  /// Kwota zaliczki wg D8: netto zestawu x (1 + stawka VAT obiektu) x 1,1. Liczona z WYBRANEGO
+  /// wariantu (FLD-QUOTE-VARIANTS), zapisana tutaj, a faktura ją ODCZYTUJE, nie liczy po raz drugi.
+  depositAmountGross Decimal? @map("deposit_amount_gross") @db.Decimal(12, 2)
+
+  sentAt DateTime? @map("sent_at") @db.Timestamptz(6)
+
+  /// Okno ważności oferty. Wyliczane z SLA.QUOTE_VALIDITY (14 dni) w chwili wysłania —
+  /// nigdy literałem w kodzie (ADR-011).
+  validUntil DateTime? @map("valid_until") @db.Timestamptz(6)
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  variants  QuoteVariant[]
+  contracts InstallationContract[]
+  invoices  Invoice[]
+
+  @@index([leadId])
+  @@index([status])
+  @@map("quotes")
+}
+
+/// FLD-QUOTE-VARIANTS (K2): 1-3 warianty na ofertę. Ograniczenie liczby wariantów jest w bazie
+/// (CHECK na numerze), nie w formularzu — formularz da się ominąć zapisem przez API.
+model QuoteVariant {
+  id      String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quoteId String @map("quote_id") @db.Uuid
+  quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  /// 1, 2 albo 3 (CHECK quote_variants_variant_number_check).
+  variantNumber Int @map("variant_number")
+
+  name String?
+
+  /// Suma netto wariantu — wyliczana po stronie serwera (FLD-QUOTE-CALC), zapisana dla odtwarzalności.
+  totalNetAmount Decimal? @map("total_net_amount") @db.Decimal(12, 2)
+
+  /// Cena netto samego zestawu urządzeń — podstawa wzoru zaliczki z D8.
+  equipmentNetAmount Decimal? @map("equipment_net_amount") @db.Decimal(12, 2)
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  rooms QuoteRoom[]
+  items QuoteItem[]
+
+  @@unique([quoteId, variantNumber], map: "quote_variants_quote_id_variant_number_key")
+  @@map("quote_variants")
+}
+
+/// FLD-QUOTE-ROOMS (D17): pomieszczenie w wariancie oferty.
+model QuoteRoom {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quoteVariantId String       @map("quote_variant_id") @db.Uuid
+  quoteVariant   QuoteVariant @relation(fields: [quoteVariantId], references: [id], onDelete: Cascade)
+
+  name String
+
+  /// Moc jednostki WPISYWANA przez audytora, nie wyliczana z metrażu (K7). Brak automatycznego
+  /// doboru jest decyzją projektową, nie brakiem implementacji.
+  powerKw Decimal? @map("power_kw") @db.Decimal(6, 2)
+
+  position Int?
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+
+  items QuoteItem[]
+
+  @@index([quoteVariantId])
+  @@map("quote_rooms")
+}
+
+/// FLD-QUOTE-ROOMS + FLD-QUOTE-GENERAL-ITEMS (D17): pozycja oferty.
+///
+/// SEDNO TEJ TABELY: `quoteRoomId` jest NULLOWALNE ZE WZGLĘDU DOMENOWEGO, a nie dlatego, że
+/// „dane mogą być jeszcze nieuzupełnione". Brak pomieszczenia ZNACZY „pozycja ogólna całej
+/// instalacji". Żeby ta nullowalność nie stała się furtką na pozycje-sieroty, spójności pilnuje
+/// CHECK quote_items_scope_room_consistency_check:
+///     scope = 'ROOM'         => quote_room_id IS NOT NULL
+///     scope = 'INSTALLATION' => quote_room_id IS NULL
+/// `scope` jest tu ZDENORMALIZOWANY z PriceListItem świadomie: CHECK nie sięga do innej tabeli,
+/// a wariant z wyzwalaczem czytającym cennik byłby droższy i dawałby się ominąć przy wyłączonym
+/// wyzwalaczu. Cena denormalizacji to jedna kolumna, którą i tak zamraża snapshot oferty.
+model QuoteItem {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quoteVariantId String       @map("quote_variant_id") @db.Uuid
+  quoteVariant   QuoteVariant @relation(fields: [quoteVariantId], references: [id], onDelete: Cascade)
+
+  /// NULL = pozycja ogólna całej instalacji (scope = 'INSTALLATION').
+  quoteRoomId String?    @map("quote_room_id") @db.Uuid
+  quoteRoom   QuoteRoom? @relation(fields: [quoteRoomId], references: [id], onDelete: Cascade)
+
+  /// 'ROOM' | 'INSTALLATION' — musi zgadzać się z zasięgiem pozycji cennika (CHECK wyżej).
+  scope String
+
+  /// NULL dla pozycji indywidualnej spoza cennika (FLD-QUOTE-MANUAL-ITEM: stelaż, zwyżka).
+  priceListItemId String?        @map("price_list_item_id") @db.Uuid
+  priceListItem   PriceListItem? @relation(fields: [priceListItemId], references: [id], onDelete: Restrict)
+
+  /// Wersja ceny UŻYTA przy wyliczeniu — razem z unitPriceNet daje odtwarzalność oferty.
+  priceListItemVersionId String?               @map("price_list_item_version_id") @db.Uuid
+  priceListItemVersion   PriceListItemVersion? @relation(fields: [priceListItemVersionId], references: [id], onDelete: Restrict)
+
+  /// Pozycja indywidualna: nazwa i opis wpisywane ręcznie. Opis jest OBOWIĄZKOWY dla takiej
+  /// pozycji (to tekst, który klient zobaczy w ofercie) — pilnuje tego CHECK, nie formularz.
+  manualName        String? @map("manual_name")
+  manualDescription String? @map("manual_description")
+
+  quantity Decimal @db.Decimal(12, 3)
+
+  /// CENA ZAMROŻONA (FLD-QUOTE-PRICE-SNAPSHOT). Zapisana wprost, a nie odczytywana przez
+  /// wskazanie na cennik — inaczej zmiana cennika zmieniłaby sumę wysłanej oferty.
+  unitPriceNet Decimal @map("unit_price_net") @db.Decimal(12, 2)
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+
+  @@index([quoteVariantId])
+  @@index([quoteRoomId])
+  @@map("quote_items")
+}
+
+/// DOC-PDF-RENDER: wygenerowany dokument PDF (protokół, umowa, oferta, faktura).
+/// Wskazanie źródła jest polimorficzne (sourceType + sourceId) z tego samego powodu co przy
+/// Signature — patrz komentarz tam.
+model Document {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// 'HANDOVER_PROTOCOL' | 'INSTALLATION_CONTRACT' | 'QUOTE' | 'INVOICE' (CHECK documents_kind_check).
+  kind String
+
+  /// Tabela źródłowa i identyfikator wiersza. Bez FK — patrz uzasadnienie przy Signature.
+  sourceType String @map("source_type")
+  sourceId   String @map("source_id") @db.Uuid
+
+  storagePath String @map("storage_path")
+
+  /// Skrót treści dokumentu. Podstawa zamrożenia przed podpisem (FLD-SIGN-DOC-FREEZE):
+  /// podmiana pliku pod tą samą ścieżką przestaje być niezauważalna.
+  contentHash String? @map("content_hash")
+
+  /// Jawny numer wersji wzorca z docs/legal/ (np. 'v0.1-lorem'), nie flaga „roboczy/gotowy".
+  /// Przyrostek -lorem jest bramką przed wysyłką do klienta (ryzyko R17, FLD-CONTRACT-GENERATE).
+  templateVersion String? @map("template_version")
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+
+  contracts InstallationContract[]
+
+  @@index([sourceType, sourceId])
+  @@map("documents")
+}
+
+/// FLD-CONTRACT-GENERATE: umowa montażu.
+/// Nazwa `installation_contracts`, a nie `contracts` — rozstrzygnięcie Michała 2026-09-23.
+/// `contracts` byłoby poprawne wg ADR-002, ale w tym repozytorium `contracts/` to katalog
+/// źródła prawdy, a zasób RBAC o tej nazwie czytałby się w audycie jako uprawnienie do kontraktów
+/// systemowych, nie do umów z klientem.
+model InstallationContract {
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId String @map("lead_id") @db.Uuid
+  lead   leady  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  quoteId String? @map("quote_id") @db.Uuid
+  quote   Quote?  @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+
+  installationId String?     @map("installation_id") @db.Uuid
+  installation   instalacje? @relation(fields: [installationId], references: [id], onDelete: SetNull)
+
+  /// Wersja wzorca z docs/legal/ jako łańcuch znaków (np. 'v0.1-lorem'). NOT NULL: umowa bez
+  /// wskazania treści, którą podpisano, jest bezwartościowa dowodowo.
+  documentVersion String @map("document_version")
+
+  /// 'DRAFT' | 'SENT' | 'SIGNED' (CHECK installation_contracts_status_check).
+  status String @default("DRAFT")
+
+  /// Skrót zamrożonej treści (FLD-SIGN-DOC-FREEZE). Po podpisaniu treść jest niezmienna —
+  /// pilnuje tego wyzwalacz installation_contracts_freeze_signed_trg, nie macierz uprawnień.
+  contentHash String? @map("content_hash")
+
+  documentId String?   @map("document_id") @db.Uuid
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  sentAt   DateTime? @map("sent_at") @db.Timestamptz(6)
+  signedAt DateTime? @map("signed_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([leadId])
+  @@map("installation_contracts")
+}
+
+/// FLD-SIGN-*: podpis klienta wraz ze śladem dowodowym.
+///
+/// POLIMORFIZM DOKUMENTU (decyzja projektowa contract-steward 2026-09-23, wariant
+/// `documentType` + `documentId`): D4.3 wymienia DOKŁADNIE DWA dokumenty podpisywane przez
+/// klienta — protokół odbioru i umowę montażu. Protokół serwisowy i zgoda marketingowa są
+/// jawnie poza zakresem. Encja nadrzędna „dokument podpisywalny" dla dwóch znanych typów to
+/// warstwa, która nie zarabia na siebie.
+/// KOSZT WYPOWIEDZIANY WPROST: przy wskazaniu polimorficznym baza NIE MA klucza obcego na
+/// documentId, więc nie zatrzyma podpisu wskazującego nieistniejący wiersz. Pilnuje tego CHECK
+/// na documentType plus kryterium testowe w FLD-SIGN-AUDIT-TRAIL. To jest miejsce, w którym
+/// ten wybór może zaboleć — i dlatego jest zapisane tutaj, a nie przemilczane.
+///
+/// APPEND-ONLY: wyzwalacz signatures_append_only_trg odrzuca UPDATE i DELETE dla wszystkich,
+/// łącznie z adminem (macierz RBAC ma update: [] i delete: []). Podpis, który administrator
+/// może poprawić, nie jest dowodem — a poprawiony ślad to dowód wytworzony po fakcie.
+model Signature {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// 'HANDOVER_PROTOCOL' | 'INSTALLATION_CONTRACT' (CHECK signatures_document_type_check).
+  documentType String @map("document_type")
+  documentId   String @map("document_id") @db.Uuid
+
+  /// 'ON_SITE' | 'REMOTE' (CHECK). Od trybu zależy obowiązkowość kodu SMS (D4.2):
+  /// zdalny wymaga OTP, na miejscu nie — pilnuje tego CHECK signatures_remote_requires_otp_check.
+  mode String
+
+  signedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("signed_at") @db.Timestamptz(6)
+
+  /// Skrót dokumentu w chwili podpisu — musi zgadzać się ze skrótem sprzed prezentacji.
+  documentHash String @map("document_hash")
+
+  signatureImagePath String @map("signature_image_path")
+
+  /// Dane przechwycenia (urządzenie, adres IP, znacznik czasu klienta). Sam obraz podpisu
+  /// bez kontekstu nie jest śladem dowodowym.
+  captureMetadata Json? @map("capture_metadata")
+
+  /// KWALIFIKOWANY ZNACZNIK CZASU (EuroCert, D6). NULLOWALNY Z ZAŁOŻENIA, nie z niedopatrzenia:
+  /// podpis złożony bez zasięgu dostaje znacznik dopiero po synchronizacji (ryzyko R8), więc stan
+  /// „podpisany, jeszcze nieostemplowany" MUSI być reprezentowalny.
+  tsaTimestampAt DateTime? @map("tsa_timestamp_at") @db.Timestamptz(6)
+  tsaToken       String?   @map("tsa_token")
+
+  /// Tylko tryb zdalny (FLD-SIGN-REMOTE-OTP). Numer bierze się z danych leada, nie z formularza
+  /// podpisu — inaczej kod potwierdza tożsamość osoby, która sama go sobie wskazała.
+  otpPhone      String?   @map("otp_phone")
+  otpVerifiedAt DateTime? @map("otp_verified_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+
+  @@index([documentType, documentId])
+  @@map("signatures")
+}
+
+/// INV-PROFORMA / INV-ADVANCE-AUTO / INV-FINAL (D9): łańcuch trzech dokumentów rozliczeniowych.
+model Invoice {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// 'PROFORMA' | 'ADVANCE' | 'FINAL' (CHECK invoices_kind_check). Trzy rodzaje z D9 —
+  /// proforma NIE JEST fakturą w rozumieniu VAT i nie trafia do KSeF.
+  kind String
+
+  leadId String @map("lead_id") @db.Uuid
+  lead   leady  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  quoteId String? @map("quote_id") @db.Uuid
+  quote   Quote?  @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+
+  installationId String?     @map("installation_id") @db.Uuid
+  installation   instalacje? @relation(fields: [installationId], references: [id], onDelete: SetNull)
+
+  amountNet      Decimal @map("amount_net") @db.Decimal(12, 2)
+  /// Stawka z obiektu (PRICE-VAT-RATE): 8 albo 23. Zapisana, nie wyliczana przy odczycie.
+  vatRatePercent Int     @map("vat_rate_percent")
+  amountGross    Decimal @map("amount_gross") @db.Decimal(12, 2)
+
+  /// 'ISSUED' | 'PAID' | 'CANCELLED' (CHECK).
+  status String @default("ISSUED")
+
+  /// KLUCZ IDEMPOTENCJI (ryzyko R15): identyfikator zdarzenia płatności u dostawcy.
+  /// UNIQUE — to jest JEDYNY nośnik gwarancji „ponowiony webhook nie wystawi drugiej faktury
+  /// zaliczkowej". Sprawdzenie „czy już istnieje" w kodzie przegrywa wyścig dwóch równoległych
+  /// wywołań zwrotnych, a korekta faktury to praca księgowej, nie kliknięcie.
+  paymentEventId String? @unique @map("payment_event_id")
+
+  /// Identyfikator dokumentu w inFakt (KSeF po stronie dostawcy, bez własnej integracji).
+  externalId String? @map("external_id")
+
+  issuedAt  DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("issued_at") @db.Timestamptz(6)
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+
+  @@index([leadId])
+  @@index([kind])
+  @@map("invoices")
+}
+
+/// FLD-PHOTO-SET (4 + 2n) i FLD-PHOTO-SET-PHASE-ONE: dokumentacja zdjęciowa.
+/// Nazwa tabeli jest PRAWĄ stroną słownika przekładu w docs/architecture/NAMING.md
+/// (`zdjecia_z_montazu` -> `installation_photos`), więc jest nazwą docelową, nie porzuconą.
+model InstallationPhoto {
+  id             String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  installationId String     @map("installation_id") @db.Uuid
+  installation   instalacje @relation(fields: [installationId], references: [id], onDelete: Cascade)
+
+  /// Rodzaj ze słownika (CHECK installation_photos_kind_check). Część stała zamknięcia montażu:
+  /// 'OUTDOOR_UNIT', 'OUTDOOR_UNIT_NAMEPLATE', 'CONDENSATE_DRAIN', 'VACUUM_TEST_GAUGE'.
+  /// Na każdą jednostkę wewnętrzną: 'INDOOR_UNIT_MOUNTED', 'INDOOR_UNIT_NAMEPLATE'.
+  /// Etap I (FLD-PHOTO-SET-PHASE-ONE): 'PIPE_ROUTE_BEFORE_COVER', 'NITROGEN_TEST_GAUGE'.
+  /// Audyt (FLD-AUDIT-FORM): 'AUDIT'.
+  kind String
+
+  /// Numer jednostki wewnętrznej, której dotyczy zdjęcie — bez tego dwa zdjęcia TEJ SAMEJ
+  /// jednostki spełniałyby wymóg „2 na każdą jednostkę" przy multi-splicie.
+  indoorUnitIndex Int? @map("indoor_unit_index")
+
+  /// 1 albo 2 (CHECK) — rozdziela komplet etapu I od kompletu zamknięcia montażu. NULL dla
+  /// montażu jednoetapowego i dla zdjęć z audytu.
+  phaseNumber Int? @map("phase_number")
+
+  storagePath String @map("storage_path")
+
+  /// Klucz idempotencji nadawany na urządzeniu (FLD-PHOTO-UPLOAD-RESILIENT, FLD-OFFLINE-OUTBOX).
+  /// UNIQUE: kolejka offline ponawia wysyłkę z definicji, więc ochrona przed duplikatem musi być
+  /// w bazie, a nie w porównaniu nazw plików.
+  uploadIdempotencyKey String @unique @map("upload_idempotency_key")
+
+  takenAt   DateTime? @map("taken_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+
+  @@index([installationId, kind])
+  @@map("installation_photos")
+}

@@ -79,6 +79,19 @@ const MUTATIONS = [
   { rule: 'R21-sla-shape',         file: 'sla.contract.mjs', from: "meters: 20,   req: ['FLD-GEO-UNLOCK']", to: "meters: 20, days: 14, req: ['FLD-GEO-UNLOCK']", desc: 'próg z dwoma kształtami pomiaru naraz — metry i dni w jednej polityce' },
   // R28: wartość skalara. R21 przepuszcza każdą liczbę, także niemożliwą.
   { rule: 'R28-sla-range',         file: 'sla.contract.mjs', from: "meters: 20,   req: ['FLD-GEO-UNLOCK']", to: "meters: -20,  req: ['FLD-GEO-UNLOCK']", desc: 'ujemny promień geofencingu — warunek, którego monter pod adresem nigdy nie spełni' },
+
+  // ── Etap 0 Field App: aktor systemowy i pytanie warunkowe (2026-09-23) ──
+  // R31 i R32 to dwie NOWE reguły, a nowa reguła bez mutacji jest deklaracją, nie bramką.
+  // Mutacje celują w te warianty, które przechodzą „na oko": aktor systemowy dopisany do ROLES
+  // wygląda jak porządkowanie listy, a warunek widoczności ze złą wartością wygląda jak literówka
+  // — a jedno daje konto z uprawnieniami automatu, drugie pytanie, które nigdy się nie pokaże.
+  { rule: 'R31-system-actor',      file: 'rbac.contract.mjs', from: "export const ROLES = ['admin', 'dyspozytor', 'audytor', 'monter'];", to: "export const ROLES = ['admin', 'dyspozytor', 'audytor', 'monter', 'system'];", desc: 'aktor systemowy dopisany do ROLES — czyli do dziedziny authorized_users.role: powstaje konto, na które da się zalogować' },
+  { rule: 'R31-system-actor',      file: 'rbac.contract.mjs', from: "    capabilities: ['create'],", to: "    capabilities: ['create', 'delete'],", desc: 'automat dostaje prawo kasowania faktur — awaria automatu sprząta po sobie dowody' },
+  { rule: 'R31-system-actor',      file: 'rbac.contract.mjs', from: "    req: ['INV-ADVANCE-AUTO'],", to: "    req: [],", desc: 'nadanie dla automatu bez wymagania — uprawnienie, którego nikt nie zamówił i żaden test nie pilnuje' },
+  { rule: 'R31-system-actor',      file: 'rbac.contract.mjs', from: "    resource: 'invoices',", to: "    resource: 'faktury',", desc: 'nadanie na zasobie spoza RESOURCES' },
+  { rule: 'R32-triage-visibility', file: 'triage.contract.mjs', from: "visibleWhen: { field: 'BUILDING_TYPE', in: ['APARTMENT', 'HOUSE'] }", to: "visibleWhen: { field: 'BUILDING_TYPE', in: ['APARTMENT', 'DOM'] }", desc: 'warunek widoczności z wartością spoza słownika — pytanie o powierzchnię nie pokaże się domom, a oferta wyjdzie z domyślną stawką VAT' },
+  { rule: 'R32-triage-visibility', file: 'triage.contract.mjs', from: "visibleWhen: { field: 'BUILDING_TYPE', in: ['APARTMENT', 'HOUSE'] }", to: "visibleWhen: { field: 'TYP_BUDYNKU', in: ['APARTMENT', 'HOUSE'] }", desc: 'warunek widoczności wskazuje nieistniejące pole odpowiedzi' },
+  { rule: 'R32-triage-visibility', file: 'triage.contract.mjs', from: "{ id: 'UP_TO_300', pl: 'Do 300 m²',      boundary: 'BELOW_OR_EQUAL', status: 'STABLE' },", to: "{ id: 'UP_TO_300', pl: 'Do 300 m²',      boundary: 'BELOW_OR_EQUAL', maxSqm: 300, status: 'STABLE' },", desc: 'próg 300 m² powtórzony w słowniku Triage — druga kopia liczby, która żyje w kontrakcie SLA' },
 ];
 
 let passed = 0;

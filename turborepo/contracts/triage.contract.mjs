@@ -29,6 +29,27 @@ export const ROOM_SIZE_BANDS = [
   { id: 'OVER_35',       pl: 'Powyżej 35 m²', minSqm: 36,   maxSqm: null, status: 'STABLE' },
 ];
 
+/**
+ * Przedział powierzchni CAŁEGO LOKALU — pytanie warunkowe dodane 2026-09-23 (decyzja Michała D17).
+ *
+ * To NIE JEST to samo co ROOM_SIZE_BANDS. Tamte opisują metraż POJEDYNCZEGO POMIESZCZENIA i służą
+ * doborowi mocy jednostki. Te opisują powierzchnię całego lokalu i służą WYŁĄCZNIE ustaleniu stawki
+ * VAT (8% do progu, 23% powyżej — PRICE-VAT-RATE). Dwa różne pytania o metraż w jednym kreatorze
+ * są mylące z natury, dlatego różnica jest wypowiedziana tutaj, a nie zostawiona do odgadnięcia.
+ *
+ * Wybór z DWÓCH KAFELKÓW, nigdy wpisywanie metrażu (D17) — klient zwykle nie zna powierzchni lokalu
+ * na pamięć, a sumowanie powierzchni pomieszczeń dawałoby liczbę zaniżoną i podstawę do zarzutu
+ * o zaniżenie stawki podatku. To zamyka ryzyko R20.
+ *
+ * Granica pochodzi z progu SLA.PROPERTY_AREA_VAT_THRESHOLD (300 m²) i NIE WOLNO jej tu powtórzyć
+ * jako literału — gdyby księgowy zmienił próg, słownik i stawka muszą zmienić się jednym ruchem.
+ * Dlatego pasma opisane są przez `boundary: 'BELOW_OR_EQUAL' | 'ABOVE'`, a nie przez liczby.
+ */
+export const PROPERTY_AREA_BANDS = [
+  { id: 'UP_TO_300', pl: 'Do 300 m²',      boundary: 'BELOW_OR_EQUAL', status: 'STABLE' },
+  { id: 'ABOVE_300', pl: 'Powyżej 300 m²', boundary: 'ABOVE',          status: 'STABLE' },
+];
+
 /** Typ nieruchomości — pytanie 1 kreatora. COMMERCIAL jest wartością dyskwalifikującą, patrz DISQUALIFICATION_RULES. */
 export const BUILDING_TYPES = [
   { id: 'APARTMENT',  pl: 'Mieszkanie',       status: 'STABLE' },
@@ -68,12 +89,33 @@ export const PROPERTY_CONDITIONS = [
  */
 export const ROOM_COUNT_EXPERT_THRESHOLD = 4;
 
-/** Pola odpowiedzi, na które wolno się powołać w regule dyskwalifikacji. `dictionary` wiąże pole ze słownikiem. */
+/**
+ * Pola odpowiedzi, na które wolno się powołać w regule dyskwalifikacji. `dictionary` wiąże pole ze słownikiem.
+ *
+ * WIDOCZNOŚĆ WARUNKOWA (`visibleWhen`) — dodana 2026-09-23 razem z PROPERTY_AREA_BAND (D17).
+ * Do tej pory każde pole kreatora było zadawane zawsze i mechanizm warunku nie był potrzebny.
+ * Nowe pytanie o powierzchnię lokalu ma sens wyłącznie dla nieruchomości mieszkalnych, bo lokal
+ * komercyjny i tak nie dostaje automatycznej wyceny (reguła COMMERCIAL_PROPERTY kieruje go na ekran
+ * eksperta), a stawkę 23% ma niezależnie od metrażu.
+ *
+ * Kształt celowo minimalny: `{ field, in: [...] }` — pole jest widoczne, gdy odpowiedź na wskazane
+ * wcześniejsze pytanie należy do wymienionego zbioru. Brak klucza `visibleWhen` znaczy „zawsze
+ * widoczne", więc cztery istniejące pola nie zmieniają zachowania.
+ *
+ * DLACZEGO TO NIE JEST DISQUALIFICATION_RULES: tamten mechanizm odpowiada na pytanie „czy w ogóle
+ * wyceniamy tę konfigurację" i ma jedyny dozwolony skutek EXPERT_SCREEN. Tutaj chodzi o to, czy
+ * ZADAĆ PYTANIE — kreator idzie dalej tak samo, niezależnie od odpowiedzi. Zlanie tych dwóch
+ * mechanizmów oznaczałoby, że dołożenie pytania warunkowego wymaga dopisania reguły dyskwalifikującej,
+ * czyli że każde nowe pytanie może przypadkiem wykluczyć klienta z wyceny. Z tego samego powodu NIE
+ * rozszerzam DISQUALIFICATION_OPERATORS o operator `IN`: tamta lista opisuje operatory reguł
+ * dyskwalifikujących i żadna reguła ich nie używa w tym znaczeniu.
+ */
 export const TRIAGE_FIELDS = [
   { id: 'BUILDING_TYPE',      kind: 'ENUM',   dictionary: 'BUILDING_TYPES' },
   { id: 'ROOM_COUNT',         kind: 'NUMBER', dictionary: null },
   { id: 'ROOM_SIZE_BAND',     kind: 'ENUM',   dictionary: 'ROOM_SIZE_BANDS' },
   { id: 'PROPERTY_CONDITION', kind: 'ENUM',   dictionary: 'PROPERTY_CONDITIONS' },
+  { id: 'PROPERTY_AREA_BAND', kind: 'ENUM',   dictionary: 'PROPERTY_AREA_BANDS', visibleWhen: { field: 'BUILDING_TYPE', in: ['APARTMENT', 'HOUSE'] }, req: ['B2C-PROPERTY-AREA-BAND', 'PRICE-VAT-RATE'] },
 ];
 
 export const DISQUALIFICATION_OPERATORS = ['EQUALS', 'GTE'];

@@ -1,12 +1,13 @@
 # Pamięć agenta: contract-steward
 
-- [Deklaracja o otwartym oknie to nie stan okna](feedback_window_claim_is_not_window_state.md) — zlecenie może twierdzić „okno otwarte", gdy tokenu nie ma; status PRZED czymkolwiek, przy migracji proś o --minutes 60.
+- [Deklaracja o otwartym oknie to nie stan okna](feedback_window_claim_is_not_window_state.md) — status PRZED czymkolwiek; OTWARTE to za mało, liczy się margines do expiresAt (naprawa też wymaga okna).
 
 - [Migracja musi działać w OBU porządkach](feedback_migration_both_run_orders.md) — replay wg nazw plików vs ręczne uruchomienie poza kolejnością; nazwa nieznana statycznie -> dynamiczny COMMENT.
 - [audit_log_resource_check to PODZBIÓR RESOURCES](project_audit_log_resource_check_subset_of_resources.md) — nowy zasób nie trafia tam sam, żadna bramka nie wykryje; ŻYWO 15 wartości, migracja 20260915120000 URUCHOMIONA 2026-09-15.
 - [Weryfikacja SQL bez Dockera](feedback_sql_verify_via_rolled_back_tx.md) — blok na żywej bazie w transakcji z celowym ROLLBACK przez `node -e`; guard-paths blokuje pliki skryptowe.
 - [FLD-AVAIL-SELF / FLD-AVAIL-RESTORE zamknięte](project_fld_avail_self_restore_verified_awaiting_window.md) — 2026-09-15 DONE, 13/13 AC; AC1 dowiedziony na żywej bazie (6 kolumn, CHECK jednego właściciela), dwa AC pod tagiem rodzeństwa.
 
+- [Etap 0 Field App: rejestracja 46 wymagań i 11 tabel](project_etap0_field_app_registration.md) — 2026-09-23; aktor systemowy ≠ rola, polimorfizm podpisu, FNL-2PHASE-INVOICE odwrócone, próg 300 m² tylko w SLA.
 - [FNL-2PHASE nośniki postawione, status TODO](project_fnl_2phase_booking_mechanics_carriers.md) — 2026-09-16; R7 wariant (b), RBAC świadomie odłożone, brak `@unique` na bookingId jest celowy.
 - [FNL-2PHASE-BOOKING zamknięte](project_fnl_2phase_booking_done.md) — 2026-09-16 DONE (3c1e306); koszyki dowiedzione danymi z produkcji, `do:openPhaseTwoBooking` bez wykonawcy, FNL-2PHASE zostaje 3/5.
 - [FNL-2PHASE-ROLLBACK-RELEASE zamknięte](project_fnl_2phase_rollback_release_done.md) — 2026-09-16 DONE (ea9b390); itest nieuruchomiony, ale predykat indeksu sprawdzony read-only; FNL-ROLLBACK-BOOKING-RELEASE zarejestrowane jako TODO.

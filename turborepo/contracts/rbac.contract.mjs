@@ -41,12 +41,36 @@ export const RESOURCES = [
   // zakłamywałoby macierz — nazwy zasobów są tożsame z nazwami tabel (ADR-002), a audyt
   // czytałby „admin edytuje słownik koszyków" tam, gdzie edytuje konfigurację harmonogramu.
   'system_config',
+  // ── ETAP 0 FIELD APP / PODPISY / WYCENA (2026-09-23, okno KK-IMPL-2026Q4) ──
+  // Odpowiadają tabelom tworzonym migracjami 20260925090000-20260925092000.
+  //
+  // `quotes`, `documents` i `invoices` są na tej liście OD 2026-08-18 (ADR-012) i były dotąd
+  // zasobami BEZ TABEL — teraz dostają nośniki. Nie dopisuję ich ponownie; weryfikacja ich
+  // uprawnień wobec nowego schematu jest niżej, przy wierszach MATRIX.
+  //
+  // CZEGO TU ŚWIADOMIE NIE MA: quote_variants, quote_rooms i quote_items. To są podtabele
+  // oferty, a nie osobne byty uprawnieniowe — autoryzacja dzieje się na `quotes` (agregat),
+  // bo „prawo do oferty" i „prawo do pozycji tej oferty" to w tym modelu jedno i to samo
+  // uprawnienie. Dopisanie ich dałoby trzy wiersze macierzy, które musiałyby być zawsze
+  // zgodne z wierszem `quotes`, czyli trzy okazje do rozjazdu bez ani jednej nowej decyzji.
+  // Gdyby kiedykolwiek pojawiła się potrzeba innego prawa do pozycji niż do oferty (np. ekipa
+  // widzi pozycje, ale nie widzi cen) — to jest moment na osobny zasób, nie wcześniej.
+  'price_list_items', 'installation_contracts', 'signatures', 'installation_photos',
 ];
 
 /** capability: read | create | update | delete | assign */
 export const MATRIX = [
   { resource: 'clients',            read: ['admin', 'dyspozytor'],                     create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor'], delete: ['admin'] },
-  { resource: 'leads',              read: ['admin', 'dyspozytor', 'audytor:own'],      create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor'], delete: ['admin'], assign: ['admin'] },
+  // `create` rozszerzone o rolę `audytor` 2026-09-23 (decyzja Michała D14 z 2026-09-21,
+  // okno KK-IMPL-2026Q4): audytor zakłada leada w terenie dla klienta, który nie przeszedł
+  // przez Triage (FLD-AUDIT-LEAD-CREATE). To jest DRUGIE wejście do lejka i zarazem jedyny
+  // powód tej zmiany — dlatego rozszerza się WYŁĄCZNIE `create`. `update` zostaje
+  // ['admin', 'dyspozytor'], bo prawo założenia leada nie może nieść prawa edycji cudzych
+  // leadów, a `read` zostaje z wariantem :own, bo audytor ma widzieć swoje, nie wszystkie.
+  // Bez wariantu :own przy `create`: wiersz w chwili tworzenia nie ma jeszcze właściciela,
+  // więc :own nie miałoby czego sprawdzić — przypisanie audytora do leada jest osobnym
+  // uprawnieniem (`assign`) i zostaje przy adminie.
+  { resource: 'leads',              read: ['admin', 'dyspozytor', 'audytor:own'],      create: ['admin', 'dyspozytor', 'audytor'], update: ['admin', 'dyspozytor'], delete: ['admin'], assign: ['admin'] },
   { resource: 'quotes',             read: ['admin', 'dyspozytor', 'audytor:own'],      create: ['audytor', 'admin'],    update: ['audytor:own', 'admin'], delete: ['admin'] },
   { resource: 'installations',      read: ['admin', 'dyspozytor', 'monter:own'],       create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor', 'monter:own'], delete: ['admin'] },
   { resource: 'services',           read: ['admin', 'dyspozytor', 'monter:own'],       create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor', 'monter:own'], delete: ['admin'] },
@@ -153,6 +177,102 @@ export const MATRIX = [
   // wywróciłoby silnik, który jest fail-closed (brak wartości => error, nie fallback do 0).
   // Rozszerzenie o create/delete to osobna decyzja i osobne okno, nie domyślne dopełnienie wzorca.
   { resource: 'system_config',      read: ['admin'],                                   create: [],                      update: ['admin'],               delete: [] },
+  // ── ETAP 0 FIELD APP / PODPISY / WYCENA: wiersze dodane 2026-09-23 ──
+  //
+  // price_list_items — cennik kosztorysowy (PRICE-LIST-SCHEMA, PRICE-LIST-ADMIN).
+  // `read` dla audytora bez wariantu :own: cennik nie jest „czyjś", a audytor musi widzieć
+  // wszystkie pozycje, żeby złożyć z nich wycenę. Monter cennika nie potrzebuje — nie wycenia.
+  // `create`/`update` wyłącznie admin (D15: cennik prowadzi administrator, nie programista
+  // i nie audytor w terenie; gdyby audytor mógł zmieniać ceny, „wycena z cennika" zamieniłaby
+  // się z powrotem we wpisywanie kwot z palca).
+  // `delete: []` — NIKT, łącznie z adminem, i to jest decyzja, nie przeoczenie: usunięcie
+  // pozycji rozspójnia oferty historyczne, które się na nią powołują (FLD-QUOTE-PRICE-SNAPSHOT
+  // wymaga, żeby oferta sprzed miesiąca dała się odtworzyć). Wycofanie pozycji z użytku to
+  // przełączenie flagi aktywności, nie skasowanie wiersza — ten sam układ co przy
+  // availability_rules, gdzie „usuń" też zastąpiono przełącznikiem. R13 dopuszcza pustą listę.
+  { resource: 'price_list_items',   read: ['admin', 'dyspozytor', 'audytor'],          create: ['admin'],               update: ['admin'],               delete: [] },
+  //
+  // installation_contracts — umowa montażu (FLD-CONTRACT-GENERATE).
+  // `create` dla audytora: umowę generuje się z oferty na miejscu u klienta.
+  // `update` z wariantem :own dla audytora — dotyczy WYŁĄCZNIE szkicu przed wysłaniem.
+  // Niezmienności umowy PODPISANEJ nie pilnuje ten wiersz (macierz nie rozróżnia stanów wiersza),
+  // tylko wyzwalacz w bazie — dokładnie tak samo, jak przy legal_document_versions niezmienności
+  // treści opublikowanej pilnuje legal_document_versions_freeze_published_trg, a nie macierz.
+  { resource: 'installation_contracts', read: ['admin', 'dyspozytor', 'audytor:own'],  create: ['admin', 'dyspozytor', 'audytor'], update: ['admin', 'audytor:own'], delete: ['admin'] },
+  //
+  // signatures — podpisy klienta wraz ze śladem dowodowym (FLD-SIGN-AUDIT-TRAIL).
+  // APPEND-ONLY, profil audit_log i employee_consents: `update: []` i `delete: []` — NIKT,
+  // łącznie z administratorem. Powód jest ten sam i wart powtórzenia: podpis, który
+  // administrator może poprawić, nie jest dowodem niczego, a poprawiony ślad to dowód wobec
+  // sądu wytworzony po fakcie. Unieważnienie podpisu = nowy wiersz opisujący unieważnienie,
+  // nigdy edycja starego. W bazie odpowiada temu wyzwalacz signatures_append_only_trg.
+  // UWAGA (ta sama klasa wyjątku co przy rezerwacji terminu przez klienta w ADR-012):
+  // KLIENT podpisujący zdalnie NIE MA konta w authorized_users i nie jest rolą w tej macierzy.
+  // Ta ścieżka jest osobnym, wąskim endpointem chronionym jednorazowym tokenem o wysokiej
+  // entropii (FLD-SIGN-REMOTE) i własnym limitem prób (FLD-SIGN-ABUSE-GUARD), a nie wpisem tutaj.
+  // `create` dla ról terenowych bez wariantu :own — właściciela wiersza wyznacza dopiero
+  // wskazanie dokumentu, którego macierz nie widzi; ograniczenie „tylko do swojego zlecenia"
+  // wyraża funkcja domenowa, tak samo jak przy employee_consents.
+  { resource: 'signatures',         read: ['admin', 'dyspozytor', 'audytor:own', 'monter:own'], create: ['audytor', 'monter'], update: [],            delete: [] },
+  //
+  // installation_photos — dokumentacja zdjęciowa montażu i audytu (FLD-PHOTO-SET, FLD-PHOTO-STORAGE).
+  // `create` dla montera (zdjęcia montażowe) i audytora (zdjęcia z audytu, FLD-AUDIT-FORM).
+  // `update: []` — zdjęcie jest dowodem wykonania pracy i podstawą wypłaty dla ekipy
+  // (KPI OPS-06), więc podmiana pliku pod istniejącym wierszem nie może być operacją dostępną
+  // komukolwiek; pomyłka naprawia się nowym zdjęciem, nie nadpisaniem starego.
+  // `delete` wyłącznie admin — zgodnie z globalną zasadą „usuwa wyłącznie admin".
+  { resource: 'installation_photos', read: ['admin', 'dyspozytor', 'audytor:own', 'monter:own'], create: ['audytor', 'monter'], update: [],           delete: ['admin'] },
+];
+
+/**
+ * AKTOR SYSTEMOWY — zapisy wykonywane bez udziału człowieka (rozstrzygnięcie Michała 2026-09-23).
+ *
+ * Problem: faktura zaliczkowa ma się wystawiać AUTOMATYCZNIE po zaksięgowaniu wpłaty (D9 krok 2),
+ * czyli w wywołaniu zwrotnym dostawcy płatności, gdzie nie ma zalogowanego człowieka. Michał
+ * rozstrzygnął, że taki zapis ma przechodzić przez TĘ SAMĄ bramkę `can()` co zapis ręczny,
+ * a nie obok niej — bo ścieżka omijająca autoryzację jest ścieżką, której nikt nie audytuje.
+ *
+ * DLACZEGO TO NIE JEST PIĄTA WARTOŚĆ W `ROLES` (decyzja projektowa contract-steward, 2026-09-23):
+ * `ROLES` nie jest listą „bytów, które mogą coś zrobić" — jest DZIEDZINĄ KOLUMNY
+ * `authorized_users.role`, chronioną w bazie ograniczeniem CHECK (migracja
+ * 20260907173000_security_authorized_user_role_no_default.sql) i dlatego jako jedyne miejsce
+ * w kontrakcie trzyma wartości po polsku (ADR-002, wyjątek świadomy). Dopisanie tam `SYSTEM`
+ * oznaczałoby, że wartość `SYSTEM` wolno zapisać w kolumnie roli KONTA — czyli że da się
+ * założyć użytkownika z uprawnieniami automatu i zalogować się jako on. To jest podniesienie
+ * uprawnień wprowadzone tylnymi drzwiami przy okazji faktury i dlatego odrzucone.
+ * Odrzucony został też wariant odwrotny (wyjątek systemowy poza `can()`) — wprost przez Michała.
+ *
+ * Wybrany wariant: WĄSKA, ODDZIELNA LISTA NADAŃ. Aktor systemowy nie jest rolą, nie ma konta
+ * i nie ma wiersza w MATRIX; ma wyłącznie wymienione niżej pary (zasób, uprawnienie).
+ * Precedens dla samego pojęcia istnieje w kontrakcie od dawna: `ACTORS` w
+ * contracts/funnel.contract.mjs zawiera `SYSTEM` obok CLIENT/DISPATCHER/ADMIN/AUDITOR/INSTALLER,
+ * bo przejścia wyzwalane cronem i webhookiem też nie mają człowieka. Tu jest to samo pojęcie,
+ * przeniesione na warstwę uprawnień.
+ *
+ * JAK USTALANA JEST TOŻSAMOŚĆ AKTORA (to jest najważniejsza część i dlatego jest w kontrakcie,
+ * nie w kodzie): aktor systemowy NIGDY nie pochodzi z treści żądania. Nie z nagłówka, nie
+ * z parametru, nie z pola w JSON-ie — każde z tych źródeł kontroluje ten, kto wysyła żądanie,
+ * więc każde z nich zamieniłoby tę listę w publiczny cennik uprawnień do wzięcia. Ustala go
+ * WYŁĄCZNIE serwer, po pomyślnej weryfikacji podpisu kryptograficznego dostawcy płatności
+ * (sekret po stronie serwera, liczony z surowego ciała żądania). Kolejność jest wiążąca:
+ * najpierw weryfikacja podpisu, dopiero potem nadanie aktora i wywołanie `can()`. Żądanie
+ * z niepoprawnym podpisem nie dociera do `can()` w ogóle.
+ *
+ * Zakres nadań jest celowo minimalny: `create` na `invoices` i nic więcej. Brak `read` — automat
+ * nie czyta cudzych danych; brak `update` i `delete` — automat nie poprawia ani nie kasuje
+ * dokumentów księgowych. Rozszerzenie tej listy to zmiana kontraktu, okno i osobna decyzja.
+ */
+export const SYSTEM_ACTOR = 'system';
+
+export const SYSTEM_GRANTS = [
+  {
+    resource: 'invoices',
+    capabilities: ['create'],
+    trigger: 'payment_provider_webhook',
+    rationale: 'Faktura zaliczkowa wystawiana automatycznie po zaksięgowaniu wpłaty (D9 krok 2). Idempotencja po identyfikatorze zdarzenia płatności jest warunkiem koniecznym — ponowiony webhook nie może wystawić drugiego dokumentu (ryzyko R15).',
+    req: ['INV-ADVANCE-AUTO'],
+    status: 'STABLE',
+  },
 ];
 
 /** Polityki kluczy obcych przy usuwaniu — database_model.md §4.2 */

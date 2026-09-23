@@ -134,6 +134,7 @@ Każdy próg ma nazwę i dokładnie jeden kształt pomiaru (R21). Literał liczb
 | `INSTALL_DAY_ALERT` | hourOfDay | 16 | Godzina, po której niezakończona dzisiejsza instalacja podświetla się na pomarańczowo | CRM-INST-AC2 |
 | `GEOFENCE_UNLOCK_RADIUS` | meters | 20 | Promień w metrach od punktu docelowego, w którym Field App odblokowuje rozpoczęcie i zakończenie zlecenia | FLD-GEO-UNLOCK |
 | `GEOFENCE_EN_ROUTE_RADIUS` | meters | 3000 | Promień w metrach (3 km), którego przecięcie w oknie dnia wizyty wyzwala klientowi SMS „w drodze" — N3/N7/N13/N17 | FLD-GEO-EN-ROUTE |
+| `PROPERTY_AREA_VAT_THRESHOLD` | sqm | 300 | Powierzchnia lokalu mieszkalnego w m², do której (włącznie) obowiązuje obniżona stawka VAT na montaż; powyżej — stawka podstawowa | PRICE-VAT-RATE, B2C-PROPERTY-AREA-BAND |
 
 ## Elementy oczekujące na decyzję człowieka
 
