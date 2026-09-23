@@ -7,7 +7,7 @@ import { getCurrentActorRole } from "../../../utils/supabase/server"
 export const dynamic = "force-dynamic"
 
 export default async function CustomersPage(props: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string }>;
 }) {
   let actorRole: Awaited<ReturnType<typeof getCurrentActorRole>> = null;
   try {
@@ -23,8 +23,9 @@ export default async function CustomersPage(props: {
 
   const searchParams = await props.searchParams;
   const page = searchParams.page ? parseInt(searchParams.page, 10) : 1;
+  const query = searchParams.q || "";
 
-  const { customers, totalPages } = await getCustomers({ page });
+  const { customers, totalPages } = await getCustomers({ page, query });
 
   return (
     <CustomersClient
@@ -32,6 +33,7 @@ export default async function CustomersPage(props: {
       actorRole={actorRole}
       totalPages={totalPages}
       currentPage={page}
+      initialQuery={query}
     />
   );
 }
