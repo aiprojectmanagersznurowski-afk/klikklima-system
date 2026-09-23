@@ -43,6 +43,22 @@ export const SLA_POLICIES = [
   // Specyfikacja rekomendowała nazwy z sufiksem (_M, _KM); sufiksy odrzucone razem z drugą jednostką.
   { id: 'GEOFENCE_UNLOCK_RADIUS',   scope: 'Promień w metrach od punktu docelowego, w którym Field App odblokowuje rozpoczęcie i zakończenie zlecenia', meters: 20,   req: ['FLD-GEO-UNLOCK'] },
   { id: 'GEOFENCE_EN_ROUTE_RADIUS', scope: 'Promień w metrach (3 km), którego przecięcie w oknie dnia wizyty wyzwala klientowi SMS „w drodze" — N3/N7/N13/N17', meters: 3000, req: ['FLD-GEO-EN-ROUTE'] },
+
+  // ── Próg podatkowy wyceny (D16/D17, rozstrzygnięte 2026-09-23) ──
+  // Powierzchnia lokalu rozstrzyga o stawce VAT: mieszkalny do progu — 8%, powyżej progu — 23%,
+  // usługowy — zawsze 23%, niezależnie od metrażu. Próg dotyczy MIESZKAŃ I DOMÓW JEDNAKOWO (R21).
+  //
+  // Dlaczego to mieszka w kontrakcie SLA razem z progami czasowymi i przestrzennymi: to jest próg
+  // liczbowy, od którego zależy kwota na fakturze. Literał 300 rozsiany po kodzie oznaczałby,
+  // że korekta po rozmowie z księgowym wymaga znalezienia wszystkich miejsc, a jedno przeoczone
+  // daje fakturę z inną stawką niż oferta. Nazwa bez sufiksu jednostki (nie `..._M2`) — jednostkę
+  // niesie nazwa pola `sqm`, dokładnie tak samo jak `days`, `meters` i `hourOfDay` wyżej;
+  // sufiksy w identyfikatorach zostały odrzucone razem z drugą jednostką przy progach przestrzennych.
+  //
+  // Konsumenci: PRICE-VAT-RATE (stawka na ofercie i fakturze), B2C-PROPERTY-AREA-BAND (granica
+  // dwóch kafelków w Triage). Słownik PROPERTY_AREA_BANDS w contracts/triage.contract.mjs celowo
+  // NIE powtarza tej liczby — opisuje pasma przez `boundary`, żeby zmiana progu była jedną zmianą.
+  { id: 'PROPERTY_AREA_VAT_THRESHOLD', scope: 'Powierzchnia lokalu mieszkalnego w m², do której (włącznie) obowiązuje obniżona stawka VAT na montaż; powyżej — stawka podstawowa', sqm: 300, req: ['PRICE-VAT-RATE', 'B2C-PROPERTY-AREA-BAND'] },
 ];
 
 /**

@@ -18,9 +18,10 @@ const load = (f) => import(new URL(f, DIR).href);
 const { STATES, TRANSITIONS, GUARDS, ACTORS, TRIGGER_TYPES, START_STATE } = await load('funnel.contract.mjs');
 const { NOTIFICATIONS, CHANNELS, RECIPIENTS, DOMAINS, QUEUE_POLICY } = await load('notifications.contract.mjs');
 const { SLA_POLICIES, INCIDENT_PRIORITIES } = await load('sla.contract.mjs');
-const { ROLES, MATRIX, RESOURCES, DELETE_POLICIES, AUDIT_REQUIREMENTS } = await load('rbac.contract.mjs');
+const { ROLES, MATRIX, RESOURCES, DELETE_POLICIES, AUDIT_REQUIREMENTS,
+        SYSTEM_ACTOR, SYSTEM_GRANTS } = await load('rbac.contract.mjs');
 const { REQUIREMENTS } = await load('requirements.contract.mjs');
-const { ROOM_SIZE_BANDS, BUILDING_TYPES, PROPERTY_CONDITIONS, TRIAGE_FIELDS,
+const { ROOM_SIZE_BANDS, BUILDING_TYPES, PROPERTY_CONDITIONS, TRIAGE_FIELDS, PROPERTY_AREA_BANDS,
         DISQUALIFICATION_RULES, DISQUALIFICATION_OPERATORS, DISQUALIFICATION_OUTCOMES,
         ROOM_COUNT_EXPERT_THRESHOLD } = await load('triage.contract.mjs');
 
@@ -267,7 +268,10 @@ for (const n of NOTIFICATIONS) {
 // w kodzie, czyli dokładnie to, przed czym ADR-011 i reguła magic-sla-days mają chronić.
 // Każde rozszerzenie tej listy musi być odzwierciedlone w tools/kk-codegen.mjs (lista skalarów przy sla.ts),
 // inaczej próg przechodzi walidację, a w wygenerowanym pliku zostaje sam opis bez liczby.
-const MEASURES = ['bands', 'days', 'count', 'hourOfDay', 'meters'];
+// 'sqm' — powierzchnia w metrach kwadratowych, dodane 2026-09-23 (D16/D17) dla progu
+// PROPERTY_AREA_VAT_THRESHOLD. Jedyna jednostka powierzchni w kontrakcie, z tego samego powodu,
+// dla którego 'meters' jest jedyną jednostką odległości: druga jednostka wymusza przeliczanie w kodzie.
+const MEASURES = ['bands', 'days', 'count', 'hourOfDay', 'meters', 'sqm'];
 for (const p of SLA_POLICIES) {
   const declared = MEASURES.filter((k) => p[k] !== undefined);
   if (declared.length !== 1) {
@@ -410,6 +414,7 @@ const SCALAR_RANGES = {
   count:     { min: 1, max: null,  unit: 'sztuk' },
   hourOfDay: { min: 0, max: 23,    unit: 'godzina doby' },
   meters:    { min: 1, max: null,  unit: 'metrów' },
+  sqm:       { min: 1, max: null,  unit: 'metrów kwadratowych' },
 };
 // Fail-safe: skalar dopuszczony w MEASURES, ale bez zakresu, przechodziłby R28 niezauważony.
 for (const key of MEASURES) {
@@ -428,6 +433,98 @@ for (const p of SLA_POLICIES) {
     }
     if (v < range.min || (range.max !== null && v > range.max)) {
       err('R28-sla-range', `${p.id}: ${key} = ${v} poza dopuszczalnym zakresem ${span} (${range.unit}). Próg spoza zakresu to warunek, którego w terenie nic nie spełni.`);
+    }
+  }
+}
+
+// R31 — aktor systemowy nie może być rolą i nie może dostać szerokich uprawnień (2026-09-23).
+// Zapis automatyczny (faktura zaliczkowa po wpłacie, INV-ADVANCE-AUTO) przechodzi przez can()
+// jako AKTOR SYSTEMOWY, a nie przez wyjątek obok autoryzacji — rozstrzygnięcie Michała.
+// Ta reguła pilnuje trzech rzeczy, z których każda jest osobną drogą do podniesienia uprawnień:
+//   1. `SYSTEM_ACTOR` NIE JEST wartością w ROLES. ROLES to dziedzina kolumny authorized_users.role
+//      (CHECK w bazie, migracja 20260907173000). Aktor systemowy na tej liście znaczyłby, że da się
+//      ZAŁOŻYĆ KONTO z uprawnieniami automatu i się na nie zalogować.
+//   2. Nadanie nie obejmuje 'delete' ani 'update' — automat wystawia dokumenty, nie poprawia
+//      i nie kasuje. Automat z prawem kasowania to automat, który po awarii sprząta dowody.
+//   3. Każde nadanie wskazuje zasób z RESOURCES i wymaganie z rejestru. Uprawnienie bez wymagania
+//      jest uprawnieniem, którego nikt nie zamówił i którego żaden test nie pilnuje.
+if (SYSTEM_ACTOR !== undefined || (SYSTEM_GRANTS && SYSTEM_GRANTS.length)) {
+  if (!SYSTEM_ACTOR) {
+    err('R31-system-actor', 'SYSTEM_GRANTS istnieje, ale SYSTEM_ACTOR jest pusty — nadania bez nazwanego aktora nie da się sprawdzić w can().');
+  } else if (ROLES.includes(SYSTEM_ACTOR)) {
+    err('R31-system-actor', `SYSTEM_ACTOR "${SYSTEM_ACTOR}" występuje w ROLES. ROLES jest dziedziną kolumny authorized_users.role — aktor systemowy na tej liście oznacza konto, na które da się zalogować.`);
+  }
+  const FORBIDDEN_FOR_SYSTEM = ['delete', 'update'];
+  const reqIds = new Set(REQUIREMENTS.map((r) => r.id));
+  for (const g of SYSTEM_GRANTS || []) {
+    if (!RESOURCES.includes(g.resource)) {
+      err('R31-system-actor', `SYSTEM_GRANTS: nieznany zasób "${g.resource}".`);
+    }
+    if (!MATRIX.some((m) => m.resource === g.resource)) {
+      err('R31-system-actor', `SYSTEM_GRANTS ${g.resource}: zasób bez wiersza w MATRIX — nadanie dla automatu na zasobie, którego macierz nie opisuje.`);
+    }
+    if (!g.capabilities?.length) {
+      err('R31-system-actor', `SYSTEM_GRANTS ${g.resource}: nadanie bez uprawnień.`);
+    }
+    for (const cap of g.capabilities || []) {
+      if (!['read', 'create', 'update', 'delete', 'assign'].includes(cap)) err('R31-system-actor', `SYSTEM_GRANTS ${g.resource}: nieznane uprawnienie "${cap}".`);
+      if (FORBIDDEN_FOR_SYSTEM.includes(cap)) {
+        err('R31-system-actor', `SYSTEM_GRANTS ${g.resource}.${cap}: automat nie dostaje prawa "${cap}". Zapis bez udziału człowieka wolno TWORZYĆ, nie poprawiać i nie kasować — inaczej awaria automatu sprząta po sobie dowody.`);
+      }
+    }
+    if (!g.trigger) err('R31-system-actor', `SYSTEM_GRANTS ${g.resource}: brak wskazania wyzwalacza — nie wiadomo, która ścieżka wejścia nadaje tożsamość aktora.`);
+    if (!g.req?.length) {
+      err('R31-system-actor', `SYSTEM_GRANTS ${g.resource}: nadanie bez wymagania. Uprawnienie, którego nikt nie zamówił, nie ma jak zostać przetestowane.`);
+    }
+    for (const rid of g.req || []) {
+      if (!reqIds.has(rid)) err('R31-system-actor', `SYSTEM_GRANTS ${g.resource}: nieznane wymaganie "${rid}".`);
+    }
+  }
+}
+
+// R32 — pytanie warunkowe kreatora musi wskazywać istniejące pole i istniejące odpowiedzi (2026-09-23).
+// `visibleWhen` powstało dla PROPERTY_AREA_BAND (D17): pytanie o powierzchnię lokalu zadajemy wyłącznie
+// dla nieruchomości mieszkalnych. Warunek wskazujący nieistniejące pole albo wartość spoza słownika
+// daje pytanie, które NIGDY się nie pokaże — a taka awaria jest cicha: kreator działa, tylko klient
+// nie dostaje pytania, więc oferta wychodzi z domyślną stawką VAT. Dlatego to błąd, nie ostrzeżenie.
+for (const f of TRIAGE_FIELDS) {
+  const dictName = f.dictionary;
+  if (dictName && !TRIAGE_DICTS[dictName] && dictName !== 'PROPERTY_AREA_BANDS') {
+    err('R32-triage-visibility', `TRIAGE_FIELDS ${f.id}: nieznany słownik "${dictName}".`);
+  }
+  if (!f.visibleWhen) continue;
+  const cond = f.visibleWhen;
+  const target = TRIAGE_FIELDS.find((x) => x.id === cond.field);
+  if (!target) {
+    err('R32-triage-visibility', `TRIAGE_FIELDS ${f.id}: warunek widoczności wskazuje pole "${cond.field}", którego nie ma w TRIAGE_FIELDS.`);
+    continue;
+  }
+  if (!Array.isArray(cond.in) || !cond.in.length) {
+    err('R32-triage-visibility', `TRIAGE_FIELDS ${f.id}: warunek widoczności bez listy wartości — pole byłoby niewidoczne zawsze.`);
+    continue;
+  }
+  const dict = TRIAGE_DICTS[target.dictionary] || (target.dictionary === 'PROPERTY_AREA_BANDS' ? PROPERTY_AREA_BANDS : null);
+  if (!dict) {
+    err('R32-triage-visibility', `TRIAGE_FIELDS ${f.id}: warunek opiera się na polu "${target.id}", które nie ma słownika — nie da się sprawdzić, czy wartości warunku istnieją.`);
+    continue;
+  }
+  for (const v of cond.in) {
+    if (!dict.some((d) => d.id === v)) {
+      err('R32-triage-visibility', `TRIAGE_FIELDS ${f.id}: warunek widoczności wymienia wartość "${v}", której nie ma w słowniku ${target.dictionary}. Pytanie nigdy by się nie pokazało, a kreator nie zgłosiłby błędu.`);
+    }
+  }
+}
+// Pasma powierzchni lokalu: dwa rozłączne pasma wokół progu z kontraktu SLA. Liczba 300 NIE MOŻE
+// występować w słowniku (próg mieszka w SLA.PROPERTY_AREA_VAT_THRESHOLD) — stąd sprawdzenie kształtu,
+// a nie wartości.
+if (PROPERTY_AREA_BANDS) {
+  const boundaries = PROPERTY_AREA_BANDS.map((b) => b.boundary);
+  if (!boundaries.includes('BELOW_OR_EQUAL') || !boundaries.includes('ABOVE')) {
+    err('R32-triage-visibility', 'PROPERTY_AREA_BANDS: pasma muszą pokrywać obie strony progu (BELOW_OR_EQUAL i ABOVE) — inaczej część lokali nie ma reprezentacji i nie da się im przypisać stawki VAT.');
+  }
+  for (const b of PROPERTY_AREA_BANDS) {
+    if (b.minSqm !== undefined || b.maxSqm !== undefined) {
+      err('R32-triage-visibility', `PROPERTY_AREA_BANDS ${b.id}: pasmo powtarza próg liczbowo. Granica należy do SLA.PROPERTY_AREA_VAT_THRESHOLD — dwa zapisy tej samej liczby rozjadą się przy pierwszej korekcie stawki.`);
     }
   }
 }

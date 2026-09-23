@@ -21,9 +21,9 @@ const CHECK = process.argv.includes('--check');
 const { STATES, TRANSITIONS, GUARDS, START_STATE, LOST_REASONS } = await import(join(ROOT, config.contractsDir, 'funnel.contract.mjs'));
 const { NOTIFICATIONS, QUEUE_POLICY } = await import(join(ROOT, config.contractsDir, 'notifications.contract.mjs'));
 const { SLA_POLICIES } = await import(join(ROOT, config.contractsDir, 'sla.contract.mjs'));
-const { ROLES, MATRIX, DELETE_POLICIES, AUDIT_REQUIREMENTS } = await import(join(ROOT, config.contractsDir, 'rbac.contract.mjs'));
+const { ROLES, MATRIX, DELETE_POLICIES, AUDIT_REQUIREMENTS, SYSTEM_ACTOR, SYSTEM_GRANTS } = await import(join(ROOT, config.contractsDir, 'rbac.contract.mjs'));
 const { REQUIREMENTS } = await import(join(ROOT, config.contractsDir, 'requirements.contract.mjs'));
-const { ROOM_SIZE_BANDS, BUILDING_TYPES, PROPERTY_CONDITIONS, TRIAGE_FIELDS,
+const { ROOM_SIZE_BANDS, BUILDING_TYPES, PROPERTY_CONDITIONS, TRIAGE_FIELDS, PROPERTY_AREA_BANDS,
         DISQUALIFICATION_RULES, ROOM_COUNT_EXPERT_THRESHOLD } = await import(join(ROOT, config.contractsDir, 'triage.contract.mjs'));
 
 const BANNER = `// ⚠️  PLIK GENEROWANY — NIE EDYTUJ RĘCZNIE.
@@ -161,7 +161,7 @@ export function byId(id: NotificationId): NotificationDef {
 // Lista musi odpowiadać MEASURES w tools/kk-validate.mjs (pomniejszonej o 'bands', które nie jest skalarem).
 // Kształt nieobecny tutaj nie powoduje błędu: JSON.stringify wycina undefined, więc próg trafiłby
 // do sla.ts jako sam scope — liczba znika po cichu, kontrakt i dokumentacja zostają zielone.
-const MEASURE_SCALARS = ['days', 'count', 'hourOfDay', 'meters'];
+const MEASURE_SCALARS = ['days', 'count', 'hourOfDay', 'meters', 'sqm'];
 
 files[`${config.generatedTsDir}/sla.ts`] = `${BANNER}
 export const SLA = {
@@ -213,6 +213,30 @@ export function can(role: Role, resource: string, capability: Capability): 'no' 
   if (entry.includes(role)) return 'yes';
   if (entry.includes(\`\${role}:own\`)) return 'own';
   return 'no';
+}
+
+/**
+ * AKTOR SYSTEMOWY — zapis bez udziału człowieka (dziś: faktura zaliczkowa po wpłacie, INV-ADVANCE-AUTO).
+ *
+ * Celowo OSOBNA funkcja i osobny typ, a nie kolejna wartość w \`Role\`: \`Role\` jest dziedziną
+ * kolumny authorized_users.role, więc aktor systemowy na tej liście oznaczałby konto, na które
+ * da się zalogować. Tutaj nie ma konta — jest wąska lista par (zasób, uprawnienie).
+ *
+ * WARUNEK UŻYCIA, którego ta funkcja NIE JEST W STANIE sprawdzić za wywołującego: tożsamość aktora
+ * systemowego wolno przyjąć WYŁĄCZNIE po pomyślnej weryfikacji podpisu dostawcy (sekret serwerowy,
+ * liczony z surowego ciała żądania). Nigdy na podstawie nagłówka, parametru ani pola w JSON-ie —
+ * każde z nich kontroluje ten, kto wysyła żądanie.
+ */
+export const SYSTEM_ACTOR = ${q(SYSTEM_ACTOR)};
+
+export const SYSTEM_GRANTS = ${JSON.stringify(SYSTEM_GRANTS, null, 2)} as const;
+
+export type SystemTrigger = (typeof SYSTEM_GRANTS)[number]['trigger'];
+
+export function canSystem(resource: string, capability: Capability, trigger: SystemTrigger): boolean {
+  return SYSTEM_GRANTS.some(
+    (g) => g.resource === resource && g.trigger === trigger && (g.capabilities as readonly string[]).includes(capability),
+  );
 }
 `;
 
@@ -281,11 +305,43 @@ export function suggestsTwoPhase(condition: PropertyConditionId): boolean {
 /** Próg liczby pomieszczeń kierujący na ekran Eksperta. Zakaz literału w komponencie. */
 export const ROOM_COUNT_EXPERT_THRESHOLD = ${ROOM_COUNT_EXPERT_THRESHOLD};
 
+export const PROPERTY_AREA_BAND_IDS = [${PROPERTY_AREA_BANDS.map((b) => q(b.id)).join(', ')}] as const;
+export type PropertyAreaBandId = (typeof PROPERTY_AREA_BAND_IDS)[number];
+export const PROPERTY_AREA_BAND_PL: Record<PropertyAreaBandId, string> = {
+${PROPERTY_AREA_BANDS.map((b) => `  ${b.id}: ${q(b.pl)},`).join('\n')}
+};
+
+/**
+ * Pasmo powierzchni CAŁEGO LOKALU — wyłącznie do ustalenia stawki VAT (PRICE-VAT-RATE).
+ * To NIE jest metraż pomieszczenia (ROOM_SIZE_BANDS) i nie służy doborowi mocy jednostki.
+ * Granica NIE JEST tu powtórzona jako liczba — mieszka w SLA.PROPERTY_AREA_VAT_THRESHOLD.
+ */
+export const PROPERTY_AREA_BAND_BOUNDARY: Record<PropertyAreaBandId, 'BELOW_OR_EQUAL' | 'ABOVE'> = {
+${PROPERTY_AREA_BANDS.map((b) => `  ${b.id}: ${q(b.boundary)},`).join('\n')}
+};
+
 export const TRIAGE_FIELD_IDS = [${TRIAGE_FIELDS.map((f) => q(f.id)).join(', ')}] as const;
 export type TriageFieldId = (typeof TRIAGE_FIELD_IDS)[number];
 
 /** Odpowiedzi kreatora w postaci, w jakiej trafiają do leads.triage_answers. */
 export type TriageAnswers = Partial<Record<TriageFieldId, string | number>>;
+
+/**
+ * Warunki widoczności pytań kreatora (D17). Pole nieobecne w tej mapie jest widoczne ZAWSZE.
+ * Kreator MUSI pytać o to stąd — warunek przepisany do komponentu przestaje być kontraktem
+ * i rozjeżdża się przy pierwszej zmianie słownika typów nieruchomości.
+ */
+export const TRIAGE_FIELD_VISIBILITY: Partial<Record<TriageFieldId, { field: TriageFieldId; in: readonly string[] }>> = {
+${TRIAGE_FIELDS.filter((f) => f.visibleWhen).map((f) => `  ${f.id}: { field: ${q(f.visibleWhen.field)}, in: [${f.visibleWhen.in.map(q).join(', ')}] as const },`).join('\n')}
+};
+
+/** Czy pytanie ma być zadane przy dotychczasowych odpowiedziach. Nie licz tego warunkiem w komponencie. */
+export function isTriageFieldVisible(field: TriageFieldId, answers: TriageAnswers): boolean {
+  const cond = TRIAGE_FIELD_VISIBILITY[field];
+  if (!cond) return true;
+  const v = answers[cond.field];
+  return typeof v === 'string' && cond.in.includes(v);
+}
 
 export const DISQUALIFICATION_RULES = [
 ${DISQUALIFICATION_RULES.map((r) => `  { id: ${q(r.id)}, field: ${q(r.field)}, operator: ${q(r.operator)}, value: ${typeof r.value === 'number' ? r.value : q(r.value)}, outcome: ${q(r.outcome)}, pl: ${q(r.pl)} },`).join('\n')}

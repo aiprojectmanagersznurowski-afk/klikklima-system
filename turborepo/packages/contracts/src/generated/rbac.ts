@@ -10,7 +10,7 @@ export type Capability = 'read' | 'create' | 'update' | 'delete' | 'assign';
 
 export const PERMISSIONS: Record<string, Partial<Record<Capability, string[]>>> = {
   clients: { read: ["admin","dyspozytor"], create: ["admin","dyspozytor"], update: ["admin","dyspozytor"], delete: ["admin"] },
-  leads: { read: ["admin","dyspozytor","audytor:own"], create: ["admin","dyspozytor"], update: ["admin","dyspozytor"], delete: ["admin"], assign: ["admin"] },
+  leads: { read: ["admin","dyspozytor","audytor:own"], create: ["admin","dyspozytor","audytor"], update: ["admin","dyspozytor"], delete: ["admin"], assign: ["admin"] },
   quotes: { read: ["admin","dyspozytor","audytor:own"], create: ["audytor","admin"], update: ["audytor:own","admin"], delete: ["admin"] },
   installations: { read: ["admin","dyspozytor","monter:own"], create: ["admin","dyspozytor"], update: ["admin","dyspozytor","monter:own"], delete: ["admin"] },
   services: { read: ["admin","dyspozytor","monter:own"], create: ["admin","dyspozytor"], update: ["admin","dyspozytor","monter:own"], delete: ["admin"] },
@@ -37,6 +37,10 @@ export const PERMISSIONS: Record<string, Partial<Record<Capability, string[]>>> 
   availability_rules: { read: ["admin","dyspozytor","audytor:own","monter:own"], create: ["admin","audytor:own","monter:own"], update: ["admin","audytor:own","monter:own"], delete: ["admin"] },
   visit_duration_baskets: { read: ["admin","dyspozytor","audytor","monter"], create: ["admin"], update: ["admin"], delete: ["admin"] },
   system_config: { read: ["admin"], create: [], update: ["admin"], delete: [] },
+  price_list_items: { read: ["admin","dyspozytor","audytor"], create: ["admin"], update: ["admin"], delete: [] },
+  installation_contracts: { read: ["admin","dyspozytor","audytor:own"], create: ["admin","dyspozytor","audytor"], update: ["admin","audytor:own"], delete: ["admin"] },
+  signatures: { read: ["admin","dyspozytor","audytor:own","monter:own"], create: ["audytor","monter"], update: [], delete: [] },
+  installation_photos: { read: ["admin","dyspozytor","audytor:own","monter:own"], create: ["audytor","monter"], update: [], delete: ["admin"] },
 };
 
 export const DELETE_POLICIES = [
@@ -105,4 +109,41 @@ export function can(role: Role, resource: string, capability: Capability): 'no' 
   if (entry.includes(role)) return 'yes';
   if (entry.includes(`${role}:own`)) return 'own';
   return 'no';
+}
+
+/**
+ * AKTOR SYSTEMOWY — zapis bez udziału człowieka (dziś: faktura zaliczkowa po wpłacie, INV-ADVANCE-AUTO).
+ *
+ * Celowo OSOBNA funkcja i osobny typ, a nie kolejna wartość w `Role`: `Role` jest dziedziną
+ * kolumny authorized_users.role, więc aktor systemowy na tej liście oznaczałby konto, na które
+ * da się zalogować. Tutaj nie ma konta — jest wąska lista par (zasób, uprawnienie).
+ *
+ * WARUNEK UŻYCIA, którego ta funkcja NIE JEST W STANIE sprawdzić za wywołującego: tożsamość aktora
+ * systemowego wolno przyjąć WYŁĄCZNIE po pomyślnej weryfikacji podpisu dostawcy (sekret serwerowy,
+ * liczony z surowego ciała żądania). Nigdy na podstawie nagłówka, parametru ani pola w JSON-ie —
+ * każde z nich kontroluje ten, kto wysyła żądanie.
+ */
+export const SYSTEM_ACTOR = "system";
+
+export const SYSTEM_GRANTS = [
+  {
+    "resource": "invoices",
+    "capabilities": [
+      "create"
+    ],
+    "trigger": "payment_provider_webhook",
+    "rationale": "Faktura zaliczkowa wystawiana automatycznie po zaksięgowaniu wpłaty (D9 krok 2). Idempotencja po identyfikatorze zdarzenia płatności jest warunkiem koniecznym — ponowiony webhook nie może wystawić drugiego dokumentu (ryzyko R15).",
+    "req": [
+      "INV-ADVANCE-AUTO"
+    ],
+    "status": "STABLE"
+  }
+] as const;
+
+export type SystemTrigger = (typeof SYSTEM_GRANTS)[number]['trigger'];
+
+export function canSystem(resource: string, capability: Capability, trigger: SystemTrigger): boolean {
+  return SYSTEM_GRANTS.some(
+    (g) => g.resource === resource && g.trigger === trigger && (g.capabilities as readonly string[]).includes(capability),
+  );
 }

@@ -67,11 +67,45 @@ export function suggestsTwoPhase(condition: PropertyConditionId): boolean {
 /** Próg liczby pomieszczeń kierujący na ekran Eksperta. Zakaz literału w komponencie. */
 export const ROOM_COUNT_EXPERT_THRESHOLD = 4;
 
-export const TRIAGE_FIELD_IDS = ["BUILDING_TYPE", "ROOM_COUNT", "ROOM_SIZE_BAND", "PROPERTY_CONDITION"] as const;
+export const PROPERTY_AREA_BAND_IDS = ["UP_TO_300", "ABOVE_300"] as const;
+export type PropertyAreaBandId = (typeof PROPERTY_AREA_BAND_IDS)[number];
+export const PROPERTY_AREA_BAND_PL: Record<PropertyAreaBandId, string> = {
+  UP_TO_300: "Do 300 m²",
+  ABOVE_300: "Powyżej 300 m²",
+};
+
+/**
+ * Pasmo powierzchni CAŁEGO LOKALU — wyłącznie do ustalenia stawki VAT (PRICE-VAT-RATE).
+ * To NIE jest metraż pomieszczenia (ROOM_SIZE_BANDS) i nie służy doborowi mocy jednostki.
+ * Granica NIE JEST tu powtórzona jako liczba — mieszka w SLA.PROPERTY_AREA_VAT_THRESHOLD.
+ */
+export const PROPERTY_AREA_BAND_BOUNDARY: Record<PropertyAreaBandId, 'BELOW_OR_EQUAL' | 'ABOVE'> = {
+  UP_TO_300: "BELOW_OR_EQUAL",
+  ABOVE_300: "ABOVE",
+};
+
+export const TRIAGE_FIELD_IDS = ["BUILDING_TYPE", "ROOM_COUNT", "ROOM_SIZE_BAND", "PROPERTY_CONDITION", "PROPERTY_AREA_BAND"] as const;
 export type TriageFieldId = (typeof TRIAGE_FIELD_IDS)[number];
 
 /** Odpowiedzi kreatora w postaci, w jakiej trafiają do leads.triage_answers. */
 export type TriageAnswers = Partial<Record<TriageFieldId, string | number>>;
+
+/**
+ * Warunki widoczności pytań kreatora (D17). Pole nieobecne w tej mapie jest widoczne ZAWSZE.
+ * Kreator MUSI pytać o to stąd — warunek przepisany do komponentu przestaje być kontraktem
+ * i rozjeżdża się przy pierwszej zmianie słownika typów nieruchomości.
+ */
+export const TRIAGE_FIELD_VISIBILITY: Partial<Record<TriageFieldId, { field: TriageFieldId; in: readonly string[] }>> = {
+  PROPERTY_AREA_BAND: { field: "BUILDING_TYPE", in: ["APARTMENT", "HOUSE"] as const },
+};
+
+/** Czy pytanie ma być zadane przy dotychczasowych odpowiedziach. Nie licz tego warunkiem w komponencie. */
+export function isTriageFieldVisible(field: TriageFieldId, answers: TriageAnswers): boolean {
+  const cond = TRIAGE_FIELD_VISIBILITY[field];
+  if (!cond) return true;
+  const v = answers[cond.field];
+  return typeof v === 'string' && cond.in.includes(v);
+}
 
 export const DISQUALIFICATION_RULES = [
   { id: "COMMERCIAL_PROPERTY", field: "BUILDING_TYPE", operator: "EQUALS", value: "COMMERCIAL", outcome: "EXPERT_SCREEN", pl: "Lokal komercyjny wymaga indywidualnej oceny — nie wyceniamy go automatycznie." },

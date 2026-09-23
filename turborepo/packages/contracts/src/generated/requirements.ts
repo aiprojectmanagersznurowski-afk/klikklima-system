@@ -3,7 +3,7 @@
 // Regeneracja: node tools/kk-codegen.mjs
 // Każda ręczna zmiana zostanie wykryta przez `kk-codegen --check` i odrzucona w CI.
 
-export const REQUIREMENT_IDS = ["FNL-E1-E2", "FNL-E2-E3", "FNL-E3-E4", "FNL-E3-BUCKET", "FNL-E4-E5", "FNL-E5-E6", "FNL-E5-BYPASS", "FNL-E6-E7", "FNL-E7-E8", "FNL-ROLLBACK", "FNL-ROLLBACK-EXIT", "FNL-NO-ILLEGAL-TRANSITIONS", "CRM-KLI-AC1", "CRM-KLI-AC2", "CRM-KLI-AC3", "CRM-INST-AC1", "CRM-INST-AC2", "CRM-SRV-TRIGGER", "CRM-UST-AC1", "CRM-UST-AC2", "CRM-UST-AC3", "CRM-AUDYT-AC1", "CRM-AUDYT-AC2", "CRM-AUDYT-AC3", "CRM-AUDYT-KARTOTEKA", "CRM-ZESP-KARTOTEKA", "CRM-ZESP-AC1", "CRM-ZESP-AC2", "CRM-ZESP-AC3", "CRM-ZIMNE-AC1", "CRM-ZIMNE-AC2", "CRM-ZIMNE-AC3", "CRM-BOOK-HISTORY", "CRM-REGION-AUTO", "FNL-2PHASE", "FNL-2PHASE-BOOKING", "FNL-2PHASE-ROLLBACK-RELEASE", "FNL-ROLLBACK-BOOKING-RELEASE", "FNL-2PHASE-INVOICE", "NTF-PUSH-TOKEN", "NTF-I7-SLA", "SRV-SOURCE-OF-TRUTH", "SRV-REMINDER-ONCE", "CRM-ZESP-REP", "CRM-DELETE-ADMIN-ONLY", "CRM-DELETE-ADMIN-ONLY-CLIENTS", "CRM-CLIENT-ANONYMIZE-RODO", "SEC-AUDIT-LOG-APPEND-ONLY", "CRM-DELETE-ADMIN-ONLY-LEADS", "CRM-DELETE-ADMIN-ONLY-INSTALLATIONS", "CRM-DELETE-ADMIN-ONLY-SERVICES", "CRM-DELETE-ADMIN-ONLY-INCIDENTS", "CRM-DELETE-ADMIN-ONLY-AUDITORS", "CRM-DELETE-ADMIN-ONLY-CREWS", "CRM-CREW-UPDATE-ADMIN-ONLY", "CRM-CONTEXT-MENU", "SLA-QUOTE-14D", "SLA-LOG-COLORS", "UI-SLA-NO-GREEN", "UI-NO-HARDCODED-COLORS", "UI-ICONS-LUCIDE-ONLY", "UI-FORMS-RHF-ZOD", "SRV-NEXT-DATE", "SEC-SSO-GUARD", "SEC-AUTHZ-USER-MGMT", "SEC-RLS-AUDITOR-SCOPE", "SEC-ASSIGNMENT-POOL-MINIMIZE", "SEC-LEADS-LIST-MINIMIZE", "SEC-LEADS-LIST-SCALARS", "CRM-LEAD-UPDATE-ADMIN-DISPATCHER", "SEC-AUTHZ-B2B-MUTATIONS", "SEC-AUTHZ-B2B-READS", "SEC-EMAIL-UNIQUE", "SEC-EMAIL-CASE-NORMALIZE", "SEC-SERVICE-KEY-SERVER-ONLY", "SEC-RODO-DELETE", "SEC-AUDIT-LOG", "SEC-AUDIT-LOG-DELETE", "SEC-AUDIT-LOG-ROLE-CHANGE", "SEC-AUDIT-LOG-MANUAL-STATUS", "SEC-LAST-ADMIN-GUARD", "SEC-AUTHZ-DEFAULT-ROLE", "NTF-QUEUE-TABLE", "NTF-QUEUE-WINDOW", "NTF-POLY", "NTF-HISTORY", "NTF-RETRY", "NTF-CATALOG-PARITY", "B2C-LEAD-ENTRY", "B2C-LEAD-ATOMIC", "B2C-BOOKING-SLOT", "B2C-CONSENT-RODO", "B2C-RLS-PUBLIC", "B2C-TRIAGE-STEPS", "B2C-TRIAGE-DISQUALIFY", "B2C-TRIAGE-CONDITIONAL", "B2C-SOFT-LEAD", "B2C-BOOKING-VALIDATION", "B2C-PRICE-FROM", "B2C-CATALOG-LIST", "B2C-DEVICE-MODAL", "B2C-CATALOG-VIEW-TRACKED", "B2C-CONTENT-PAGES", "B2C-NAV-STATE", "FLD-GEO-COORDS", "FLD-GEO-UNLOCK", "FLD-GEO-EN-ROUTE", "FLD-GPS-RODO", "FLD-AUTH-BLOCKED", "FLD-CONSENT-TRIGGERS-INTEGRATION", "FLD-CONSENT-ACCEPT", "FLD-LEGAL-DOC-VERSION", "FLD-AVAIL-SELF", "FLD-AVAIL-RESTORE", "FLD-AVAIL-WEEKLY-RULES", "CAL-SLOT-ENGINE", "CAL-POOL-AGGREGATE", "FLD-BOOKING-ATOMIC-ASSIGN", "FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT", "CAL-VISIT-DURATION-BASKETS", "CAL-TRAVEL-BUFFER", "FLD-QUOTE-BASKET-SELECT", "FLD-BASE-LOCATION-EDIT", "CRM-PROJECT-NUMBER", "CRM-READABLE-IDENTIFIERS", "FLD-PHOTO-SET", "FNL-ADVANCE-STATUS-CONTRACT-BOUND"] as const;
+export const REQUIREMENT_IDS = ["FNL-E1-E2", "FNL-E2-E3", "FNL-E3-E4", "FNL-E3-BUCKET", "FNL-E4-E5", "FNL-E5-E6", "FNL-E5-BYPASS", "FNL-E6-E7", "FNL-E7-E8", "FNL-ROLLBACK", "FNL-ROLLBACK-EXIT", "FNL-NO-ILLEGAL-TRANSITIONS", "CRM-KLI-AC1", "CRM-KLI-AC2", "CRM-KLI-AC3", "CRM-INST-AC1", "CRM-INST-AC2", "CRM-SRV-TRIGGER", "CRM-UST-AC1", "CRM-UST-AC2", "CRM-UST-AC3", "CRM-AUDYT-AC1", "CRM-AUDYT-AC2", "CRM-AUDYT-AC3", "CRM-AUDYT-KARTOTEKA", "CRM-ZESP-KARTOTEKA", "CRM-ZESP-AC1", "CRM-ZESP-AC2", "CRM-ZESP-AC3", "CRM-ZIMNE-AC1", "CRM-ZIMNE-AC2", "CRM-ZIMNE-AC3", "CRM-BOOK-HISTORY", "CRM-REGION-AUTO", "FNL-2PHASE", "FNL-2PHASE-BOOKING", "FNL-2PHASE-ROLLBACK-RELEASE", "FNL-ROLLBACK-BOOKING-RELEASE", "FNL-2PHASE-INVOICE", "NTF-PUSH-TOKEN", "NTF-I7-SLA", "SRV-SOURCE-OF-TRUTH", "SRV-REMINDER-ONCE", "CRM-ZESP-REP", "CRM-DELETE-ADMIN-ONLY", "CRM-DELETE-ADMIN-ONLY-CLIENTS", "CRM-CLIENT-ANONYMIZE-RODO", "SEC-AUDIT-LOG-APPEND-ONLY", "CRM-DELETE-ADMIN-ONLY-LEADS", "CRM-DELETE-ADMIN-ONLY-INSTALLATIONS", "CRM-DELETE-ADMIN-ONLY-SERVICES", "CRM-DELETE-ADMIN-ONLY-INCIDENTS", "CRM-DELETE-ADMIN-ONLY-AUDITORS", "CRM-DELETE-ADMIN-ONLY-CREWS", "CRM-CREW-UPDATE-ADMIN-ONLY", "CRM-CONTEXT-MENU", "SLA-QUOTE-14D", "SLA-LOG-COLORS", "UI-SLA-NO-GREEN", "UI-NO-HARDCODED-COLORS", "UI-ICONS-LUCIDE-ONLY", "UI-FORMS-RHF-ZOD", "SRV-NEXT-DATE", "SEC-SSO-GUARD", "SEC-AUTHZ-USER-MGMT", "SEC-RLS-AUDITOR-SCOPE", "SEC-ASSIGNMENT-POOL-MINIMIZE", "SEC-LEADS-LIST-MINIMIZE", "SEC-LEADS-LIST-SCALARS", "CRM-LEAD-UPDATE-ADMIN-DISPATCHER", "SEC-AUTHZ-B2B-MUTATIONS", "SEC-AUTHZ-B2B-READS", "SEC-EMAIL-UNIQUE", "SEC-EMAIL-CASE-NORMALIZE", "SEC-SERVICE-KEY-SERVER-ONLY", "SEC-RODO-DELETE", "SEC-AUDIT-LOG", "SEC-AUDIT-LOG-DELETE", "SEC-AUDIT-LOG-ROLE-CHANGE", "SEC-AUDIT-LOG-MANUAL-STATUS", "SEC-LAST-ADMIN-GUARD", "SEC-AUTHZ-DEFAULT-ROLE", "NTF-QUEUE-TABLE", "NTF-QUEUE-WINDOW", "NTF-POLY", "NTF-HISTORY", "NTF-RETRY", "NTF-CATALOG-PARITY", "B2C-LEAD-ENTRY", "B2C-LEAD-ATOMIC", "B2C-BOOKING-SLOT", "B2C-CONSENT-RODO", "B2C-RLS-PUBLIC", "B2C-TRIAGE-STEPS", "B2C-TRIAGE-DISQUALIFY", "B2C-TRIAGE-CONDITIONAL", "B2C-SOFT-LEAD", "B2C-BOOKING-VALIDATION", "B2C-PRICE-FROM", "B2C-CATALOG-LIST", "B2C-DEVICE-MODAL", "B2C-CATALOG-VIEW-TRACKED", "B2C-CONTENT-PAGES", "B2C-NAV-STATE", "FLD-GEO-COORDS", "FLD-GEO-UNLOCK", "FLD-GEO-EN-ROUTE", "FLD-GPS-RODO", "FLD-AUTH-BLOCKED", "FLD-CONSENT-TRIGGERS-INTEGRATION", "FLD-CONSENT-ACCEPT", "FLD-LEGAL-DOC-VERSION", "FLD-AVAIL-SELF", "FLD-AVAIL-RESTORE", "FLD-AVAIL-WEEKLY-RULES", "CAL-SLOT-ENGINE", "CAL-POOL-AGGREGATE", "FLD-BOOKING-ATOMIC-ASSIGN", "FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT", "CAL-VISIT-DURATION-BASKETS", "CAL-TRAVEL-BUFFER", "FLD-QUOTE-BASKET-SELECT", "FLD-BASE-LOCATION-EDIT", "CRM-PROJECT-NUMBER", "CRM-READABLE-IDENTIFIERS", "FLD-PHOTO-SET", "FNL-ADVANCE-STATUS-CONTRACT-BOUND", "FLD-APP-SHELL", "FLD-API-LAYER", "FLD-APP-DISTRIBUTION", "FLD-MOBILE-TEST-HARNESS", "FLD-JOBS-OWN", "FLD-CONSENT-ENFORCE", "FLD-CHECKLIST-PREINSTALL", "FLD-PHOTO-STORAGE", "FLD-PHOTO-UPLOAD-RESILIENT", "FLD-OFFLINE-OUTBOX", "FLD-HANDOVER-PROTOCOL", "DOC-PDF-RENDER", "FLD-INSTALL-PAYOUT-APPROVAL", "FLD-SIGN-DOC-FREEZE", "FLD-SIGN-CAPTURE", "FLD-SIGN-AUDIT-TRAIL", "FLD-SIGN-TSA", "FLD-SIGN-REMOTE", "FLD-SIGN-REMOTE-OTP", "FLD-SIGN-DELIVERY-PROOF", "FLD-SIGN-ABUSE-GUARD", "FLD-SIGN-DURABLE-COPY", "FLD-AUDIT-LEAD-CREATE", "FLD-AUDIT-FORM", "FLD-AUDIT-INSTALL-TYPE", "FLD-QUOTE-BASKET-SELECT-AUDITOR", "FLD-QUOTE-VARIANTS", "PRICE-LIST-SCHEMA", "PRICE-LIST-IMPORT", "PRICE-LIST-ADMIN", "STD-INSTALL-CONFIG", "B2C-TRIAGE-PRICE-FROM-PRICE-LIST", "FLD-QUOTE-CALC", "FLD-QUOTE-ROOMS", "FLD-QUOTE-GENERAL-ITEMS", "PRICE-VAT-RATE", "FLD-QUOTE-MANUAL-ITEM", "FLD-QUOTE-PRICE-SNAPSHOT", "FLD-CONTRACT-GENERATE", "DOC-LEGAL-VERSION-REGISTRY", "INV-PROFORMA", "INV-ADVANCE-AUTO", "INV-FINAL", "PAY-DEPOSIT-LINK", "FLD-PHOTO-SET-PHASE-ONE", "B2C-PROPERTY-AREA-BAND"] as const;
 export type RequirementId = (typeof REQUIREMENT_IDS)[number];
 
 export const REQUIREMENTS = [
@@ -316,8 +316,8 @@ export const REQUIREMENTS = [
     "domain": "funnel",
     "status": "TODO",
     "risk": "MEDIUM",
-    "source": "ADR-005; PRZYJĘCIE KRYTERIUM 2026-09-16 (okno FNL-2PHASE-BOOKING-SCHEMA-2): kryterium 4 przeniesione z FNL-2PHASE-BOOKING (tam kryterium 7, zgłoszone 2026-09-10). PRZYJĘTO TU TAKŻE EFEKT do:issuePhaseOneInvoice, usunięty 2026-09-16 z T17.effects (rozstrzygnięcie R7, wariant (b)): efekt domenowy jest obowiązkową zmianą stanu sprawdzaną testem kontraktowym, a tabela `invoices` nie istnieje — zostawienie go na T17 dałoby efekt zadeklarowany i niezrealizowany. Efekt WRACA na T17 razem z realizacją tego wymagania",
-    "statement": "Po zakończeniu etapu I klient otrzymuje fakturę za ten etap."
+    "source": "ADR-005; PRZYJĘCIE KRYTERIUM 2026-09-16 (okno FNL-2PHASE-BOOKING-SCHEMA-2): kryterium 4 przeniesione z FNL-2PHASE-BOOKING (tam kryterium 7, zgłoszone 2026-09-10). PRZYJĘTO TU TAKŻE EFEKT do:issuePhaseOneInvoice, usunięty 2026-09-16 z T17.effects (rozstrzygnięcie R7, wariant (b)): efekt domenowy jest obowiązkową zmianą stanu sprawdzaną testem kontraktowym, a tabela `invoices` nie istnieje — zostawienie go na T17 dałoby efekt zadeklarowany i niezrealizowany. Efekt WRACA na T17 razem z realizacją tego wymagania. ──── PRZEPISANE 2026-09-23 (D9, okno KK-IMPL-2026Q4): powyższy akapit opisuje stan sprzed rozstrzygnięcia i zostaje jako zapis historii, ale JEGO KONKLUZJA JEST JUŻ NIEAKTUALNA. Michał rozstrzygnął 2026-09-23 łańcuch trzech dokumentów (proforma -> faktura zaliczkowa po wpłacie -> faktura rozliczeniowa po montażu) i moment rozliczenia przy montażu dwuetapowym: PO ETAPIE II. Etap I kończy T17, które jest PĘTLĄ na AWAITING_INSTALLATION (sprawdzone wprost w contracts/funnel.contract.mjs), a montaż zamyka dopiero T09 — więc reguła jest jedna dla obu trybów: faktura rozliczeniowa przy T09, NIGDY przy T17. Konsekwencje: (1) efekt do:issuePhaseOneInvoice NIE WRACA na T17 i nie ma go czym zastąpić — po etapie I nie powstaje żaden dokument rozliczeniowy; (2) załącznik invoice_phase_1 znika z N8a, bo nie ma faktury, która mogłaby nim być",
+    "statement": "Przy montażu dwuetapowym klient NIE otrzymuje faktury po etapie I — rozliczenie następuje po etapie II, tym samym przejściem T09, które zamyka montaż jednoetapowy."
   },
   {
     "id": "NTF-PUSH-TOKEN",
@@ -717,7 +717,7 @@ export const REQUIREMENTS = [
     "status": "TODO",
     "risk": "HIGH",
     "source": "b2c_app_requirements.md#1",
-    "statement": "Ukończony Triage tworzy leada w stanie NEW_LEAD — to jedyne legalne wejście do maszyny stanów lejka."
+    "statement": "Ukończony Triage tworzy leada w stanie NEW_LEAD — to jest wejście KLIENCKIE do maszyny stanów lejka (drugim, pracowniczym, jest FLD-AUDIT-LEAD-CREATE)."
   },
   {
     "id": "B2C-LEAD-ATOMIC",
@@ -1010,10 +1010,10 @@ export const REQUIREMENTS = [
   {
     "id": "FLD-PHOTO-SET",
     "domain": "field",
-    "status": "BLOCKED",
+    "status": "TODO",
     "risk": "MEDIUM",
-    "source": "field_app_requirements.md#8",
-    "statement": "Zamknięcie montażu wymaga kompletu dokładnie czterech zdjęć: jednostka wewnętrzna, jednostka zewnętrzna, budynek z oddali, odpływ skroplin."
+    "source": "D7 rozstrzygnięte 2026-09-23 (zestaw zmienny 4 + 2n), docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 0 i 3 D7; wcześniej field_app_requirements.md#8",
+    "statement": "Zamknięcie montażu wymaga kompletu zdjęć o składzie zmiennym: czterech zdjęć części stałej oraz dwóch zdjęć na każdą zamontowaną jednostkę wewnętrzną."
   },
   {
     "id": "FNL-ADVANCE-STATUS-CONTRACT-BOUND",
@@ -1022,5 +1022,373 @@ export const REQUIREMENTS = [
     "risk": "MEDIUM",
     "source": "Zobowiązanie z contracts/requirements.contract.mjs, wpis SEC-AUDIT-LOG-MANUAL-STATUS (2026-09-04): \"naprawa advanceLeadStatus jako maszyny stanów — fakt, że jego lokalna mapa ALLOWED_TRANSITIONS (leads/actions.ts:604-621) jest równoległa do kontraktu i pomija wszystkie guardy oraz efekty, jest defektem POWAŻNIEJSZYM niż brak audytu\". Potwierdzone bezpośrednio w kodzie 2026-09-07 (Fala C dodała klasyfikację audytową przez findTransitionByFromTo, ale NIE naprawiła struktury maszyny stanów): apps/b2b-web/src/app/(dashboard)/leads/actions.ts, funkcja advanceLeadStatus (dziś linie 648-765). Sekwencja realna: (1) linia 697, `const allowed = ALLOWED_TRANSITIONS[currentStatus] || []` i linia 699 `if (!allowed.includes(targetStatus)) throw` — to jest JEDYNA bramka decydująca, czy zapis się wykona; to lokalna, ręcznie utrzymywana mapa (from -> to[]), zdefiniowana w tym samym pliku (linie 606-627), nie w contracts/funnel.contract.mjs. (2) Linia 711, `findTransitionByFromTo(currentStatus, targetStatus)` woła kontrakt, ale WYŁĄCZNIE w celu klasyfikacji audytowej (linia 718, `isManualStatusChange(transition.id)`) — jeśli transition istnieje i nie jest 'manual', jego guards i effects z contracts/funnel.contract.mjs są odczytane z obiektu `transition`, ale NIGDZIE nie są wykonane; kod idzie prosto do `tx.leady.update` (linia 731). (3) Konkretne pominięcia potwierdzone przez porównanie z TRANSITIONS: T03 acceptQuoteAndBook ma guard 'slotAvailable' (funnel.contract.mjs:110) i effect 'do:reserveInstallationSlot' (funnel.contract.mjs:111) — advanceLeadStatus nie sprawdza dostępności slotu przed zapisem AUDIT_COMPLETED -> AWAITING_CREW_ASSIGNMENT i nie rezerwuje go po. T14 rebookInstallation ma guard 'slotAvailable' (funnel.contract.mjs:175) — to samo pominięcie przy powrocie z ROLLBACK_RESCHEDULING (linia lokalnej mapy 624, ROLLBACK_RESCHEDULING -> AWAITING_CREW_ASSIGNMENT). T10-T13 (rollback, funnel.contract.mjs:168-171) mają effects ['N_ROLLBACK', 'I4', 'do:releaseCrewSlot', 'do:suspendLogisticsSla'] — advanceLeadStatus dopuszcza te przejścia przez lokalną mapę (linie 614-617, wpisy '...ROLLBACK_RESCHEDULING') i owinięte SEC-AUDIT-LOG-MANUAL-STATUS Wave B/K3 tworzy wpis audytowy (isManual=true), ale sam nie woła releaseCrewSlot ani suspendLogisticsSla — te efekty istnieją TYLKO jako funkcje wołane z rollbackLogisticsOrder (logistics/actions.ts:217), nie z advanceLeadStatus; lead przesunięty tą ścieżką pozostaje z zajętym slotem ekipy i aktywnym SLA logistyki. T02 sendQuote ma effects ['N4', 'do:createQuote', 'do:startQuoteValidityClock'] — nie wołane. Ocena ryzyka: rls-security-auditor w tej sesji (SEC-AUDIT-LOG-MANUAL-STATUS Wave B) ocenił brak releaseCrewSlot/suspendLogisticsSla na ścieżce rollback jako 'dług operacyjny, nie luka bezpieczeństwa' — nie ma tu obejścia RBAC ani wycieku danych, jest niespójność stanu procesu (slot zajęty mimo rollbacku, SLA nie wstrzymane, klient nie dostaje powiadomienia N_ROLLBACK jeśli ta gałąź nie woła go wprost — do zweryfikowania per przejście przy implementacji). Stąd risk = MEDIUM, nie HIGH: wpływ jest na integralność danych operacyjnych i doświadczenie klienta (zły SMS albo brak SMS), nie na autoryzację ani bezpieczeństwo w sensie RODO/RBAC. WYMAGA DECYZJI CZŁOWIEKA, NIE ROZSTRZYGNIĘTE TUTAJ: (a) czy to jedna duża zmiana (advanceLeadStatus czyta guard+effect z kontraktu dla WSZYSTKICH siedemnastu przejść naraz) czy trzeba ją rozbić na sub-wymagania per przejście albo per kategoria guardów (wzorem rozbicia SEC-AUDIT-LOG na DELETE/ROLE-CHANGE/MANUAL-STATUS/NOTIFICATION-RESEND) — ryzyko jednego dużego przebiegu RED→GREEN jest wyższe niż przy audycie, bo dotyka ścieżki zapisu używanej przez WSZYSTKIE przejścia sterowane z leads/actions.ts, nie tylko pięć już zaudytowanych; (b) czy guardy dotykające zewnętrznych systemów (dziś tylko 'slotAvailable' odpytuje dostępność terminu, ale przyszłe guardy mogą dotykać systemów kurierskich) mogą być sprawdzane synchronicznie WEWNĄTRZ tej samej transakcji Prisma (tak jak dziś robi to rezerwacja slotu w innych ścieżkach, `FOR UPDATE` + sprawdzenie), czy wymagają wzorca kompensacji/rezerwacji poza transakcją — od tej decyzji zależy, czy `findTransitionByFromTo` (już istniejące z Fali C) rozszerza się o wykonanie guard/effect, czy potrzebny jest nowy mechanizm. Sąsiaduje z: SEC-AUDIT-LOG-MANUAL-STATUS (bezpośredni rodzic tego długu), FNL-ROLLBACK (T10-T13, właściciel effects releaseCrewSlot/suspendLogisticsSla), LOGISTICS-SHIPPING-EFFECTS (analogiczny defekt guardu na T06, trackingIdPresent, tam już zarejestrowany jako osobne ID).",
     "statement": "advanceLeadStatus (apps/b2b-web/src/app/(dashboard)/leads/actions.ts) przestaje mieć własną, równoległą mapę przejść (ALLOWED_TRANSITIONS) i czyta WYŁĄCZNIE z contracts/funnel.contract.mjs (TRANSITIONS): dozwolone przejście to wyłącznie takie, które istnieje w kontrakcie dla danego (from, to); przed zapisem statusu sprawdzane są guardy zdefiniowane na tym przejściu (np. slotAvailable dla T03/T14), a po zapisie — w TEJ SAMEJ transakcji Prisma, tam gdzie to możliwe — wywoływane są jego effects (np. do:reserveInstallationSlot, do:releaseCrewSlot, do:suspendLogisticsSla). Zakres podziału na sub-wymagania i podejście do guardów/effectów dotykających zewnętrznych systemów pozostają otwarte dla Work Ordera (patrz `source`, sekcja WYMAGA DECYZJI)."
+  },
+  {
+    "id": "FLD-APP-SHELL",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D1 (React Native + Expo), D12 (telefon dla obu ról), docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M1",
+    "statement": "Istnieje aplikacja terenowa apps/field-app (Expo), do której audytor i monter logują się tym samym kontem co do panelu B2B."
+  },
+  {
+    "id": "FLD-API-LAYER",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D2 potwierdzone 2026-09-23 (Route Handlery + can() + Prisma jako aneks ADR-013); ryzyko R13 w docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 9",
+    "statement": "Każdy zapis z aplikacji terenowej przechodzi przez warstwę Route Handlerów, która weryfikuje token i wywołuje tę samą bramkę can() oraz te same funkcje domenowe co panel B2B."
+  },
+  {
+    "id": "FLD-APP-DISTRIBUTION",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "LOW",
+    "source": "D1; ryzyko R11 (D-U-N-S) w docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 9",
+    "statement": "Aplikacja terenowa jest dystrybuowana do pracowników przez sklepy (EAS Build/Update, TestFlight, Play Console), a nie przez ręczne wgrywanie plików."
+  },
+  {
+    "id": "FLD-MOBILE-TEST-HARNESS",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D1; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 6.3",
+    "statement": "Aplikacja terenowa ma własną pętlę RED→GREEN wpiętą w bramkę CI (Jest + React Native Testing Library, E2E Maestro)."
+  },
+  {
+    "id": "FLD-JOBS-OWN",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M1; macierz RBAC (warianty :own)",
+    "statement": "Pracownik widzi w aplikacji wyłącznie własne zlecenia — zawężenie jest wykonywane po stronie serwera, nie filtrem w interfejsie."
+  },
+  {
+    "id": "FLD-CONSENT-ENFORCE",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "Decyzja D-D z 2026-08-21 (blokada w aplikacji, nie w panelu); zapowiedź w FLD-CONSENT-ACCEPT kryt. 9; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M2",
+    "statement": "Pracownik bez kompletu aktualnych zgód nie może rozpocząć zlecenia w aplikacji terenowej."
+  },
+  {
+    "id": "FLD-CHECKLIST-PREINSTALL",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "LOW",
+    "source": "docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M3 (N15)",
+    "statement": "Monter odhacza checklistę przedmontażową przed rozpoczęciem prac, a jej wynik jest zapisany przy instalacji."
+  },
+  {
+    "id": "FLD-PHOTO-STORAGE",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M3; FLD-PHOTO-SET kryt. 3",
+    "statement": "Zdjęcia montażowe trafiają do dedykowanego bucketu z własnymi politykami dostępu, nie do bucketu awatarów pracowników."
+  },
+  {
+    "id": "FLD-PHOTO-UPLOAD-RESILIENT",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D11 (wersja wąska: szkic + kolejka); backlogowe FLD-PHOTO-OPTIMIZE; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M3",
+    "statement": "Zdjęcia są kompresowane na urządzeniu i wysyłane ponownie po powrocie zasięgu, bez tworzenia duplikatów."
+  },
+  {
+    "id": "FLD-OFFLINE-OUTBOX",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D11 rozstrzygnięte 2026-09-21 (wersja wąska: szkic lokalny + kolejka wysyłki, expo-sqlite); docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M3",
+    "statement": "Praca bez zasięgu zapisuje się jako szkic lokalny i wysyła się z kolejki po powrocie sieci; przeglądanie danych bez zasięgu jest świadomie poza zakresem."
+  },
+  {
+    "id": "FLD-HANDOVER-PROTOCOL",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D7 (parametry prób liczbowo), K5 (numery seryjne z tabliczek), D10 = A; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M4",
+    "statement": "Monter wypełnia protokół zdawczo-odbiorczy: numery seryjne i modele urządzeń, parametry prób wpisane liczbowo, potwierdzenie instruktażu."
+  },
+  {
+    "id": "DOC-PDF-RENDER",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M4 i 6.3; wzory w docs/legal/",
+    "statement": "Jeden silnik po stronie serwera renderuje PDF protokołu, umowy i oferty na podstawie wzorów z docs/legal/."
+  },
+  {
+    "id": "FLD-INSTALL-PAYOUT-APPROVAL",
+    "domain": "crm",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D10 = A rozstrzygnięte 2026-09-21 (monter zamyka, dyspozytor zatwierdza tylko wypłatę); KPI OPS-06; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M4",
+    "statement": "Dyspozytor zatwierdza zakończony montaż do wypłaty ekipie; zatwierdzenie nie wstrzymuje ani powiadomienia N8, ani dokumentów dla klienta."
+  },
+  {
+    "id": "FLD-SIGN-DOC-FREEZE",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D4 (2026-09-21), S3; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M5",
+    "statement": "Klient podpisuje dokładnie tę wersję dokumentu, którą zobaczył — treść jest zamrożona przed prezentacją i weryfikowalna po podpisie."
+  },
+  {
+    "id": "FLD-SIGN-CAPTURE",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D4.3, D12 (telefon, podpis palcem), D1 (React Native Skia); docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M5",
+    "statement": "Klient podpisuje palcem na ekranie telefonu pracownika; podpis jest przechwytywany, dający się cofnąć i eksportowany razem z danymi przechwycenia."
+  },
+  {
+    "id": "FLD-SIGN-AUDIT-TRAIL",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D4 (2026-09-21); wzorzec audit_log_append_only_trg; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M5",
+    "statement": "Każdy podpis ma nieusuwalny ślad zdarzeń (wysłano, doręczono, otwarto, podpisano) z łańcuchem skrótów między wpisami, a karta podpisu jest dołączona do dokumentu."
+  },
+  {
+    "id": "FLD-SIGN-TSA",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D4.1 (TSA obowiązkowy) i D6 (EuroCert, 2026-09-23); ryzyko R5 i R8; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M5",
+    "statement": "Podpis otrzymuje kwalifikowany znacznik czasu (RFC 3161) od EuroCert, osadzony przy dokumencie i weryfikowalny niezależnie od nas."
+  },
+  {
+    "id": "FLD-SIGN-REMOTE",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D4.2; blokowane pytaniami prawnymi z D5; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M5, etap 5",
+    "statement": "Klient podpisuje zdalnie ze strony publicznej otwieranej z linku w mailu; link jest jednorazowy, wygasający i o wysokiej entropii."
+  },
+  {
+    "id": "FLD-SIGN-REMOTE-OTP",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D4.2 rozstrzygnięte 2026-09-21 (OTP obowiązkowy w trybie zdalnym, na miejscu nie); SMSAPI — pole nadawcy gotowe",
+    "statement": "Podpis zdalny wymaga kodu SMS wysłanego na numer klienta; kod wiąże kliknięcie w link z numerem telefonu."
+  },
+  {
+    "id": "FLD-SIGN-DELIVERY-PROOF",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D13 (Mailtrap, 2026-09-21); zależność Z1 (wysyłka powiadomień)",
+    "statement": "Doręczenie linku do podpisu jest udokumentowane zdarzeniem delivery od dostawcy poczty, zapisanym jako dowód."
+  },
+  {
+    "id": "FLD-SIGN-ABUSE-GUARD",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "Ryzyko R3 (strona publiczna, skutek prawny); przegląd rls-security-auditor przed wdrożeniem",
+    "statement": "Publiczna ścieżka podpisu jest chroniona przed nadużyciem: limit prób, ochrona przed enumeracją tokenów i osobny przegląd bezpieczeństwa przed wdrożeniem."
+  },
+  {
+    "id": "FLD-SIGN-DURABLE-COPY",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D5 pytanie prawne 2 (trwały nośnik) — ZALEŻNE OD OPINII PRAWNIKA; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M5",
+    "statement": "Klient otrzymuje kopię podpisanego dokumentu na trwałym nośniku w formie rozstrzygniętej przez opinię prawną."
+  },
+  {
+    "id": "FLD-AUDIT-LEAD-CREATE",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D14 rozstrzygnięte 2026-09-21 (lead od audytora W ZAKRESIE); luka nr 6 w docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 4",
+    "statement": "Audytor zakłada leada bezpośrednio w terenie dla klienta, który nie przeszedł przez Triage — to drugie, świadomie dopuszczone wejście do maszyny stanów lejka."
+  },
+  {
+    "id": "FLD-AUDIT-FORM",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "K7 (moc wpisywana, nie wyliczana); docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M7",
+    "statement": "Audytor wypełnia na miejscu formularz audytu pomieszczenie po pomieszczeniu: nazwa, moc jednostki, notatki, zdjęcia."
+  },
+  {
+    "id": "FLD-AUDIT-INSTALL-TYPE",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "FNL-2PHASE kryt. 2 (nośnik istnieje od migracji 20260916060000, BRAKUJE ŚCIEŻKI ZAPISU); luka nr 1 w docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 4",
+    "statement": "Audytor ustawia na miejscu tryb montażu (jednoetapowy albo dwuetapowy) — to jest ścieżka zapisu, której FNL-2PHASE kryt. 2 nie ma od 2026-09-16."
+  },
+  {
+    "id": "FLD-QUOTE-BASKET-SELECT-AUDITOR",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "LOW",
+    "source": "FLD-QUOTE-BASKET-SELECT (DONE dla dyspozytora w panelu, 2026-09-16, ścieżka audytora odłożona wprost); docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M7",
+    "statement": "Audytor wybiera koszyk czasu trwania wizyty w aplikacji terenowej, korzystając z tego samego słownika co dyspozytor w panelu."
+  },
+  {
+    "id": "FLD-QUOTE-VARIANTS",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "K2; D8 potwierdzone 2026-09-23 (zaliczka = netto x (1 + stawka VAT obiektu) x 1,1); ryzyko R16; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M7",
+    "statement": "Oferta zawiera od jednego do trzech wariantów; klient wybiera jeden, a kwota zaliczki liczy się z wybranego wariantu."
+  },
+  {
+    "id": "PRICE-LIST-SCHEMA",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D15 = A (pełny kalkulator) i D16; docs/architecture/CENNIK-ROBOCIZNY.md (39 pozycji); docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M9",
+    "statement": "Cennik kosztorysowy żyje w bazie (price_list_items): koszt zakupu osobno od ceny sprzedaży, kategoria, jednostka miary, zasięg pozycji i wersjonowanie ceny w czasie."
+  },
+  {
+    "id": "PRICE-LIST-IMPORT",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "Z2 — cennik dostarczony 2026-09-23: docs/architecture/cennik-robocizny.csv (39 pozycji); plan §4.3 pkt 2 (ujednolicenie kategorii MR/RM)",
+    "statement": "Cennik robocizny importuje się z dostarczonego arkusza do price_list_items, z ujednoliceniem kategorii i zachowaniem podziału na zasięgi."
+  },
+  {
+    "id": "PRICE-LIST-ADMIN",
+    "domain": "crm",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D15 rozszerzenie pkt 2 (cennik prowadzi administrator, nie programista); ekran /settings/pricing",
+    "statement": "Administrator prowadzi cennik wyceny w ustawieniach panelu B2B: dodaje pozycje i zmienia ceny, a każda zmiana ceny jest nową wersją."
+  },
+  {
+    "id": "STD-INSTALL-CONFIG",
+    "domain": "crm",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D15 rozszerzenie pkt 3 (montaż standardowy jako dane, nie tekst); ryzyko R19; ekran /settings/standard-installation",
+    "statement": "Montaż standardowy jest konfiguracją w bazie zbudowaną z pozycji cennika i ich ilości — jedno źródło ilości dla Triage i dla oferty audytora."
+  },
+  {
+    "id": "B2C-TRIAGE-PRICE-FROM-PRICE-LIST",
+    "domain": "b2c",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D15 rozszerzenie pkt 1 (jeden cennik dla audytora i Triage); ryzyko R18 (cena publiczna rośnie ok. dwukrotnie)",
+    "statement": "Triage liczy cenę montażu z tego samego cennika i konfiguracji montażu standardowego co audytor, zamiast z pozycji „Montaż wzorcowy\" i literału 1200 zł."
+  },
+  {
+    "id": "FLD-QUOTE-CALC",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D15 = A; D8; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M9",
+    "statement": "Silnik wyceny liczy pozycje razy ilości, sumę netto i brutto, marżę na pozycji oraz kwotę zaliczki."
+  },
+  {
+    "id": "FLD-QUOTE-ROOMS",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D17 rozstrzygnięte 2026-09-23 (formularz w dwóch częściach; 23 pozycje ROOM); docs/architecture/CENNIK-ROBOCIZNY.md",
+    "statement": "Pierwsza część formularza wyceny to pozycje przypisane do pomieszczeń: audytor dodaje pomieszczenie i uzupełnia przy nim ilości pozycji o zasięgu ROOM."
+  },
+  {
+    "id": "FLD-QUOTE-GENERAL-ITEMS",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D17 rozstrzygnięte 2026-09-23 (pozycji ogólnych NIE BYŁO NIGDZIE — ani w planie, ani w wymaganiach; realna luka); 16 pozycji INSTALLATION",
+    "statement": "Druga część formularza wyceny to pozycje ogólne całej instalacji, niededykowane żadnemu pomieszczeniu."
+  },
+  {
+    "id": "PRICE-VAT-RATE",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D16 i D17 rozstrzygnięte 2026-09-23 (stawka z obiektu; próg 300 m2 w kontrakcie SLA); R21 zamknięte",
+    "statement": "Stawka VAT wynika z rodzaju obiektu: lokal mieszkalny do 300 m2 to 8%, powyżej 300 m2 to 23%, lokal usługowy zawsze 23%."
+  },
+  {
+    "id": "FLD-QUOTE-MANUAL-ITEM",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "LOW",
+    "source": "D15; plan §4.3 (pozycje indywidualne wyłączone z automatu); docs/architecture/CENNIK-ROBOCIZNY.md pkt 5",
+    "statement": "Audytor dodaje do oferty pozycję indywidualną spoza cennika (stelaż, zwyżka) z opisem i ceną wpisaną ręcznie."
+  },
+  {
+    "id": "FLD-QUOTE-PRICE-SNAPSHOT",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D15 (rekomendacja: zamrożenie cen od pierwszej wysłanej oferty); docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M9",
+    "statement": "Wysłana oferta i wycena z Triage pamiętają ceny z dnia wystawienia; późniejsza zmiana cennika nie zmienia tego, co klient dostał."
+  },
+  {
+    "id": "FLD-CONTRACT-GENERATE",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D5 (pakiet dokumentów, wzory robocze w docs/legal/); ryzyko R17 (lorem ipsum nie może wyjść do klienta)",
+    "statement": "Umowa montażu powstaje z zaakceptowanej oferty na wzorze z docs/legal/, z jawnym numerem wersji wzorca."
+  },
+  {
+    "id": "DOC-LEGAL-VERSION-REGISTRY",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "Luka opisana w docs/legal/README.md; D5; docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 6.3",
+    "statement": "Wersje dokumentów prawnych dla KLIENTA są rejestrowane w bazie, tak jak wersje dokumentów pracowniczych w legal_document_versions."
+  },
+  {
+    "id": "INV-PROFORMA",
+    "domain": "funnel",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D9 krok 1 rozstrzygnięte 2026-09-23 (proforma albo wezwanie do zapłaty przed wpłatą); inFakt",
+    "statement": "Przed wpłatą klient dostaje proformę albo wezwanie do zapłaty — dokument, który nie jest fakturą w rozumieniu VAT."
+  },
+  {
+    "id": "INV-ADVANCE-AUTO",
+    "domain": "funnel",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D9 krok 2 rozstrzygnięte 2026-09-23 (faktura zaliczkowa automatycznie po wpłacie); ryzyko R15 (podwójna faktura przy ponowionym webhooku); rozstrzygnięcie Michała 2026-09-23: zapis automatyczny przechodzi przez can(), a nie obok niego",
+    "statement": "Faktura zaliczkowa wystawia się automatycznie po zaksięgowaniu wpłaty, bez udziału człowieka, dokładnie raz na płatność."
+  },
+  {
+    "id": "INV-FINAL",
+    "domain": "funnel",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D9 krok 3 rozstrzygnięte 2026-09-23 (faktura rozliczeniowa po montażu, przy dwuetapowym po etapie II); S7",
+    "statement": "Faktura rozliczeniowa wystawia się przy zamknięciu montażu (T09) i domyka VAT od pozostałej kwoty."
+  },
+  {
+    "id": "PAY-DEPOSIT-LINK",
+    "domain": "funnel",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D8; styk z Pakietem Dodatkowym A roadmapy (PayU); docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 5 M8",
+    "statement": "Klient dostaje link do płatności zaliczki, a zaksięgowanie wpłaty jest zdarzeniem uruchamiającym fakturę zaliczkową."
+  },
+  {
+    "id": "FLD-PHOTO-SET-PHASE-ONE",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D7 rozstrzygnięte 2026-09-23 (etap I: trasy przed zakryciem + manometr próby azotem); docs/workorders/FIELD-APP-I-PODPISY-ZAKRES.md rozdz. 3 D7",
+    "statement": "Zamknięcie etapu I montażu dwuetapowego wymaga własnego, mniejszego kompletu zdjęć: tras instalacji przed zakryciem oraz manometru próby azotem."
+  },
+  {
+    "id": "B2C-PROPERTY-AREA-BAND",
+    "domain": "b2c",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "D17 rozstrzygnięte 2026-09-23 (pytanie warunkowe o przedział powierzchni, bez wpisywania metrażu); R20 zamknięte",
+    "statement": "Triage pyta o przedział powierzchni lokalu (do 300 m2 / powyżej 300 m2) wyborem z listy, wyłącznie dla nieruchomości mieszkalnych."
   }
 ] as const;
