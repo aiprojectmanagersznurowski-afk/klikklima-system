@@ -8,11 +8,6 @@ import {
   Square,
   Plus,
   X,
-  Sparkles,
-  Bot,
-  Brain,
-  Cpu,
-  Zap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -67,77 +62,6 @@ interface WindowWithAudio {
   webkitAudioContext?: typeof AudioContext
   SpeechRecognition?: new () => SpeechRecognitionInstance
   webkitSpeechRecognition?: new () => SpeechRecognitionInstance
-}
-
-// ----------------------------------------------------------------------
-// Sub-components
-// ----------------------------------------------------------------------
-function MorphingText({ text }: { text: string }) {
-  const [width, setWidth] = useState<number | "auto">("auto")
-  const spanRef = useRef<HTMLSpanElement>(null)
-
-  useEffect(() => {
-    if (spanRef.current) {
-      setWidth(spanRef.current.offsetWidth)
-    }
-  }, [text])
-
-  return (
-    <span
-      className="relative inline-flex items-center justify-center overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]"
-      style={{ width }}
-    >
-      <span ref={spanRef} className="invisible whitespace-nowrap px-1">
-        {text}
-      </span>
-      <span
-        key={text}
-        className="absolute inset-0 flex items-center justify-center whitespace-nowrap animate-in fade-in zoom-in-95 duration-300"
-      >
-        {text}
-      </span>
-    </span>
-  )
-}
-
-function ModelIcon({ model, className }: { model: string; className?: string }) {
-  const normalized = model.toLowerCase()
-  if (normalized.includes("gemini") || normalized.includes("flash") || normalized.includes("pro")) {
-    return <Sparkles className={cn("size-3.5 text-primary", className)} />
-  }
-  if (normalized.includes("claude") || normalized.includes("opus")) {
-    return <Brain className={cn("size-3.5 text-accent", className)} />
-  }
-  if (normalized.includes("gpt")) {
-    return <Bot className={cn("size-3.5 text-primary", className)} />
-  }
-  if (normalized.includes("composer") || normalized.includes("glm")) {
-    return <Zap className={cn("size-3.5 text-primary", className)} />
-  }
-  return <Cpu className={cn("size-3.5 text-primary", className)} />
-}
-
-function DynamicBarsIcon({ level }: { level: string }) {
-  const isMediumOrHigh = level === "Zbalansowany" || level === "Głęboki RAG" || level === "Medium" || level === "Max Effort"
-  const isHigh = level === "Głęboki RAG" || level === "Max Effort"
-
-  return (
-    <div className="flex items-end gap-[1.5px] h-3.5 w-3.5 justify-center py-0.5" aria-hidden="true">
-      <span className="w-1 h-1.5 rounded-xs bg-current transition-opacity duration-300 opacity-100" />
-      <span
-        className={cn(
-          "w-1 h-2.5 rounded-xs bg-current transition-opacity duration-300",
-          isMediumOrHigh ? "opacity-100" : "opacity-30"
-        )}
-      />
-      <span
-        className={cn(
-          "w-1 h-3.5 rounded-xs bg-current transition-opacity duration-300",
-          isHigh ? "opacity-100" : "opacity-30"
-        )}
-      />
-    </div>
-  )
 }
 
 // ----------------------------------------------------------------------
@@ -332,17 +256,15 @@ function AttachmentGalleryModal({
 // ----------------------------------------------------------------------
 
 export interface PromptInputMeta {
-  model: string
-  effort: string
   attachments: File[]
+  model?: string
+  effort?: string
 }
 
 export interface PromptInputProps {
   onSubmit?: (value: string, meta: PromptInputMeta) => void
   placeholder?: string
   className?: string
-  models?: string[]
-  efforts?: string[]
   defaultValue?: string
   value?: string
   onChange?: (value: string) => void
@@ -355,10 +277,8 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
   (
     {
       onSubmit,
-      placeholder = "Zadaj pytanie asystentowi AI...",
+      placeholder = "Zadaj pytanie",
       className,
-      models = ["Gemini 3.6 Flash", "Gemini 3.5 Flash", "Gemini 1.5 Pro", "Claude 3.7", "GPT-4o"],
-      efforts = ["Szybki", "Zbalansowany", "Głęboki RAG"],
       defaultValue = "",
       value: controlledValue,
       onChange,
@@ -371,9 +291,6 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
     const [expanded, setExpanded] = useState(false)
     const [isSmoothResize, setIsSmoothResize] = useState(false)
     const [localValue, setLocalValue] = useState(defaultValue)
-    const [selectedModel, setSelectedModel] = useState(models[0] || "Gemini 3.6 Flash")
-    const [effortIndex, setEffortIndex] = useState(1)
-    const [isModelSelectOpen, setIsModelSelectOpen] = useState(false)
 
     const [attachments, setAttachments] = useState<Attachment[]>([])
     const [activeAttachment, setActiveAttachment] = useState<{ attachment: Attachment; rect: DOMRect } | null>(null)
@@ -391,7 +308,6 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
     const demoIntervalRef = useRef<number | null>(null)
     const demoTextIntervalRef = useRef<number | null>(null)
 
-    const [hoverStyle, setHoverStyle] = useState({ opacity: 0, transform: "translateY(0px) scale(0.95)", transition: "none" })
     const [containerHeight, setContainerHeight] = useState(116)
     const [textareaHeight, setTextareaHeight] = useState(68)
     const [isScrolling, setIsScrolling] = useState(false)
@@ -644,23 +560,11 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
       setTimeout(updateFades, 0)
     }, [textareaHeight])
 
-    useEffect(() => {
-      if (!isModelSelectOpen) return
-      const handleOutsideClick = (e: MouseEvent) => {
-        if (internalContainerRef.current && !internalContainerRef.current.contains(e.target as Node)) {
-          setIsModelSelectOpen(false)
-        }
-      }
-      document.addEventListener("mousedown", handleOutsideClick)
-      return () => document.removeEventListener("mousedown", handleOutsideClick)
-    }, [isModelSelectOpen])
-
     const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
       if (internalContainerRef.current && internalContainerRef.current.contains(e.relatedTarget as Node)) return
       if (value.trim() === "" && !hasAttachments && !isRecording) {
         setIsSmoothResize(false)
         setExpanded(false)
-        setIsModelSelectOpen(false)
       }
     }
 
@@ -668,20 +572,12 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
       if (value.trim() === "" && !hasAttachments) return
       setIsSmoothResize(false)
       onSubmit?.(value, {
-        model: selectedModel,
-        effort: efforts[effortIndex] || "Zbalansowany",
         attachments: attachments.map((a) => a.file),
       })
       handleValueChange("")
       attachments.forEach((a) => URL.revokeObjectURL(a.url))
       setAttachments([])
       setExpanded(false)
-      setIsModelSelectOpen(false)
-    }
-
-    const cycleEffort = (e: React.MouseEvent) => {
-      e.stopPropagation()
-      setEffortIndex((prev) => (prev + 1) % efforts.length)
     }
 
     const openFileChooser = (e: React.MouseEvent) => {
@@ -847,7 +743,6 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                 if (e.key === "Escape" && value.trim() === "" && !hasAttachments) {
                   setIsSmoothResize(false)
                   setExpanded(false)
-                  setIsModelSelectOpen(false)
                 }
               }}
               placeholder={placeholder}
@@ -896,108 +791,22 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
             {/* Bottom Actions Wrapper - Hides when recording to make space for visualizer */}
             <div
               className={cn(
-                "absolute bottom-2 left-3 right-12 z-[10] flex items-center gap-1 transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]",
+                "absolute bottom-2 left-3 right-12 z-[10] flex items-center gap-1.5 transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]",
                 expanded && !isRecording
                   ? "opacity-100 blur-0 translate-y-0 pointer-events-auto"
                   : "opacity-0 blur-xs translate-y-2 pointer-events-none"
               )}
             >
-              <div className="relative">
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsModelSelectOpen((prev) => !prev)
-                  }}
-                  className={cn(
-                    "group flex items-center gap-1.5 rounded-full px-2.5 py-1 text-muted-foreground transition-all duration-200 outline-none hover:bg-secondary hover:text-foreground cursor-pointer text-xs font-medium border border-transparent hover:border-border/60",
-                    isModelSelectOpen ? "bg-secondary text-foreground border-border/60" : ""
-                  )}
-                  aria-label={`Wybierz model. Aktualny: ${selectedModel}`}
-                >
-                  <ModelIcon model={selectedModel} className="size-3.5" />
-                  <span className="font-semibold select-none transition-colors">
-                    <MorphingText text={selectedModel} />
-                  </span>
-                </button>
-
-                <div
-                  style={{ transformOrigin: "bottom left" }}
-                  onMouseLeave={() => {
-                    setHoverStyle((prev) => ({
-                      ...prev,
-                      opacity: 0,
-                      transform: prev.transform.replace("scale(1)", "scale(0.95)"),
-                      transition: "opacity 0.2s ease-in, transform 0.2s ease-out",
-                    }))
-                  }}
-                  className={cn(
-                    "absolute bottom-full left-0 mb-2.5 z-50 w-48 rounded-2xl border border-border/80 bg-card p-1.5 shadow-xl backdrop-blur-md flex flex-col gap-0.5 transition-all duration-300",
-                    isModelSelectOpen
-                      ? "opacity-100 scale-100 translate-y-0 pointer-events-auto ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-                      : "opacity-0 scale-95 translate-y-3 pointer-events-none ease-[cubic-bezier(0.175,0.885,0.32,1.275)]"
-                  )}
-                >
-                  <div className="relative flex flex-col gap-0.5">
-                    <div
-                      style={hoverStyle}
-                      className="absolute left-0 right-0 top-0 h-8 -z-10 rounded-xl bg-secondary pointer-events-none"
-                    />
-                    {models.map((model, idx) => (
-                      <button
-                        key={model}
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onMouseEnter={() => {
-                          setHoverStyle((prev) => ({
-                            opacity: 1,
-                            transform: `translateY(${idx * 34}px) scale(1)`,
-                            transition:
-                              prev.opacity === 0
-                                ? "opacity 0.15s ease-out"
-                                : "transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.15s ease",
-                          }))
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedModel(model)
-                          setIsModelSelectOpen(false)
-                        }}
-                        className="group relative flex h-8 w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-left text-xs font-medium text-foreground/80 outline-none hover:text-foreground active:scale-[0.98] cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2">
-                          <ModelIcon model={model} className="size-3.5" />
-                          <span>{model}</span>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={cycleEffort}
-                className="group flex items-center gap-1.5 rounded-full px-2.5 py-1 text-muted-foreground transition-all duration-200 hover:bg-secondary hover:text-foreground outline-none cursor-pointer text-xs font-medium border border-transparent hover:border-border/60"
-                title="Kliknij, aby zmienić tryb precyzji / wysiłku analizy"
-              >
-                <DynamicBarsIcon level={efforts[effortIndex] || ""} />
-                <span className="font-semibold select-none transition-colors">
-                  <MorphingText text={efforts[effortIndex] || "Zbalansowany"} />
-                </span>
-              </button>
-
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={openFileChooser}
                 disabled={attachments.length >= maxAttachments}
-                className="ml-auto flex size-7 items-center justify-center rounded-full text-muted-foreground transition-all duration-200 hover:bg-secondary hover:text-foreground outline-none cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-muted-foreground transition-all duration-200 hover:bg-secondary hover:text-foreground outline-none cursor-pointer text-xs font-medium border border-transparent hover:border-border/60 disabled:opacity-40 disabled:pointer-events-none"
                 title="Dodaj załącznik obrazu"
               >
-                <Plus className="size-4" />
+                <Plus className="size-3.5" />
+                <span>Załącznik</span>
               </button>
             </div>
 

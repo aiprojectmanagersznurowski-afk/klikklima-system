@@ -27,11 +27,10 @@ describe("AI Chat Input UI (21stdev integration) & Chat Page", () => {
     // Brak niebezpiecznych zewnętrznych CDN assetów
     expect(content).not.toContain("https://cdn.21st.dev");
 
-    // Wykorzystanie biblioteki lucide-react
-    expect(content).toContain("from \"lucide-react\"");
-    expect(content).toContain("ArrowUp");
-    expect(content).toContain("Mic");
-    expect(content).toContain("Square");
+    // Brak selektora modeli i poziomu mocy (używamy wyłącznie Gemini)
+    expect(content).not.toContain("isModelSelectOpen")
+    expect(content).not.toContain("cycleEffort")
+    expect(content).toContain("placeholder = \"Zadaj pytanie\"")
   });
 
   it("chat/page.tsx integruje PromptInput i zawiera sekcję sugerowanych promptów pod polem chata", () => {

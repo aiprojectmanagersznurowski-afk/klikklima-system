@@ -440,9 +440,7 @@ export default function ChatPage() {
               onSubmit={(text, meta) => {
                 void sendMessage(text, meta)
               }}
-              placeholder="Zadaj pytanie dotyczące procedur, cennika, SLA lub poproś o diagram..."
-              models={["Gemini 3.6 Flash", "Gemini 3.5 Flash", "Gemini 1.5 Pro", "Claude 3.7", "GPT-4o"]}
-              efforts={["Szybki", "Zbalansowany", "Głęboki RAG"]}
+              placeholder="Zadaj pytanie"
               collapsedMaxWidth={460}
               expandedMaxWidth={760}
             />
