@@ -24,7 +24,7 @@ export const Step4State = () => {
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <OptionCard
-          title="Wykończony"
+          title="Wykończony / Zamieszkany"
           icon={<Sparkles size={40} strokeWidth={1.5} />}
           selected={state.buildingState === 'Wykończony / Zamieszkany'}
           onClick={() => handleSelect('Wykończony / Zamieszkany')}
@@ -41,27 +41,27 @@ export const Step4State = () => {
           selected={state.buildingState === 'Stan deweloperski'}
           onClick={() => handleSelect('Stan deweloperski')}
         />
-        </div>
+      </div>
 
-        <AnimatePresence>
-          {isComplete && showNextBtn && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="flex justify-center pt-8"
+      <AnimatePresence>
+        {isComplete && showNextBtn && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="flex justify-center pt-8"
+          >
+            <Button 
+              onClick={nextStep} 
+              size="lg" 
+              className="w-full sm:w-auto px-12 h-14 text-lg gap-3 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all rounded-2xl"
             >
-              <Button 
-                onClick={nextStep} 
-                size="lg" 
-                className="w-full sm:w-auto px-12 h-14 text-lg gap-3 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all rounded-2xl"
-              >
-                Dalej
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              Dalej
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </StepWrapper>
   );
 };

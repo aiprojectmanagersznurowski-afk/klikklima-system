@@ -106,14 +106,14 @@ function SizeSelector({
               active 
                 ? "text-white" 
                 : isBlocked 
-                  ? "text-[#94A3B8] opacity-50 cursor-not-allowed" 
-                  : "text-[#475569] hover:text-[#0F172A]"
+                  ? "text-slate-400 opacity-50 cursor-not-allowed" 
+                  : "text-slate-600 hover:text-slate-900"
             }`}
           >
             {active && (
               <motion.span
                 layoutId={`seg-${groupId}`}
-                className="absolute inset-0 -z-10 rounded-lg bg-[#2563EB] shadow-[0_4px_12px_rgba(37,99,235,0.35)]"
+                className="absolute inset-0 -z-10 rounded-lg bg-blue-600 shadow-[0_4px_12px_rgba(37,99,235,0.35)]"
                 transition={{ type: "spring", stiffness: 500, damping: 35 }}
               />
             )}
@@ -152,21 +152,21 @@ function RoomRow({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, height: 0, marginTop: 0, scale: 0.98 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
-      className="rounded-2xl border border-[#E8EDF5] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-[#EEF3FE] text-[13px] font-bold text-[#2563EB]">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-blue-50 text-[13px] font-bold text-blue-600">
             {index + 1}
           </span>
           <div>
-            <p className="font-semibold text-[#0F172A]">{room.name}</p>
+            <p className="font-semibold text-slate-900">{room.name}</p>
             {size ? (
-               <p className="text-[13px] text-[#475569]">
+               <p className="text-[13px] text-slate-600">
                  {size.area} · {room.size ? roomPowers[room.size] : size.power}
                </p>
             ) : (
-               <p className="text-[13px] text-[#94A3B8]">
+               <p className="text-[13px] text-slate-400">
                  Wybierz metraż
                </p>
             )}
@@ -175,7 +175,7 @@ function RoomRow({
         <button
           type="button"
           onClick={onRemove}
-          className="flex size-8 items-center justify-center rounded-full text-[#94A3B8] transition-colors hover:bg-[#FEF2F2] hover:text-[#EF4444]"
+          className="flex size-8 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
           aria-label="Usuń pokój"
         >
           <Trash2 className="size-4" />
@@ -379,7 +379,7 @@ export function DeviceModal({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed inset-0 z-50 bg-[#0F172A]/55 backdrop-blur-sm"
+                className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm"
               />
             </DialogPrimitive.Overlay>
 
@@ -387,6 +387,7 @@ export function DeviceModal({
               asChild 
               forceMount 
               aria-describedby={undefined}
+              data-device-modal-open="true"
               onInteractOutside={(e) => {
                 if (galleryIndex !== null) {
                   e.preventDefault();
@@ -401,26 +402,26 @@ export function DeviceModal({
                 className="fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-[24px] bg-white shadow-[0_30px_80px_-20px_rgba(15,23,42,0.45)] md:flex-row md:overflow-hidden"
               >
                 {/* Close button */}
-                <DialogPrimitive.Close className="absolute right-4 top-4 z-20 flex size-9 items-center justify-center rounded-full text-[#64748B] transition-colors hover:bg-[#F1F5F9] hover:text-[#0F172A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/50">
+                <DialogPrimitive.Close className="absolute right-4 top-4 z-20 flex size-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/50">
                   <X className="size-5" />
                   <span className="sr-only">Zamknij</span>
                 </DialogPrimitive.Close>
 
                 {/* ---------- LEFT: Configuration ---------- */}
                 <div className="flex-none bg-white px-6 py-7 md:flex-1 md:overflow-y-auto md:px-8">
-                  <DialogPrimitive.Title className="text-[22px] font-bold tracking-tight text-[#0F172A]">
+                  <DialogPrimitive.Title className="text-[22px] font-bold tracking-tight text-slate-900">
                     Skonfiguruj swój system klimatyzacji
                   </DialogPrimitive.Title>
-                  <p className="mt-1 text-[14px] text-[#475569]">
+                  <p className="mt-1 text-[14px] text-slate-600">
                     Dobierz jednostki do pomieszczeń — agregat dobierzemy automatycznie
                   </p>
 
                   {/* Indoor unit preview */}
-                  <div className="mt-6 flex items-center gap-4 rounded-2xl border border-[#E8EDF5] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                  <div className="mt-6 flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                     <button 
                       onClick={(e) => { e.preventDefault(); setGalleryIndex(0); }}
                       type="button"
-                      className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#F1F5F9] cursor-pointer transition-opacity hover:opacity-80 block"
+                      className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 cursor-pointer transition-opacity hover:opacity-80 block"
                     >
                       <img
                         src={images[0]}
@@ -429,14 +430,14 @@ export function DeviceModal({
                       />
                     </button>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-semibold uppercase tracking-wide text-[#2563EB]">
+                      <p className="text-[12px] font-semibold uppercase tracking-wide text-blue-600">
                         {device.brand}
                       </p>
-                      <h3 className="font-bold text-[#0F172A]">
+                      <h3 className="font-bold text-slate-900">
                         Seria {device.model}
                       </h3>
                       {device.marketingDesc && (
-                        <p className="mt-1 text-[13px] leading-relaxed text-[#475569]">
+                        <p className="mt-1 text-[13px] leading-relaxed text-slate-600">
                           {device.marketingDesc}
                         </p>
                       )}
@@ -454,14 +455,14 @@ export function DeviceModal({
 
                   {/* Rooms section */}
                   <div className="mt-7 flex items-center justify-between">
-                    <h3 className="text-[17px] font-bold text-[#0F172A]">
+                    <h3 className="text-[17px] font-bold text-slate-900">
                       Pokoje do klimatyzacji
                     </h3>
                     <button
                       type="button"
                       onClick={addRoom}
                       disabled={rooms.length >= maxSupportedRooms || (!device._raw?.is_multi_compatible && rooms.length >= 1)}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-[#CBD9F2] bg-white px-3.5 py-2 text-[14px] font-semibold text-primary transition-colors hover:border-primary hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-white px-3.5 py-2 text-[14px] font-semibold text-primary transition-colors hover:border-primary hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Plus className="size-4" />
                       Dodaj pokój
@@ -486,8 +487,8 @@ export function DeviceModal({
                     </AnimatePresence>
 
                     {!hasRooms && (
-                      <div className="rounded-2xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] py-10 text-center">
-                        <p className="text-[14px] text-[#475569]">
+                      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-10 text-center">
+                        <p className="text-[14px] text-slate-600">
                           Dodaj pierwsze pomieszczenie, aby rozpocząć konfigurację.
                         </p>
                       </div>
@@ -495,13 +496,13 @@ export function DeviceModal({
                   </div>
 
                   {/* Outdoor unit (agregat) */}
-                  <h3 className="mt-7 text-[17px] font-bold text-[#0F172A]">
+                  <h3 className="mt-7 text-[17px] font-bold text-slate-900">
                     Dobrany Agregat
                   </h3>
-                  <div className="relative mt-4 overflow-hidden rounded-2xl bg-[#0F172A] p-5">
+                  <div className="relative mt-4 overflow-hidden rounded-2xl bg-slate-900 p-5">
                     {/* glow */}
-                    <div className="pointer-events-none absolute -right-10 -top-16 size-48 rounded-full bg-[#2563EB]/40 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-16 left-10 size-40 rounded-full bg-[#38BDF8]/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -right-10 -top-16 size-48 rounded-full bg-blue-600/40 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-16 left-10 size-40 rounded-full bg-sky-400/20 blur-3xl" />
 
                     <AnimatePresence mode="wait">
                       <motion.div
@@ -530,7 +531,7 @@ export function DeviceModal({
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#2563EB]/20 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#93C5FD]">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-600/20 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-300">
                             <Sparkles className="size-3" />
                             Inteligentny dobór
                           </span>
@@ -555,14 +556,14 @@ export function DeviceModal({
                 </div>
 
                 {/* ---------- RIGHT: Summary & Pricing ---------- */}
-                <div className="flex w-full shrink-0 flex-col border-t border-[#E8EDF5] bg-white md:w-[360px] md:border-l md:border-t-0">
+                <div className="flex w-full shrink-0 flex-col border-t border-slate-200 bg-white md:w-[360px] md:border-l md:border-t-0">
                   <div className="flex-none px-6 py-7 md:flex-1 md:overflow-y-auto">
                     {/* Price — D1 (WO B2C-TRIAGE-DISQUALIFY): znika w całości przy
                         rooms.length >= ROOM_COUNT_EXPERT_THRESHOLD, łącznie z
                         fallbackiem "Cena zaczyna się od" na basePrice. */}
                     {showPrice && (
                     <>
-                    <p className="text-[13px] font-medium text-[#475569]">
+                    <p className="text-[13px] font-medium text-slate-600">
                       {isFullyConfigured ? "Cena całkowita zestawu" : "Cena zaczyna się od"}
                     </p>
                     <div className="mt-1 flex items-end gap-1">
@@ -576,23 +577,23 @@ export function DeviceModal({
                              animate={{ opacity: 1, y: 0 }}
                              exit={{ opacity: 0, y: -8 }}
                              transition={{ duration: 0.2 }}
-                             className="text-[40px] font-extrabold font-mono leading-none tracking-tight text-[#0F172A]"
+                             className="text-[40px] font-extrabold font-mono leading-none tracking-tight text-slate-900"
                            >
                              {fmt(total)}
                            </motion.span>
                         )}
                       </AnimatePresence>
                     </div>
-                    <p className="mt-2 text-[12px] text-[#64748B]">
+                    <p className="mt-2 text-[12px] text-slate-500">
                       Zawiera 8% VAT oraz montaż podstawowy
                     </p>
                     </>
                     )}
 
-                    <div className="my-6 h-px bg-[#E8EDF5]" />
+                    <div className="my-6 h-px bg-slate-200" />
 
                     {/* Summary list */}
-                    <p className="text-[13px] font-semibold uppercase tracking-wide text-[#94A3B8]">
+                    <p className="text-[13px] font-semibold uppercase tracking-wide text-slate-400">
                       Podsumowanie konfiguracji
                     </p>
                     <ul className="mt-3 space-y-2.5">
@@ -601,36 +602,36 @@ export function DeviceModal({
                           key={r.id}
                           className="flex items-center justify-between text-[14px]"
                         >
-                          <span className="text-[#475569]">
+                          <span className="text-slate-600">
                             {r.name}
                           </span>
-                          <span className="font-semibold text-[#0F172A]">
+                          <span className="font-semibold text-slate-900">
                             {r.size ? `${ROOM_SIZES[r.size].area} · ${roomPowers[r.size] || ROOM_SIZES[r.size].power}` : '---'}
                           </span>
                         </li>
                       ))}
                       {isFullyConfigured && matchedSet && !isLoading && (
-                        <li className="flex items-center justify-between border-t border-dashed border-[#E8EDF5] pt-2.5 text-[14px]">
-                          <span className="text-[#475569]">Agregat zewnętrzny</span>
-                          <span className="font-semibold text-[#0F172A]">
+                        <li className="flex items-center justify-between border-t border-dashed border-slate-200 pt-2.5 text-[14px]">
+                          <span className="text-slate-600">Agregat zewnętrzny</span>
+                          <span className="font-semibold text-slate-900">
                             1× {matchedSet.outdoorModel}
                           </span>
                         </li>
                       )}
                       {!hasRooms && (
-                        <li className="text-[14px] text-[#94A3B8]">
+                        <li className="text-[14px] text-slate-400">
                           Brak skonfigurowanych jednostek.
                         </li>
                       )}
                     </ul>
 
                     {/* Installation scope accordion */}
-                    <div className="mt-6 rounded-2xl bg-[#F8FAFC] px-4">
+                    <div className="mt-6 rounded-2xl bg-slate-50 px-4">
                       <Accordion type="single" collapsible>
                         <AccordionItem value="scope" className="border-b-0">
                           <AccordionTrigger className="hover:no-underline">
-                            <span className="flex items-center gap-2 font-semibold text-[#0F172A]">
-                              <Info className="size-4 text-[#2563EB]" />
+                            <span className="flex items-center gap-2 font-semibold text-slate-900">
+                              <Info className="size-4 text-blue-600" />
                               Co zawiera standardowy pakiet montażowy?
                             </span>
                           </AccordionTrigger>
@@ -645,9 +646,9 @@ export function DeviceModal({
                               ].map((it) => (
                                 <li
                                   key={it.t}
-                                  className="flex items-center gap-2.5 text-[13px] text-[#475569]"
+                                  className="flex items-center gap-2.5 text-[13px] text-slate-600"
                                 >
-                                  <span className="flex size-6 items-center justify-center rounded-md bg-white text-[#2563EB] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                                  <span className="flex size-6 items-center justify-center rounded-md bg-white text-blue-600 shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
                                     <it.icon className="size-3.5" />
                                   </span>
                                   {it.t}
@@ -661,7 +662,7 @@ export function DeviceModal({
                   </div>
 
                   {/* Sticky CTA */}
-                  <div className="sticky bottom-0 z-10 border-t border-[#E8EDF5] bg-white px-6 py-5 shadow-[0_-8px_15px_-3px_rgba(15,23,42,0.05)] md:static md:shadow-none">
+                  <div className="sticky bottom-0 z-10 border-t border-slate-200 bg-white px-6 py-5 shadow-[0_-8px_15px_-3px_rgba(15,23,42,0.05)] md:static md:shadow-none">
                     <button
                       type="button"
                       onClick={handleAuditClick}
@@ -670,6 +671,13 @@ export function DeviceModal({
                     >
                       <Check className="size-5 transition-transform group-hover:scale-110" />
                       {!isFullyConfigured && hasRooms ? "Uzupełnij metraż pokoi" : "Wybieram ten zestaw"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-md border border-border bg-white py-3 text-[14px] font-semibold text-muted-foreground transition-all hover:bg-secondary hover:text-foreground active:scale-[0.99]"
+                    >
+                      Powrót do przeglądania
                     </button>
                     <p className="mt-3 flex items-center justify-center gap-1.5 text-[12px] text-muted-foreground">
                       <ShieldCheck className="size-3.5 text-primary" />

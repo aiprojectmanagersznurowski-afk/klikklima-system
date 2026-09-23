@@ -20,8 +20,19 @@ export default function ExitIntentModal() {
   const triageData = useTriageStore((state) => state.data);
 
   useExitIntent(() => {
-    // Pokazujemy tylko raz, jeśli nie zostało jeszcze wypełnione
-    if (!submitted && !isOpen) {
+    // Sprawdzenie czy konfigurator urządzenia / DeviceModal jest otwarty w DOM
+    const isDeviceModalOpen = typeof document !== 'undefined' && Boolean(
+      document.querySelector('[data-device-modal-open="true"]') ||
+      document.querySelector('[role="dialog"]')
+    );
+    if (isDeviceModalOpen) return;
+
+    // Pokazujemy tylko raz w sesji
+    const hasShownInSession = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('kk_exit_intent_shown');
+    if (!submitted && !isOpen && !hasShownInSession) {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('kk_exit_intent_shown', 'true');
+      }
       setIsOpen(true);
     }
   });
@@ -96,7 +107,7 @@ export default function ExitIntentModal() {
             {!submitted ? (
               <div className="flex flex-col">
                 {/* Header z grafiką / kolorem */}
-                <div className="relative bg-gradient-to-br from-[#0d1b2e] to-[#1750c8] pt-10 pb-12 px-8 text-center overflow-hidden">
+                <div className="relative bg-gradient-to-br from-slate-900 to-blue-700 pt-10 pb-12 px-8 text-center overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
 
                   <div className="relative z-10 w-16 h-16 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-5 border border-white/20 shadow-lg">

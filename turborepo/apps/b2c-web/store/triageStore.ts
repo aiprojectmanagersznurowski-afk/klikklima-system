@@ -84,7 +84,7 @@ function toTriageAnswers(location: LocationType, roomCount: RoomCount): TriageAn
 const initialState: TriageStateData = {
   location: null,
   roomCount: null,
-  roomSizes: { 1: 'Do 20 m²' },
+  roomSizes: {},
   buildingState: null,
   hasBalcony: null,
   floor: null,
@@ -128,6 +128,8 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
     let next = state.step + 1;
     if (state.step === 1 && state.data.selectedDeviceLine) {
       next = 4;
+    } else if (state.step === 4 && state.data.location !== 'Mieszkanie') {
+      next = 6;
     }
     
     return { 
@@ -140,6 +142,8 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
     let prev = state.step - 1;
     if (state.step === 4 && state.data.selectedDeviceLine) {
       prev = 1;
+    } else if (state.step === 6 && state.data.location !== 'Mieszkanie') {
+      prev = 4;
     }
     // Zabezpieczenie: Cofając się z 7 kroku (lub jeśli z jakiegoś powodu jesteśmy na 6)
     // przeskakujemy ekran loadera bezpośrednio do kroku 5.
