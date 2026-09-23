@@ -1,10 +1,9 @@
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
-import { Bot, Send, User, Sparkles, AlertCircle, Copy, Check, BookOpen, Layers } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Bot, User, Sparkles, AlertCircle, Copy, Check, BookOpen, Layers, RotateCcw } from 'lucide-react'
 import { Card } from '@/components/ui/card'
+import { PromptInput, type PromptInputMeta } from '@/components/ui/ai-chat-input'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
@@ -89,7 +88,19 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const sendMessage = async (textToSend: string) => {
+  const handleResetChat = () => {
+    setMessages([
+      {
+        id: 'initial',
+        role: 'assistant',
+        content: 'Cześć! Jestem Twoim Asystentem AI w systemie KlikKlima. Posiadam bezpośredni dostęp do bazy wiedzy w PostgreSQL (`pgvector`), w tym kontraktów SLA, maszyny stanów lejka, modeli rozliczeniowych i definicji montażu standardowego. \n\nW czym mogę Ci pomóc?'
+      }
+    ])
+    setInput('')
+    setError(null)
+  }
+
+  const sendMessage = async (textToSend: string, _meta?: PromptInputMeta) => {
     if (!textToSend.trim() || isLoading) return
 
     const userText = textToSend.trim()
@@ -136,9 +147,10 @@ export default function ChatPage() {
           )
         )
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Chat error:', err)
-      setError(err?.message || 'Wystąpił nieoczekiwany błąd podczas pobierania odpowiedzi.')
+      const errMessage = err instanceof Error ? err.message : 'Wystąpił nieoczekiwany błąd podczas pobierania odpowiedzi.'
+      setError(errMessage)
       setMessages(prev =>
         prev.map(msg =>
           msg.id === assistantId && msg.content === ''
@@ -151,17 +163,12 @@ export default function ChatPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    sendMessage(input)
-  }
-
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] p-4 md:p-6 bg-secondary/15">
+    <div className="flex flex-col h-[calc(100vh-64px)] p-3 md:p-6 bg-secondary/15">
       {/* Nagłówek czatu */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center size-10 rounded-xl bg-gradient-to-tr from-primary to-primary/80 shadow-sm text-primary-foreground">
+          <div className="flex items-center justify-center size-10 rounded-xl bg-primary shadow-sm text-primary-foreground">
             <Sparkles className="size-5 animate-pulse" />
           </div>
           <div>
@@ -179,6 +186,19 @@ export default function ChatPage() {
             </p>
           </div>
         </div>
+
+        {messages.length > 1 && (
+          <button
+            type="button"
+            onClick={handleResetChat}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/70 bg-card hover:bg-secondary text-muted-foreground hover:text-foreground text-xs font-medium transition-colors shadow-2xs self-start sm:self-auto cursor-pointer disabled:opacity-50"
+            title="Rozpocznij nowy wątek"
+          >
+            <RotateCcw className="size-3.5" />
+            <span>Nowa rozmowa</span>
+          </button>
+        )}
       </div>
 
       {/* Główny obszar wiadomości */}
@@ -198,7 +218,7 @@ export default function ChatPage() {
                   "flex items-center justify-center size-8 rounded-full shrink-0 shadow-xs ring-2",
                   m.role === 'user'
                     ? "bg-primary text-primary-foreground ring-primary/20"
-                    : "bg-gradient-to-br from-primary/90 to-primary text-primary-foreground ring-primary/20"
+                    : "bg-primary text-primary-foreground ring-primary/20"
                 )}
               >
                 {m.role === 'user' ? <User className="size-4" /> : <Bot className="size-4" />}
@@ -309,7 +329,7 @@ export default function ChatPage() {
                               {children}
                             </strong>
                           ),
-                          code: ({ className, children, ...props }) => {
+                          code: ({ className, children }) => {
                             const raw = String(children || '').trim()
                             const isMermaid =
                               (typeof className === 'string' &&
@@ -323,7 +343,7 @@ export default function ChatPage() {
                             if (isMermaid) {
                               return (
                                 <div className="my-3.5 rounded-xl border border-border/60 bg-muted/20 p-3 shadow-2xs overflow-hidden">
-                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-2 pb-1.5 border-b border-border/40">
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-2 pb-1.5 border-b border-border/40">
                                     <Sparkles className="size-3.5 text-primary" />
                                     <span>Diagram procesowy</span>
                                   </div>
@@ -373,7 +393,7 @@ export default function ChatPage() {
                               title={`Sekcja: ${s.header}`}
                             >
                               <span className="font-medium">{s.file}</span>
-                              <span className="text-[10px] px-1 rounded-sm bg-primary/10 text-primary font-semibold">
+                              <span className="text-[10px] px-1 rounded-xs bg-primary/10 text-primary font-semibold">
                                 {Math.round(s.similarity * 100)}%
                               </span>
                             </span>
@@ -390,7 +410,7 @@ export default function ChatPage() {
           {/* Animacja oczekiwania */}
           {isLoading && messages[messages.length - 1]?.content === '' && (
             <div className="flex gap-3.5 max-w-[85%]">
-              <div className="flex items-center justify-center size-8 rounded-full shrink-0 shadow-xs bg-gradient-to-br from-primary/90 to-primary text-primary-foreground ring-2 ring-primary/20">
+              <div className="flex items-center justify-center size-8 rounded-full shrink-0 shadow-xs bg-primary text-primary-foreground ring-2 ring-primary/20">
                 <Bot className="size-4 animate-spin" />
               </div>
               <div className="px-5 py-4 rounded-2xl rounded-tl-xs shadow-xs text-sm bg-card text-muted-foreground border border-border/60 flex items-center gap-2.5">
@@ -410,47 +430,47 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Dolna belka z sugestiami i polem wprowadzania */}
-        <div className="p-4 bg-card border-t border-border/50 space-y-3">
-          {/* Sugerowane pytania (widoczne szczególnie na początku) */}
-          {messages.length <= 2 && !isLoading && (
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs">
-              <span className="text-muted-foreground shrink-0 text-[11px] font-medium flex items-center gap-1">
-                <Layers className="size-3" />
-                Sugerowane:
-              </span>
-              {SUGGESTED_PROMPTS.map((prompt, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => sendMessage(prompt)}
-                  className="whitespace-nowrap px-3 py-1 rounded-full border border-border/60 bg-background hover:bg-secondary hover:border-primary/40 text-muted-foreground hover:text-foreground transition-all text-xs cursor-pointer shadow-2xs"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="flex gap-2.5 max-w-4xl mx-auto">
-            <Input
+        {/* Dolna belka z nowym komponentem PromptInput i sugerowanymi promptami POD polem wprowadzania */}
+        <div className="p-4 bg-card/70 border-t border-border/50 flex flex-col items-center gap-3">
+          {/* Nowoczesny PromptInput z 21stdev */}
+          <div className="w-full flex justify-center">
+            <PromptInput
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={setInput}
+              onSubmit={(text, meta) => {
+                void sendMessage(text, meta)
+              }}
               placeholder="Zadaj pytanie dotyczące procedur, cennika, SLA lub poproś o diagram..."
-              className="flex-1 shadow-2xs rounded-xl h-11 bg-background"
-              disabled={isLoading}
+              models={["Gemini 3.6 Flash", "Gemini 3.5 Flash", "Gemini 1.5 Pro", "Claude 3.7", "GPT-4o"]}
+              efforts={["Szybki", "Zbalansowany", "Głęboki RAG"]}
+              collapsedMaxWidth={460}
+              expandedMaxWidth={760}
             />
-            <Button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="h-11 px-5 rounded-xl shadow-xs gap-2 shrink-0 cursor-pointer font-medium"
-            >
-              <Send className="size-4" />
-              <span className="hidden sm:inline">Wyślij</span>
-            </Button>
-          </form>
+          </div>
+
+          {/* Sugerowane pytania umieszczone bezpośrednio POD chatem / polem wprowadzania */}
+          <div className="w-full max-w-3xl flex flex-wrap items-center justify-center gap-1.5 pt-1 text-xs">
+            <span className="text-muted-foreground shrink-0 text-[11px] font-medium flex items-center gap-1 mr-1">
+              <Layers className="size-3 text-primary" />
+              Sugerowane:
+            </span>
+            {SUGGESTED_PROMPTS.map((prompt, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  void sendMessage(prompt)
+                }}
+                disabled={isLoading}
+                className="whitespace-nowrap px-3 py-1 rounded-full border border-border/70 bg-background hover:bg-secondary hover:border-primary/40 text-muted-foreground hover:text-foreground transition-all duration-200 text-xs cursor-pointer shadow-2xs hover:shadow-xs group disabled:opacity-50"
+              >
+                <span className="group-hover:text-primary transition-colors">{prompt}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </Card>
     </div>
   )
 }
+

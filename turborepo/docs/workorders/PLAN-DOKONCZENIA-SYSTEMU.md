@@ -60,8 +60,10 @@ ma linku do podpisu, protokołu, przypomnień ani SMS-a „jesteśmy w drodze".
 - Wymagania: `SEC-AUDIT-LOG`, `SEC-AUDIT-LOG-APPEND-ONLY`, `SEC-AUDIT-LOG-DELETE`,
   `SEC-AUDIT-LOG-ROLE-CHANGE`, `SEC-AUDIT-LOG-MANUAL-STATUS`, `SEC-AUTHZ-B2B-READS`,
   `SEC-AUTHZ-USER-MGMT`, `SEC-ASSIGNMENT-POOL-MINIMIZE`, `SEC-SSO-GUARD`, `SEC-LAST-ADMIN-GUARD`,
-  `SEC-EMAIL-CASE-NORMALIZE`, `SEC-RODO-DELETE`, `CRM-DELETE-ADMIN-ONLY`,
-  `CRM-DELETE-ADMIN-ONLY-CLIENTS`, `CRM-CLIENT-ANONYMIZE-RODO`.
+  `SEC-EMAIL-CASE-NORMALIZE`, `CRM-CLIENT-ANONYMIZE-RODO`.
+- **Sprostowanie 2026-09-23:** `SEC-RODO-DELETE`, `CRM-DELETE-ADMIN-ONLY` i `CRM-DELETE-ADMIN-ONLY-CLIENTS`
+  mają w rejestrze status `SUPERSEDED` — zastąpiło je `CRM-CLIENT-ANONYMIZE-RODO` (usunięcie klienta
+  realizowane jako anonimizacja). Nie planujemy ich osobno.
 - Szacunek: **10–15 MD**.
 - Uwaga: większość to wymagania o wysokim ryzyku. `SEC-RODO-DELETE` i anonimizacja muszą działać, **zanim**
   do systemu trafią dane pierwszych prawdziwych klientów, bo później wniosek o usunięcie danych staje się
