@@ -322,26 +322,21 @@ export function InstallationsClient({
         </div>
       </div>
 
-      <DeleteJustificationDialog
-        open={deleteDialogId !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteDialogId(null);
-        }}
-        title="Usuń instalację"
-        description="Wpisz uzasadnienie biznesowe i wskaż podstawę prawną usunięcia wpisu instalacji z systemu."
-        resource="installations"
-        recordId={deleteDialogId || ""}
-        onConfirm={async (data) => {
-          if (!deleteDialogId) return;
-          const { deleteInstallationAction } = await import("./actions");
-          const result = await deleteInstallationAction(deleteDialogId, data);
-          if (!result.success) {
-            throw new Error(result.error);
-          }
-          setInstallations(prev => prev.filter(i => i.id !== deleteDialogId));
-          setDeleteDialogId(null);
-        }}
-      />
+      {deleteDialogId !== null && (
+        <DeleteJustificationDialog
+          title="Usuń instalację"
+          description="Wpisz uzasadnienie biznesowe i wskaż podstawę prawną usunięcia wpisu instalacji z systemu."
+          onClose={() => setDeleteDialogId(null)}
+          onConfirm={async (data) => {
+            const { deleteInstallationAction } = await import("./actions");
+            return deleteInstallationAction(deleteDialogId, data);
+          }}
+          onSuccess={() => {
+            setInstallations(prev => prev.filter(i => i.id !== deleteDialogId));
+            setDeleteDialogId(null);
+          }}
+        />
+      )}
     </div>
   );
 }
