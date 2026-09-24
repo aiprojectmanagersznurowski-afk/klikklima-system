@@ -128,8 +128,13 @@ describe('M8 — jednorazowość zapisu exit intent jest po stronie serwera, nie
   it('drugie wywołanie saveSoftLead z tym samym numerem telefonu nie tworzy drugiego wiersza', async () => {
     const phone = '500999888';
 
-    await saveSoftLead(phone, { location: 'Mieszkanie' });
-    await saveSoftLead(phone, { location: 'Mieszkanie' });
+    // B2C-SOFT-LEAD-CONSENT wymaga FK do legal_document_versions na KAŻDY zapis (wzorzec
+    // z bloku B2C-SOFT-LEAD-CONSENT wyżej w tym pliku) — dopisane tutaj, żeby ten test
+    // sprawdzał WYŁĄCZNIE dedup (M8), w izolacji od walidacji zgody.
+    const consentDocumentVersionId = '22222222-2222-2222-2222-222222222222';
+
+    await saveSoftLead(phone, { location: 'Mieszkanie', consentDocumentVersionId });
+    await saveSoftLead(phone, { location: 'Mieszkanie', consentDocumentVersionId });
 
     // Asercja na WARUNEK UNIKALNOŚCI w argumentach wywołania do Supabase (upsert z
     // onConflict albo sprawdzenie istniejącego wiersza przed insertem), nie na
