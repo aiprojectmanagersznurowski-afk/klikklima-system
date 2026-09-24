@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T16:57:46.460Z",
+  "generatedAt": "2026-09-24T21:34:52.711Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -171,7 +171,7 @@
     "apps/b2b-web/tests/logistics-rollback-effects.test.ts::adr002-pl-tables": 39,
     "apps/b2b-web/tests/middleware-auditor-blocked.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/read-pages-authz.test.ts::adr002-pl-columns": 1,
-    "apps/b2b-web/tests/read-pages-authz.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/read-pages-authz.test.ts::adr002-pl-tables": 5,
     "apps/b2b-web/tests/rls-deny-by-default-freeze.test.ts::adr002-pl-tables": 20,
     "apps/b2b-web/tests/sec-audit-log-delete-wave-a.test.ts::adr002-pl-tables": 4,
     "apps/b2b-web/tests/sec-audit-log-delete-wave-b.test.ts::adr002-pl-columns": 1,
@@ -262,5 +262,5 @@
     "supabase/migrations/20260925092000_invoices_and_installation_photos.sql::adr002-pl-tables": 8,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2674
+  "total": 2677
 }
