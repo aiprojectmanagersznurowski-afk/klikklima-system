@@ -59,6 +59,22 @@ export const SLA_POLICIES = [
   // dwóch kafelków w Triage). Słownik PROPERTY_AREA_BANDS w contracts/triage.contract.mjs celowo
   // NIE powtarza tej liczby — opisuje pasma przez `boundary`, żeby zmiana progu była jedną zmianą.
   { id: 'PROPERTY_AREA_VAT_THRESHOLD', scope: 'Powierzchnia lokalu mieszkalnego w m², do której (włącznie) obowiązuje obniżona stawka VAT na montaż; powyżej — stawka podstawowa', sqm: 300, req: ['PRICE-VAT-RATE', 'B2C-PROPERTY-AREA-BAND'] },
+
+  // ── Retencja rejestru idempotencji warstwy API Field App (D-API-1, 2026-09-24) ──
+  // Rejestr `field_request_idempotency` rośnie z każdym zapisem z urządzenia i jest jedyną
+  // tabelą w tym systemie, którą WOLNO czyścić w całości — wiersz po upływie okna retencji
+  // nie jest ani dowodem, ani danymi osobowymi, tylko zużytym biletem na powtórzenie żądania.
+  //
+  // Dlaczego to mieszka w kontrakcie SLA, a nie w kodzie zamiatacza: próg retencji rozstrzyga,
+  // jak długo powtórzone żądanie jest rozpoznawane jako powtórzenie. Literał 30 w zadaniu
+  // czyszczącym i literał 30 w dokumentacji rozjadą się przy pierwszej korekcie, a skutkiem
+  // rozjazdu jest DRUGI zapis z tego samego telefonu (kolejka offline ponawia z definicji —
+  // FLD-OFFLINE-OUTBOX). To jest dokładnie pułapka nr 5 z CLAUDE.md.
+  //
+  // 30 dni to wartość PROPONOWANA w WO i przyjęta bez korekty: kolejka offline urządzenia
+  // ponawia w horyzoncie godzin, nie tygodni, więc miesiąc jest zapasem o dwa rzędy wielkości.
+  // Skrócenie jest bezpieczne, wydłużenie kosztuje wyłącznie miejsce.
+  { id: 'FIELD_IDEMPOTENCY_RETENTION', scope: 'Po ilu dniach wiersz rejestru field_request_idempotency wolno usunąć — po tym czasie powtórzone żądanie z tym samym kluczem NIE jest już rozpoznawane jako powtórzenie', days: 30, req: ['FLD-API-IDEMPOTENCY-REGISTRY'] },
 ];
 
 /**
