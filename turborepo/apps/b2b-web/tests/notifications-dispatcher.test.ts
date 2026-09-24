@@ -49,12 +49,13 @@ describe("P1 — Silnik wysyłki powiadomień (Dispatcher, SMSAPI, Mailtrap)", (
     smsSendMock.mockResolvedValue({ success: true, messageId: "sms-msg-123" });
 
     const queueRow = makePendingRow();
+    const updateMock = vi.fn().mockResolvedValue({ ...queueRow, status: "SENT" });
 
     const mockPrisma = {
       notificationQueue: {
         findMany: vi.fn().mockResolvedValue([queueRow]),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-        update: vi.fn().mockResolvedValue({ ...queueRow, status: "SENT" }),
+        update: updateMock,
       },
     };
 
@@ -66,6 +67,14 @@ describe("P1 — Silnik wysyłki powiadomień (Dispatcher, SMSAPI, Mailtrap)", (
     expect(smsArgs.to).toBe("+48500123456");
     expect(smsArgs.from).toBe("KlikKlima");
     expect(smsArgs.message).toContain("Jan");
+
+    // Udana wysyłka musi zapisać status SENT w wywołaniu `update`, które
+    // KOŃCZY przetwarzanie wiersza (nie przejęcie SENDING — to updateMany,
+    // sprawdzone osobno w teście NTF-QUEUE-CLAIM). Zweryfikowane mutacją:
+    // zamiana `SENT` -> `PENDING` w kodzie produkcyjnym przechodziła cały
+    // zestaw jednostkowy bez czerwieni, dopóki tej asercji nie było.
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(updateMock.mock.calls[0][0].data).toMatchObject({ status: "SENT" });
   });
 
   it("wysyła Email przez bramkę Mailtrap z poprawnym szablonem i odbiorcą", async () => {

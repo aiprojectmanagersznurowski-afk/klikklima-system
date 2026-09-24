@@ -35,7 +35,7 @@ const HARDCODED_ISO_DATE_RE = /new Date\(\s*["']\d{4}-\d{2}-\d{2}T/;
 
 describe("GATE-EVASION / fałszywa zieleń — bramki i dispatcher nie rozpoznają środowiska testowego", () => {
   for (const relPath of PRODUCTION_FILES) {
-    // @REQ: NTF-QUEUE-CLAIM
+    // @REQ: GATE-EVASION-DETECT
     it(`${relPath} nie zawiera gałęzi NODE_ENV === "test"/"development"`, () => {
       const content = readFileSync(join(REPO_ROOT, relPath), "utf8");
       const match = ENV_BRANCH_RE.exec(content);
@@ -43,7 +43,7 @@ describe("GATE-EVASION / fałszywa zieleń — bramki i dispatcher nie rozpoznaj
     });
   }
 
-  // @REQ: NTF-QUEUE-CLAIM
+  // @REQ: GATE-EVASION-DETECT
   it("apps/b2b-web/src/lib/notifications/dispatcher.ts nie zawiera sztywnej daty ISO jako podstawy czasu bieżącego", () => {
     const content = readFileSync(
       join(REPO_ROOT, "apps/b2b-web/src/lib/notifications/dispatcher.ts"),

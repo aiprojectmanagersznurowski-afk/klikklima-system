@@ -115,10 +115,10 @@ describe("NTF-HISTORY — Historia komunikacji z klientem na Karcie 360", () => 
   // @REQ: NTF-HISTORY
   it("powiadomienia wewnętrzne (I1–I7) nie pojawiają się w historii klienta", async () => {
     const mixedRows = [
-      { id: "1", notificationId: N_AUDITOR_ASSIGNED, recipientType: "CLIENT", channel: "SMS", createdAt: new Date() },
-      { id: "2", notificationId: "internal-1", recipientType: "DISPATCHER", channel: "EMAIL", createdAt: new Date() },
-      { id: "3", notificationId: "internal-2", recipientType: "DISPATCHER", channel: "SMS", createdAt: new Date() },
-      { id: "4", notificationId: "internal-3", recipientType: "CREW", channel: "SMS", createdAt: new Date() },
+      { id: "1", notificationId: N_AUDITOR_ASSIGNED, recipientType: "CLIENT", channel: "SMS", leadId: "lead-1", createdAt: new Date() },
+      { id: "2", notificationId: "internal-1", recipientType: "DISPATCHER", channel: "EMAIL", leadId: "lead-1", createdAt: new Date() },
+      { id: "3", notificationId: "internal-2", recipientType: "DISPATCHER", channel: "SMS", leadId: "lead-1", createdAt: new Date() },
+      { id: "4", notificationId: "internal-3", recipientType: "CREW", channel: "SMS", leadId: "lead-1", createdAt: new Date() },
     ];
 
     const mockPrisma = {
