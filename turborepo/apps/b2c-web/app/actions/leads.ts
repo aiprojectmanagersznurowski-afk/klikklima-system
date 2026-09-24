@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -8,21 +9,148 @@ function getAdminClient() {
   return createClient(supabaseUrl, supabaseServiceKey);
 }
 
-export async function saveSoftLead(contactInfo: string, partialData: any) {
+// Ten sam wzorzec czyszczenia i walidacji numeru co ExitIntentModal.tsx:39-42 — do dziś
+// ta walidacja żyła WYŁĄCZNIE po stronie klienta i nic nie broniło Server Action wywołanej
+// z pominięciem interfejsu (BLOCKER 4, recenzja 2026-09-24).
+const PHONE_REGEX = /^(?:\+?48)?\d{9}$/;
+
+const softLeadPhoneSchema = z
+  .string()
+  .transform((value) => value.replace(/[\s\-\(\)]/g, ""))
+  .refine((value) => PHONE_REGEX.test(value), {
+    message: "Numer telefonu nie przechodzi walidacji /^(?:+?48)?\\d{9}$/ (wzorzec ExitIntentModal.tsx:39-42).",
+  });
+
+// Kształt danych częściowych z kreatora Triage (store/triageStore.ts#TriageStateData).
+// ŚCISŁY (`.strict()`) — żadne pole spoza tego kształtu (np. zagnieżdżona funkcja) nie
+// trafia do insertu, jak działo się dziś przy zapisie kluczem service_role bez walidacji.
+//
+// B2C-SOFT-LEAD-CONSENT (contracts/requirements.contract.mjs, 2026-09-24, HIGH): zgoda
+// WSKAZUJE KONKRETNĄ wersję dokumentu prawnego kluczem obcym do legal_document_versions
+// (soft_leady.consent_version_id, migracja 20260926094000) — nigdy sama flaga logiczna,
+// nigdy numer wersji jako tekst. Pole jest WYMAGANE na każdy zapis: brak zgody albo
+// zgoda wskazana tekstem/flagą jest odrzucana identycznie jak brak pola.
+const softLeadPartialDataSchema = z
+  .object({
+    location: z.string().nullable().optional(),
+    roomCount: z.number().int().nullable().optional(),
+    roomSizes: z.record(z.string(), z.string()).optional(),
+    buildingState: z.string().nullable().optional(),
+    hasBalcony: z.boolean().nullable().optional(),
+    floor: z.string().nullable().optional(),
+    selectedDate: z.union([z.date(), z.string(), z.null()]).optional(),
+    selectedSlot: z.string().nullable().optional(),
+    name: z.string().optional(),
+    phone: z.string().optional(),
+    email: z.union([z.string().email(), z.literal("")]).optional(),
+    address: z.string().optional(),
+    selectedDeviceLine: z.string().nullable().optional(),
+    selectedInternalUnits: z.array(z.unknown()).optional(),
+    selectedExternalUnit: z.unknown().nullable().optional(),
+    priceDevices: z.number().optional(),
+    priceInstallation: z.number().optional(),
+    // FK do legal_document_versions.id — wzorem B2C-CONSENT-RODO, bez odstępstw.
+    consentDocumentVersionId: z.string().uuid({
+      message:
+        "consentDocumentVersionId musi być kluczem obcym (UUID) do legal_document_versions — flaga logiczna albo numer wersji jako tekst nie wystarczają.",
+    }),
+  })
+  .strict();
+
+// B2C-SOFT-LEAD-CONSENT kryt. 4: formularz prezentuje ODNOŚNIK do polityki prywatności,
+// a zgoda wskazuje TĘ SAMĄ wersję dokumentu, która jest prezentowana (B2C-CONTENT-PAGES).
+//
+// LUKA ZNANA, NIE DO ROZWIĄZANIA W TEJ ZMIANIE: `legal_document_versions.document_kind`
+// ma dziś tylko RODO_CONSENT i EMPLOYEE_TERMS (packages/database/prisma/schema.prisma) —
+// oba wzorem dokumentów PRACOWNICZYCH (Field App). Rejestr wersji dla dokumentów KLIENTA
+// (polityka prywatności/regulamin B2C) to DOC-LEGAL-VERSION-REGISTRY, status TODO, jeszcze
+// nie zbudowany — dziś w bazie nie istnieje ŻADEN wiersz reprezentujący "aktualną" politykę
+// prywatności B2C do wskazania kluczem obcym. Ta funkcja czyta najbliższy istniejący
+// odpowiednik (RODO_CONSENT) jako tymczasowe przybliżenie i zwraca `null`, gdy nie ma
+// żadnej wersji `is_current` — wołający MUSI blokować wysyłkę przy `null`, nie fabrykować
+// zgody. Prawdziwe domknięcie wymaga DOC-LEGAL-VERSION-REGISTRY (osobny Work Order).
+export async function getCurrentSoftLeadConsentVersionId(): Promise<string | null> {
   try {
     const supabaseAdmin = getAdminClient();
-    
     const { data, error } = await supabaseAdmin
-      .from("soft_leady")
-      .insert([
-        {
-          dane_kontaktowe: contactInfo,
-          dane_cząstkowe: partialData,
-        }
-      ]);
+      .from("legal_document_versions")
+      .select("id")
+      .eq("document_kind", "RODO_CONSENT")
+      .eq("is_current", true)
+      .limit(1)
+      .maybeSingle();
 
     if (error) throw error;
-    
+    return data?.id ?? null;
+  } catch (err: any) {
+    console.error("Error reading current legal document version:", err.message);
+    return null;
+  }
+}
+
+export type SaveSoftLeadResult =
+  | { success: true; deduped?: boolean }
+  | { success: false; error: string };
+
+// M8 — jednorazowość zapisu po stronie serwera, nie tylko sessionStorage klienta.
+//
+// ZABEZPIECZENIE TYMCZASOWE, NIE FINALNE: tabela `soft_leady` NIE MA dziś unikalnego
+// indeksu na `dane_kontaktowe` (sprawdzone: packages/database/prisma/schema.prisma,
+// supabase/migrations/) — dodanie go jest migracją i jest POZA zakresem tej zmiany
+// (implementer-ui nie dotyka schema.prisma/migracji). Ten `Set` chroni tylko w obrębie
+// JEDNEJ instancji procesu serwera: nie chroni przed dwoma równoległymi żądaniami
+// trafiającymi w różne instancje/regiony ani nie przetrwa restartu/cold startu.
+// Finalne rozwiązanie: unikalny indeks na `dane_kontaktowe` w bazie + `upsert(...,
+// { onConflict: 'dane_kontaktowe' })` bez tej furtki — zgłoszone jako blokujące.
+const processedPhoneNumbers = new Set<string>();
+
+export async function saveSoftLead(
+  contactInfo: string,
+  partialData: unknown,
+): Promise<SaveSoftLeadResult> {
+  const phoneResult = softLeadPhoneSchema.safeParse(contactInfo);
+  if (!phoneResult.success) {
+    return { success: false, error: "Nieprawidłowy numer telefonu." };
+  }
+  const cleanedPhone = phoneResult.data;
+
+  const dataResult = softLeadPartialDataSchema.safeParse(partialData);
+  if (!dataResult.success) {
+    return {
+      success: false,
+      error: "Nieprawidłowy kształt danych albo brak zgody wskazującej wersję dokumentu.",
+    };
+  }
+
+  // Patrz komentarz przy deklaracji `processedPhoneNumbers` powyżej.
+  if (processedPhoneNumbers.has(cleanedPhone)) {
+    return { success: true, deduped: true };
+  }
+
+  const { consentDocumentVersionId, ...domainData } = dataResult.data;
+
+  try {
+    const supabaseAdmin = getAdminClient();
+
+    // Docelowo `upsert` wymaga unikalnego indeksu na `dane_kontaktowe` (patrz komentarz
+    // wyżej) — dziś ta gałąź nie jest wywoływana drugi raz dla tego samego numeru w
+    // obrębie jednej instancji procesu wyłącznie dzięki `processedPhoneNumbers`.
+    const { error } = await supabaseAdmin.from("soft_leady").upsert(
+      [
+        {
+          dane_kontaktowe: contactInfo,
+          dane_cząstkowe: domainData,
+          consent_version_id: consentDocumentVersionId,
+          consent_granted_at: new Date().toISOString(),
+        },
+      ],
+      { onConflict: "dane_kontaktowe" },
+    );
+
+    if (error) throw error;
+
+    processedPhoneNumbers.add(cleanedPhone);
+
     return { success: true };
   } catch (err: any) {
     console.error("Error saving soft lead:", err.message);

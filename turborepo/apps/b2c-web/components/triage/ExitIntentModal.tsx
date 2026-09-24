@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useExitIntent } from "@/hooks/useExitIntent";
 import { useState, useEffect } from "react";
-import { saveSoftLead } from "@/app/actions/leads";
+import { saveSoftLead, getCurrentSoftLeadConsentVersionId } from "@/app/actions/leads";
 import { useTriageStore } from "@/store/triageStore";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Phone, ArrowRight, CheckCircle2, PhoneCall } from "lucide-react";
@@ -13,6 +14,17 @@ export default function ExitIntentModal() {
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [acceptedConsent, setAcceptedConsent] = useState(false);
+  const [consentError, setConsentError] = useState("");
+  // B2C-SOFT-LEAD-CONSENT: zgoda musi wskazywać KONKRETNĄ wersję dokumentu (FK do
+  // legal_document_versions), nie samą flagę. `null` = brak zarejestrowanej wersji
+  // (DOC-LEGAL-VERSION-REGISTRY jeszcze nie istnieje dla dokumentów B2C) — w takim
+  // stanie wysyłka jest blokowana, formularz nie fabrykuje zgody.
+  const [consentVersionId, setConsentVersionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getCurrentSoftLeadConsentVersionId().then(setConsentVersionId);
+  }, []);
 
   // Bezpieczne pobranie danych z Zustand
   // Aby uniknąć błędów hydratacji, czasami używa się useEffect,
@@ -52,11 +64,31 @@ export default function ExitIntentModal() {
       return;
     }
 
+    if (!acceptedConsent) {
+      setConsentError("Zgoda jest wymagana.");
+      return;
+    }
+
+    if (!consentVersionId) {
+      // Brak zarejestrowanej wersji dokumentu — nie wolno fabrykować zgody (patrz
+      // komentarz przy getCurrentSoftLeadConsentVersionId w app/actions/leads.ts).
+      setConsentError("Formularz jest tymczasowo niedostępny. Spróbuj zadzwonić do nas bezpośrednio.");
+      return;
+    }
+
     setIsSubmitting(true);
-    // Wywołanie Server Action do zapisu w Supabase
-    await saveSoftLead(phone, triageData);
+    // Wywołanie Server Action do zapisu w Supabase — zgoda wskazuje KONKRETNĄ wersję
+    // dokumentu (FK), nie samą flagę (B2C-SOFT-LEAD-CONSENT).
+    const result = await saveSoftLead(phone, {
+      ...triageData,
+      consentDocumentVersionId: consentVersionId,
+    });
 
     setIsSubmitting(false);
+    if (!result.success) {
+      setError("Nie udało się zapisać zgłoszenia. Spróbuj ponownie.");
+      return;
+    }
     setSubmitted(true);
 
     // Auto-zamknięcie po 3 sekundach od sukcesu
@@ -146,6 +178,29 @@ export default function ExitIntentModal() {
                         <p className="text-red-500 text-xs mt-2 ml-1 font-medium">{error}</p>
                       )}
                     </div>
+
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        id="exit-intent-consent"
+                        checked={acceptedConsent}
+                        onChange={(e) => {
+                          setAcceptedConsent(e.target.checked);
+                          if (e.target.checked) setConsentError("");
+                        }}
+                        className="mt-1 w-5 h-5 rounded-md border border-border text-primary focus:ring-2 focus:ring-primary/40 focus-visible:ring-2 focus-visible:ring-primary cursor-pointer outline-none"
+                      />
+                      <label htmlFor="exit-intent-consent" className="text-xs text-gray-600 leading-relaxed">
+                        Wyrażam zgodę na kontakt telefoniczny i przetwarzanie moich danych zgodnie z{" "}
+                        <Link href="/polityka-prywatnosci" className="text-primary hover:underline" target="_blank">
+                          Polityką Prywatności
+                        </Link>
+                        .
+                      </label>
+                    </div>
+                    {consentError && (
+                      <p className="text-red-500 text-xs -mt-2 ml-1 font-medium">{consentError}</p>
+                    )}
 
                     <button
                       type="submit"

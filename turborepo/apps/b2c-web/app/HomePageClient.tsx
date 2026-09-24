@@ -161,7 +161,7 @@ export default function HomePageClient({
       <Navbar />
 
       {/* ── Hero ───────────────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden bg-[slate-950]">
+      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden bg-slate-950">
         {/* Full-bleed background photo */}
         <img
           src="https://images.unsplash.com/photo-1761330440311-16e160cad236?w=1800&h=1100&fit=crop&auto=format"
@@ -169,8 +169,8 @@ export default function HomePageClient({
           className="absolute inset-0 w-full h-full object-cover object-center opacity-55"
         />
         {/* Gradient vignette — stronger on left for text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[slate-950]/90 via-[slate-950]/55 to-[slate-950]/10 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[slate-950]/60 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/55 to-slate-950/10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 py-24 sm:py-32 w-full">
           {/* Glassmorphism text panel */}

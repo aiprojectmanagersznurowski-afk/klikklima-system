@@ -128,7 +128,7 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
     let next = state.step + 1;
     if (state.step === 1 && state.data.selectedDeviceLine) {
       next = 4;
-    } else if (state.step === 4 && state.data.location !== 'Mieszkanie') {
+    } else if (state.step === 4 && state.data.location !== BUILDING_TYPE_PL.APARTMENT) {
       next = 6;
     }
     
@@ -142,13 +142,13 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
     let prev = state.step - 1;
     if (state.step === 4 && state.data.selectedDeviceLine) {
       prev = 1;
-    } else if (state.step === 6 && state.data.location !== 'Mieszkanie') {
+    } else if (state.step === 6 && state.data.location !== BUILDING_TYPE_PL.APARTMENT) {
       prev = 4;
     }
     // Zabezpieczenie: Cofając się z 7 kroku (lub jeśli z jakiegoś powodu jesteśmy na 6)
     // przeskakujemy ekran loadera bezpośrednio do kroku 5.
     if (prev === 6) {
-      if (state.data.location === 'Mieszkanie') {
+      if (state.data.location === BUILDING_TYPE_PL.APARTMENT) {
         prev = 5;
       } else {
         prev = 4;
