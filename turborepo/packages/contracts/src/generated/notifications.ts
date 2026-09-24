@@ -69,7 +69,23 @@ export const QUEUE_POLICY = {
   "backoffBaseSeconds": 60,
   "deadLetterAfterAttempts": 5,
   "requiresIdempotencyKey": true,
-  "note": "ADR-007 rozstrzygnięte 2026-08-18: notification_queue ma attempts, last_error, next_attempt_at, dead_lettered_at oraz unikalny idempotency_key. Status DEAD_LETTER jest osobny od ERROR."
+  "statuses": [
+    "PENDING",
+    "SENDING",
+    "SENT",
+    "ERROR",
+    "DEAD_LETTER"
+  ],
+  "claimTransition": {
+    "from": "PENDING",
+    "to": "SENDING",
+    "req": [
+      "NTF-QUEUE-CLAIM"
+    ]
+  },
+  "persistsRenderedBody": true,
+  "templateSource": "message_templates",
+  "note": "ADR-007 rozstrzygnięte 2026-08-18: notification_queue ma attempts, last_error, next_attempt_at, dead_lettered_at oraz unikalny idempotency_key. Status DEAD_LETTER jest osobny od ERROR. ROZSZERZENIE 2026-09-24 (decyzje Michała): (1) słownik statusów przeniesiony z migracji do kontraktu i rozszerzony o SENDING — stan przejęcia wiersza, bez którego dwa równoległe zamiatacze wysyłają ten sam SMS dwa razy (NTF-QUEUE-CLAIM); (2) wiersz kolejki zapisuje WYRENDEROWANĄ treść i wersję szablonu w chwili kolejkowania (NTF-QUEUE-RENDERED-BODY), bo po przeniesieniu szablonów do edytowalnej tabeli message_templates treści nie da się już odtworzyć z gita; (3) szablony mieszkają w bazie, nie w stałej TypeScript (NTF-TEMPLATE-STORE). Zamiatacz kolejki jest zdarzeniowo NIEZALEŻNY od kolejkowania — wysyłkę wyzwala pg_cron po stronie Supabase (NTF-DISPATCH-CRON), bo okno 08:00-18:00, ponowienia z narastającym odstępem i zakaz wołania zewnętrznego API w transakcji biznesowej to trzy powody, dla których zdarzenie domenowe nie wystarcza."
 } as const;
 
 export function notificationsForTransition(transitionId: string): NotificationDef[] {

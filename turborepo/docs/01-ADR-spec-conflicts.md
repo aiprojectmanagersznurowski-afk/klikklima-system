@@ -1,6 +1,6 @@
 # ADR: Sprzeczności i luki w dokumentacji architektury
 
-**Status: 12 z 12 rozstrzygniętych (2026-08-18). Rejestr zamknięty — kontrakt nie ma ani jednego elementu w statusie propozycji, a rejestr wymagań ani jednego zablokowanego.**
+**Status: 12 z 12 rozstrzygniętych (2026-08-18), rejestr ponownie otwarty o jeden punkt 2026-09-24.** Aplikacja terenowa (Field App) jest typem klienta, którego nie było w sierpniu — dodała trzynasty punkt, ADR-013, opisany niżej jako wyjątek od ADR-001. Poza nim kontrakt nie ma ani jednego elementu w statusie propozycji, a rejestr wymagań ani jednego zablokowanego.
 
 Poniższe punkty wyszły przy destylacji Twoich jedenastu dokumentów do kontraktu. To nie są uwagi stylistyczne. Każdy z nich to miejsce, w którym dwóch agentów pracujących równolegle nad różnymi modułami napisze niekompatybilny kod — i obaj będą mieli rację, bo obaj będą się trzymali dokumentacji.
 
@@ -247,6 +247,22 @@ Najpoważniejszy był brak `bookings`. Rezerwacja terminu występuje w trzech pr
 
 ---
 
+## ADR-013 — Wyjątek od ADR-001: warstwa zapisu aplikacji terenowej ✅ ROZSTRZYGNIĘTE 2026-09-24
+
+To nie jest sprzeczność między starymi dokumentami jak dwanaście punktów powyżej — to nowy, formalny wyjątek od decyzji już rozstrzygniętej.
+
+**Napięcie:** ADR-001 (2026-08-18) rozstrzygnął Server Actions jako jedyny mechanizm mutacji w panelu B2B, z Route Handlerami dopuszczonymi wyłącznie dla publicznych webhooków. Decyzja D1 z 2026-08-20 (potwierdzona 2026-09-21) mówi, że aplikacja terenowa to React Native + Expo — a Server Actions są mechanizmem Next.js, niewywoływalnym z aplikacji natywnej.
+
+**Decyzja (Michał, D2, potwierdzona 2026-09-23):** Route Handlery pod `apps/b2b-web/src/app/api/field/**`, cienka warstwa nad tymi samymi funkcjami domenowymi i tą samą bramką `can()`, którą wołają Server Actions panelu. Pełne uzasadnienie i odrzucone alternatywy (bezpośredni `supabase-js` + RLS z urządzenia) są w `docs/architecture/ADR-013-warstwa-zapisu-field-app.md` — nie powtarzam ich tutaj.
+
+**Warunki, pod którymi wyjątek obowiązuje** (z ADR-013, punkty 1-6): Route Handler bez logiki biznesowej; uwierzytelnienie tokenem zweryfikowanym po stronie serwera (nigdy z nagłówka klienta); klucz idempotencji na każdym zapisie; zero `service_role` w aplikacji; test kontraktowy uprawnień na każdym endpoincie; wyjątek zamknięty wyłącznie do prefiksu `api/field/**` i publicznej strony podpisu zdalnego.
+
+**Wykonane 2026-09-24:** zarejestrowane `FLD-API-LAYER` (Work Order istnieje: `docs/workorders/FLD-API-LAYER.md`, ma otwarte pytania projektowe do rozstrzygnięcia przed fazą RED — D-API-3/D-API-4 o tym, gdzie stoi `can()` i jaki skaner tego pilnuje), `FLD-API-IDEMPOTENCY-REGISTRY` (nowa tabela `field_request_idempotency`, migracja `20260926090000`), `SEC-ACCESS-DENIED-LOG` (`security_events`, migracja `20260926091000`).
+
+**Pierwszy przypadek w tym repo, gdzie Route Handler wchodzi do panelu B2B nie jako webhook, tylko jako pełnoprawna warstwa API.** Stąd potrzeba osobnych reguł bramki — `kk-authz-gate` musi objąć tę warstwę, a decyzja D-API-3/D-API-4 (gdzie mieszka `can()` i jaki skaner tego pilnuje) wciąż jest otwarta — i osobnego testu statycznego pilnującego, że Route Handlery nie powstają poza zarezerwowanym prefiksem.
+
+---
+
 ## Rekomendowana kolejność Twoich decyzji
 
 1. ~~**ADR-001**~~ — ✅ rozstrzygnięte 2026-08-18, dokumenty poprawione, reguła w bramce.
@@ -255,7 +271,8 @@ Najpoważniejszy był brak `bookings`. Rezerwacja terminu występuje w trzech pr
 4. ~~**ADR-004**~~, ~~**ADR-009**~~ — ✅ oba rozstrzygnięte 2026-08-18.
 5. ~~**ADR-008**~~, ~~**ADR-002**~~, ~~**ADR-010**~~, ~~**ADR-011**~~ — ✅ wszystkie rozstrzygnięte.
 6. ~~**ADR-005**~~, ~~**ADR-006**~~ — ✅ oba rozstrzygnięte 2026-08-18.
+7. ~~**ADR-013**~~ — ✅ rozstrzygnięte 2026-09-24, wyjątek od ADR-001 dla aplikacji terenowej, wymagania zarejestrowane.
 
-**Wszystkie dwanaście punktów zostało rozstrzygniętych 2026-08-18.** Kontrakt nie ma elementów w statusie `PROPOSED`, rejestr wymagań nie ma pozycji `BLOCKED`, walidator zgłasza zero ostrzeżeń. Od tego momentu krok zerowy jest zamknięty i agenci mogą pracować nad dowolnym modułem — pod warunkiem że kolejne zmiany kontraktu przechodzą przez okno kontraktowe.
+**Wszystkie dwanaście punktów z sierpnia zostały rozstrzygnięte 2026-08-18, a trzynasty (ADR-013) dołączył i został rozstrzygnięty 2026-09-24.** Kontrakt nie ma elementów w statusie `PROPOSED`, rejestr wymagań nie ma pozycji `BLOCKED` (poza otwartymi pytaniami projektowymi D-API-3/D-API-4 w `docs/workorders/FLD-API-LAYER.md`, do rozstrzygnięcia przed fazą RED), walidator zgłasza zero ostrzeżeń. Od tego momentu krok zerowy jest zamknięty i agenci mogą pracować nad dowolnym modułem — pod warunkiem że kolejne zmiany kontraktu przechodzą przez okno kontraktowe.
 
 Po każdej decyzji: aktualizacja `contracts/*.contract.mjs` przez `contract-steward` w otwartym oknie, potem `node tools/kk-codegen.mjs`, potem `node tools/kk-validate.mjs --strict`.

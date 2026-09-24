@@ -1,9 +1,7 @@
-# ADR-013 (SZKIC): warstwa zapisu aplikacji terenowej
+# ADR-013: warstwa zapisu aplikacji terenowej
 
-> **Status: SZKIC DO ZATWIERDZENIA.** To nie jest jeszcze obowiązujący ADR. Treść powstała 2026-09-23
-> na podstawie decyzji D1 i D2 z [zakresu Field App](../workorders/FIELD-APP-I-PODPISY-ZAKRES.md).
-> Formalne wydanie należy do `contract-steward` w oknie kontraktowym, razem z wpisem
-> w [01-ADR-spec-conflicts.md](../01-ADR-spec-conflicts.md).
+> **Status: WYDANE 2026-09-24.** Aneks do ADR-001, patrz wpis w
+> [01-ADR-spec-conflicts.md](../01-ADR-spec-conflicts.md).
 
 ## Kontekst
 

@@ -75,5 +75,59 @@ export const QUEUE_POLICY = {
   backoffBaseSeconds: 60,
   deadLetterAfterAttempts: 5,
   requiresIdempotencyKey: true,
-  note: 'ADR-007 rozstrzygnięte 2026-08-18: notification_queue ma attempts, last_error, next_attempt_at, dead_lettered_at oraz unikalny idempotency_key. Status DEAD_LETTER jest osobny od ERROR.',
+
+  /**
+   * SŁOWNIK STATUSÓW KOLEJKI — lustro CHECK-a notification_queue_status_check w bazie.
+   *
+   * Dotąd ten słownik nie istniał w kontrakcie: żył wyłącznie w treści migracji
+   * 20260908065000 i w komentarzu modelu Prisma, a `note` niżej wspominał o nim prozą.
+   * Wpisany tutaj, bo od 2026-09-24 słownik przestał być listą opisową i stał się
+   * MECHANIZMEM WSPÓŁBIEŻNOŚCI — a mechanizm bez nazwy w kontrakcie jest literałem w kodzie.
+   *
+   * `SENDING` (nowy, decyzja Michała 2026-09-24 po recenzji gałęzi feat/ntf-gateway).
+   * Recenzja wykazała bloker, który nie jest błędem implementacji, tylko brakiem stanu:
+   * dispatcher pobierał wiersze PENDING, wysyłał, dopiero potem oznaczał SENT. Dwa równoległe
+   * uruchomienia (a przy zamiataczu cron takie są normą, nie wypadkiem) czytały ten sam wiersz
+   * i wysyłały klientowi ten sam SMS dwa razy. Sprawdzenie „czy już wysłane" w JS tego nie
+   * naprawia — to jest pułapka nr 4 z CLAUDE.md w czystej postaci, tyle że o kolejce zamiast
+   * o slocie: między odczytem a zapisem mieści się drugi proces.
+   *
+   * Naprawą jest ATOMOWE PRZEJĘCIE WIERSZA, a nie kolejna flaga: `updateMany` z warunkiem
+   * `{ id, status: 'PENDING' }` ustawiający `status: 'SENDING'`, po czym wysyłka WYŁĄCZNIE
+   * gdy `count === 1`. Przegrany wyścig dostaje `count === 0` i nie robi nic — rozstrzyga
+   * baza, nie kolejność wywołań. Dlatego `SENDING` musi być osobnym stanem: gdyby przejęcie
+   * ustawiało od razu `SENT`, awaria dostawcy SMS zostawiłaby wiersz oznaczony jako wysłany,
+   * którego nikt nie wysłał — czyli zamieniłaby duble na ciche gubienie wiadomości.
+   *
+   * CENA, którą trzeba znać: wiersz w `SENDING` po awarii procesu (kill, timeout, restart)
+   * zostaje w tym stanie na zawsze i nikt go nie podejmie. Odzyskiwanie takich wierszy
+   * („SENDING starszy niż N minut wraca do PENDING") należy do NTF-QUEUE-CLAIM i JEST
+   * warunkiem kompletności tego mechanizmu, a nie ulepszeniem na później.
+   */
+  statuses: ['PENDING', 'SENDING', 'SENT', 'ERROR', 'DEAD_LETTER'],
+  claimTransition: { from: 'PENDING', to: 'SENDING', req: ['NTF-QUEUE-CLAIM'] },
+
+  /**
+   * TREŚĆ WYRENDEROWANA ZAPISYWANA W WIERSZU KOLEJKI (decyzja Michała 2026-09-24).
+   *
+   * Dziś wiersz kolejki trzyma `payload` (zmienne) i `template_key` (wskazanie szablonu),
+   * ale NIE trzyma tekstu, który poszedł do klienta. Dopóki szablony były stałą w TypeScripcie,
+   * treść dawała się odtworzyć z gita: klucz + zmienne + commit z dnia wysyłki. Po przeniesieniu
+   * szablonów do bazy i dopuszczeniu edycji w panelu (NTF-TEMPLATE-STORE) ta droga znika —
+   * odtworzenie dałoby treść AKTUALNĄ, nie tę wysłaną.
+   *
+   * Pytanie, na które to odpowiada, nie jest techniczne: „co dokładnie napisaliście klientowi
+   * 14 marca" pada w sporze o ofertę albo o termin i odpowiedź „nie wiemy, szablon zmieniono"
+   * jest przegraną. Dlatego treść zapisuje się W MOMENCIE KOLEJKOWANIA, nie w momencie wysyłki:
+   * kolejkowanie dzieje się w transakcji ze zmianą statusu (pułapka nr 2 z CLAUDE.md), więc
+   * to jedyny moment, w którym wiadomo, że treść i zdarzenie są tą samą prawdą.
+   *
+   * Wersja szablonu zapisywana OBOK treści, nie zamiast niej: sam numer wersji wymagałby
+   * dołączenia do tabeli wersji przy każdym pytaniu, a treść bez numeru nie mówi, którą
+   * wersję widział wtedy administrator. Nośnikiem obu jest NTF-QUEUE-RENDERED-BODY.
+   */
+  persistsRenderedBody: true,
+  templateSource: 'message_templates',
+
+  note: 'ADR-007 rozstrzygnięte 2026-08-18: notification_queue ma attempts, last_error, next_attempt_at, dead_lettered_at oraz unikalny idempotency_key. Status DEAD_LETTER jest osobny od ERROR. ROZSZERZENIE 2026-09-24 (decyzje Michała): (1) słownik statusów przeniesiony z migracji do kontraktu i rozszerzony o SENDING — stan przejęcia wiersza, bez którego dwa równoległe zamiatacze wysyłają ten sam SMS dwa razy (NTF-QUEUE-CLAIM); (2) wiersz kolejki zapisuje WYRENDEROWANĄ treść i wersję szablonu w chwili kolejkowania (NTF-QUEUE-RENDERED-BODY), bo po przeniesieniu szablonów do edytowalnej tabeli message_templates treści nie da się już odtworzyć z gita; (3) szablony mieszkają w bazie, nie w stałej TypeScript (NTF-TEMPLATE-STORE). Zamiatacz kolejki jest zdarzeniowo NIEZALEŻNY od kolejkowania — wysyłkę wyzwala pg_cron po stronie Supabase (NTF-DISPATCH-CRON), bo okno 08:00-18:00, ponowienia z narastającym odstępem i zakaz wołania zewnętrznego API w transakcji biznesowej to trzy powody, dla których zdarzenie domenowe nie wystarcza.',
 };

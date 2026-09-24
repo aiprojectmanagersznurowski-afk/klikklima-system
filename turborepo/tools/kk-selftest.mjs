@@ -16,6 +16,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { checkWrite } from './guard-core.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'contracts');
@@ -45,7 +46,11 @@ const MUTATIONS = [
   { rule: 'R17-var-naming',    file: 'notifications.contract.mjs', from: "vars: ['first_name', 'eta']", to: "vars: ['imie', 'eta']", desc: 'polska nazwa zmiennej szablonu (ADR-002)' },
   { rule: 'R11-req-complete',  file: 'requirements.contract.mjs',  from: "acceptance: ['Sortowanie po bucket_entered_at DESC']", to: "acceptance: []", desc: 'wymaganie bez kryteriów akceptacji' },
   { rule: 'R12-req-refs',      file: 'funnel.contract.mjs',        from: "req: ['FNL-E5-BYPASS']", to: "req: ['FNL-NIE-ISTNIEJE']", desc: 'odwołanie do nieistniejącego wymagania' },
-  { rule: 'R13-rbac',          file: 'rbac.contract.mjs',          from: "{ resource: 'clients',            read: ['admin', 'dyspozytor'],                     create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor'], delete: ['admin'] }", to: "{ resource: 'clients',            read: ['admin', 'dyspozytor'],                     create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor'], delete: ['admin', 'dyspozytor'] }", desc: 'dyspozytor dostaje prawo usuwania klientów' },
+  // KOTWICA ZAKTUALIZOWANA 2026-09-24: wiersz `clients` dostał warianty audytor:own i monter:own
+  // (CRM-KLI-AC2), więc poprzednia kotwica przestała istnieć i kk-selftest zgłosił „mutacja
+  // nieaktualna" — dokładnie tak, jak powinien. Mutacja bada nadal to samo: globalną zasadę
+  // „usuwa wyłącznie admin", niezależną od tego, kto ma prawo ODCZYTU.
+  { rule: 'R13-rbac',          file: 'rbac.contract.mjs',          from: "{ resource: 'clients',            read: ['admin', 'dyspozytor', 'audytor:own', 'monter:own'], create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor'], delete: ['admin'] }", to: "{ resource: 'clients',            read: ['admin', 'dyspozytor', 'audytor:own', 'monter:own'], create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor'], delete: ['admin', 'dyspozytor'] }", desc: 'dyspozytor dostaje prawo usuwania klientów' },
   { rule: 'R14-sla',           file: 'sla.contract.mjs',           from: "{ id: 'URGENT',   maxDays: 7,", to: "{ id: 'URGENT',   maxDays: 2,", desc: 'progi SLA w złej kolejności' },
   { rule: 'R15-queue',         file: 'notifications.contract.mjs', from: 'requiresIdempotencyKey: true', to: 'requiresIdempotencyKey: false', desc: 'ponawianie bez klucza idempotencji' },
 
@@ -92,6 +97,89 @@ const MUTATIONS = [
   { rule: 'R32-triage-visibility', file: 'triage.contract.mjs', from: "visibleWhen: { field: 'BUILDING_TYPE', in: ['APARTMENT', 'HOUSE'] }", to: "visibleWhen: { field: 'BUILDING_TYPE', in: ['APARTMENT', 'DOM'] }", desc: 'warunek widoczności z wartością spoza słownika — pytanie o powierzchnię nie pokaże się domom, a oferta wyjdzie z domyślną stawką VAT' },
   { rule: 'R32-triage-visibility', file: 'triage.contract.mjs', from: "visibleWhen: { field: 'BUILDING_TYPE', in: ['APARTMENT', 'HOUSE'] }", to: "visibleWhen: { field: 'TYP_BUDYNKU', in: ['APARTMENT', 'HOUSE'] }", desc: 'warunek widoczności wskazuje nieistniejące pole odpowiedzi' },
   { rule: 'R32-triage-visibility', file: 'triage.contract.mjs', from: "{ id: 'UP_TO_300', pl: 'Do 300 m²',      boundary: 'BELOW_OR_EQUAL', status: 'STABLE' },", to: "{ id: 'UP_TO_300', pl: 'Do 300 m²',      boundary: 'BELOW_OR_EQUAL', maxSqm: 300, status: 'STABLE' },", desc: 'próg 300 m² powtórzony w słowniku Triage — druga kopia liczby, która żyje w kontrakcie SLA' },
+];
+
+/**
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ * SONDY REGUŁ TREŚCIOWYCH (2026-09-24, wymaganie GATE-EVASION-DETECT)
+ *
+ * Mutacje powyżej dotyczą reguł WALIDATORA (kk-validate na zmutowanym kontrakcie). Reguły
+ * wykrywające omijanie bramek żyją gdzie indziej — w `forbiddenPatterns` w tools/kk.config.mjs,
+ * egzekwowanych przez guard-core przy ZAPISIE PLIKU. Tamtego mechanizmu nie da się sprawdzić
+ * podmianą kontraktu, bo kontraktu on nie czyta.
+ *
+ * DLACZEGO TO JEST W TYM SAMYM PLIKU, A NIE W NOWYM NARZĘDZIU (decyzja projektowa,
+ * contract-steward 2026-09-24): kk-selftest odpowiada na JEDNO pytanie — „czy bramka potrafi
+ * zapalić się na czerwono". To pytanie jest identyczne dla obu rodzajów reguł, a rozdzielenie
+ * go na dwa narzędzia dałoby drugie miejsce, o którym trzeba pamiętać, i drugi licznik, który
+ * może po cichu spaść do zera. Jedno narzędzie, jedno miejsce w scripts/verify.sh, jeden wynik.
+ *
+ * RÓŻNICA WOBEC MUTACJI: każda sonda deklaruje `fires` — czy reguła MA się zapalić.
+ * Sondy NEGATYWNE (`fires: false`) są tu równie ważne jak pozytywne i nie są ozdobą.
+ * Reguła treściowa jest regexem nad cudzym kodem: reguła, która łapie przypadki legalne,
+ * zostanie wyciszona przy pierwszym fałszywym alarmie — czyli w praktyce usunięta. Sonda
+ * negatywna jest jedynym, co trzyma jej zakres na miejscu przy późniejszym „poszerzę trochę".
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ */
+const PROD = 'apps/b2b-web/src/app/(dashboard)/leads/probe.ts';
+const TEST = 'apps/b2b-web/tests/probe.test.ts';
+
+const CONTENT_PROBES = [
+  // ── gate-evasion-split-identifier ──
+  {
+    rule: 'gate-evasion-split-identifier', file: PROD, fires: true,
+    content: "const TBL = ['kli', 'enci'].join('');\n",
+    desc: 'identyfikator sklejony z tablicy literałów joinem z pustym separatorem (wzorzec z feat/crm-cards)',
+  },
+  {
+    rule: 'gate-evasion-split-identifier', file: PROD, fires: true,
+    content: 'const TBL = "zespoly_" + "monterskie";\n',
+    desc: 'identyfikator sklejony konkatenacją dwóch literałów bez spacji',
+  },
+  {
+    // Zakres celowo ogólny: reguła NIE zna słownika porzuconych nazw i ma łapać także
+    // sklejenie nazwy, której nikt jeszcze nie porzucił. Ta sonda pilnuje, żeby przy
+    // przyszłym „doprecyzowaniu" reguły nie przypięto jej do listy z adr002-pl-tables.
+    rule: 'gate-evasion-split-identifier', file: PROD, fires: true,
+    content: "const col = ['price', '_netto'].join('');\n",
+    desc: 'sklejanie działa na dowolnym identyfikatorze, nie tylko na dzisiejszej liście porzuconych nazw',
+  },
+  {
+    rule: 'gate-evasion-split-identifier', file: PROD, fires: false,
+    content: "const label = ['Jan', 'Kowalski'].join(', ');\nconst msg = 'Witaj, ' + name;\n",
+    desc: 'NEGATYWNA: join z separatorem i konkatenacja z tekstem dla człowieka są legalne',
+  },
+  {
+    rule: 'gate-evasion-split-identifier', file: TEST, fires: false,
+    content: "const UNSAFE_TYPE = ['an', 'y'].join('');\n",
+    desc: 'NEGATYWNA: test budujący zakazany token, żeby sam się o niego nie odbić (dwa takie pliki istnieją w repo)',
+  },
+
+  // ── gate-evasion-prisma-recast ──
+  {
+    rule: 'gate-evasion-prisma-recast', file: PROD, fires: true,
+    content: 'const db = prisma as unknown as SomeDynamicType;\n',
+    desc: 'klient Prismy przepuszczony przez podwójne rzutowanie — as any w przebraniu',
+  },
+  {
+    rule: 'gate-evasion-prisma-recast', file: PROD, fires: true,
+    content: 'const d = client as unknown as PrismaLeadDelegate;\n',
+    desc: 'rzutowanie NA typ prismowy — druga strona tego samego obejścia',
+  },
+  {
+    // UWAGA NA KSZTAŁT TEJ SONDY (pomyłka popełniona i naprawiona 2026-09-24): operandem
+    // rzutowania musi być identyfikator prismowy, a nie CEL PRZYPISANIA. `const mockPrisma =
+    // raw as unknown as X` reguły NIE zapala i zapalać nie powinna — rzutowane jest `raw`.
+    // Reguła patrzy na to, CO jest rzutowane, i to jest właściwe zachowanie.
+    rule: 'gate-evasion-prisma-recast', file: TEST, fires: true,
+    content: 'const client = mockPrisma as unknown as Whatever;\n',
+    desc: 'reguła obowiązuje także w testach — atrapa udająca typowanego klienta to ten sam problem',
+  },
+  {
+    rule: 'gate-evasion-prisma-recast', file: TEST, fires: false,
+    content: 'const missing = undefined as unknown as string;\nconst n = badWeekday as unknown as number;\n',
+    desc: 'NEGATYWNA: ~20 legalnych użyć `as unknown as` w repo (podsuwanie złego typu walidacji) NIE może zapalać bramki',
+  },
 ];
 
 let passed = 0;
@@ -145,7 +233,32 @@ function run(contractsDir) {
   }
 }
 
-console.log(`\n  Wynik: ${passed}/${MUTATIONS.length} reguł udowodniło, że potrafi zablokować zmianę.`);
+// ── Sondy reguł treściowych (guard-core + forbiddenPatterns z kk.config.mjs) ──
+console.log(`\n  sondy reguł treściowych (omijanie bramek): ${CONTENT_PROBES.length}\n`);
+let probesPassed = 0;
+for (const p of CONTENT_PROBES) {
+  // role: null + enforceContract: false => uruchamia WYŁĄCZNIE sekcję 3 (wzorce zakazane
+  // w treści). Bez tego sonda odbijałaby się od reguł ścieżkowych, nie od badanej reguły.
+  const res = checkWrite(p.file, p.content, { role: null, enforceContract: false });
+  const firedRule = res.blocked ? res.rule : null;
+  const ok = p.fires ? firedRule === p.rule : firedRule !== p.rule;
+  const tag = p.fires ? 'wykryto' : 'przepuszczono';
+  if (ok) {
+    probesPassed++;
+    console.log(`  ✓ ${p.rule.padEnd(30)} ${tag}: ${p.desc}`);
+    // Dowodem żywotności jest KOMUNIKAT, nie licznik — ta sama zasada co przy mutacjach.
+    if (p.fires) console.log(`      └─ ${res.reason.slice(0, 150)}`);
+  } else if (p.fires) {
+    failures.push(`${p.rule}: sonda „${p.desc}" NIE zapaliła reguły (zapaliło się: ${firedRule || 'nic'}) — reguła martwa`);
+    console.log(`  ✗ ${p.rule.padEnd(30)} PRZEOCZONO: ${p.desc}`);
+  } else {
+    failures.push(`${p.rule}: FAŁSZYWY ALARM na przypadku legalnym „${p.desc}" — reguła w tym kształcie zostanie wyciszona`);
+    console.log(`  ✗ ${p.rule.padEnd(30)} FAŁSZYWY ALARM: ${p.desc}`);
+  }
+}
+
+console.log(`\n  Wynik: ${passed}/${MUTATIONS.length} reguł walidatora udowodniło, że potrafi zablokować zmianę.`);
+console.log(`         ${probesPassed}/${CONTENT_PROBES.length} sond reguł treściowych zachowało się zgodnie z zamiarem.`);
 if (failures.length) {
   console.log('\n  MARTWE REGUŁY:');
   for (const f of failures) console.log(`    - ${f}`);
