@@ -1,10 +1,12 @@
 "use client"
 
-import React, { useState, useTransition } from "react"
-import { Search, MapPin, Calendar, Wrench, MoreHorizontal, CheckCircle2, XCircle, ArrowRight , ShieldAlert } from "lucide-react"
-import { can, SLA, type Role } from "@klikklima/contracts"
+import React, { useState, useTransition, useEffect } from "react"
+import { Search, MapPin, Calendar, Wrench, MoreHorizontal, CheckCircle2, XCircle, ShieldAlert } from "lucide-react"
+import { can, type Role } from "@klikklima/contracts"
 import { Button } from "@/components/ui/button"
-import { InstallationSummary, updateInstallationStatus , deleteInstallationAction } from "./actions"
+import { InstallationSummary, updateInstallationStatus } from "./actions"
+import { isInstallationLate } from "./installation-sla"
+import { createClient } from "@/utils/supabase/client"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,13 +15,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { isToday } from "date-fns"
 import { formatDate } from "@/lib/format-date"
 import { DeleteJustificationDialog } from "@/components/delete-justification-dialog"
 import { StatusPill } from "@/components/ui/status-pill"
 import { EMPTY_VALUE } from "@/lib/empty-value"
+import type { InstallationStatus } from "@repo/database"
 
 export function InstallationsClient({
   initialInstallations,
@@ -40,8 +42,53 @@ export function InstallationsClient({
     setDeleteDialogId(id);
   }
 
+  // @REQ: CRM-INST-AC1 — nasłuchiwanie na zmiany statusu instalacji w Supabase Realtime.
+  // Gdy ekipa oznaczy montaż jako zakończony w aplikacji mobilnej, widok odświeża się bez pełnego przeładowania.
+  useEffect(() => {
+    let activeChannel: ReturnType<ReturnType<typeof createClient>['channel']> | null = null;
+    try {
+      const supabase = createClient();
+      activeChannel = supabase
+        .channel('installations-realtime-channel')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'instalacje',
+          },
+          (payload) => {
+            if (payload.new && typeof payload.new === 'object') {
+              const row = payload.new as Record<string, unknown>;
+              if (row.id && row.status) {
+                setInstallations((prev) =>
+                  prev.map((item) =>
+                    item.id === row.id ? { ...item, status: row.status as InstallationStatus } : item
+                  )
+                );
+              }
+            }
+            router.refresh();
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.error("Realtime subscription error:", e);
+    }
 
-  const handleStatusChange = (id: string, newStatus: any) => {
+    return () => {
+      if (activeChannel) {
+        try {
+          const supabase = createClient();
+          supabase.removeChannel(activeChannel);
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, [router]);
+
+  const handleStatusChange = (id: string, newStatus: InstallationStatus) => {
     startTransition(async () => {
       try {
         const result = await updateInstallationStatus(id, newStatus);
@@ -51,7 +98,7 @@ export function InstallationsClient({
         }
         setInstallations(prev => prev.map(i => i.id === id ? { ...i, status: newStatus } : i));
         alert(`Status instalacji zaktualizowany na: ${newStatus}`);
-      } catch (e) {
+      } catch {
         alert("Błąd podczas aktualizacji statusu instalacji.");
       }
     });
@@ -127,15 +174,13 @@ export function InstallationsClient({
                 ) : (
                   filtered.map(item => {
                     const isTodayInstall = item.plannedDate ? isToday(new Date(item.plannedDate)) : false;
-                    const isLate = isTodayInstall && item.status !== "COMPLETED" && new Date().getHours() >= SLA.INSTALL_DAY_ALERT.hourOfDay;
+                    // @REQ: CRM-INST-AC2 — próg z SLA.INSTALL_DAY_ALERT.hourOfDay
+                    const isLate = isInstallationLate(item);
                     
                     return (
                       <tr
                         key={item.id}
                         onClick={() => {
-                          // Wzorzec z leads-client.tsx: jeżeli użytkownik ma zaznaczony tekst
-                          // (np. próbował przeciągnięciem myszki zaznaczyć adres/nazwisko klienta),
-                          // nie traktujemy tego jako intencji nawigacji do szczegółów.
                           if (window.getSelection()?.toString()) return;
                           router.push(`/installations/${item.id}`);
                         }}
@@ -230,7 +275,7 @@ export function InstallationsClient({
 
                                 {item.status === 'IN_PROGRESS' && (
                                   <DropdownMenuItem onClick={() => handleStatusChange(item.id, 'COMPLETED')}>
-                                    <CheckCircle2 className="mr-2 size-4 text-green-600" />
+                                    <CheckCircle2 className="mr-2 size-4 text-primary" />
                                     <span>Zakończ montaż</span>
                                   </DropdownMenuItem>
                                 )}
@@ -274,6 +319,22 @@ export function InstallationsClient({
           </div>
         </div>
       </div>
+
+      {deleteDialogId !== null && (
+        <DeleteJustificationDialog
+          title="Usuń instalację"
+          description="Wpisz uzasadnienie biznesowe i wskaż podstawę prawną usunięcia wpisu instalacji z systemu."
+          onClose={() => setDeleteDialogId(null)}
+          onConfirm={async (data) => {
+            const { deleteInstallationAction } = await import("./actions");
+            return deleteInstallationAction(deleteDialogId, data);
+          }}
+          onSuccess={() => {
+            setInstallations(prev => prev.filter(i => i.id !== deleteDialogId));
+            setDeleteDialogId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

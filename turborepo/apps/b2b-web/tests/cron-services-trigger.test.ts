@@ -124,7 +124,8 @@ describe("CRM-SRV-TRIGGER & SRV-REMINDER-ONCE: runServiceInspectionCron", () => 
         data: expect.objectContaining({
           notificationId: n10Def!.id,
           recipientType: "CLIENT",
-          installationId: "inst-uuid-1",
+          serviceId: "srv-created-1",
+          installationId: null,
         }),
       })
     )

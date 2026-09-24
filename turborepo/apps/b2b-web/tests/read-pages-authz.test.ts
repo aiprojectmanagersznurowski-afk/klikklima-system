@@ -296,12 +296,21 @@ describe('CustomerDetailPage (/customers/[id]) - BLOCKER SEC-READ-GATES: bramka 
     'rola %s - render przechodzi, notFound() NIE wołane, findUnique wołane dokładnie raz (zachowanie bez zmian)',
     async (role) => {
       getCurrentActorRoleMock.mockResolvedValue(role);
+      // Fikstura zgodna z `select` w `page.tsx` (runda 3, minimalizacja PII): relacje
+      // `select`owane w Prismie wracają ZAWSZE jako tablica (nigdy `undefined`), stąd
+      // `adresy`/`leady`/`usterki_incidents` poniżej muszą być obecne — ten test dotyczy
+      // bramki roli, nie treści historii, więc puste tablice są wystarczające.
       klienciFindUniqueMock.mockResolvedValue({
         id: 'customer-1',
+        client_number: 'K-0001',
         imie_i_nazwisko: 'Jan Kowalski',
         email: null,
         telefon: null,
         created_at: new Date('2026-01-01T00:00:00.000Z'),
+        anonymized_at: null,
+        adresy: [],
+        leady: [],
+        usterki_incidents: [],
       });
 
       const result = await CustomerDetailPage({ params: Promise.resolve({ id: 'customer-1' }) });
