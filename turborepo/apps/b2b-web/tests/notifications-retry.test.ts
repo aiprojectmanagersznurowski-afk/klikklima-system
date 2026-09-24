@@ -52,10 +52,7 @@ describe("NTF-RETRY — Ponawianie błędnych powiadomień i DEAD_LETTER", () =>
   it("ponowienie inkrementuje attempts na istniejącym rekordzie, nie tworzy nowego wiersza", async () => {
     const mockPrisma = {
       notificationQueue: {
-        update: vi.fn().mockImplementation(async ({ where, data }) => ({
-          id: where.id,
-          ...data,
-        })),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         create: vi.fn(),
       },
     };
@@ -71,33 +68,77 @@ describe("NTF-RETRY — Ponawianie błędnych powiadomień i DEAD_LETTER", () =>
     const updated = await retryNotificationRecord(mockPrisma as never, deadLetterRecord.id);
 
     expect(mockPrisma.notificationQueue.create).not.toHaveBeenCalled();
-    expect(mockPrisma.notificationQueue.update).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.notificationQueue.updateMany).toHaveBeenCalledTimes(1);
     expect(updated.status).toBe("PENDING");
     expect(updated.deadLetteredAt).toBeNull();
   });
 
   // @REQ: NTF-RETRY
-  it("dwa równoległe ponowienia z tym samym rekordem skutkują jedną operacją (idempotencja)", async () => {
-    let updateCount = 0;
+  it("ponowienie wiersza, który NIE jest w DEAD_LETTER (np. już SENT), jest odmawiane bez żadnej zmiany w bazie", async () => {
+    // Odmowa jest dostrzegalna WYŁĄCZNIE przez to, co poszło do bazy: przejęcie
+    // musi iść przez updateMany z warunkiem na POPRZEDNIM statusie (analogicznie
+    // do NTF-QUEUE-CLAIM w dispatcherze) — „sprawdzenie w JS, czy rekord jest
+    // SENT" nie wystarcza, bo klient serwer-akcji może podać dowolne
+    // notificationId niezależnie od tego, co faktycznie widzi w bazie.
+    const updateManyMock = vi.fn().mockResolvedValue({ count: 0 });
     const mockPrisma = {
       notificationQueue: {
-        update: vi.fn().mockImplementation(async () => {
-          updateCount++;
-          return { id: "ntf-concurrency-1", status: "PENDING", attempts: 5 };
-        }),
+        updateMany: updateManyMock,
         create: vi.fn(),
       },
     };
 
-    // Uruchomienie dwóch prób ponowienia równolegle
-    const [res1, res2] = await Promise.all([
+    const sentRecordId = "ntf-already-sent-1";
+
+    await expect(retryNotificationRecord(mockPrisma as never, sentRecordId)).rejects.toThrow();
+
+    expect(updateManyMock).toHaveBeenCalledTimes(1);
+    const [args] = updateManyMock.mock.calls[0];
+    expect(args.where).toMatchObject({ id: sentRecordId, status: "DEAD_LETTER" });
+    expect(mockPrisma.notificationQueue.create).not.toHaveBeenCalled();
+  });
+
+  // @REQ: NTF-RETRY
+  it("dwa równoległe ponowienia tego samego rekordu skutkują JEDNĄ faktyczną zmianą (count sumaryczny === 1)", async () => {
+    // Baza-atrapa ze stanem: pierwsze updateMany, które trafia na DEAD_LETTER,
+    // przełącza rekord na PENDING i zwraca count: 1; drugie trafia na rekord
+    // już zmieniony (nie jest już DEAD_LETTER) i zwraca count: 0. Suma zwróconych
+    // count-ów jest jedynym wiarygodnym dowodem „jedna operacja wygrała" —
+    // liczenie samych WYWOŁAŃ update (jak w poprzedniej wersji tego testu)
+    // nie odróżnia bezwarunkowego update od atomowego przejęcia.
+    let currentStatus: string = "DEAD_LETTER";
+    let totalAppliedCount = 0;
+
+    const updateManyMock = vi.fn().mockImplementation(async ({ where }: { where: { status?: string } }) => {
+      if (where.status && where.status !== currentStatus) {
+        return { count: 0 };
+      }
+      currentStatus = "PENDING";
+      totalAppliedCount += 1;
+      return { count: 1 };
+    });
+
+    const mockPrisma = {
+      notificationQueue: {
+        updateMany: updateManyMock,
+        create: vi.fn(),
+      },
+    };
+
+    const [res1, res2] = await Promise.allSettled([
       retryNotificationRecord(mockPrisma as never, "ntf-concurrency-1"),
       retryNotificationRecord(mockPrisma as never, "ntf-concurrency-1"),
     ]);
 
-    expect(res1.status).toBe("PENDING");
-    expect(res2.status).toBe("PENDING");
     expect(mockPrisma.notificationQueue.create).not.toHaveBeenCalled();
+    expect(totalAppliedCount).toBe(1);
+
+    // Dokładnie jeden z dwóch woływanych zwraca sukces (PENDING), drugi jest
+    // odmową — nigdy oba jako sukces.
+    const successCount = [res1, res2].filter(
+      (r) => r.status === "fulfilled" && r.value.status === "PENDING",
+    ).length;
+    expect(successCount).toBe(1);
   });
 
   // @REQ: NTF-RETRY

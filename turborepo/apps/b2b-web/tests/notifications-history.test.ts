@@ -13,6 +13,33 @@ const N_INSTALL_COMPLETED = findId("funnel.install_completed");
 const N_SERVICE_REMINDER = findId("service.reminder");
 const N_INCIDENT_RECEIVED = findId("incident.received");
 
+/**
+ * applyWhereClause — interpreter MINIMALNEGO podzbioru składni `where` Prisma
+ * (equality, `{ field: { in: [...] } }`, `OR: [...]`), używany WYŁĄCZNIE po
+ * to, żeby atrapa `findMany` faktycznie filtrowała na podstawie argumentu,
+ * który dostała od kodu produkcyjnego — a nie zwracała z góry przygotowaną
+ * listę wierszy niezależnie od tego, co jej przekazano (dokładnie ten defekt,
+ * który recenzja 2026-09-24 znalazła w tym pliku: `findMany` ignorowało
+ * `where` i test i tak przechodził).
+ *
+ * Interpreter NIE wie nic o `clientId` — bo dzisiejszy `where` produkowany
+ * przez `getCustomerCommunicationHistory` też nic o nim nie wie (parametr
+ * jest przyjmowany i nieużywany). To jest właśnie premisa testu poniżej.
+ */
+function matchesWhere(row: Record<string, unknown>, where: Record<string, unknown>): boolean {
+  return Object.entries(where).every(([key, condition]) => {
+    if (key === "OR") {
+      const branches = condition as Record<string, unknown>[];
+      return branches.some((branch) => matchesWhere(row, branch));
+    }
+    if (condition && typeof condition === "object" && "in" in (condition as object)) {
+      const list = (condition as { in: unknown[] }).in;
+      return list.includes(row[key]);
+    }
+    return row[key] === condition;
+  });
+}
+
 describe("NTF-HISTORY — Historia komunikacji z klientem na Karcie 360", () => {
   // @REQ: NTF-HISTORY
   it("recipient_address zapisuje adres z chwili wysyłki i nie zmienia się po edycji danych klienta", async () => {
@@ -34,7 +61,9 @@ describe("NTF-HISTORY — Historia komunikacji z klientem na Karcie 360", () => 
 
     const mockPrisma = {
       notificationQueue: {
-        findMany: vi.fn().mockResolvedValue(historicalRows),
+        findMany: vi.fn().mockImplementation(async ({ where }) =>
+          historicalRows.filter((r) => matchesWhere(r, where)),
+        ),
       },
     };
 
@@ -59,7 +88,9 @@ describe("NTF-HISTORY — Historia komunikacji z klientem na Karcie 360", () => 
 
     const mockPrisma = {
       notificationQueue: {
-        findMany: vi.fn().mockResolvedValue(historicalRows),
+        findMany: vi.fn().mockImplementation(async ({ where }) =>
+          historicalRows.filter((r) => matchesWhere(r, where)),
+        ),
       },
     };
 
@@ -92,10 +123,13 @@ describe("NTF-HISTORY — Historia komunikacji z klientem na Karcie 360", () => 
 
     const mockPrisma = {
       notificationQueue: {
-        findMany: vi.fn().mockImplementation(async ({ where }) => {
-          // Zapytanie filtruje recipientType = CLIENT
-          return mixedRows.filter((r) => r.recipientType === "CLIENT");
-        }),
+        // Filtr jest zastosowany PRZEZ interpreter na podstawie `where`
+        // przekazanego przez kod produkcyjny — nie zaszyty na twardo w atrapie
+        // (implementacja bez filtra recipientType przejdzie tu identycznie
+        // jak dawniej, jeżeli where faktycznie go nie zawiera).
+        findMany: vi.fn().mockImplementation(async ({ where }) =>
+          mixedRows.filter((r) => matchesWhere(r, where)),
+        ),
       },
     };
 
@@ -106,5 +140,61 @@ describe("NTF-HISTORY — Historia komunikacji z klientem na Karcie 360", () => 
 
     expect(history).toHaveLength(1);
     expect(history[0].notificationId).toBe(N_AUDITOR_ASSIGNED);
+  });
+
+  // @REQ: NTF-HISTORY
+  it("wywołanie z samym clientId (bez żadnej listy ID) NIE zwraca komunikacji innych klientów", async () => {
+    // Dwa wiersze CLIENT, powiązane z DWOMA różnymi leadami — a więc (w
+    // rzeczywistym systemie) z dwoma różnymi klientami. Wołający podaje
+    // WYŁĄCZNIE `clientId`, bez `leadIds` — scenariusz z Karty 360, gdzie
+    // wołający jeszcze nie zna ID leadów/instalacji tego klienta i oczekuje,
+    // że funkcja sama je rozstrzygnie przez realną relację.
+    //
+    // Interpreter `matchesWhere` NIE MA żadnej wiedzy o `clientId` — bo
+    // dzisiejszy `where` produkowany przez `getCustomerCommunicationHistory`
+    // też jej nie ma (parametr jest przyjmowany i nieużywany, `where`
+    // redukuje się do `{ recipientType: "CLIENT" }`). Jeżeli wynik zawiera
+    // wiersz „innego klienta", dispatcher/historia wyciekła całą tabelę.
+    const rowOwnedByOurClient = {
+      id: "ntf-mine",
+      notificationId: N_AUDITOR_ASSIGNED,
+      channel: "SMS",
+      recipientType: "CLIENT",
+      recipientAddress: "+48500000001",
+      leadId: "lead-client-1",
+      installationId: null,
+      serviceId: null,
+      incidentId: null,
+      createdAt: new Date("2026-06-01T10:00:00Z"),
+    };
+    const rowOwnedByOtherClient = {
+      id: "ntf-not-mine",
+      notificationId: N_INSTALL_COMPLETED,
+      channel: "EMAIL",
+      recipientType: "CLIENT",
+      recipientAddress: "+48500000002",
+      leadId: "lead-client-2",
+      installationId: null,
+      serviceId: null,
+      incidentId: null,
+      createdAt: new Date("2026-06-02T10:00:00Z"),
+    };
+    const allRows = [rowOwnedByOurClient, rowOwnedByOtherClient];
+
+    const mockPrisma = {
+      notificationQueue: {
+        findMany: vi.fn().mockImplementation(async ({ where }) =>
+          allRows.filter((r) => matchesWhere(r, where)),
+        ),
+      },
+    };
+
+    const history = await getCustomerCommunicationHistory(mockPrisma as never, {
+      clientId: "client-1",
+    });
+
+    const returnedIds = history.map((h) => h.id);
+    expect(returnedIds).not.toContain("ntf-not-mine");
+    expect(returnedIds).toEqual(["ntf-mine"]);
   });
 });

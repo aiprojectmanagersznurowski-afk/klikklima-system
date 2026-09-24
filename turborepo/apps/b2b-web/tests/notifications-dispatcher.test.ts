@@ -27,27 +27,33 @@ beforeEach(() => {
   emailSendMock.mockReset();
 });
 
+function makePendingRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "q-1",
+    notificationId: AUDITOR_ASSIGNED_ID,
+    templateKey: "funnel.auditor_assigned",
+    channel: "SMS",
+    recipientType: "CLIENT",
+    recipientAddress: "+48 500 123 456",
+    payload: { first_name: "Jan", order_number: "ORD-999" },
+    status: "PENDING",
+    attempts: 0,
+    idempotencyKey: "key-sms-1",
+    nextAttemptAt: null,
+    ...overrides,
+  };
+}
+
 describe("P1 — Silnik wysyłki powiadomień (Dispatcher, SMSAPI, Mailtrap)", () => {
   it("wysyła SMS przez bramkę SMSAPI z poprawnym nadawcą i numerem", async () => {
     smsSendMock.mockResolvedValue({ success: true, messageId: "sms-msg-123" });
 
-    const queueRow = {
-      id: "q-1",
-      notificationId: AUDITOR_ASSIGNED_ID,
-      templateKey: "funnel.auditor_assigned",
-      channel: "SMS",
-      recipientType: "CLIENT",
-      recipientAddress: "+48 500 123 456",
-      payload: { first_name: "Jan", order_number: "ORD-999" },
-      status: "PENDING",
-      attempts: 0,
-      idempotencyKey: "key-sms-1",
-      nextAttemptAt: null,
-    };
+    const queueRow = makePendingRow();
 
     const mockPrisma = {
       notificationQueue: {
         findMany: vi.fn().mockResolvedValue([queueRow]),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue({ ...queueRow, status: "SENT" }),
       },
     };
@@ -65,23 +71,20 @@ describe("P1 — Silnik wysyłki powiadomień (Dispatcher, SMSAPI, Mailtrap)", (
   it("wysyła Email przez bramkę Mailtrap z poprawnym szablonem i odbiorcą", async () => {
     emailSendMock.mockResolvedValue({ success: true, messageId: "mail-msg-456" });
 
-    const queueRow = {
+    const queueRow = makePendingRow({
       id: "q-2",
       notificationId: QUOTE_READY_ID,
       templateKey: "funnel.quote_ready",
       channel: "EMAIL",
-      recipientType: "CLIENT",
       recipientAddress: "jan.kowalski@example.com",
       payload: { first_name: "Jan", link: "https://klikklima.pl/w/123", total_price: "15 000 zł" },
-      status: "PENDING",
-      attempts: 0,
       idempotencyKey: "key-email-1",
-      nextAttemptAt: null,
-    };
+    });
 
     const mockPrisma = {
       notificationQueue: {
         findMany: vi.fn().mockResolvedValue([queueRow]),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
         update: vi.fn().mockResolvedValue({ ...queueRow, status: "SENT" }),
       },
     };
@@ -96,18 +99,64 @@ describe("P1 — Silnik wysyłki powiadomień (Dispatcher, SMSAPI, Mailtrap)", (
     expect(mailArgs.html).toContain("Jan");
   });
 
-  it("idempotencja: ponowne uruchomienie dispatchera nie wysyła wiadomości ze statusem SENT", async () => {
+  // @REQ: NTF-QUEUE-CLAIM
+  it("przejęcie wiersza jest atomowe: updateMany z warunkiem { id, status: PENDING } -> { status: SENDING }, wysyłka wyłącznie po count === 1", async () => {
+    smsSendMock.mockResolvedValue({ success: true, messageId: "sms-msg-999" });
+
+    const queueRow = makePendingRow();
+    const updateManyMock = vi.fn().mockResolvedValue({ count: 1 });
+
     const mockPrisma = {
       notificationQueue: {
-        findMany: vi.fn().mockResolvedValue([]),
-        update: vi.fn(),
+        findMany: vi.fn().mockResolvedValue([queueRow]),
+        updateMany: updateManyMock,
+        update: vi.fn().mockResolvedValue({ ...queueRow, status: "SENT" }),
       },
     };
 
     const result = await processNotificationQueue(mockPrisma as never);
 
-    expect(result.sentCount).toBe(0);
+    // Nie sprawdzamy zwrotki atrapy — sprawdzamy DOSŁOWNE argumenty przekazane
+    // do bazy: przejęcie musi iść przez updateMany z warunkiem na POPRZEDNIM
+    // statusie, nie przez bezwarunkowy update.
+    expect(updateManyMock).toHaveBeenCalledTimes(1);
+    const [claimArgs] = updateManyMock.mock.calls[0];
+    expect(claimArgs.where).toMatchObject({ id: queueRow.id, status: "PENDING" });
+    expect(claimArgs.data).toMatchObject({ status: "SENDING" });
+
+    // Wysyłka nastąpiła TYLKO dlatego, że przejęcie zwróciło count === 1.
+    expect(smsSendMock).toHaveBeenCalledTimes(1);
+    expect(result.sentCount).toBe(1);
+  });
+
+  // @REQ: NTF-QUEUE-CLAIM
+  it("przegrany wyścig o przejęcie wiersza (updateMany zwraca count: 0) nie wysyła nic i nie ustawia SENT", async () => {
+    // Zwrotka bramki jest tu nieistotna dla sedna testu (asercja jest o tym,
+    // czy dispatcher W OGÓLE spróbował wysłać) — ale musi być zdefiniowana,
+    // inaczej dzisiejszy dispatcher (który NIE sprawdza count z przejęcia i
+    // wysyła zawsze) wywali się na czytaniu `.success` z `undefined`, co
+    // maskowałoby prawdziwą asercję wyjątkiem technicznym.
+    smsSendMock.mockResolvedValue({ success: true, messageId: "should-not-happen" });
+    const queueRow = makePendingRow();
+    const updateMock = vi.fn();
+
+    const mockPrisma = {
+      notificationQueue: {
+        findMany: vi.fn().mockResolvedValue([queueRow]),
+        // Drugi proces przejął wiersz pierwszy — nasze updateMany trafia na
+        // status już zmieniony na SENDING i zwraca count: 0.
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        update: updateMock,
+      },
+    };
+
+    const result = await processNotificationQueue(mockPrisma as never);
+
     expect(smsSendMock).not.toHaveBeenCalled();
     expect(emailSendMock).not.toHaveBeenCalled();
+    // Zero skutków ubocznych — żaden update statusu (a więc żadne SENT) dla
+    // wiersza, którego nie przejęliśmy.
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(result.sentCount).toBe(0);
   });
 });
