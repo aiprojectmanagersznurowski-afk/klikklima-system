@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T11:46:18.571Z",
+  "generatedAt": "2026-09-24T21:56:22.466Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -24,12 +24,12 @@
     "apps/b2b-web/src/app/(dashboard)/crews/crews-client.tsx::adr002-pl-tables": 1,
     "apps/b2b-web/src/app/(dashboard)/crews/page.tsx::adr002-pl-columns": 2,
     "apps/b2b-web/src/app/(dashboard)/crews/schema.ts::adr002-pl-columns": 5,
-    "apps/b2b-web/src/app/(dashboard)/customers/[id]/page.tsx::adr002-pl-columns": 1,
-    "apps/b2b-web/src/app/(dashboard)/customers/[id]/page.tsx::adr002-pl-tables": 7,
-    "apps/b2b-web/src/app/(dashboard)/customers/[id]/tabs-client.tsx::adr002-pl-columns": 1,
-    "apps/b2b-web/src/app/(dashboard)/customers/[id]/tabs-client.tsx::adr002-pl-tables": 14,
-    "apps/b2b-web/src/app/(dashboard)/customers/actions.ts::adr002-pl-columns": 6,
-    "apps/b2b-web/src/app/(dashboard)/customers/actions.ts::adr002-pl-tables": 12,
+    "apps/b2b-web/src/app/(dashboard)/customers/[id]/page.tsx::adr002-pl-columns": 2,
+    "apps/b2b-web/src/app/(dashboard)/customers/[id]/page.tsx::adr002-pl-tables": 5,
+    "apps/b2b-web/src/app/(dashboard)/customers/[id]/tabs-client.tsx::adr002-pl-columns": 3,
+    "apps/b2b-web/src/app/(dashboard)/customers/[id]/tabs-client.tsx::adr002-pl-tables": 9,
+    "apps/b2b-web/src/app/(dashboard)/customers/actions.ts::adr002-pl-columns": 9,
+    "apps/b2b-web/src/app/(dashboard)/customers/actions.ts::adr002-pl-tables": 14,
     "apps/b2b-web/src/app/(dashboard)/incidents/actions.ts::adr002-pl-columns": 21,
     "apps/b2b-web/src/app/(dashboard)/incidents/actions.ts::adr002-pl-tables": 19,
     "apps/b2b-web/src/app/(dashboard)/incidents/incidents-client.tsx::adr002-pl-columns": 8,
@@ -40,7 +40,7 @@
     "apps/b2b-web/src/app/(dashboard)/installations/[id]/page.tsx::adr002-pl-tables": 3,
     "apps/b2b-web/src/app/(dashboard)/installations/actions.ts::adr002-pl-columns": 7,
     "apps/b2b-web/src/app/(dashboard)/installations/actions.ts::adr002-pl-tables": 5,
-    "apps/b2b-web/src/app/(dashboard)/installations/installations-client.tsx::adr002-pl-tables": 1,
+    "apps/b2b-web/src/app/(dashboard)/installations/installations-client.tsx::adr002-pl-tables": 2,
     "apps/b2b-web/src/app/(dashboard)/installations/two-phase-actions.ts::adr002-pl-tables": 2,
     "apps/b2b-web/src/app/(dashboard)/layout.tsx::adr002-pl-tables": 2,
     "apps/b2b-web/src/app/(dashboard)/leads/[id]/actions.ts::adr002-pl-columns": 9,
@@ -175,7 +175,7 @@
     "apps/b2b-web/tests/notifications-history.test.ts::adr002-pl-columns": 2,
     "apps/b2b-web/tests/notifications-history.test.ts::adr002-pl-tables": 4,
     "apps/b2b-web/tests/read-pages-authz.test.ts::adr002-pl-columns": 1,
-    "apps/b2b-web/tests/read-pages-authz.test.ts::adr002-pl-tables": 2,
+    "apps/b2b-web/tests/read-pages-authz.test.ts::adr002-pl-tables": 5,
     "apps/b2b-web/tests/rls-deny-by-default-freeze.test.ts::adr002-pl-tables": 20,
     "apps/b2b-web/tests/sec-audit-log-delete-wave-a.test.ts::adr002-pl-tables": 4,
     "apps/b2b-web/tests/sec-audit-log-delete-wave-b.test.ts::adr002-pl-columns": 1,
@@ -266,5 +266,5 @@
     "supabase/migrations/20260925092000_invoices_and_installation_photos.sql::adr002-pl-tables": 8,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2689
+  "total": 2694
 }

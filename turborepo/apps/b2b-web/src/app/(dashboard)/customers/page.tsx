@@ -24,6 +24,10 @@ export default async function CustomersPage(props: {
   const searchParams = await props.searchParams;
   const page = searchParams.page ? parseInt(searchParams.page, 10) : 1;
 
+  // MAJOR (audyt bezpieczeństwa 2026-09-24, runda 3): fraza wyszukiwania NIE jest już
+  // czytana z query stringu URL-a (był to wyciek PII przez historię przeglądarki, nagłówek
+  // Referer i logi serwera) — `customers-client.tsx` woła `getCustomers` bezpośrednio jako
+  // Server Action, fraza nigdy nie trafia do adresu.
   const { customers, totalPages } = await getCustomers({ page });
 
   return (

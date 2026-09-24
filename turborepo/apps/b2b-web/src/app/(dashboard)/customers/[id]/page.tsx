@@ -24,25 +24,66 @@ export default async function Customer360Page({ params }: { params: Promise<{ id
   }
 
   const { id } = await params;
-  const customer = await prisma.klienci.findUnique({
+  // MAJOR (audyt bezpieczeństwa 2026-09-24, runda 3): minimalizacja danych — poprzednie
+  // `include` bez `select` serializowało do przeglądarki cały wiersz leada (notatki
+  // wewnętrzne, finalną wycenę, odpowiedzi triage), współrzędne adresów oraz
+  // `logistyka_zamowienia` (zasób z `read: no` dla WSZYSTKICH ról w macierzy RBAC — jego
+  // obecność tutaj była sprzeczna z kontraktem niezależnie od odbiorcy). Kształt `leady`
+  // poniżej jest CELOWO identyczny z tym, co zwraca `getCustomerHistoryAction`
+  // (`customers/actions.ts`) — różne ścieżki (dane startowe SSR vs. lazy-load), ten sam
+  // zawężony kontrakt danych.
+  const customerRaw = await prisma.klienci.findUnique({
     where: { id },
-    include: {
-      adresy: true,
-      leady: {
-        include: {
-          instalacje: true,
-          logistyka_zamowienia: true
-        }
+    select: {
+      id: true,
+      client_number: true,
+      imie_i_nazwisko: true,
+      email: true,
+      telefon: true,
+      created_at: true,
+      anonymized_at: true,
+      adresy: {
+        select: {
+          id: true,
+          address_number: true,
+          ulica_miasto: true,
+        },
       },
-      serwisy: true,
-      usterki_incidents: true
-    }
+      leady: {
+        select: {
+          id: true,
+          project_number: true,
+          status: true,
+          created_at: true,
+        },
+        orderBy: { created_at: 'desc' },
+      },
+      usterki_incidents: {
+        select: {
+          id: true,
+          incident_number: true,
+          opis_usterki: true,
+          status: true,
+          created_at: true,
+        },
+      },
+    },
   });
 
-  if (!customer) {
+  if (!customerRaw) {
     notFound();
     return;
   }
+
+  const customer = {
+    ...customerRaw,
+    leady: customerRaw.leady.map((lead) => ({
+      id: lead.id,
+      lead_number: lead.project_number,
+      status: lead.status,
+      created_at: lead.created_at,
+    })),
+  };
 
   return (
     <div className="h-full flex flex-col max-w-[1800px] mx-auto animate-in fade-in duration-300">
