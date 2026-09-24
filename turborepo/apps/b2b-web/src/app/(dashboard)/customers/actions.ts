@@ -1,32 +1,12 @@
 'use server'
 
 import { revalidatePath } from "next/cache"
-import { prisma } from "@repo/database"
+import { prisma, LeadStatus } from "@repo/database"
 import { can } from "@klikklima/contracts"
 import { getCurrentActorRole, createClient } from "../../../utils/supabase/server"
 import { anonymizeClientSchema, ANONYMIZED_NAME_PLACEHOLDER } from "./anonymize-client-schema"
 import { createCustomerSchema } from "./create-customer-schema"
 import { updateCustomerContactDataSchema, type UpdateCustomerContactDataInput } from "./update-customer-schema"
-
-const TBL_CLIENTS = ['kli', 'enci'].join('')
-const TBL_LEADS = ['le', 'ady'].join('')
-const TBL_INSTALLATIONS = ['instal', 'acje'].join('')
-const TBL_LOGISTICS = ['logistyka', 'zamowienia'].join('_')
-const COL_NAME = ['imie', 'i', 'nazwisko'].join('_')
-const COL_CLIENT_ID = ['klient', 'id'].join('_')
-
-type DynamicModelDelegate = {
-  findMany: (args?: Record<string, unknown>) => Promise<Record<string, unknown>[]>;
-  count: (args?: Record<string, unknown>) => Promise<number>;
-  update: (args: Record<string, unknown>) => Promise<unknown>;
-  updateMany: (args: Record<string, unknown>) => Promise<{ count: number }>;
-};
-
-type DynamicDb = {
-  $transaction: <T>(fn: (tx: Record<string, DynamicModelDelegate>) => Promise<T>) => Promise<T>;
-} & Record<string, DynamicModelDelegate>;
-
-const db = prisma as unknown as DynamicDb;
 
 export type CustomerSummary = {
   id: string;
@@ -66,14 +46,17 @@ export async function getCustomers(
   }
 
   const page = options?.page || 1;
-  const limit = options?.limit || 50;
+  // MAJOR (audyt bezpieczeństwa 2026-09-24): limit górny — Server Action jest osiągalna
+  // z klienta jak dowolne RPC, więc `limit: 100000` z konsoli nie może zwrócić całej tabeli.
+  const REASONABLE_MAX_LIMIT = 100;
+  const limit = Math.min(options?.limit || 50, REASONABLE_MAX_LIMIT);
   const skip = (page - 1) * limit;
   const query = options?.query?.trim();
 
   const where = query
     ? {
         OR: [
-          { [COL_NAME]: { contains: query, mode: "insensitive" as const } },
+          { imie_i_nazwisko: { contains: query, mode: "insensitive" as const } },
           { email: { contains: query, mode: "insensitive" as const } },
           { telefon: { contains: query, mode: "insensitive" as const } },
           { client_number: { contains: query, mode: "insensitive" as const } },
@@ -82,7 +65,7 @@ export async function getCustomers(
     : undefined;
 
   const [customers, totalCount] = await Promise.all([
-    db[TBL_CLIENTS].findMany({
+    prisma.klienci.findMany({
       where,
       orderBy: {
         created_at: 'desc',
@@ -92,37 +75,36 @@ export async function getCustomers(
       select: {
         id: true,
         client_number: true,
-        [COL_NAME]: true,
+        imie_i_nazwisko: true,
         email: true,
         telefon: true,
         created_at: true,
-        _count: { select: { [TBL_LEADS]: true } },
-        [TBL_LEADS]: {
+        _count: { select: { leady: true } },
+        leady: {
           select: {
-            _count: { select: { [TBL_INSTALLATIONS]: true } },
+            _count: { select: { instalacje: true } },
           },
         },
       },
     }),
-    db[TBL_CLIENTS].count({ where }),
+    prisma.klienci.count({ where }),
   ]);
 
   return {
     customers: customers.map((c) => {
-      const leadList = (c[TBL_LEADS] as Array<{ _count: Record<string, number> }>) || [];
-      const installationsCount = leadList.reduce(
-        (sum, lead) => sum + (lead._count?.[TBL_INSTALLATIONS] || 0),
+      const installationsCount = c.leady.reduce(
+        (sum, lead) => sum + (lead._count?.instalacje || 0),
         0
       );
 
       return {
-        id: String(c.id),
-        clientNumber: c.client_number ? String(c.client_number) : null,
-        name: (c[COL_NAME] as string) || "Nieznany",
-        email: (c.email as string) || null,
-        phone: (c.telefon as string) || null,
-        createdAt: c.created_at as Date,
-        leadsCount: ((c._count as Record<string, number>)?.[TBL_LEADS]) || 0,
+        id: c.id,
+        clientNumber: c.client_number ?? null,
+        name: c.imie_i_nazwisko || "Nieznany",
+        email: c.email ?? null,
+        phone: c.telefon ?? null,
+        createdAt: c.created_at,
+        leadsCount: c._count.leady,
         installationsCount,
       };
     }),
@@ -161,8 +143,15 @@ export async function updateCustomerContactDataAction(
 
   const { imieINazwisko, email, telefon } = parsed.data;
 
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  const actorEmail = data.user?.email;
+  if (!actorEmail) {
+    return { success: false, error: "Brak uprawnień do edycji klienta." };
+  }
+
   // Stany terminalne i buckety zgodnie z contracts/funnel.contract.mjs
-  const EXCLUDED_LEAD_STATUSES = [
+  const EXCLUDED_LEAD_STATUSES: LeadStatus[] = [
     'INSTALLATION_COMPLETED',
     'ARCHIVED_LOST',
     'QUOTE_REJECTED',
@@ -170,20 +159,43 @@ export async function updateCustomerContactDataAction(
   ];
 
   try {
-    await db.$transaction(async (tx) => {
-      await tx[TBL_CLIENTS].update({
-        where: { id },
+    let updateCount = 0;
+    await prisma.$transaction(async (tx) => {
+      // BLOCKER 2 (audyt bezpieczeństwa 2026-09-24): wzorem anonymizeClientAction —
+      // `updateMany` z `where: { id, anonymized_at: null }` jest bramką współbieżności
+      // w bazie, nie sprawdzeniem w JS. `.update` przyjmuje wyłącznie unikalne pola w
+      // `where` i nie mógłby wyrazić tego warunku — rekord raz zanonimizowany zostaje
+      // zanonimizowany.
+      const { count } = await tx.klienci.updateMany({
+        where: { id, anonymized_at: null },
         data: {
-          [COL_NAME]: imieINazwisko,
+          imie_i_nazwisko: imieINazwisko,
           email: email || null,
           telefon: telefon || null,
         },
       });
+      updateCount = count;
+
+      if (count === 0) {
+        return;
+      }
+
+      await tx.auditLog.create({
+        data: {
+          operation: 'field_update',
+          resource: 'clients',
+          recordId: id,
+          actorEmail,
+          actorRole,
+          justification: 'Aktualizacja danych kontaktowych klienta z Karty 360.',
+          legalBasis: 'OTHER',
+        },
+      });
 
       // Propagacja do aktywnych leadów (z wykluczeniem stanów terminalnych i bucketów)
-      await tx[TBL_LEADS].updateMany({
+      await tx.leady.updateMany({
         where: {
-          [COL_CLIENT_ID]: id,
+          klient_id: id,
           status: { notIn: EXCLUDED_LEAD_STATUSES },
         },
         data: {
@@ -191,6 +203,13 @@ export async function updateCustomerContactDataAction(
         },
       });
     });
+
+    if (updateCount === 0) {
+      return {
+        success: false,
+        error: "Klient został zanonimizowany — edycja danych kontaktowych jest niedostępna.",
+      };
+    }
 
     revalidatePath('/customers');
     revalidatePath(`/customers/${id}`);
@@ -220,16 +239,31 @@ export async function getCustomerHistoryAction(
   }
 
   try {
-    const leads = (await db[TBL_LEADS].findMany({
-      where: { [COL_CLIENT_ID]: id },
-      include: {
-        [TBL_INSTALLATIONS]: true,
-        [TBL_LOGISTICS]: true,
+    // MAJOR (audyt bezpieczeństwa 2026-09-24): minimalizacja danych — `tabs-client.tsx`
+    // (zakładka „Historia") renderuje wyłącznie id, lead_number (numer projektu), status
+    // i created_at. Poprzednie `include: true` na instalacjach/logistyce i brak `select`
+    // na leadzie serializowały do przeglądarki cały wiersz (notatki wewnętrzne, finalną
+    // wycenę, odpowiedzi triage) i całe zagnieżdżone relacje.
+    const leads = await prisma.leady.findMany({
+      where: { klient_id: id },
+      select: {
+        id: true,
+        project_number: true,
+        status: true,
+        created_at: true,
       },
       orderBy: { created_at: 'desc' },
-    })) as Array<Record<string, unknown>>;
+    });
 
-    return { success: true, leads };
+    return {
+      success: true,
+      leads: leads.map((lead) => ({
+        id: lead.id,
+        lead_number: lead.project_number,
+        status: lead.status,
+        created_at: lead.created_at,
+      })),
+    };
   } catch (error) {
     console.error("Failed to get customer history:", error);
     return { success: false, error: "Nie udało się pobrać historii klienta." };

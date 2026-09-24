@@ -187,11 +187,12 @@ export function CustomersClient({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    // MAJOR (audyt bezpieczeństwa 2026-09-24): fraza wyszukiwania NIE trafia do query
+    // stringu URL-a (historia przeglądarki, nagłówek Referer, logi serwera to wyciek PII
+    // poza bazę danych). Filtrowanie działa wyłącznie przez lokalny stan `searchQuery`
+    // (patrz `filtered` poniżej); paginacja zostaje w URL-u.
     startTransition(() => {
       const params = new URLSearchParams()
-      if (searchQuery.trim()) {
-        params.set("q", searchQuery.trim())
-      }
       params.set("page", "1")
       router.push(`/customers?${params.toString()}`)
     })
