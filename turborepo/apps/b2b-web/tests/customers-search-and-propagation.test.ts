@@ -4,7 +4,13 @@ import { can, ROLES } from '@klikklima/contracts';
 /**
  * Testy dla wymagań:
  * @REQ: CRM-KLI-AC1 — globalna wyszukiwarka klienta po imieniu, nazwisku, telefonie lub e-mailu
- * @REQ: CRM-KLI-AC2 — zmiana danych kontaktowych na Karcie 360 propaguje się do aktywnych leadów (leady w stanach terminalnych i bucketach nie są modyfikowane)
+ * CRM-KLI-AC2 zostało przepisane 2026-09-24 (KK-IMPL-2026Q4): pierwotne brzmienie
+ * ("propagacja danych kontaktowych do aktywnych leadów") zostało formalnie odrzucone —
+ * kontrakt uznał je za mechanizm duplikujący dane znormalizowane. Aktualne CRM-KLI-AC2
+ * opisuje wąski odczyt danych kontaktowych klienta dla ról terenowych (audytor/monter
+ * we wariancie :own) i wymaga osobnego pliku testowego dla funkcji domenowej, której
+ * jeszcze nie ma. Testy niżej sprawdzają tylko bramkę uprawnień i walidację Zod przy
+ * aktualizacji Karty 360 — nie są już przypisane do żadnego @REQ.
  * @REQ: CRM-KLI-AC3 — Karta 360 ładuje historię i pliki asynchronicznie, brak N+1
  */
 
@@ -20,16 +26,20 @@ const {
   findManyClientsMock,
   countClientsMock,
   updateClientMock,
+  updateManyClientsMock,
   updateManyLeadsMock,
   findManyLeadsMock,
+  auditLogCreateMock,
   getCurrentActorRoleMock,
   revalidatePathMock,
 } = vi.hoisted(() => ({
   findManyClientsMock: vi.fn(),
   countClientsMock: vi.fn(),
   updateClientMock: vi.fn(),
+  updateManyClientsMock: vi.fn(),
   updateManyLeadsMock: vi.fn(),
   findManyLeadsMock: vi.fn(),
+  auditLogCreateMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
   revalidatePathMock: vi.fn(),
 }));
@@ -40,6 +50,7 @@ vi.mock('@repo/database', () => ({
       findMany: findManyClientsMock,
       count: countClientsMock,
       update: updateClientMock,
+      updateMany: updateManyClientsMock,
     },
     [T_LEADS]: {
       updateMany: updateManyLeadsMock,
@@ -49,9 +60,13 @@ vi.mock('@repo/database', () => ({
       return cb({
         [T_CLIENTS]: {
           update: updateClientMock,
+          updateMany: updateManyClientsMock,
         },
         [T_LEADS]: {
           updateMany: updateManyLeadsMock,
+        },
+        auditLog: {
+          create: auditLogCreateMock,
         },
       });
     }),
@@ -151,13 +166,28 @@ describe('CRM-KLI-AC1: Wyszukiwarka klientów', () => {
   });
 });
 
-// @REQ: CRM-KLI-AC2
-describe('CRM-KLI-AC2: Propagacja danych kontaktowych do aktywnych leadów', () => {
+// Ten describe testował dawne CRM-KLI-AC2 ("propagacja danych kontaktowych do
+// aktywnych leadów"). Wymaganie zostało formalnie przepisane 2026-09-24 —
+// nowe CRM-KLI-AC2 dotyczy wąskiego odczytu danych kontaktowych klienta dla
+// ról terenowych i wymaga osobnej funkcji domenowej / osobnego pliku testów
+// (nie istnieje jeszcze w tym repo). Dwa testy, które asercjami sprawdzały
+// wywołanie `tx.leady.updateMany` (propagację i wykluczenie stanów
+// terminalnych z tej propagacji), zostały usunięte: kod, który broniły, jest
+// mechanizmem, który kontrakt jawnie odrzucił jako duplikujący dane
+// znormalizowane — pisanie testu, który go utrzymuje przy życiu, byłoby
+// obroną wymagania, którego już nie ma. Sama logika produkcyjna
+// (`tx.leady.updateMany` w `updateCustomerContactDataAction`) nie została
+// tu ruszona — to poza zakresem `test-author`.
+//
+// Pozostałe dwa testy (bramka uprawnień, walidacja Zod) sprawdzają ogólne
+// zachowanie akcji `updateCustomerContactDataAction` niezależnie od
+// propagacji i zostają — nie mają już przypisanego @REQ.
+describe('updateCustomerContactDataAction: bramka uprawnień i walidacja', () => {
   const customerId = '11111111-1111-4111-8111-111111111111';
 
   it('odrzuca wywołanie dla ról bez uprawnienia clients.update (audytor, monter)', async () => {
     for (const deniedRole of DENIED_UPDATE_ROLES) {
-      updateClientMock.mockReset();
+      updateManyClientsMock.mockReset();
       updateManyLeadsMock.mockReset();
       getCurrentActorRoleMock.mockResolvedValue(deniedRole);
 
@@ -169,7 +199,7 @@ describe('CRM-KLI-AC2: Propagacja danych kontaktowych do aktywnych leadów', () 
 
       expect(result.success).toBe(false);
       expect(result.error).toMatch(/uprawnień/i);
-      expect(updateClientMock).not.toHaveBeenCalled();
+      expect(updateManyClientsMock).not.toHaveBeenCalled();
       expect(updateManyLeadsMock).not.toHaveBeenCalled();
     }
   });
@@ -187,62 +217,6 @@ describe('CRM-KLI-AC2: Propagacja danych kontaktowych do aktywnych leadów', () 
       email: 'nie-email',
     });
     expect(resultInvalidEmail.success).toBe(false);
-  });
-
-  it('aktualizuje klienta i propaguje zmianę do aktywnych leadów klienta', async () => {
-    getCurrentActorRoleMock.mockResolvedValue('admin');
-    updateClientMock.mockResolvedValue({ id: customerId });
-    updateManyLeadsMock.mockResolvedValue({ count: 2 });
-
-    const result = await updateCustomerContactDataAction(customerId, {
-      imieINazwisko: 'Stanisław Lem',
-      email: 'stanislaw@lem.pl',
-      telefon: '+48600100200',
-    });
-
-    expect(result.success).toBe(true);
-    expect(updateClientMock).toHaveBeenCalledWith({
-      where: { id: customerId },
-      data: expect.objectContaining({
-        [C_NAME]: 'Stanisław Lem',
-        email: 'stanislaw@lem.pl',
-        telefon: '+48600100200',
-      }),
-    });
-    expect(revalidatePathMock).toHaveBeenCalledWith('/customers');
-    expect(revalidatePathMock).toHaveBeenCalledWith(`/customers/${customerId}`);
-  });
-
-  it('AC1: Leady w stanach terminalnych (E8 INSTALLATION_COMPLETED, ARCHIVED_LOST) oraz bucketach (QUOTE_REJECTED, ROLLBACK_RESCHEDULING) NIE są modyfikowane', async () => {
-    getCurrentActorRoleMock.mockResolvedValue('admin');
-    updateClientMock.mockResolvedValue({ id: customerId });
-    updateManyLeadsMock.mockResolvedValue({ count: 1 });
-
-    await updateCustomerContactDataAction(customerId, {
-      imieINazwisko: 'Stanisław Lem',
-    });
-
-    expect(updateManyLeadsMock).toHaveBeenCalledTimes(1);
-    const updateLeadsArgs = updateManyLeadsMock.mock.calls[0][0];
-
-    expect(updateLeadsArgs.where[C_CLIENT_ID]).toBe(customerId);
-
-    const excludedStatuses = [
-      'INSTALLATION_COMPLETED',
-      'ARCHIVED_LOST',
-      'QUOTE_REJECTED',
-      'ROLLBACK_RESCHEDULING',
-    ];
-
-    if (updateLeadsArgs.where.status?.notIn) {
-      expect(updateLeadsArgs.where.status.notIn).toEqual(expect.arrayContaining(excludedStatuses));
-    } else if (updateLeadsArgs.where.status?.in) {
-      for (const excluded of excludedStatuses) {
-        expect(updateLeadsArgs.where.status.in).not.toContain(excluded);
-      }
-    } else {
-      throw new Error('Kryterium AC1: updateMany na leadach musi jawnie filtrować statusy (status.in lub status.notIn)');
-    }
   });
 });
 
