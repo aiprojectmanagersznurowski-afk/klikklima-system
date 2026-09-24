@@ -55,11 +55,18 @@ let createdClientIds: string[] = [];
 
 async function createTestClient(overrides: { anonymizedAt?: Date | null } = {}) {
   const suffix = randomUUID();
+  // Gdy `anonymizedAt` jest ustawione, symulujemy rekord już zanonimizowany — a w produkcji
+  // (`anonymizeClientAction`) `email`/`telefon` i `anonymized_at` są ustawiane atomowo, w tym
+  // samym `updateMany`. Rekord z ustawionym `anonymized_at`, ale wciąż prawdziwym `email`/
+  // `telefon`, jest stanem niereprezentatywnym — niemożliwym w produkcji. Fikstura musi
+  // odzwierciedlać rzeczywisty, atomowo zanonimizowany stan, inaczej asercja `after.email`/
+  // `after.telefon` w bloku `toBeNull()` sprawdza artefakt fikstury, nie kontrakt bazy.
+  const isAlreadyAnonymized = overrides.anonymizedAt != null;
   const client = await clientTable.create({
     data: {
       [C_NAME]: `ITEST BLOCKER-2 ${suffix}`,
-      email: `itest-blocker2-${suffix}@example.invalid`,
-      telefon: '+48000000000',
+      email: isAlreadyAnonymized ? null : `itest-blocker2-${suffix}@example.invalid`,
+      telefon: isAlreadyAnonymized ? null : '+48000000000',
       anonymized_at: overrides.anonymizedAt ?? null,
     },
   });
