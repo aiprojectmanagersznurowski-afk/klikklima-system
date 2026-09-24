@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from "next/cache"
-import { prisma, LeadStatus } from "@repo/database"
+import { prisma } from "@repo/database"
 import { can } from "@klikklima/contracts"
 import { getCurrentActorRole, createClient } from "../../../utils/supabase/server"
 import { anonymizeClientSchema, ANONYMIZED_NAME_PLACEHOLDER } from "./anonymize-client-schema"
@@ -150,14 +150,6 @@ export async function updateCustomerContactDataAction(
     return { success: false, error: "Brak uprawnień do edycji klienta." };
   }
 
-  // Stany terminalne i buckety zgodnie z contracts/funnel.contract.mjs
-  const EXCLUDED_LEAD_STATUSES: LeadStatus[] = [
-    'INSTALLATION_COMPLETED',
-    'ARCHIVED_LOST',
-    'QUOTE_REJECTED',
-    'ROLLBACK_RESCHEDULING',
-  ];
-
   try {
     let updateCount = 0;
     await prisma.$transaction(async (tx) => {
@@ -189,17 +181,6 @@ export async function updateCustomerContactDataAction(
           actorRole,
           justification: 'Aktualizacja danych kontaktowych klienta z Karty 360.',
           legalBasis: 'OTHER',
-        },
-      });
-
-      // Propagacja do aktywnych leadów (z wykluczeniem stanów terminalnych i bucketów)
-      await tx.leady.updateMany({
-        where: {
-          klient_id: id,
-          status: { notIn: EXCLUDED_LEAD_STATUSES },
-        },
-        data: {
-          updated_at: new Date(),
         },
       });
     });
