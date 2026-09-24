@@ -19,7 +19,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * w tym katalogu), nie słownik docelowy ADR-002.
  */
 
-const { mockInsert, mockFrom, writeCalls } = vi.hoisted(() => {
+const { mockFrom, writeCalls } = vi.hoisted(() => {
   const writeCalls: Array<{ method: 'insert' | 'upsert'; table: string; rows: unknown[] }> = [];
 
   const mockInsert = vi.fn((rows: unknown[]) => {
@@ -45,6 +45,13 @@ vi.mock('@supabase/supabase-js', () => ({
 
 const { saveSoftLead } = await import('../../app/actions/leads');
 
+// Wzorzec identyczny jak `validConsentDocumentVersionId` w `soft-lead.test.ts` w tym
+// katalogu — Supabase jest całkowicie zamockowany, wartość służy wyłącznie do przejścia
+// walidacji Zod `.uuid()` w leads.ts, żeby testy walidacji telefonu/kształtu w tym bloku
+// nie odpadały wcześniej na B2C-SOFT-LEAD-CONSENT (co czyniło je martwe — zweryfikowane
+// mutacją: bez tego pola usunięcie CAŁEJ walidacji telefonu nie ruszało tego testu).
+const validConsentDocumentVersionId = '33333333-3333-3333-3333-333333333333';
+
 describe('B2C-SOFT-LEAD — walidacja serwerowa przed zapisem (BLOCKER 4, brak Zod dziś)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -57,11 +64,57 @@ describe('B2C-SOFT-LEAD — walidacja serwerowa przed zapisem (BLOCKER 4, brak Z
     // dokładnie ta walidacja, którą ExitIntentModal robi WYŁĄCZNIE po stronie klienta
     // (ExitIntentModal.tsx:39-42). Server Action wywołana z pominięciem UI musi
     // powtórzyć tę walidację, bo dziś nic jej nie broni na serwerze.
+    //
+    // Zgoda (consentDocumentVersionId) jest tu POPRAWNA i obecna celowo — inaczej ten
+    // test odpada na B2C-SOFT-LEAD-CONSENT zamiast na regexie telefonu (błędny RED).
     const invalidPhone = 'abc';
 
-    const result = await saveSoftLead(invalidPhone, { location: 'Mieszkanie' });
+    const result = await saveSoftLead(invalidPhone, {
+      location: 'Mieszkanie',
+      consentDocumentVersionId: validConsentDocumentVersionId,
+    });
 
-    expect(mockInsert).not.toHaveBeenCalled();
+    // Asercja na REALNY skutek (żaden zapis, żadną metodą), nie na konkretną metodę
+    // Supabase — `writeCalls` (patrz wzorzec w bloku M8 niżej w tym pliku) łapie i
+    // `insert`, i `upsert`, więc nie zależy od decyzji D3 (implementer-ui przełącza
+    // `leads.ts` między `insert` a `upsert` równolegle z tą zmianą).
+    expect(writeCalls.length).toBe(0);
+    expect(result.success).toBe(false);
+  });
+
+  // @REQ: B2C-SOFT-LEAD
+  it('poprawny numer telefonu z poprawną zgodą jest akceptowany (kontrola pozytywna)', async () => {
+    const result = await saveSoftLead('500100200', {
+      location: 'Mieszkanie',
+      consentDocumentVersionId: validConsentDocumentVersionId,
+    });
+
+    expect(result.success).toBe(true);
+    expect(writeCalls.length).toBe(1);
+  });
+
+  // @REQ: B2C-SOFT-LEAD
+  it.each([
+    ['+48 przed numerem', '+48500100201'],
+    ['spacje i myślnik jako separatory', '500-100 202'],
+    ['sam prefiks 48 bez plusa', '48500100203'],
+  ])('numer telefonu z wariantem formatu (%s) przechodzi walidację regexu', async (_label, phoneVariant) => {
+    const result = await saveSoftLead(phoneVariant, {
+      location: 'Mieszkanie',
+      consentDocumentVersionId: validConsentDocumentVersionId,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  // @REQ: B2C-SOFT-LEAD
+  it('numer telefonu o niewłaściwej długości (8 cyfr) jest odrzucony', async () => {
+    const result = await saveSoftLead('50010020', {
+      location: 'Mieszkanie',
+      consentDocumentVersionId: validConsentDocumentVersionId,
+    });
+
+    expect(writeCalls.length).toBe(0);
     expect(result.success).toBe(false);
   });
 
@@ -74,11 +127,14 @@ describe('B2C-SOFT-LEAD — walidacja serwerowa przed zapisem (BLOCKER 4, brak Z
       exploit: () => {
         throw new Error('nie powinno się nigdy wykonać');
       },
+      // Zgoda POPRAWNA i obecna celowo — inaczej test odpada na braku zgody, nie na
+      // polu `exploit` spoza schematu (ten sam błąd jak przy walidacji telefonu wyżej).
+      consentDocumentVersionId: validConsentDocumentVersionId,
     };
 
     const result = await saveSoftLead('500100200', maliciousPartialData);
 
-    expect(mockInsert).not.toHaveBeenCalled();
+    expect(writeCalls.length).toBe(0);
     expect(result.success).toBe(false);
   });
 });
@@ -96,24 +152,58 @@ describe('B2C-SOFT-LEAD-CONSENT — soft lead bez wskazania KONKRETNEJ wersji do
     // wymaga żadnej zgody, więc to wywołanie dziś przechodzi i zapisuje — to jest RED.
     const result = await saveSoftLead('600100200', { location: 'Dom' });
 
-    expect(mockInsert).not.toHaveBeenCalled();
+    expect(writeCalls.length).toBe(0);
     expect(result.success).toBe(false);
   });
 
   // @REQ: B2C-SOFT-LEAD-CONSENT
-  it('zgoda wskazująca wersję dokumentu jako sam numer/tekst (nie klucz obcy do legal_document_versions) nie wystarcza', async () => {
-    // Numer wersji jako tekst NIE wystarcza (wzorzec B2C-CONSENT-RODO, bez odstępstw) —
-    // musi być wskazanie klucza obcego, którego baza może odrzucić dla nieistniejącej
-    // wersji. Przekazanie samej wartości tekstowej powinno być odrzucone identycznie
-    // jak brak zgody, a nie potraktowane jako poprawne wskazanie wersji.
-    const partialDataWithTextOnlyConsent = {
+  it('zgoda pod BŁĘDNYM kluczem (consentDocumentVersion zamiast consentDocumentVersionId) nie wystarcza', async () => {
+    // Wcześniejsza wersja tego testu padała na tym payloadzie z NIEWŁAŚCIWEGO powodu:
+    // nazwa klucza `consentDocumentVersion` (bez `Id`) nie istnieje w schemacie, więc
+    // to wywołanie odrzuca `.strict()` (nierozpoznany klucz) RÓWNOLEGLE z brakiem
+    // wymaganego `consentDocumentVersionId` — asercja `success === false` była prawdziwa
+    // niezależnie od tego, czy walidacja UUID w ogóle działa. Ten test pokrywa DOKŁADNIE
+    // to zjawisko: obcy/nierozpoznany klucz w payloadzie przy poprawnej reszcie danych
+    // musi zostać odrzucony przez `.strict()`.
+    const partialDataWithWrongKeyName = {
       location: 'Dom',
-      consentDocumentVersion: '1.0', // tekst, nie FK do legal_document_versions
+      consentDocumentVersion: '1.0', // literówka w nazwie klucza, nie FK
     };
 
-    const result = await saveSoftLead('700100200', partialDataWithTextOnlyConsent);
+    const result = await saveSoftLead('700100200', partialDataWithWrongKeyName);
 
-    expect(mockInsert).not.toHaveBeenCalled();
+    expect(writeCalls.length).toBe(0);
+    expect(result.success).toBe(false);
+  });
+
+  // @REQ: B2C-SOFT-LEAD-CONSENT
+  it('zgoda wskazująca wersję dokumentu jako sam numer/tekst (nie UUID/klucz obcy) pod POPRAWNYM kluczem nie wystarcza', async () => {
+    // Numer wersji jako tekst NIE wystarcza (wzorzec B2C-CONSENT-RODO, bez odstępstw) —
+    // musi być wskazanie klucza obcego (UUID). Klucz jest tu POPRAWNY
+    // (`consentDocumentVersionId`), więc to wywołanie testuje wyłącznie walidację
+    // `.uuid()` w leads.ts, w izolacji od `.strict()` na nierozpoznanej nazwie klucza.
+    const partialDataWithTextOnlyConsent = {
+      location: 'Dom',
+      consentDocumentVersionId: '1.0', // tekst, nie UUID/FK do legal_document_versions
+    };
+
+    const result = await saveSoftLead('700100201', partialDataWithTextOnlyConsent);
+
+    expect(writeCalls.length).toBe(0);
+    expect(result.success).toBe(false);
+  });
+
+  // @REQ: B2C-SOFT-LEAD-CONSENT
+  it('obcy, nieznany klucz w payloadzie przy poprawnej resztcie danych (w tym poprawnej zgodzie) jest odrzucony przez .strict()', async () => {
+    const partialDataWithUnknownKey = {
+      location: 'Dom',
+      consentDocumentVersionId: validConsentDocumentVersionId,
+      nieznanePole: 'coś, czego nie ma w schemacie',
+    };
+
+    const result = await saveSoftLead('700100202', partialDataWithUnknownKey);
+
+    expect(writeCalls.length).toBe(0);
     expect(result.success).toBe(false);
   });
 });

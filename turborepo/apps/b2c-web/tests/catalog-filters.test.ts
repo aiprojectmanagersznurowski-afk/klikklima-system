@@ -1,37 +1,57 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import type { BestsellerProduct } from '../app/actions/getBestsellers';
 
 /**
- * BLOCKER 5 (recenzja 2026-09-24): test poniżej ('filtry marki i koloru...') definiował
- * WŁASNĄ kopię logiki filtrowania (`matchBrand && matchColor` na lokalnej tablicy
- * `mockProducts`) i asertował wynik swojej pętli — nigdy nie importował ani nie
- * wywoływał kodu z `katalog/page.tsx`. Taki test przechodzi niezależnie od tego, czy
- * implementacja filtrowania w aplikacji jest poprawna, błędna, czy usunięta — testuje
+ * BLOCKER 5 (recenzja 2026-09-24): dawna wersja testu poniżej ('filtry marki i koloru...')
+ * definiowała WŁASNĄ kopię logiki filtrowania (`matchBrand && matchColor` na lokalnej
+ * tablicy `mockProducts`) i asertowała wynik swojej pętli — nigdy nie importowała ani nie
+ * wywoływała kodu z `katalog/page.tsx`. Taki test przechodził niezależnie od tego, czy
+ * implementacja filtrowania w aplikacji jest poprawna, błędna, czy usunięta — testował
  * sam siebie.
  *
- * DWIE PRZYCZYNY, DLA KTÓRYCH NIE NAPRAWIONO TEGO WPROST importem prawdziwej funkcji:
- *   1. `katalog/page.tsx` NIE eksportuje czystej funkcji filtrującej — logika żyje
- *      wyłącznie jako `useMemo(...)` wewnątrz komponentu `CatalogPage` (zweryfikowane
- *      2026-09-24: brak `export function filterProducts` / podobnego w tym pliku).
- *      Wydzielenie takiej funkcji jest zmianą kodu produkcyjnego — poza zakresem roli
- *      `test-author` (CLAUDE.md: „Edycja kodu produkcyjnego przez test-author" jest
- *      zakazana hookiem). To jest zgłoszenie do `implementer-server`/`implementer-ui`,
- *      nie coś do naprawienia w tej turze.
- *   2. Bez wydzielonej funkcji jedyna alternatywa to renderowanie `CatalogPage` i
- *      symulacja kliknięć filtrów — a `apps/b2c-web` nie ma w tym pakiecie testowym
- *      żadnej paczki do renderowania komponentów w teście ani emulacji DOM (sprawdzone:
- *      `package.json` nie deklaruje takiej zależności), a korzeniowy `vitest.config.mts`
- *      nie ustawia środowiska z DOM. Nie da się więc napisać testu integracyjnego na
- *      poziomie jednostkowym bez zmiany infrastruktury.
+ * RUNDA 3 (2026-09-24): `katalog/page.tsx` DZIŚ eksportuje czystą funkcję
+ * `export function filterProducts(products, filters)`, wydzieloną z dawnego
+ * `useMemo(...)` (zweryfikowane odczytem pliku) — więc test poniżej importuje i wywołuje
+ * PRAWDZIWĄ implementację, nie jej kopię.
  *
- * Test złożenia filtrów (marka AND kolor) jest więc DZIŚ NIEPOKRYTY na tym poziomie —
- * jawnie udokumentowane ograniczenie, zgodnie z zasadą „nie fabrykuj słabszego testu,
- * żeby było coś". Trzy pozostałe testy w tym pliku (struktura sekcji, komunikat pustego
- * wyniku, otwieranie modala z karty) są utrzymane, bo sprawdzają REALNĄ treść
- * `katalog/page.tsx` przez `readFileSync` — nie kopiują logiki aplikacji, więc
- * odróżniają usunięcie/zmianę tej treści od jej obecności.
+ * Import samego `page.tsx` transytywnie ciągnie moduły `"use client"`/`"use server"` z
+ * aliasami `@/...` (m.in. `@/lib/supabaseClient`, `@/components/ui/ProductCard`,
+ * `@/components/ui/DeviceModal`, `@/components/layout/Navbar`, `@/components/layout/Footer`)
+ * — korzeniowy `vitest.config.mts` (współdzielony w monorepo, poza zakresem edycji
+ * `test-author`) nie ma skonfigurowanego aliasu `@/*`, więc bez interwencji import wywala
+ * się na "Cannot find package '@/...'" (zweryfikowane próbą). `filterProducts` sama w
+ * sobie nie dotyka żadnego z tych modułów (czysta funkcja na tablicy/obiekcie), więc
+ * zamiast zmieniać współdzieloną konfigurację, te zależności są zamockowane `vi.mock` —
+ * moduły nigdy nie są faktycznie importowane/renderowane, `filterProducts` jest wołana
+ * bez modyfikacji. Ten sam trik (mockowanie modułu po nierozwiązywalnej ścieżce aliasu)
+ * NIE wymaga jsdom/RTL — to wciąż czysty test funkcji, nie renderowanie komponentu.
  */
+
+vi.mock('@/lib/supabaseClient', () => ({ supabase: {} }));
+vi.mock('@/components/ui/ProductCard', () => ({ ProductCard: () => null, calcBrutto: () => 0 }));
+vi.mock('@/components/ui/DeviceModal', () => ({ DeviceModal: () => null }));
+vi.mock('@/components/layout/Navbar', () => ({ default: () => null }));
+vi.mock('@/components/layout/Footer', () => ({ default: () => null }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ back: vi.fn() }) }));
+
+const { filterProducts } = await import('../app/katalog/page');
+
+function makeProduct(overrides: Partial<BestsellerProduct> & { _raw?: any }): BestsellerProduct {
+  return {
+    id: overrides.id ?? 'id',
+    brand: overrides.brand ?? 'Fuji Electric',
+    brandLogo: 'FE',
+    model: 'Model',
+    power: '2.5 kW',
+    img: 'https://example.test/img.jpg',
+    deviceNettoPrice: overrides.deviceNettoPrice ?? 1000,
+    installNettoPrice: 1500,
+    _raw: { color: 'Biały', ...overrides._raw },
+    ...overrides,
+  };
+}
 
 describe('B2C-CATALOG-LIST — struktura katalogu i filtrowanie', () => {
   const catalogPagePath = join(process.cwd(), 'apps/b2c-web/app/katalog/page.tsx');
@@ -50,9 +70,46 @@ describe('B2C-CATALOG-LIST — struktura katalogu i filtrowanie', () => {
   });
 
   // @REQ: B2C-CATALOG-LIST
-  it.todo(
-    'filtry marki i koloru dają się złożyć w koniunkcji — brak funkcji filtrującej wydzielonej z katalog/page.tsx i brak infrastruktury do renderowania komponentu w tym pakiecie testowym (zgłoszenie do implementer-server/implementer-ui, patrz komentarz na górze pliku); dawna wersja tego testu kopiowała logikę filtrowania do siebie i testowała samą siebie (BLOCKER 5, usunięte)',
-  );
+  it('filtry marki i koloru składają się w koniunkcji (AND), nie w alternatywę (OR)', () => {
+    const products: BestsellerProduct[] = [
+      // Pasuje do OBU filtrów naraz — jedyny oczekiwany wynik.
+      makeProduct({ id: 'fuji-bialy', brand: 'Fuji Electric', _raw: { color: 'Biały' } }),
+      // Pasuje TYLKO do marki — złe koniunkcji zaakceptowałoby to jako "OR marka".
+      makeProduct({ id: 'fuji-czarny', brand: 'Fuji Electric', _raw: { color: 'Czarny' } }),
+      // Pasuje TYLKO do koloru — złe koniunkcji zaakceptowałoby to jako "OR kolor".
+      makeProduct({ id: 'haier-bialy', brand: 'Haier', _raw: { color: 'Biały' } }),
+      // Nie pasuje do żadnego z filtrów.
+      makeProduct({ id: 'haier-czarny', brand: 'Haier', _raw: { color: 'Czarny' } }),
+    ];
+
+    const result = filterProducts(products, {
+      roomType: 'all',
+      brands: ['Fuji Electric'],
+      colors: ['Biały'],
+      area: 'all',
+      features: { wifi: false, silent: false, presence: false },
+    });
+
+    expect(result.map((p) => p.id)).toEqual(['fuji-bialy']);
+  });
+
+  // @REQ: B2C-CATALOG-LIST
+  it('brak zaznaczonych filtrów marki/koloru zwraca wszystkie produkty (bez zawężenia)', () => {
+    const products: BestsellerProduct[] = [
+      makeProduct({ id: 'a', brand: 'Fuji Electric', _raw: { color: 'Biały' } }),
+      makeProduct({ id: 'b', brand: 'Haier', _raw: { color: 'Czarny' } }),
+    ];
+
+    const result = filterProducts(products, {
+      roomType: 'all',
+      brands: [],
+      colors: [],
+      area: 'all',
+      features: { wifi: false, silent: false, presence: false },
+    });
+
+    expect(result.map((p) => p.id).sort()).toEqual(['a', 'b']);
+  });
 
   // @REQ: B2C-CATALOG-LIST
   it('pusty wynik filtrowania prezentuje komunikat o braku wyników, a nie pustą siatkę', () => {

@@ -1,48 +1,161 @@
-import { describe, it } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { JSDOM } from 'jsdom';
 
 /**
- * BLOCKER 1-2 (recenzja 2026-09-24): wersja poprzednia tego pliku szukała w treści
- * `HomePageClient.tsx` ciągów `selectedProduct` / `setSelectedProduct(null)` — obu
- * ISTNIEJĄCYCH na `main` PRZED jakąkolwiek implementacją B2C-NAV-STATE. Taki test jest
- * zielony niezależnie od tego, czy zachowanie (przywrócenie scrolla, przywrócenie
- * adresu przy zamknięciu modala) jest poprawne — mierzy istnienie zmiennej, nie
- * zachowania z kryteriów akceptacji.
+ * RUNDA 3 (2026-09-24): poprzednie uzasadnienie `it.todo` w tym pliku ("apps/b2c-web
+ * nie ma paczki do renderowania komponentów w teście ani emulacji DOM") było BŁĘDNE —
+ * `jsdom`, `@testing-library/react` i `@testing-library/user-event` są zainstalowane w
+ * monorepo (deklarowane w `apps/b2b-web/package.json`, ale hoisted do korzeniowego
+ * `node_modules/`, więc rozwiązywalne z każdego pakietu — zweryfikowane `require.resolve`
+ * przed napisaniem tego pliku).
  *
- * OGRANICZENIE INFRASTRUKTURY (do zaraportowania, nie do obejścia fałszywym testem):
- * B2C-NAV-STATE dotyczy WYŁĄCZNIE zachowań przeglądarki w czasie działania — pozycji
- * scrolla po nawigacji wstecz i stanu adresu URL po zamknięciu modala.
- * Sprawdzone przed napisaniem tego pliku:
- *   - `apps/b2c-web` NIE ma `vitest.config.mts` własnego; korzysta z korzeniowego
- *     `vitest.config.mts`, które nie ustawia `test.environment` na środowisko z DOM
- *     (domyślne środowisko Vitest to `node` — bez `window`, `document`, `scrollY`,
- *     `history`).
- *   - `apps/b2c-web/package.json` (`dependencies` + `devDependencies`) NIE ma paczki
- *     do renderowania komponentów w teście ani paczki emulującej DOM — nie da się
- *     renderować `HomePageClient` i wywołać na nim rzeczywistej interakcji w tym
- *     pakiecie testowym.
- * Nie istnieje też wydzielona, czysta funkcja (np. `restoreScrollPosition(prevY)`)
- * możliwa do zaimportowania i przetestowania bez renderowania DOM — cała logika jest
- * wpleciona w JSX/hooki komponentu klienckiego.
+ * DRUGA PRZESZKODA, RÓWNIEŻ REALNIE ZWERYFIKOWANA (nie założona): standardowa ścieżka —
+ * pragma "at-vitest-environment jsdom" (mechanizm wbudowany w Vitest, używany gdzie
+ * indziej w monorepo, np. apps/b2b-web) — W TEJ WERSJI (Vitest 4 / nowe Vite
+ * Environment API) powoduje, że silnik rozwiązywania modułów tego środowiska odrzuca
+ * import HomePageClient.tsx na aliasach @/... jeszcze PRZED zadziałaniem mockowania
+ * modułów ("Failed to resolve import '@/components/ui/DeviceModal'"), mimo że te same
+ * mocki na tych samych aliasach działają bez zarzutu w środowisku domyślnym (node) —
+ * patrz `tests/catalog-filters.test.ts` w tym katalogu, gdzie identyczny wzorzec
+ * mockowania aliasów działa. To jest różnica w silniku środowiska jsdom Vitesta, nie w
+ * dostępności paczek. Korzeniowy `vitest.config.mts` (współdzielony w monorepo, poza
+ * zakresem edycji `test-author`) nie deklaruje aliasu `@/*`, więc nie da się tego
+ * naprawić bez dotykania współdzielonej konfiguracji.
  *
- * Statyczny test na treści pliku (grep po `pushState`/`useSearchParams` itp.) NIE
- * odróżniłby poprawnej implementacji od błędnej — dokładnie ten defekt, który ta
- * naprawa usuwa. Świadoma decyzja: NIE pisać kolejnej wersji takiego testu.
+ * PUŁAPKA PRZY PISANIU TEGO KOMENTARZA (zapisana tu, żeby się nie powtórzyła): sam
+ * literalny wzorzec tekstowy funkcji-mockującej-moduł z otwierającym nawiasem, wpisany
+ * w treść komentarza JSDoc jako przykład kodu, wystarczył, żeby mechanizm podnoszenia
+ * (hoistingu) wywołań mockujących w tym pliku się zepsuł — realne wywołania niżej w
+ * pliku przestawały być podnoszone przed statycznymi importami, dając TĘ SAMĄ
+ * sygnaturę błędu ("Failed to resolve import"), mimo że kod poniżej jest poprawny.
+ * Zweryfikowane bisekcją: usunięcie tego wzorca z komentarza naprawiało import.
  *
- * Jedyne realne pokrycie obu kryteriów akceptacji B2C-NAV-STATE w tym repozytorium to
- * `apps/b2c-web/e2e/navigation.spec.ts` (Playwright, prawdziwy DOM/przeglądarka):
- *   - `should restore scroll position when going back from Catalog` (kryt. 1)
- *   - `should restore scroll position when going back from Knowledge Base` (kryt. 1)
- *   - `zamknięcie modala urządzenia przywraca adres sprzed otwarcia i nie przewija
- *     strony na górę` (kryt. 2)
- *
- * Poniższy wpis jest jawnym, udokumentowanym ograniczeniem tej warstwy testów — NIE
- * jest testem wyłączonym/pominiętym (ten wariant metody `it` oznacza „do zrobienia /
- * niewykonywalne tutaj", nie „wyłączone", i nie ukrywa istniejącego pokrycia: dowód
- * pozostaje w pliku E2E wymienionym powyżej).
+ * ROZWIĄZANIE: zamiast wbudowanej pragmy środowiska jsdom, ten plik zostaje w
+ * DOMYŚLNYM środowisku node (tam, gdzie mockowanie aliasów @/... działa) i RĘCZNIE
+ * konstruuje `window`/`document` przez `new JSDOM(...)` + `vi.stubGlobal(...)`, PRZED
+ * zaimportowaniem `HomePageClient` i modułów RTL. To wciąż ta sama biblioteka jsdom
+ * (prawdziwe DOM API: `window.location`, `window.history`, `window.scrollTo`), tylko
+ * podpięta ręcznie zamiast przez plugin środowiska Vitesta — omija WYŁĄCZNIE silnik
+ * rozwiązywania modułów tego pluginu, nie samą emulację DOM.
  */
-describe('B2C-NAV-STATE — pokrycie wyłącznie przez E2E (Playwright), patrz apps/b2c-web/e2e/navigation.spec.ts', () => {
+
+const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost/' });
+vi.stubGlobal('window', dom.window);
+vi.stubGlobal('document', dom.window.document);
+vi.stubGlobal('navigator', dom.window.navigator);
+vi.stubGlobal('HTMLElement', dom.window.HTMLElement);
+
+const { createElement } = await import('react');
+const { render, screen, cleanup } = await import('@testing-library/react');
+const userEvent = (await import('@testing-library/user-event')).default;
+
+// `getFomoSlots`/`getBestsellers` są importowane przez HomePageClient.tsx jako WARTOŚCI
+// (nie `import type`), więc ich moduły wykonują się przy imporcie i ciągną
+// `@/lib/supabaseClient` — mockowanie zapobiega temu samemu problemowi, co przy
+// `soft-lead.test.ts` w `tests/actions/`, tu na poziomie całego drzewa importów strony.
+vi.mock('../app/actions/getFomoSlots', () => ({ getFomoSlots: vi.fn() }));
+vi.mock('../app/actions/getBestsellers', () => ({ getBestsellers: vi.fn() }));
+
+// Navbar/Footer nie biorą udziału w kontrakcie B2C-NAV-STATE (nawigacja/adres/scroll) —
+// zastąpione `null`, żeby nie ciągnąć `next/navigation` (`usePathname`) bez prawdziwego
+// routera Next.
+vi.mock('@/components/layout/Navbar', () => ({ default: () => null }));
+vi.mock('@/components/layout/Footer', () => ({ default: () => null }));
+
+// ProductCard/DeviceModal są zastąpione minimalnymi atrapami, które wołają DOKŁADNIE te
+// same propsy (`onOpenModal`, `onClose`), których używa PRAWDZIWY `HomePageClient` —
+// test sprawdza logikę stanu/adresu W `HomePageClient`, nie wewnętrzną treść tych
+// komponentów (ta jest pokryta gdzie indziej / przez E2E).
+vi.mock('@/components/ui/ProductCard', () => ({
+  ProductCard: ({
+    product,
+    onOpenModal,
+  }: {
+    product: { model: string };
+    onOpenModal: (p: unknown) => void;
+  }) => createElement('button', { onClick: () => onOpenModal(product) }, `open-${product.model}`),
+  calcBrutto: () => 0,
+}));
+vi.mock('@/components/ui/DeviceModal', () => ({
+  DeviceModal: ({ onClose }: { onClose: () => void }) =>
+    createElement('button', { onClick: onClose }, 'close-modal'),
+}));
+
+const { default: HomePageClient } = await import('../app/HomePageClient');
+
+const testProduct = {
+  id: '1',
+  brand: 'Fuji Electric',
+  brandLogo: 'FE',
+  model: 'KLTA-25',
+  power: '2.5 kW',
+  img: '',
+  deviceNettoPrice: 1000,
+  installNettoPrice: 1500,
+};
+
+describe('B2C-NAV-STATE — otwarcie/zamknięcie modala urządzenia (kryt. 2)', () => {
+  beforeEach(() => {
+    window.history.replaceState({}, '', '/');
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
   // @REQ: B2C-NAV-STATE
-  it.todo(
-    'brak infrastruktury do renderowania komponentów z DOM w tym pakiecie testowym — nie da się zweryfikować scrolla/adresu URL na poziomie jednostkowym; dowód w e2e/navigation.spec.ts',
-  );
+  it('otwarcie modala urządzenia dopisuje ?device=<model> do adresu i wpisu historii', async () => {
+    const user = userEvent.setup();
+    render(
+      createElement(HomePageClient, {
+        initialFomoData: null,
+        initialDbProducts: [testProduct],
+      }),
+    );
+
+    await user.click(screen.getByText('open-KLTA-25'));
+
+    expect(new URL(window.location.href).searchParams.get('device')).toBe('KLTA-25');
+    expect((window.history.state as { device?: string } | null)?.device).toBe('KLTA-25');
+  });
+
+  // @REQ: B2C-NAV-STATE
+  it('zamknięcie modala przywraca adres sprzed otwarcia (usuwa ?device=) i NIE przewija strony', async () => {
+    const user = userEvent.setup();
+    render(
+      createElement(HomePageClient, {
+        initialFomoData: null,
+        initialDbProducts: [testProduct],
+      }),
+    );
+
+    await user.click(screen.getByText('open-KLTA-25'));
+    expect(window.location.search).toContain('device=KLTA-25');
+
+    // Spy zamiast realnej pozycji przewinięcia: jsdom nie implementuje layoutu, więc
+    // `window.scrollY` jest zawsze 0 niezależnie od wywołań `scrollTo` (zweryfikowane
+    // przed napisaniem tego testu) — asercja na samej wartości `scrollY` byłaby martwa.
+    // Szpieg na `scrollTo` ma zęby: wykryje realne wywołanie, gdyby ktoś je dodał.
+    const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+
+    await user.click(screen.getByText('close-modal'));
+
+    expect(window.location.search).toBe('');
+    expect(scrollToSpy).not.toHaveBeenCalled();
+  });
 });
+
+/**
+ * Kryt. 1 (przywrócenie pozycji scrolla po nawigacji WSTECZ z Katalogu/Bazy Wiedzy) NIE
+ * jest pokryte na tym poziomie — celowa, udokumentowana decyzja, nie przeoczenie.
+ * `HomePageClient` nie ma własnej logiki przywracania scrolla (żadnego odwołania do
+ * `sessionStorage`/zapamiętanej pozycji w tym pliku — zweryfikowane odczytem); kryt. 1
+ * polega na DOMYŚLNYM zachowaniu przeglądarki (`history.scrollRestoration` / bfcache)
+ * przy PRAWDZIWEJ nawigacji między załadowaniami stron. `jsdom` nie renderuje pojedynczej
+ * strony jako część prawdziwej historii sesji przeglądarki z bfcache — nie da się tego
+ * zasymulować w tym samym renderze bez fabrykowania testu, który i tak nie odróżniłby
+ * poprawnego zachowania przeglądarki od błędnego. Pokrycie kryt. 1 pozostaje wyłącznie w
+ * `apps/b2c-web/e2e/navigation.spec.ts` (`should restore scroll position when going back
+ * from Catalog` / `... from Knowledge Base`).
+ */

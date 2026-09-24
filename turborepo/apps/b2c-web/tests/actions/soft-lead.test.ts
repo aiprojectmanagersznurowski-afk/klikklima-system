@@ -6,10 +6,13 @@ import { join } from 'node:path';
 
 // Mock Supabase admin client
 //
-// B2C-SOFT-LEAD-CONSENT (2026-09-24): `saveSoftLead` zapisuje przez `upsert(...,
-// { onConflict: 'dane_kontaktowe' })`, nie `insert` (patrz M8 w leads.ts) — mock musi
-// wystawiać obie metody, wzorem `soft-lead-security.test.ts` w tym katalogu, inaczej
-// wywołanie produkcyjne wywala się na "upsert is not a function" (błędny RED).
+// D3 (decyzja Michała 2026-09-24, zweryfikowana odczytem `leads.ts` w tej turze):
+// `saveSoftLead` zapisuje przez zwykły `insert`, nie `upsert` — wcześniejszy `upsert(...,
+// { onConflict: 'dane_kontaktowe' })` zakładał unikalny indeks na `dane_kontaktowe`,
+// którego tabela nie ma, więc na żywym Postgresie/PostgREST rzucał SQLSTATE 42P10 na
+// KAŻDYM wywołaniu (patrz M8 w leads.ts). Mock i tak wystawia obie metody (wzorem
+// `soft-lead-security.test.ts` w tym katalogu) — nieużywany `mockUpsert` jest tu
+// nieszkodliwym zapasem, nie źródłem asercji.
 const mockInsert = vi.fn();
 const mockUpsert = vi.fn();
 const mockFrom = vi.fn().mockImplementation((table: string) => ({
@@ -51,15 +54,14 @@ describe('B2C-SOFT-LEAD — zapis kontaktu cząstkowego i separacja od lejka', (
 
     // Sprawdzenie przekazanych danych: `consentDocumentVersionId` jest wydzielane do
     // kolumny `consent_version_id` osobno od pozostałych danych częściowych (leads.ts:130).
-    expect(mockUpsert).toHaveBeenCalledWith(
-      [
-        expect.objectContaining({
-          dane_kontaktowe: phone,
-          dane_cząstkowe: domainPartialData,
-        }),
-      ],
-      expect.anything(),
-    );
+    // `insert` (D3) jest wołany z JEDNYM argumentem (bez `onConflict`) — w przeciwieństwie
+    // do dawnego `upsert`.
+    expect(mockInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        dane_kontaktowe: phone,
+        dane_cząstkowe: domainPartialData,
+      }),
+    ]);
   });
 
   // @REQ: B2C-SOFT-LEAD
@@ -67,7 +69,7 @@ describe('B2C-SOFT-LEAD — zapis kontaktu cząstkowego i separacja od lejka', (
     const phone = '600100200';
     await saveSoftLead(phone, { location: 'Dom', consentDocumentVersionId: validConsentDocumentVersionId });
 
-    const upsertedRow = mockUpsert.mock.calls[0][0][0] as { status?: string };
+    const upsertedRow = mockInsert.mock.calls[0][0][0] as { status?: string };
 
     // Status nie może być żadnym ze stanów maszyny lejka (np. NEW_LEAD, T01, itd.)
     if (upsertedRow.status) {
