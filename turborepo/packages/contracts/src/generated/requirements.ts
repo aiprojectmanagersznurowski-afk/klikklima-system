@@ -3,7 +3,7 @@
 // Regeneracja: node tools/kk-codegen.mjs
 // Każda ręczna zmiana zostanie wykryta przez `kk-codegen --check` i odrzucona w CI.
 
-export const REQUIREMENT_IDS = ["FNL-E1-E2", "FNL-E2-E3", "FNL-E3-E4", "FNL-E3-BUCKET", "FNL-E4-E5", "FNL-E5-E6", "FNL-E5-BYPASS", "FNL-E6-E7", "FNL-E7-E8", "FNL-ROLLBACK", "FNL-ROLLBACK-EXIT", "FNL-NO-ILLEGAL-TRANSITIONS", "CRM-KLI-AC1", "CRM-KLI-AC2", "CRM-KLI-AC3", "CRM-INST-AC1", "CRM-INST-AC2", "CRM-SRV-TRIGGER", "CRM-UST-AC1", "CRM-UST-AC2", "CRM-UST-AC3", "CRM-AUDYT-AC1", "CRM-AUDYT-AC2", "CRM-AUDYT-AC3", "CRM-AUDYT-KARTOTEKA", "CRM-ZESP-KARTOTEKA", "CRM-ZESP-AC1", "CRM-ZESP-AC2", "CRM-ZESP-AC3", "CRM-ZIMNE-AC1", "CRM-ZIMNE-AC2", "CRM-ZIMNE-AC3", "CRM-BOOK-HISTORY", "CRM-REGION-AUTO", "FNL-2PHASE", "FNL-2PHASE-BOOKING", "FNL-2PHASE-ROLLBACK-RELEASE", "FNL-ROLLBACK-BOOKING-RELEASE", "FNL-2PHASE-INVOICE", "NTF-PUSH-TOKEN", "NTF-I7-SLA", "SRV-SOURCE-OF-TRUTH", "SRV-REMINDER-ONCE", "CRM-ZESP-REP", "CRM-DELETE-ADMIN-ONLY", "CRM-DELETE-ADMIN-ONLY-CLIENTS", "CRM-CLIENT-ANONYMIZE-RODO", "SEC-AUDIT-LOG-APPEND-ONLY", "CRM-DELETE-ADMIN-ONLY-LEADS", "CRM-DELETE-ADMIN-ONLY-INSTALLATIONS", "CRM-DELETE-ADMIN-ONLY-SERVICES", "CRM-DELETE-ADMIN-ONLY-INCIDENTS", "CRM-DELETE-ADMIN-ONLY-AUDITORS", "CRM-DELETE-ADMIN-ONLY-CREWS", "CRM-CREW-UPDATE-ADMIN-ONLY", "CRM-CONTEXT-MENU", "SLA-QUOTE-14D", "SLA-LOG-COLORS", "UI-SLA-NO-GREEN", "UI-NO-HARDCODED-COLORS", "UI-ICONS-LUCIDE-ONLY", "UI-FORMS-RHF-ZOD", "SRV-NEXT-DATE", "SEC-SSO-GUARD", "SEC-AUTHZ-USER-MGMT", "SEC-RLS-AUDITOR-SCOPE", "SEC-ASSIGNMENT-POOL-MINIMIZE", "SEC-LEADS-LIST-MINIMIZE", "SEC-LEADS-LIST-SCALARS", "CRM-LEAD-UPDATE-ADMIN-DISPATCHER", "SEC-AUTHZ-B2B-MUTATIONS", "SEC-AUTHZ-B2B-READS", "SEC-EMAIL-UNIQUE", "SEC-EMAIL-CASE-NORMALIZE", "SEC-SERVICE-KEY-SERVER-ONLY", "SEC-RODO-DELETE", "SEC-AUDIT-LOG", "SEC-AUDIT-LOG-DELETE", "SEC-AUDIT-LOG-ROLE-CHANGE", "SEC-AUDIT-LOG-MANUAL-STATUS", "SEC-LAST-ADMIN-GUARD", "SEC-AUTHZ-DEFAULT-ROLE", "NTF-QUEUE-TABLE", "NTF-QUEUE-WINDOW", "NTF-POLY", "NTF-HISTORY", "NTF-RETRY", "NTF-CATALOG-PARITY", "B2C-LEAD-ENTRY", "B2C-LEAD-ATOMIC", "B2C-BOOKING-SLOT", "B2C-CONSENT-RODO", "B2C-RLS-PUBLIC", "B2C-TRIAGE-STEPS", "B2C-TRIAGE-DISQUALIFY", "B2C-TRIAGE-CONDITIONAL", "B2C-SOFT-LEAD", "B2C-BOOKING-VALIDATION", "B2C-PRICE-FROM", "B2C-CATALOG-LIST", "B2C-DEVICE-MODAL", "B2C-CATALOG-VIEW-TRACKED", "B2C-CONTENT-PAGES", "B2C-NAV-STATE", "FLD-GEO-COORDS", "FLD-GEO-UNLOCK", "FLD-GEO-EN-ROUTE", "FLD-GPS-RODO", "FLD-AUTH-BLOCKED", "FLD-CONSENT-TRIGGERS-INTEGRATION", "FLD-CONSENT-ACCEPT", "FLD-LEGAL-DOC-VERSION", "FLD-AVAIL-SELF", "FLD-AVAIL-RESTORE", "FLD-AVAIL-WEEKLY-RULES", "CAL-SLOT-ENGINE", "CAL-POOL-AGGREGATE", "FLD-BOOKING-ATOMIC-ASSIGN", "FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT", "CAL-VISIT-DURATION-BASKETS", "CAL-TRAVEL-BUFFER", "FLD-QUOTE-BASKET-SELECT", "FLD-BASE-LOCATION-EDIT", "CRM-PROJECT-NUMBER", "CRM-READABLE-IDENTIFIERS", "FLD-PHOTO-SET", "FNL-ADVANCE-STATUS-CONTRACT-BOUND", "FLD-APP-SHELL", "FLD-API-LAYER", "FLD-APP-DISTRIBUTION", "FLD-MOBILE-TEST-HARNESS", "FLD-JOBS-OWN", "FLD-CONSENT-ENFORCE", "FLD-CHECKLIST-PREINSTALL", "FLD-PHOTO-STORAGE", "FLD-PHOTO-UPLOAD-RESILIENT", "FLD-OFFLINE-OUTBOX", "FLD-HANDOVER-PROTOCOL", "DOC-PDF-RENDER", "FLD-INSTALL-PAYOUT-APPROVAL", "FLD-SIGN-DOC-FREEZE", "FLD-SIGN-CAPTURE", "FLD-SIGN-AUDIT-TRAIL", "FLD-SIGN-TSA", "FLD-SIGN-REMOTE", "FLD-SIGN-REMOTE-OTP", "FLD-SIGN-DELIVERY-PROOF", "FLD-SIGN-ABUSE-GUARD", "FLD-SIGN-DURABLE-COPY", "FLD-AUDIT-LEAD-CREATE", "FLD-AUDIT-FORM", "FLD-AUDIT-INSTALL-TYPE", "FLD-QUOTE-BASKET-SELECT-AUDITOR", "FLD-QUOTE-VARIANTS", "PRICE-LIST-SCHEMA", "PRICE-LIST-IMPORT", "PRICE-LIST-ADMIN", "STD-INSTALL-CONFIG", "B2C-TRIAGE-PRICE-FROM-PRICE-LIST", "FLD-QUOTE-CALC", "FLD-QUOTE-ROOMS", "FLD-QUOTE-GENERAL-ITEMS", "PRICE-VAT-RATE", "FLD-QUOTE-MANUAL-ITEM", "FLD-QUOTE-PRICE-SNAPSHOT", "FLD-CONTRACT-GENERATE", "DOC-LEGAL-VERSION-REGISTRY", "INV-PROFORMA", "INV-ADVANCE-AUTO", "INV-FINAL", "PAY-DEPOSIT-LINK", "FLD-PHOTO-SET-PHASE-ONE", "B2C-PROPERTY-AREA-BAND"] as const;
+export const REQUIREMENT_IDS = ["FNL-E1-E2", "FNL-E2-E3", "FNL-E3-E4", "FNL-E3-BUCKET", "FNL-E4-E5", "FNL-E5-E6", "FNL-E5-BYPASS", "FNL-E6-E7", "FNL-E7-E8", "FNL-ROLLBACK", "FNL-ROLLBACK-EXIT", "FNL-NO-ILLEGAL-TRANSITIONS", "CRM-KLI-AC1", "CRM-KLI-AC2", "CRM-KLI-AC3", "CRM-INST-AC1", "CRM-INST-AC2", "CRM-SRV-TRIGGER", "CRM-UST-AC1", "CRM-UST-AC2", "CRM-UST-AC3", "CRM-AUDYT-AC1", "CRM-AUDYT-AC2", "CRM-AUDYT-AC3", "CRM-AUDYT-KARTOTEKA", "CRM-ZESP-KARTOTEKA", "CRM-ZESP-AC1", "CRM-ZESP-AC2", "CRM-ZESP-AC3", "CRM-ZIMNE-AC1", "CRM-ZIMNE-AC2", "CRM-ZIMNE-AC3", "CRM-BOOK-HISTORY", "CRM-REGION-AUTO", "FNL-2PHASE", "FNL-2PHASE-BOOKING", "FNL-2PHASE-ROLLBACK-RELEASE", "FNL-ROLLBACK-BOOKING-RELEASE", "FNL-2PHASE-INVOICE", "NTF-PUSH-TOKEN", "NTF-I7-SLA", "SRV-SOURCE-OF-TRUTH", "SRV-REMINDER-ONCE", "CRM-ZESP-REP", "CRM-DELETE-ADMIN-ONLY", "CRM-DELETE-ADMIN-ONLY-CLIENTS", "CRM-CLIENT-ANONYMIZE-RODO", "SEC-AUDIT-LOG-APPEND-ONLY", "CRM-DELETE-ADMIN-ONLY-LEADS", "CRM-DELETE-ADMIN-ONLY-INSTALLATIONS", "CRM-DELETE-ADMIN-ONLY-SERVICES", "CRM-DELETE-ADMIN-ONLY-INCIDENTS", "CRM-DELETE-ADMIN-ONLY-AUDITORS", "CRM-DELETE-ADMIN-ONLY-CREWS", "CRM-CREW-UPDATE-ADMIN-ONLY", "CRM-CONTEXT-MENU", "SLA-QUOTE-14D", "SLA-LOG-COLORS", "UI-SLA-NO-GREEN", "UI-NO-HARDCODED-COLORS", "UI-ICONS-LUCIDE-ONLY", "UI-FORMS-RHF-ZOD", "SRV-NEXT-DATE", "SEC-SSO-GUARD", "SEC-AUTHZ-USER-MGMT", "SEC-RLS-AUDITOR-SCOPE", "SEC-ASSIGNMENT-POOL-MINIMIZE", "SEC-LEADS-LIST-MINIMIZE", "SEC-LEADS-LIST-SCALARS", "CRM-LEAD-UPDATE-ADMIN-DISPATCHER", "SEC-AUTHZ-B2B-MUTATIONS", "SEC-AUTHZ-B2B-READS", "SEC-EMAIL-UNIQUE", "SEC-EMAIL-CASE-NORMALIZE", "SEC-SERVICE-KEY-SERVER-ONLY", "SEC-RODO-DELETE", "SEC-AUDIT-LOG", "SEC-AUDIT-LOG-DELETE", "SEC-AUDIT-LOG-ROLE-CHANGE", "SEC-AUDIT-LOG-MANUAL-STATUS", "SEC-LAST-ADMIN-GUARD", "SEC-AUTHZ-DEFAULT-ROLE", "NTF-QUEUE-TABLE", "NTF-QUEUE-WINDOW", "NTF-POLY", "NTF-HISTORY", "NTF-RETRY", "NTF-CATALOG-PARITY", "B2C-LEAD-ENTRY", "B2C-LEAD-ATOMIC", "B2C-BOOKING-SLOT", "B2C-CONSENT-RODO", "B2C-RLS-PUBLIC", "B2C-TRIAGE-STEPS", "B2C-TRIAGE-DISQUALIFY", "B2C-TRIAGE-CONDITIONAL", "B2C-SOFT-LEAD", "B2C-BOOKING-VALIDATION", "B2C-PRICE-FROM", "B2C-CATALOG-LIST", "B2C-DEVICE-MODAL", "B2C-CATALOG-VIEW-TRACKED", "B2C-CONTENT-PAGES", "B2C-NAV-STATE", "FLD-GEO-COORDS", "FLD-GEO-UNLOCK", "FLD-GEO-EN-ROUTE", "FLD-GPS-RODO", "FLD-AUTH-BLOCKED", "FLD-CONSENT-TRIGGERS-INTEGRATION", "FLD-CONSENT-ACCEPT", "FLD-LEGAL-DOC-VERSION", "FLD-AVAIL-SELF", "FLD-AVAIL-RESTORE", "FLD-AVAIL-WEEKLY-RULES", "CAL-SLOT-ENGINE", "CAL-POOL-AGGREGATE", "FLD-BOOKING-ATOMIC-ASSIGN", "FLD-BOOKING-ONE-ACTIVE-PER-SUBJECT", "CAL-VISIT-DURATION-BASKETS", "CAL-TRAVEL-BUFFER", "FLD-QUOTE-BASKET-SELECT", "FLD-BASE-LOCATION-EDIT", "CRM-PROJECT-NUMBER", "CRM-READABLE-IDENTIFIERS", "FLD-PHOTO-SET", "FNL-ADVANCE-STATUS-CONTRACT-BOUND", "FLD-APP-SHELL", "FLD-API-LAYER", "FLD-APP-DISTRIBUTION", "FLD-MOBILE-TEST-HARNESS", "FLD-JOBS-OWN", "FLD-CONSENT-ENFORCE", "FLD-CHECKLIST-PREINSTALL", "FLD-PHOTO-STORAGE", "FLD-PHOTO-UPLOAD-RESILIENT", "FLD-OFFLINE-OUTBOX", "FLD-HANDOVER-PROTOCOL", "DOC-PDF-RENDER", "FLD-INSTALL-PAYOUT-APPROVAL", "FLD-SIGN-DOC-FREEZE", "FLD-SIGN-CAPTURE", "FLD-SIGN-AUDIT-TRAIL", "FLD-SIGN-TSA", "FLD-SIGN-REMOTE", "FLD-SIGN-REMOTE-OTP", "FLD-SIGN-DELIVERY-PROOF", "FLD-SIGN-ABUSE-GUARD", "FLD-SIGN-DURABLE-COPY", "FLD-AUDIT-LEAD-CREATE", "FLD-AUDIT-FORM", "FLD-AUDIT-INSTALL-TYPE", "FLD-QUOTE-BASKET-SELECT-AUDITOR", "FLD-QUOTE-VARIANTS", "PRICE-LIST-SCHEMA", "PRICE-LIST-IMPORT", "PRICE-LIST-ADMIN", "STD-INSTALL-CONFIG", "B2C-TRIAGE-PRICE-FROM-PRICE-LIST", "FLD-QUOTE-CALC", "FLD-QUOTE-ROOMS", "FLD-QUOTE-GENERAL-ITEMS", "PRICE-VAT-RATE", "FLD-QUOTE-MANUAL-ITEM", "FLD-QUOTE-PRICE-SNAPSHOT", "FLD-CONTRACT-GENERATE", "DOC-LEGAL-VERSION-REGISTRY", "INV-PROFORMA", "INV-ADVANCE-AUTO", "INV-FINAL", "PAY-DEPOSIT-LINK", "FLD-PHOTO-SET-PHASE-ONE", "B2C-PROPERTY-AREA-BAND", "FLD-API-IDEMPOTENCY-REGISTRY", "SEC-ACCESS-DENIED-LOG", "NTF-TEMPLATE-STORE", "NTF-QUEUE-RENDERED-BODY", "NTF-QUEUE-CLAIM", "NTF-DISPATCH-CRON", "SEC-WEBHOOK-SECRET-REQUIRED", "B2C-SOFT-LEAD-CONSENT", "QA-E2E-SUITE-REPAIR", "QA-E2E-REQUIRED-CHECK", "GATE-EVASION-DETECT"] as const;
 export type RequirementId = (typeof REQUIREMENT_IDS)[number];
 
 export const REQUIREMENTS = [
@@ -115,9 +115,9 @@ export const REQUIREMENTS = [
     "id": "CRM-KLI-AC2",
     "domain": "crm",
     "status": "TODO",
-    "risk": "MEDIUM",
-    "source": "b2b_crm_specifications.md#1",
-    "statement": "Zmiana danych kontaktowych na Karcie 360 propaguje się do aktywnych leadów."
+    "risk": "HIGH",
+    "source": "b2b_crm_specifications.md#1; PRZEPISANE 2026-09-24 na podstawie wyjaśnienia Michała (okno KK-IMPL-2026Q4) — pierwotne brzmienie opisywało propagację danych kontaktowych do leadów, czyli mechanizm duplikujący dane znormalizowane. Właściwym problemem jest wąski odczyt dla ról terenowych.",
+    "statement": "Audytor i ekipa montażowa widzą dane kontaktowe klienta wyłącznie dla przypisanego sobie zlecenia i wyłącznie w zakresie potrzebnym w terenie — bez dostępu do kartoteki klienta i bez kopiowania tych danych na leada."
   },
   {
     "id": "CRM-KLI-AC3",
@@ -202,7 +202,7 @@ export const REQUIREMENTS = [
   {
     "id": "CRM-AUDYT-KARTOTEKA",
     "domain": "crm",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "MEDIUM",
     "source": "docs/workorders/CRM-KARTOTEKI-CREATE-AND-CREW-ASSIGN.md (część A + rozszerzenie „edycja\", AC-A1..AC-A24) + decyzje człowieka z rozmowy 2026-08-28: D-A1 (react-hook-form + zod + @hookform/resolvers wchodzą do apps/b2b-web), D-A2 (zdjęcie przez Supabase Storage, nie base64), D-A4 (edycja wchodzi do zakresu), R-A3 wariant (b) (osobna akcja getAuditorForEdit(id) z bramką update, zamiast poszerzania listy). Brak źródła w dokumentach architektury — b2b_crm_specifications.md#5 opisuje blokadę i usunięcie audytora (CRM-AUDYT-AC1), nie zakładanie ani edycję kartoteki. R-A1 POTWIERDZONE 2026-08-28 zapytaniem SELECT * FROM storage.buckets: buckety audytorzy i zespoly ISTNIEJĄ. R-A2 POTWIERDZONE tym samym sposobem: storage.objects ma RLS włączone i ZERO polityk, więc upload z przeglądarki dziś nie działa dla nikogo poza service_role — także ten „działający\" dla ekipy; odblokowuje go migracja kartoteki_storage_policies (admin-only). KONTEKST NA PRZYSZŁOŚĆ, POZA TYM WYMAGANIEM: człowiek zadeklarował, że w fazie Field App pracownik będzie sam wgrywał własne zdjęcie do TEGO SAMEGO bucketu — rozszerzenie polityki storage.objects o ścieżkę samoobsługową będzie miało własne ID i własną migrację. ERRATA A-2 (2026-08-31, sekcja „ERRATA A-2\" tego samego WO): pierwotna rejestracja POMINĘŁA kolumny fgaz_valid_until i sep_valid_until — BŁĄD REJESTRACJI WYMAGANIA, nie regresja implementacji. Po stronie audytora NIE MA regresji funkcjonalnej, jest luka danych: getAuditors() nie filtruje po żadnej z tych kolumn, fgaz_valid_until zasila wyłącznie plakietkę „wygasa za N dni\" w auditors-client.tsx, a sep_valid_until audytora nie jest dziś czytane NIGDZIE. Decyzje człowieka z 2026-08-31 identyczne jak przy CRM-ZESP-KARTOTEKA: data w przeszłości dozwolona, brak ograniczenia górnej granicy roku. Kolumny już istnieją (DateTime? @db.Date) — bez zmiany schematu, migracji i macierzy uprawnień.",
     "statement": "Administrator zakłada i edytuje kartotekę audytora z panelu B2B: jeden formularz w dwóch rozłącznych trybach, komplet 14 pól kartoteki (w tym fgaz_valid_until i sep_valid_until — daty ważności certyfikatów), bez pól administracyjnych is_active i leave_status."
@@ -210,7 +210,7 @@ export const REQUIREMENTS = [
   {
     "id": "CRM-ZESP-KARTOTEKA",
     "domain": "crm",
-    "status": "TODO",
+    "status": "DONE",
     "risk": "MEDIUM",
     "source": "docs/workorders/CRM-KARTOTEKI-CREATE-AND-CREW-ASSIGN.md (część A + rozszerzenie „edycja\", AC-A1..AC-A24) + te same decyzje człowieka z 2026-08-28 co przy CRM-AUDYT-KARTOTEKA (D-A1, D-A2, D-A4, R-A3 wariant b). Brak źródła w dokumentach architektury — b2b_crm_specifications.md#6 opisuje certyfikaty i pulę w E4 (CRM-ZESP-AC1..AC3), nie zakładanie ani edycję kartoteki. Bucket zespoly ISTNIEJE (potwierdzone zapytaniem SELECT * FROM storage.buckets, 2026-08-28), ale upload z przeglądarki dziś fizycznie nie działa: storage.objects ma RLS włączone i zero polityk — dotyczy to także istniejącego, uchodzącego za działający wzorca crews-client.tsx. Odblokowuje go migracja kartoteki_storage_policies, admin-only. Przyszła samoobsługa pracownika z Field App do tego samego bucketu: osobne ID, osobna migracja. CZĘŚĆ B tego WO (przypisywanie ekipy do leada poza E4) jest ŚWIADOMIE ODŁOŻONA — nie ma i nie ma mieć ID. ERRATA A-2 (2026-08-31, ta sama sekcja WO): pierwotna rejestracja tego wymagania POMINĘŁA kolumny fgaz_valid_until i sep_valid_until — jest to BŁĄD REJESTRACJI WYMAGANIA, nie regresja implementacji; implementer zbudował dokładnie to, co było zapisane. Skutek potwierdzony na żywej bazie 2026-08-31: jedyna istniejąca ekipa („Ekipa Eweliny\") ma obie kolumny NULL i jest przez to trwale wykluczona z puli przypisania, bo isCertValidForDate traktuje NULL jako nieważny (fail-closed, D6). Decyzje człowieka z 2026-08-31: data w przeszłości w polu ważności certyfikatu jest DOZWOLONA (rekord dokumentuje stan faktyczny), brak dodatkowego ograniczenia górnej granicy roku poza naturalną walidacją formatu daty. Kolumny już istnieją w schemacie (DateTime? @db.Date), więc errata NIE pociąga zmiany schema.prisma, migracji ani macierzy uprawnień.",
     "statement": "Administrator zakłada i edytuje kartotekę zespołu montażowego z panelu B2B: jeden formularz w dwóch rozłącznych trybach, komplet 14 pól kartoteki (w tym fgaz_valid_until i sep_valid_until — daty ważności certyfikatów), bez pól administracyjnych aktywny i leave_status."
@@ -1390,5 +1390,93 @@ export const REQUIREMENTS = [
     "risk": "MEDIUM",
     "source": "D17 rozstrzygnięte 2026-09-23 (pytanie warunkowe o przedział powierzchni, bez wpisywania metrażu); R20 zamknięte",
     "statement": "Triage pyta o przedział powierzchni lokalu (do 300 m2 / powyżej 300 m2) wyborem z listy, wyłącznie dla nieruchomości mieszkalnych."
+  },
+  {
+    "id": "FLD-API-IDEMPOTENCY-REGISTRY",
+    "domain": "field",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D-API-1 rozstrzygnięte 2026-09-24 (rejestr CENTRALNY, nie per-endpoint); docs/workorders/FLD-API-LAYER.md sekcja WYMAGA DECYZJI; warunek 3 z ADR-013",
+    "statement": "Wszystkie zapisy z aplikacji terenowej przechodzą przez JEDEN centralny rejestr kluczy idempotencji, w którym wiersz klucza powstaje jako pierwszy krok transakcji wykonującej operację."
+  },
+  {
+    "id": "SEC-ACCESS-DENIED-LOG",
+    "domain": "security",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "D-API-2 rozstrzygnięte 2026-09-24 (OSOBNY nośnik, nie audit_log); docs/workorders/FLD-API-LAYER.md sekcja WYMAGA DECYZJI; kryterium 3 z FLD-API-LAYER („odmowa can() zostawia ślad\")",
+    "statement": "Odmowa dostępu wobec uwierzytelnionego aktora zostawia ślad w osobnym dzienniku security_events, a nie w rejestrze RODO audit_log."
+  },
+  {
+    "id": "NTF-TEMPLATE-STORE",
+    "domain": "notifications",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "Decyzja Michała 2026-09-24 (szablony wędrują do bazy i stają się edytowalne w panelu); kryterium NTF-CATALOG-PARITY, które OD ZAWSZE mówi o tabeli message_templates, podczas gdy implementacja trzymała stałą w TypeScript",
+    "statement": "Treści szablonów powiadomień mieszkają w wersjonowanej tabeli message_templates i są edytowalne z panelu; edycja tworzy nową wersję, opublikowana wersja jest zamrożona."
+  },
+  {
+    "id": "NTF-QUEUE-RENDERED-BODY",
+    "domain": "notifications",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "Decyzja Michała 2026-09-24; stan stwierdzony w packages/database/prisma/schema.prisma (model NotificationQueue) — wiersz trzyma payload i template_key, ale NIE trzyma tekstu, który poszedł",
+    "statement": "Wiersz kolejki zapisuje wyrenderowaną treść wiadomości oraz wersję szablonu w momencie kolejkowania."
+  },
+  {
+    "id": "NTF-QUEUE-CLAIM",
+    "domain": "notifications",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "Recenzja gałęzi feat/ntf-gateway (bloker: dispatcher pobiera, wysyła, dopiero potem oznacza); decyzja Michała 2026-09-24 o rozszerzeniu CHECK-a notification_queue_status_check o SENDING",
+    "statement": "Dispatcher przejmuje wiersz kolejki atomowo przed wysyłką, przez stan pośredni SENDING — dwa równoległe uruchomienia nie mogą wysłać tej samej wiadomości dwa razy."
+  },
+  {
+    "id": "NTF-DISPATCH-CRON",
+    "domain": "notifications",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "Decyzja Michała 2026-09-24 (zamiatacz kolejki na pg_cron po stronie Supabase); stan rozszerzeń potwierdzony na ŻYWEJ bazie 2026-09-24",
+    "statement": "Wysyłkę z kolejki wyzwala zamiatacz czasowy oparty o pg_cron po stronie Supabase; zakolejkowanie pozostaje zdarzeniowe, w transakcji ze zmianą statusu."
+  },
+  {
+    "id": "SEC-WEBHOOK-SECRET-REQUIRED",
+    "domain": "security",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "Znalezisko 2026-09-24 w apps/b2b-web/src/app/api/webhooks/services-cron/route.ts:13-17 oraz .../shipping/route.ts:25-29. Zweryfikowane: żadna z dwóch zmiennych (CRON_SECRET, SHIPPING_WEBHOOK_SECRET) nie jest ustawiona w żadnym pliku .env w repozytorium",
+    "statement": "Publiczny endpoint chroniony sekretem odmawia dostępu, gdy sekret nie jest skonfigurowany — brak konfiguracji to odmowa, nigdy przepustka."
+  },
+  {
+    "id": "B2C-SOFT-LEAD-CONSENT",
+    "domain": "b2c",
+    "status": "TODO",
+    "risk": "HIGH",
+    "source": "Potwierdzenie Michała 2026-09-24, że to luka RODO; gałąź feat/b2c-triage włącza zbieranie numeru telefonu na stronie lądowania; stan tabeli soft_leady potwierdzony odczytem information_schema na żywej bazie 2026-09-24",
+    "statement": "Porzucony lead (soft lead) zapisuje się wyłącznie razem ze zgodą wskazującą KONKRETNĄ wersję dokumentu prawnego — tak samo jak lead pełny."
+  },
+  {
+    "id": "QA-E2E-SUITE-REPAIR",
+    "domain": "qa",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "Decyzja Michała 2026-09-24 o wpięciu E2E jako wymaganego statusu, poprzedzona naprawą pakietu; stan pakietu Playwright stwierdzony w recenzji (selektory wskazują na tekst, którego nie ma w komponentach)",
+    "statement": "Pakiet E2E (Playwright) jest sprawny: testy faktycznie się uruchamiają, selektory wskazują na tekst istniejący w komponentach, a brak testów przestaje być traktowany jak sukces."
+  },
+  {
+    "id": "QA-E2E-REQUIRED-CHECK",
+    "domain": "qa",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "Decyzja Michała 2026-09-24 (E2E jako wymagany status bramki)",
+    "statement": "Pakiet E2E jest wymaganym statusem bramki — czerwony pakiet blokuje merge."
+  },
+  {
+    "id": "GATE-EVASION-DETECT",
+    "domain": "security",
+    "status": "TODO",
+    "risk": "MEDIUM",
+    "source": "Trzy wzorce omijania bramek znalezione w recenzjach 2026-09-24: sklejanie identyfikatorów ze stringów (feat/crm-cards), „prisma as unknown as SomeDynamicType\" (as any w przebraniu), test definiujący testowaną funkcję wewnątrz pliku testu (dwie gałęzie niezależnie)",
+    "statement": "Bramka wykrywa udokumentowane wzorce jej omijania: sklejanie porzuconych identyfikatorów ze stringów oraz zdejmowanie typów Prismy podwójnym rzutowaniem."
   }
 ] as const;

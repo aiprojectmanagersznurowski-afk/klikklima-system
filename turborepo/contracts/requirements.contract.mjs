@@ -44,7 +44,38 @@ export const REQUIREMENTS = [
 
   // ───────────────────────── CRM ─────────────────────────
   R('CRM-KLI-AC1', { source: 'b2b_crm_specifications.md#1', domain: 'crm', statement: 'Globalna wyszukiwarka znajduje klienta po imieniu, nazwisku, telefonie lub e-mailu.', acceptance: ['Wyszukiwanie działa na częściowych dopasowaniach', 'Wyniki respektują RLS roli'] }),
-  R('CRM-KLI-AC2', { source: 'b2b_crm_specifications.md#1', domain: 'crm', statement: 'Zmiana danych kontaktowych na Karcie 360 propaguje się do aktywnych leadów.', acceptance: ['Leady w stanach terminalnych (E8, buckety) nie są modyfikowane'] }),
+  // PRZEPISANE 2026-09-24 (wyjaśnienie Michała, okno KK-IMPL-2026Q4). Poprzednie brzmienie:
+  // „Zmiana danych kontaktowych na Karcie 360 propaguje się do aktywnych leadów", z jedynym
+  // kryterium „leady w stanach terminalnych nie są modyfikowane".
+  //
+  // DLACZEGO TAMTO BYŁO BŁĘDEM, A NIE TYLKO NIEPRECYZJĄ: opisywało KOPIOWANIE danych
+  // kontaktowych z klienta na leada. Dane są znormalizowane — telefon i adres wiszą na
+  // `klienci`, a lead wskazuje klienta kluczem obcym. Propagacja nie rozwiązywała więc żadnego
+  // problemu, tylko kupowała rozjazd: po każdej zmianie numeru istniałyby dwie wartości, a
+  // kryterium „stany terminalne się nie zmieniają" ZAMRAŻAŁO tę rozbieżność jako cechę
+  // zamierzoną. Zapis kontraktowy opisywał zatem mechanizm produkujący niespójność.
+  //
+  // CO NAPRAWDĘ BYŁO POTRZEBNE (Michał, 2026-09-24): audytor i ekipa montażowa mają widzieć
+  // dane kontaktowe SWOJEGO zlecenia, bez pełnego dostępu do CRM. To jest problem ZAKRESU
+  // ODCZYTU, nie duplikacji danych — i dlatego rozwiązuje go macierz uprawnień plus wąska
+  // funkcja domenowa, a nie kopiowanie kolumn.
+  R('CRM-KLI-AC2', {
+    source: 'b2b_crm_specifications.md#1; PRZEPISANE 2026-09-24 na podstawie wyjaśnienia Michała (okno KK-IMPL-2026Q4) — pierwotne brzmienie opisywało propagację danych kontaktowych do leadów, czyli mechanizm duplikujący dane znormalizowane. Właściwym problemem jest wąski odczyt dla ról terenowych.',
+    domain: 'crm',
+    statement: 'Audytor i ekipa montażowa widzą dane kontaktowe klienta wyłącznie dla przypisanego sobie zlecenia i wyłącznie w zakresie potrzebnym w terenie — bez dostępu do kartoteki klienta i bez kopiowania tych danych na leada.',
+    acceptance: [
+      'Odczyt zwraca WYŁĄCZNIE imię i nazwisko, telefon oraz adres — test sprawdza, że w odpowiedzi NIE MA e-maila, historii kontaktu, notatek, dokumentów ani danych finansowych; asercja jest na KSZTAŁT odpowiedzi (lista kluczy), a nie na obecność trzech oczekiwanych pól, bo tamta przechodzi także wtedy, gdy zwracany jest cały rekord klienta',
+      'Zawężenie do „swojego zlecenia" jest wykonywane po stronie serwera: test woła funkcję domenową bezpośrednio, z pominięciem interfejsu, dla klienta powiązanego z CUDZYM leadem i CUDZYM montażem, i oczekuje odmowy — dwa osobne przypadki, bo to dwie różne ścieżki przypisania',
+      'Prawo wynika z wariantu :own przy clients.read w macierzy RBAC (rozszerzonym 2026-09-24 o audytor:own i monter:own), a nie z warunku wpisanego wprost w zapytanie — zmiana macierzy musi zmieniać zachowanie',
+      'UWAGA NA ZNACZENIE :own W TYM WIERSZU: klient nie ma kolumny wskazującej audytora ani ekipy. „Własny" znaczy „osiągalny przez leada albo montaż przypisany do tego aktora", więc zawężenie wymaga złączenia; test musi obejmować klienta, który ma DWA leady — jeden własny, jeden cudzy — i sprawdzić, że dostęp daje tylko ten pierwszy',
+      'Rola bez prawa odczytu zasobu nie dostaje danych w ogóle, a nieistniejące i cudze zlecenie są nieodróżnialne w odpowiedzi (fail-closed, zakaz enumeracji identyfikatorów)',
+      'Dane kontaktowe NIE SĄ kopiowane na leada ani nigdzie indziej: test statyczny sprawdza, że nie powstaje zapis przenoszący telefon/adres z klienta na lead — to jest jawne odrzucenie pierwotnego brzmienia tego wymagania, a nie przeoczenie',
+      'Zmiana numeru telefonu w kartotece klienta jest natychmiast widoczna w terenie bez żadnej operacji propagującej — bo źródłem jest jeden rekord; test zmienia numer i odczytuje go ze ścieżki terenowej',
+      'Odczyt nie wymaga i nie nadaje prawa zapisu: próba aktualizacji danych kontaktowych z tej ścieżki kończy się odmową (clients.update zostaje przy admin/dyspozytor)',
+    ],
+    note: 'TA SAMA FUNKCJA, KTÓREJ POTRZEBUJE FLD-JOBS-OWN — jedna implementacja domyka oba wymagania i nie wolno pisać jej dwa razy. FLD-JOBS-OWN opisuje zawężenie listy zleceń do własnych, to wymaganie opisuje wąski odczyt danych kontaktowych klienta stojącego za takim zleceniem; obie potrzebują dokładnie tego samego rozstrzygnięcia „czy to zlecenie należy do tego aktora" i tego samego złączenia. Druga implementacja tej reguły to ryzyko R13 z ADR-013 (rozjazd uprawnień między dwiema ścieżkami) — dlatego kryterium o jednej funkcji domenowej żyje w FLD-API-LAYER i obowiązuje także tutaj. Kolejność wdrożenia: najpierw wspólne rozstrzygnięcie własności, potem oba wymagania jako jego konsumenci.',
+    risk: 'HIGH',
+  }),
   R('CRM-KLI-AC3', { source: 'b2b_crm_specifications.md#1', domain: 'crm', statement: 'Karta 360 ładuje historię i pliki asynchronicznie (lazy loading).', acceptance: ['Pierwszy paint bez oczekiwania na historię', 'Brak N+1 zapytań przy 200 zdarzeniach historii'], risk: 'LOW' }),
   R('CRM-INST-AC1', { source: 'b2b_crm_specifications.md#2', domain: 'crm', statement: 'Widok Instalacji odświeża status, gdy ekipa oznaczy montaż jako zakończony w aplikacji mobilnej.', acceptance: ['Zmiana widoczna bez pełnego przeładowania strony'] }),
   R('CRM-INST-AC2', { source: 'b2b_crm_specifications.md#2', domain: 'crm', statement: 'Dzisiejsze instalacje bez statusu Zakończona po godzinie 16:00 podświetlają się na pomarańczowo.', acceptance: ['Próg godzinowy pochodzi z SLA.INSTALL_DAY_ALERT, nie z literału w komponencie'] }),
@@ -73,7 +104,15 @@ export const REQUIREMENTS = [
   // kontraktu), nie dotyka danych klienta, nie dotyka lejka ani kolejki powiadomień, a najgorszy
   // realny skutek błędu to nadpisanie kartoteki pracownika — odwracalne ręcznie, w przeciwieństwie
   // do SMS-a wysłanego klientowi albo wycieku danych osobowych klienta.
-  R('CRM-AUDYT-KARTOTEKA', { status: 'TODO', domain: 'crm', risk: 'MEDIUM', source: 'docs/workorders/CRM-KARTOTEKI-CREATE-AND-CREW-ASSIGN.md (część A + rozszerzenie „edycja", AC-A1..AC-A24) + decyzje człowieka z rozmowy 2026-08-28: D-A1 (react-hook-form + zod + @hookform/resolvers wchodzą do apps/b2b-web), D-A2 (zdjęcie przez Supabase Storage, nie base64), D-A4 (edycja wchodzi do zakresu), R-A3 wariant (b) (osobna akcja getAuditorForEdit(id) z bramką update, zamiast poszerzania listy). Brak źródła w dokumentach architektury — b2b_crm_specifications.md#5 opisuje blokadę i usunięcie audytora (CRM-AUDYT-AC1), nie zakładanie ani edycję kartoteki. R-A1 POTWIERDZONE 2026-08-28 zapytaniem SELECT * FROM storage.buckets: buckety audytorzy i zespoly ISTNIEJĄ. R-A2 POTWIERDZONE tym samym sposobem: storage.objects ma RLS włączone i ZERO polityk, więc upload z przeglądarki dziś nie działa dla nikogo poza service_role — także ten „działający" dla ekipy; odblokowuje go migracja kartoteki_storage_policies (admin-only). KONTEKST NA PRZYSZŁOŚĆ, POZA TYM WYMAGANIEM: człowiek zadeklarował, że w fazie Field App pracownik będzie sam wgrywał własne zdjęcie do TEGO SAMEGO bucketu — rozszerzenie polityki storage.objects o ścieżkę samoobsługową będzie miało własne ID i własną migrację. ERRATA A-2 (2026-08-31, sekcja „ERRATA A-2" tego samego WO): pierwotna rejestracja POMINĘŁA kolumny fgaz_valid_until i sep_valid_until — BŁĄD REJESTRACJI WYMAGANIA, nie regresja implementacji. Po stronie audytora NIE MA regresji funkcjonalnej, jest luka danych: getAuditors() nie filtruje po żadnej z tych kolumn, fgaz_valid_until zasila wyłącznie plakietkę „wygasa za N dni" w auditors-client.tsx, a sep_valid_until audytora nie jest dziś czytane NIGDZIE. Decyzje człowieka z 2026-08-31 identyczne jak przy CRM-ZESP-KARTOTEKA: data w przeszłości dozwolona, brak ograniczenia górnej granicy roku. Kolumny już istnieją (DateTime? @db.Date) — bez zmiany schematu, migracji i macierzy uprawnień.', statement: 'Administrator zakłada i edytuje kartotekę audytora z panelu B2B: jeden formularz w dwóch rozłącznych trybach, komplet 14 pól kartoteki (w tym fgaz_valid_until i sep_valid_until — daty ważności certyfikatów), bez pól administracyjnych is_active i leave_status.', acceptance: [
+  // STATUS TODO -> DONE 2026-09-24 (okno KK-IMPL-2026Q4). Zweryfikowane, nie założone:
+  // apps/b2b-web/tests/auditors-kartoteka.test.ts + crews-kartoteka.test.ts URUCHOMIONE
+  // 2026-09-24 — 114 testów przeszło (oba pliki razem, vitest run). Bloki describe pokrywają
+  // oba tryby osobno (createAuditorAction, updateAuditorAction, getAuditorForEdit), bramkę
+  // RBAC dla każdego z nich i ERRATĘ A-2 (daty ważności certyfikatów) w obu trybach.
+  // Kryteria dotyczą KODU (Server Action, mapowanie, walidacja), nie obiektów bazy, więc
+  // atrapa Prismy jest tu wystarczającym dowodem — kolumny fgaz_valid_until / sep_valid_until
+  // już istniały i errata nie pociągnęła zmiany schematu.
+  R('CRM-AUDYT-KARTOTEKA', { status: 'DONE', domain: 'crm', risk: 'MEDIUM', source: 'docs/workorders/CRM-KARTOTEKI-CREATE-AND-CREW-ASSIGN.md (część A + rozszerzenie „edycja", AC-A1..AC-A24) + decyzje człowieka z rozmowy 2026-08-28: D-A1 (react-hook-form + zod + @hookform/resolvers wchodzą do apps/b2b-web), D-A2 (zdjęcie przez Supabase Storage, nie base64), D-A4 (edycja wchodzi do zakresu), R-A3 wariant (b) (osobna akcja getAuditorForEdit(id) z bramką update, zamiast poszerzania listy). Brak źródła w dokumentach architektury — b2b_crm_specifications.md#5 opisuje blokadę i usunięcie audytora (CRM-AUDYT-AC1), nie zakładanie ani edycję kartoteki. R-A1 POTWIERDZONE 2026-08-28 zapytaniem SELECT * FROM storage.buckets: buckety audytorzy i zespoly ISTNIEJĄ. R-A2 POTWIERDZONE tym samym sposobem: storage.objects ma RLS włączone i ZERO polityk, więc upload z przeglądarki dziś nie działa dla nikogo poza service_role — także ten „działający" dla ekipy; odblokowuje go migracja kartoteki_storage_policies (admin-only). KONTEKST NA PRZYSZŁOŚĆ, POZA TYM WYMAGANIEM: człowiek zadeklarował, że w fazie Field App pracownik będzie sam wgrywał własne zdjęcie do TEGO SAMEGO bucketu — rozszerzenie polityki storage.objects o ścieżkę samoobsługową będzie miało własne ID i własną migrację. ERRATA A-2 (2026-08-31, sekcja „ERRATA A-2" tego samego WO): pierwotna rejestracja POMINĘŁA kolumny fgaz_valid_until i sep_valid_until — BŁĄD REJESTRACJI WYMAGANIA, nie regresja implementacji. Po stronie audytora NIE MA regresji funkcjonalnej, jest luka danych: getAuditors() nie filtruje po żadnej z tych kolumn, fgaz_valid_until zasila wyłącznie plakietkę „wygasa za N dni" w auditors-client.tsx, a sep_valid_until audytora nie jest dziś czytane NIGDZIE. Decyzje człowieka z 2026-08-31 identyczne jak przy CRM-ZESP-KARTOTEKA: data w przeszłości dozwolona, brak ograniczenia górnej granicy roku. Kolumny już istnieją (DateTime? @db.Date) — bez zmiany schematu, migracji i macierzy uprawnień.', statement: 'Administrator zakłada i edytuje kartotekę audytora z panelu B2B: jeden formularz w dwóch rozłącznych trybach, komplet 14 pól kartoteki (w tym fgaz_valid_until i sep_valid_until — daty ważności certyfikatów), bez pól administracyjnych is_active i leave_status.', acceptance: [
     'Przycisk „Dodaj Audytora" otwiera modal formularza — w całej ścieżce tego przycisku nie pada alert („Dodawanie w Fazie 2"), a modal przestaje być martwym kodem bez importu (AC-A1)',
     'Zapis poprawnie wypełnionego formularza tworzy audytora widocznego na liście /auditors po odświeżeniu, bez ręcznego wejścia do bazy (AC-A3)',
     'Nowo utworzony aktywny audytor pojawia się w puli przypisania do leada (getAuditors() z leads/actions.ts) bez restartu aplikacji; pula pozostaje zawężona zgodnie z SEC-ASSIGNMENT-POOL-MINIMIZE — nowy konsument nie rozszerza zestawu pól (AC-A8)',
@@ -106,7 +145,12 @@ export const REQUIREMENTS = [
     'ERRATA A-2, DECYZJE CZŁOWIEKA 2026-08-31: data w przeszłości w polu ważności certyfikatu jest DOZWOLONA i zapisuje się bez błędu walidacji (rekord dokumentuje stan faktyczny; nikt nie ma tego „naprawiać" na twardą walidację), oraz BRAK dodatkowego ograniczenia górnej granicy roku poza naturalną walidacją formatu daty. Format spoza YYYY-MM-DD przesłany z pominięciem kontrolki jest odrzucany po stronie serwera z zerem zmienionych kolumn',
     'Adres audytora z autouzupełniania zapisuje wyłącznie tekst do kolumny adres: współrzędne NIE są zapisywane, bo tabela audytorzy nie ma na nie kolumn. FLD-GEO-COORDS dotyczy adresów klientów i nie jest tu domykany przy okazji (D-A3 pozostaje nierozstrzygnięte i poza zakresem)',
   ] }),
-  R('CRM-ZESP-KARTOTEKA', { status: 'TODO', domain: 'crm', risk: 'MEDIUM', source: 'docs/workorders/CRM-KARTOTEKI-CREATE-AND-CREW-ASSIGN.md (część A + rozszerzenie „edycja", AC-A1..AC-A24) + te same decyzje człowieka z 2026-08-28 co przy CRM-AUDYT-KARTOTEKA (D-A1, D-A2, D-A4, R-A3 wariant b). Brak źródła w dokumentach architektury — b2b_crm_specifications.md#6 opisuje certyfikaty i pulę w E4 (CRM-ZESP-AC1..AC3), nie zakładanie ani edycję kartoteki. Bucket zespoly ISTNIEJE (potwierdzone zapytaniem SELECT * FROM storage.buckets, 2026-08-28), ale upload z przeglądarki dziś fizycznie nie działa: storage.objects ma RLS włączone i zero polityk — dotyczy to także istniejącego, uchodzącego za działający wzorca crews-client.tsx. Odblokowuje go migracja kartoteki_storage_policies, admin-only. Przyszła samoobsługa pracownika z Field App do tego samego bucketu: osobne ID, osobna migracja. CZĘŚĆ B tego WO (przypisywanie ekipy do leada poza E4) jest ŚWIADOMIE ODŁOŻONA — nie ma i nie ma mieć ID. ERRATA A-2 (2026-08-31, ta sama sekcja WO): pierwotna rejestracja tego wymagania POMINĘŁA kolumny fgaz_valid_until i sep_valid_until — jest to BŁĄD REJESTRACJI WYMAGANIA, nie regresja implementacji; implementer zbudował dokładnie to, co było zapisane. Skutek potwierdzony na żywej bazie 2026-08-31: jedyna istniejąca ekipa („Ekipa Eweliny") ma obie kolumny NULL i jest przez to trwale wykluczona z puli przypisania, bo isCertValidForDate traktuje NULL jako nieważny (fail-closed, D6). Decyzje człowieka z 2026-08-31: data w przeszłości w polu ważności certyfikatu jest DOZWOLONA (rekord dokumentuje stan faktyczny), brak dodatkowego ograniczenia górnej granicy roku poza naturalną walidacją formatu daty. Kolumny już istnieją w schemacie (DateTime? @db.Date), więc errata NIE pociąga zmiany schema.prisma, migracji ani macierzy uprawnień.', statement: 'Administrator zakłada i edytuje kartotekę zespołu montażowego z panelu B2B: jeden formularz w dwóch rozłącznych trybach, komplet 14 pól kartoteki (w tym fgaz_valid_until i sep_valid_until — daty ważności certyfikatów), bez pól administracyjnych aktywny i leave_status.', acceptance: [
+  // STATUS TODO -> DONE 2026-09-24 (okno KK-IMPL-2026Q4), na tym samym przebiegu co bliźniacze
+  // CRM-AUDYT-KARTOTEKA. Bloki describe w crews-kartoteka.test.ts pokrywają oba tryby
+  // (createCrewAction, updateCrewAction), getCrewForEdit, bramkę roli osobno dla tworzenia
+  // i edycji oraz ERRATĘ A-2 w obu trybach. Kryterium „formularz zespołu NIE ma pola adresu
+  // ani preferowanych marek" jest spełnione przez brak tych pól w schemacie zespołu.
+  R('CRM-ZESP-KARTOTEKA', { status: 'DONE', domain: 'crm', risk: 'MEDIUM', source: 'docs/workorders/CRM-KARTOTEKI-CREATE-AND-CREW-ASSIGN.md (część A + rozszerzenie „edycja", AC-A1..AC-A24) + te same decyzje człowieka z 2026-08-28 co przy CRM-AUDYT-KARTOTEKA (D-A1, D-A2, D-A4, R-A3 wariant b). Brak źródła w dokumentach architektury — b2b_crm_specifications.md#6 opisuje certyfikaty i pulę w E4 (CRM-ZESP-AC1..AC3), nie zakładanie ani edycję kartoteki. Bucket zespoly ISTNIEJE (potwierdzone zapytaniem SELECT * FROM storage.buckets, 2026-08-28), ale upload z przeglądarki dziś fizycznie nie działa: storage.objects ma RLS włączone i zero polityk — dotyczy to także istniejącego, uchodzącego za działający wzorca crews-client.tsx. Odblokowuje go migracja kartoteki_storage_policies, admin-only. Przyszła samoobsługa pracownika z Field App do tego samego bucketu: osobne ID, osobna migracja. CZĘŚĆ B tego WO (przypisywanie ekipy do leada poza E4) jest ŚWIADOMIE ODŁOŻONA — nie ma i nie ma mieć ID. ERRATA A-2 (2026-08-31, ta sama sekcja WO): pierwotna rejestracja tego wymagania POMINĘŁA kolumny fgaz_valid_until i sep_valid_until — jest to BŁĄD REJESTRACJI WYMAGANIA, nie regresja implementacji; implementer zbudował dokładnie to, co było zapisane. Skutek potwierdzony na żywej bazie 2026-08-31: jedyna istniejąca ekipa („Ekipa Eweliny") ma obie kolumny NULL i jest przez to trwale wykluczona z puli przypisania, bo isCertValidForDate traktuje NULL jako nieważny (fail-closed, D6). Decyzje człowieka z 2026-08-31: data w przeszłości w polu ważności certyfikatu jest DOZWOLONA (rekord dokumentuje stan faktyczny), brak dodatkowego ograniczenia górnej granicy roku poza naturalną walidacją formatu daty. Kolumny już istnieją w schemacie (DateTime? @db.Date), więc errata NIE pociąga zmiany schema.prisma, migracji ani macierzy uprawnień.', statement: 'Administrator zakłada i edytuje kartotekę zespołu montażowego z panelu B2B: jeden formularz w dwóch rozłącznych trybach, komplet 14 pól kartoteki (w tym fgaz_valid_until i sep_valid_until — daty ważności certyfikatów), bez pól administracyjnych aktywny i leave_status.', acceptance: [
     'Przycisk „Dodaj Zespół" w widoku /crews otwiera modal formularza ekipy — woła komponent modala, a nie alert („Dodawanie w Fazie 2"); dziś przycisk i modal leżą w różnych katalogach i nigdy się nie widziały (AC-A2)',
     'Zapis poprawnie wypełnionego formularza tworzy ekipę widoczną na liście /crews po odświeżeniu (AC-A4)',
     'Kliknięcie „Edytuj Zespół" otwiera ten sam modal z WSZYSTKIMI 14 polami wypełnionymi wartościami z bazy; w tej ścieżce nie pada alert („Wkrótce w Fazie 2") (AC-A11)',
@@ -891,4 +935,191 @@ export const REQUIREMENTS = [
 
   // ── Triage: przedział powierzchni lokalu (D17, R20 zamknięte) ──
   R('B2C-PROPERTY-AREA-BAND', { source: 'D17 rozstrzygnięte 2026-09-23 (pytanie warunkowe o przedział powierzchni, bez wpisywania metrażu); R20 zamknięte', domain: 'b2c', statement: 'Triage pyta o przedział powierzchni lokalu (do 300 m2 / powyżej 300 m2) wyborem z listy, wyłącznie dla nieruchomości mieszkalnych.', acceptance: ['Pytanie pojawia się WYŁĄCZNIE dla typu nieruchomości APARTMENT albo HOUSE — dla COMMERCIAL nie jest zadawane, bo lokal komercyjny i tak trafia na ekran eksperta (reguła COMMERCIAL_PROPERTY) i nie dostaje automatycznej wyceny', 'Widoczność warunkowa wyrażona jest w kontrakcie (pole visibleWhen przy PROPERTY_AREA_BAND w TRIAGE_FIELDS), a nie warunkiem zaszytym w komponencie kreatora — zmiana kontraktu musi zmieniać zachowanie kreatora', 'Klient WYBIERA JEDEN Z DWÓCH KAFELKÓW i nigdy nie wpisuje metrażu — nie sumujemy też powierzchni pomieszczeń (to właśnie zamyka ryzyko R20)', 'Wartość zapisywana jest identyfikatorem ze słownika PROPERTY_AREA_BANDS (UP_TO_300 / ABOVE_300), nigdy etykietą po polsku, i trafia do odpowiedzi Triage zapisywanych przy leadzie', 'Granica przedziałów pochodzi z progu w kontrakcie SLA (PROPERTY_AREA_VAT_THRESHOLD) — słownik i próg nie mogą rozjechać się na dwie różne liczby', 'Brak odpowiedzi tam, gdzie pytanie było widoczne, blokuje przejście dalej po stronie serwera; dla COMMERCIAL brak wartości jest stanem poprawnym', 'Deklaracja klienta jest ORIENTACYJNA: wiążącą stawkę VAT ustala audytor na miejscu (PRICE-VAT-RATE)'], risk: 'MEDIUM' }),
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // PACZKA KONTRAKTOWA 2 (2026-09-24, okno KK-IMPL-2026Q4) — decyzje Michała z 2026-09-24
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+
+  // ── D-API-1: rejestr idempotencji warstwy zapisu Field App ──
+  // FLD-API-LAYER ma kryterium „każdy zapis przyjmuje klucz idempotencji, nośnikiem jest UNIQUE
+  // w bazie", ale nie mówi GDZIE ten klucz mieszka. Dopóki nie mieszka nigdzie, każdy endpoint
+  // rozwiązywałby to po swojemu — czyli powstałoby tyle rejestrów, ile endpointów. To jest
+  // osobne ID, a nie kryterium tamtego, bo nośnik jest jeden i wspólny dla wszystkich endpointów.
+  R('FLD-API-IDEMPOTENCY-REGISTRY', {
+    source: 'D-API-1 rozstrzygnięte 2026-09-24 (rejestr CENTRALNY, nie per-endpoint); docs/workorders/FLD-API-LAYER.md sekcja WYMAGA DECYZJI; warunek 3 z ADR-013',
+    domain: 'field',
+    statement: 'Wszystkie zapisy z aplikacji terenowej przechodzą przez JEDEN centralny rejestr kluczy idempotencji, w którym wiersz klucza powstaje jako pierwszy krok transakcji wykonującej operację.',
+    acceptance: [
+      'Rejestrem jest tabela field_request_idempotency z kolumnami: idempotency_key (UNIQUE), actor_email, endpoint, request_hash, zapisana odpowiedź oraz created_at — JEDEN rejestr dla wszystkich endpointów, nie tabela pomocnicza przy każdym z nich',
+      'WIERSZ KLUCZA JEST WSTAWIANY JAKO PIERWSZY, W TEJ SAMEJ TRANSAKCJI CO OPERACJA — to jest sedno wymagania: blokadą jest samo INSERT, więc dwa równoległe żądania kolidują na UNIQUE NATYCHMIAST, zanim którekolwiek wykona pracę. Wzorzec „sprawdź, czy klucz istnieje, potem wykonaj, potem zapisz klucz" jest jawnie ODRZUCONY: między sprawdzeniem a zapisem mieści się drugie żądanie (pułapka nr 4 z CLAUDE.md)',
+      'Test współbieżności wywołuje ten sam endpoint z tym samym kluczem DWA RAZY RÓWNOLEGLE i oczekuje dokładnie jednego wykonania operacji oraz dokładnie jednego wiersza w tabeli docelowej — nie dwóch wykonań zakończonych jednym zapisem',
+      'TEN SAM KLUCZ Z INNYM request_hash TO JAWNY BŁĄD, nigdy ciche nadpisanie i nigdy ciche zwrócenie starej odpowiedzi: żądanie jest odrzucane komunikatem wskazującym konflikt treści. Bez tego kolizja kluczy (błąd generatora na urządzeniu) zwracałaby telefonowi odpowiedź na CUDZE żądanie',
+      'Powtórzenie z tym samym kluczem I tym samym request_hash zwraca ZAPISANĄ odpowiedź z rejestru, a nie wykonuje operacji ponownie — kolejka offline ponawia z definicji (FLD-OFFLINE-OUTBOX), więc powtórzenie jest przypadkiem normalnym, nie błędem',
+      'Niepowodzenie operacji wycofuje także wiersz klucza (jedna transakcja) — inaczej nieudane żądanie zablokowałoby swój własny, poprawny retry',
+      'Okres retencji pochodzi z SLA.FIELD_IDEMPOTENCY_RETENTION, nie z literału w zadaniu czyszczącym ani w dokumentacji',
+      'Tabela NIE JEST zasobem w RESOURCES i nie ma wiersza w MATRIX — to infrastruktura transportu, nie byt uprawnieniowy; test statyczny sprawdza, że nie powstaje ścieżka odczytu tej tabeli z panelu',
+    ],
+    risk: 'HIGH',
+  }),
+
+  // ── D-API-2: dziennik odmów dostępu ──
+  R('SEC-ACCESS-DENIED-LOG', {
+    source: 'D-API-2 rozstrzygnięte 2026-09-24 (OSOBNY nośnik, nie audit_log); docs/workorders/FLD-API-LAYER.md sekcja WYMAGA DECYZJI; kryterium 3 z FLD-API-LAYER („odmowa can() zostawia ślad")',
+    domain: 'security',
+    statement: 'Odmowa dostępu wobec uwierzytelnionego aktora zostawia ślad w osobnym dzienniku security_events, a nie w rejestrze RODO audit_log.',
+    acceptance: [
+      'Nośnikiem jest tabela security_events z kolumnami opisującymi FAKT ODMOWY: aktor, rola, zasób, próbowane uprawnienie, decyzja, endpoint i moment — bez atrap w kolumnach, których odmowa nie ma',
+      'ŚLAD NIE TRAFIA DO audit_log i access_denied NIE JEST wartością w AUDIT_REQUIREMENTS.mustLog — test sprawdza, że odmowa NIE tworzy wiersza w audit_log. Powód jest w kształcie tamtej tabeli: record_id NOT NULL, justification ≥ 10 znaków i legal_basis ze słownika RODO wymagałyby przy odmowie trzech atrap naraz, a atrapa w rejestrze dowodowym psuje go dla jego własnego zastosowania',
+      'Tabela jest APPEND-ONLY, wymuszone WYZWALACZEM w bazie (wzorzec audit_log_append_only_trg), a nie samą macierzą: Prisma omija RLS (pułapka nr 1 z CLAUDE.md), więc wyzwalacz jest jedyną warstwą działającą przeciw zapisowi z panelu. Test próbuje UPDATE i DELETE i oczekuje wyjątku dla KAŻDEJ roli, łącznie z administratorem',
+      'GRANICA: logujemy odmowy aktora UWIERZYTELNIONEGO. Żądanie anonimowe (bez tokenu albo z tokenem nieważnym) NIE tworzy wiersza — test wysyła serię żądań anonimowych i oczekuje ZERA wierszy. Bez tej granicy dziennik odmów sam staje się wektorem zapełnienia dysku, czyli zamienia się w podatność, którą miał wykrywać',
+      'Zapis śladu nie może wywrócić operacji odmawiającej: awaria zapisu do dziennika zostawia odmowę odmową (odmowa jest bezpieczną stroną), a nie zamienia jej w błąd serwera ani tym bardziej w przepuszczenie',
+      'Odczyt dziennika ma wyłącznie administrator (security_events.read w macierzy) — lista „kto czego próbował" jest sama w sobie mapą tego, co warto spróbować',
+    ],
+    risk: 'HIGH',
+  }),
+
+  // ── Powiadomienia: szablony w bazie, treść w wierszu kolejki, przejęcie wiersza, zamiatacz ──
+  // Cztery osobne ID, bo to cztery różne nośniki i cztery różne momenty w czasie — scalenie
+  // dałoby wpis, którego nie da się domknąć, dopóki nie działa cały łańcuch wysyłki.
+  R('NTF-TEMPLATE-STORE', {
+    source: 'Decyzja Michała 2026-09-24 (szablony wędrują do bazy i stają się edytowalne w panelu); kryterium NTF-CATALOG-PARITY, które OD ZAWSZE mówi o tabeli message_templates, podczas gdy implementacja trzymała stałą w TypeScript',
+    domain: 'notifications',
+    statement: 'Treści szablonów powiadomień mieszkają w wersjonowanej tabeli message_templates i są edytowalne z panelu; edycja tworzy nową wersję, opublikowana wersja jest zamrożona.',
+    acceptance: [
+      'Nośnikiem jest tabela message_templates — ta sama nazwa, o której mówi kryterium NTF-CATALOG-PARITY i która jest w RESOURCES od ADR-012; do 2026-09-24 była zasobem BEZ TABELI (potwierdzone odczytem information_schema na żywej bazie), a treści siedziały w stałej TypeScript',
+      'WERSJONOWANIE WZOREM legal_document_versions, nie flaga „edytowany": edycja TWORZY NOWĄ WERSJĘ, stara zostaje nietknięta, a wersja opublikowana jest niezmienna — próba UPDATE treści opublikowanej jest odrzucana przez WYZWALACZ w bazie, nie przez Server Action',
+      'Dokładnie jedna wersja danego klucza szablonu jest obowiązująca w danym momencie; wymusza to CZĘŚCIOWY INDEKS UNIKALNY, a nie kolejność zapisów — dwa równoległe żądania publikacji nie mogą zostawić dwóch obowiązujących wersji',
+      'POWÓD WERSJONOWANIA JEST TWARDY I NALEŻY GO TESTOWAĆ WPROST: bez niego po pierwszej edycji nie da się odpowiedzieć, co dokładnie wysłano klientowi 14 marca — a to jest pytanie ze sporu o ofertę albo o termin. Test edytuje szablon PO zakolejkowaniu wiadomości i sprawdza, że odtworzenie treści tamtej wiadomości daje treść SPRZED edycji',
+      'Parzystość z katalogiem (NTF-CATALOG-PARITY) liczona jest wobec TABELI, nie wobec stałej w kodzie: każdy templateKey z NOTIFICATIONS ma obowiązującą wersję w message_templates i odwrotnie — brak sierot w obie strony',
+      'Zmienne użyte w treści szablonu należą do listy vars tego powiadomienia w katalogu — szablon odwołujący się do zmiennej, której kolejkowanie nie dostarcza, jest odrzucany przy publikacji, a nie odkrywany pustym miejscem w SMS-ie u klienta',
+      'Edycja i publikacja są uprawnieniem administratora (message_templates: create/update wyłącznie admin) sprawdzanym po stronie serwera — ukrycie przycisku w UI nie jest zabezpieczeniem, bo Prisma omija RLS',
+    ],
+    risk: 'HIGH',
+  }),
+  R('NTF-QUEUE-RENDERED-BODY', {
+    source: 'Decyzja Michała 2026-09-24; stan stwierdzony w packages/database/prisma/schema.prisma (model NotificationQueue) — wiersz trzyma payload i template_key, ale NIE trzyma tekstu, który poszedł',
+    domain: 'notifications',
+    statement: 'Wiersz kolejki zapisuje wyrenderowaną treść wiadomości oraz wersję szablonu w momencie kolejkowania.',
+    acceptance: [
+      'Treść jest renderowana i zapisywana W MOMENCIE KOLEJKOWANIA, a nie w momencie wysyłki — kolejkowanie dzieje się w transakcji ze zmianą statusu (pułapka nr 2 z CLAUDE.md), więc to jedyny moment, w którym treść i zdarzenie są tą samą prawdą',
+      'Obok treści zapisywana jest WERSJA szablonu (wskazanie wersji z message_templates), a nie sam klucz: treść bez numeru nie mówi, którą wersję widział wtedy administrator, a numer bez treści wymaga dołączenia do tabeli wersji przy każdym pytaniu',
+      'Test edytuje szablon po zakolejkowaniu i sprawdza, że treść zapisana w wierszu kolejki NIE ULEGA ZMIANIE — to jest dokładnie ten scenariusz, który przestał działać po przeniesieniu szablonów do bazy (NTF-TEMPLATE-STORE), bo wcześniej treść dawała się odtworzyć z gita',
+      'Zapis treści nie zastępuje payloadu — payload zostaje, bo ponowienie wysyłki po błędzie kanału musi mieć z czego odtworzyć wiadomość, a treść jest zapisem tego, co POSZŁO, nie materiałem do renderowania',
+      'Kryterium NIE ROZSTRZYGA retencji treści w kolejce ani anonimizacji RODO tych wierszy — to jest znana luka do osobnej decyzji, a nie przeoczenie: wyrenderowany SMS zawiera dane osobowe i podlega SEC-RODO-DELETE, co dziś nie jest opisane nigdzie',
+    ],
+    risk: 'HIGH',
+  }),
+  R('NTF-QUEUE-CLAIM', {
+    source: 'Recenzja gałęzi feat/ntf-gateway (bloker: dispatcher pobiera, wysyła, dopiero potem oznacza); decyzja Michała 2026-09-24 o rozszerzeniu CHECK-a notification_queue_status_check o SENDING',
+    domain: 'notifications',
+    statement: 'Dispatcher przejmuje wiersz kolejki atomowo przed wysyłką, przez stan pośredni SENDING — dwa równoległe uruchomienia nie mogą wysłać tej samej wiadomości dwa razy.',
+    acceptance: [
+      'Przejęcie jest ATOMOWE I WYKONUJE JE BAZA: updateMany z warunkiem na POPRZEDNIM statusie ({ id, status: PENDING } -> { status: SENDING }), a wysyłka następuje WYŁĄCZNIE gdy count === 1. Przegrany wyścig dostaje count === 0 i nie robi nic — sprawdzenie „czy już wysłane" w JS jest jawnie odrzucone, bo między odczytem a zapisem mieści się drugi proces',
+      'SENDING jest OSOBNYM stanem, a nie skrótem do SENT: gdyby przejęcie ustawiało od razu SENT, awaria dostawcy SMS zostawiłaby wiersz oznaczony jako wysłany, którego nikt nie wysłał — czyli zamieniłaby duble na ciche gubienie wiadomości',
+      'CHECK notification_queue_status_check w bazie dopuszcza PENDING|SENDING|SENT|ERROR|DEAD_LETTER, a słownik pochodzi z QUEUE_POLICY.statuses w kontrakcie, nie z literału w migracji i nie z drugiej listy w TypeScripcie',
+      'ODZYSKIWANIE WIERSZY OSIEROCONYCH JEST CZĘŚCIĄ TEGO WYMAGANIA, a nie ulepszeniem na później: wiersz w SENDING po awarii procesu (kill, timeout, restart) nie zostaje w tym stanie na zawsze — SENDING starszy niż ustalony próg wraca do PENDING. Bez tego mechanizm przejęcia zamienia duble na wiadomości, których nikt nigdy nie wyśle',
+      'Test współbieżności uruchamia DWA dispatchery równolegle na tej samej kolejce i oczekuje DOKŁADNIE JEDNEJ wysyłki na wiadomość — test musi biec na żywym Postgresie, bo dowodzi zachowania ograniczenia i transakcji, czego atrapa Prismy nie jest w stanie wykazać',
+      'Licznik prób i przejście do ERROR/DEAD_LETTER działają na wierszu przejętym — nieudana wysyłka zwalnia wiersz do ponowienia zgodnie z QUEUE_POLICY (backoff, maxAttempts), a nie zostawia go w SENDING',
+    ],
+    risk: 'HIGH',
+  }),
+  R('NTF-DISPATCH-CRON', {
+    source: 'Decyzja Michała 2026-09-24 (zamiatacz kolejki na pg_cron po stronie Supabase); stan rozszerzeń potwierdzony na ŻYWEJ bazie 2026-09-24',
+    domain: 'notifications',
+    statement: 'Wysyłkę z kolejki wyzwala zamiatacz czasowy oparty o pg_cron po stronie Supabase; zakolejkowanie pozostaje zdarzeniowe, w transakcji ze zmianą statusu.',
+    acceptance: [
+      'TRZY POWODY, DLA KTÓRYCH ZDARZENIE DOMENOWE NIE WYSTARCZA, i każdy z nich jest osobnym przypadkiem testowym: (1) OKNO 08:00-18:00 z QUEUE_POLICY.sendWindow — wiadomość zakolejkowana o 22:00 i odłożona na rano NIE MA żadnego zdarzenia, które by ją obudziło; (2) PONOWIENIA z narastającym odstępem (backoff) — next_attempt_at w przyszłości wymaga czegoś, co po ten wiersz wróci; (3) ZAKAZ wołania zewnętrznego API wewnątrz transakcji biznesowej — wysyłka SMS w transakcji zmiany statusu wiąże połączenie do bazy na czas odpowiedzi dostawcy i wywraca zmianę statusu, gdy dostawca padnie',
+      'Zakolejkowanie ZOSTAJE ZDARZENIOWE: wiersz kolejki powstaje w tej samej transakcji co zmiana statusu (pułapka nr 2 z CLAUDE.md). To wymaganie dotyczy WYŁĄCZNIE wyzwalania wysyłki i nie wolno przy jego okazji przenieść kolejkowania do crona',
+      'STAN FAKTYCZNY POTWIERDZONY NA ŻYWEJ BAZIE 2026-09-24 (pg_available_extensions + pg_extension): pg_cron, pg_net i http są DOSTĘPNE, ale ŻADNE nie jest zainstalowane; nie ma schematu cron ani net; zainstalowane są btree_gist, pg_stat_statements, pgcrypto, plpgsql, supabase_vault, uuid-ossp, vector. Instalacja rozszerzenia jest więc częścią tego wymagania, a nie założeniem',
+      'NAJPROSTSZA DROGA OD pg_cron DO KODU, KTÓRY MÓWI DO SMSAPI (projekt do zatwierdzenia w Work Orderze): pg_cron wywołuje pg_net.http_post na chroniony endpoint aplikacji, a ten uruchamia dispatcher. pg_net, a nie rozszerzenie http, bo http jest SYNCHRONICZNE i zablokowałoby proces crona na czas odpowiedzi HTTP. Baza NIE mówi do SMSAPI bezpośrednio: klucz dostawcy nie może mieszkać w definicji zadania crona, a renderowanie i obsługa błędów należą do aplikacji',
+      'SEKRET ENDPOINTU NIE JEST LITERAŁEM w definicji zadania crona — definicje są czytelne dla każdego, kto ma dostęp do bazy. Nośnikiem jest supabase_vault (zainstalowany, potwierdzone 2026-09-24)',
+      'ENDPOINT ZAMIATACZA JEST CHRONIONY FAIL-CLOSED: brak skonfigurowanego sekretu oznacza ODMOWĘ, nie przepustkę (SEC-WEBHOOK-SECRET-REQUIRED). To jest warunek KOLEJNOŚCI, nie tylko zależność: bez niego wdrożenie zamiatacza daje dowolnej osobie z internetu możliwość kazania systemowi wysyłać SMS-y do klientów',
+      'Zamiatacz jest IDEMPOTENTNY i odporny na nakładanie się uruchomień (pułapka nr 3 z CLAUDE.md): dwa przebiegi jednocześnie nie wysyłają dubla, bo wiersz jest przejmowany atomowo (NTF-QUEUE-CLAIM)',
+      'Zadanie crona jest zarejestrowane MIGRACJĄ, a nie klikiem w dashboardzie Supabase — inaczej powstaje obiekt żyjący wyłącznie na produkcji, poza repozytorium (znany dług: available_combinations i buckety Storage)',
+    ],
+    risk: 'HIGH',
+  }),
+
+  // ── Znalezisko bezpieczeństwa: fail-open w istniejących webhookach na main ──
+  // To NIE jest wymaganie prewencyjne. To jest opis działającej dziś dziury, zweryfikowanej
+  // 2026-09-24: ani CRON_SECRET, ani SHIPPING_WEBHOOK_SECRET nie są ustawione w ŻADNYM pliku .env.
+  R('SEC-WEBHOOK-SECRET-REQUIRED', {
+    source: 'Znalezisko 2026-09-24 w apps/b2b-web/src/app/api/webhooks/services-cron/route.ts:13-17 oraz .../shipping/route.ts:25-29. Zweryfikowane: żadna z dwóch zmiennych (CRON_SECRET, SHIPPING_WEBHOOK_SECRET) nie jest ustawiona w żadnym pliku .env w repozytorium',
+    domain: 'security',
+    statement: 'Publiczny endpoint chroniony sekretem odmawia dostępu, gdy sekret nie jest skonfigurowany — brak konfiguracji to odmowa, nigdy przepustka.',
+    acceptance: [
+      'WADA DO USUNIĘCIA, DOSŁOWNIE: warunek „if (cronSecret && authHeader !== ...) return 401" przepuszcza żądanie, gdy sekret jest PUSTY albo nieustawiony — bo cały warunek jest wtedy fałszywy. Ten kształt („sprawdzaj, o ile sekret istnieje") ma zniknąć z obu tras, a nie zostać obudowany ostrzeżeniem w logach',
+      'Brak skonfigurowanego sekretu oznacza ODMOWĘ (fail-closed) — test uruchamia trasę BEZ zmiennej środowiskowej i oczekuje odmowy, nie wykonania zadania. To jest najważniejszy przypadek, bo to jest stan produkcji na 2026-09-24',
+      'Żądanie bez nagłówka autoryzacji oraz żądanie z nagłówkiem błędnym kończą się odpowiedzią 401 ORAZ ZEREM SKUTKÓW UBOCZNYCH — test asertuje brak zapisów i brak wierszy w kolejce powiadomień, nie tylko kod odpowiedzi; kod 401 przy już wykonanym zadaniu nie jest zabezpieczeniem',
+      'Porównanie sekretów odporne na atak czasowy (porównanie stałoczasowe), a nie zwykłe !== na łańcuchach',
+      'ZAKRES OBEJMUJE OBIE ZNALEZIONE TRASY: services-cron (CRON_SECRET) i shipping (SHIPPING_WEBHOOK_SECRET) — druga ma DOKŁADNIE ten sam kształt wady i tak samo nieustawiony sekret, więc naprawa jednej bez drugiej zostawia dziurę otwartą',
+      'Test statyczny wykrywa POWRÓT tego wzorca w dowolnym nowym Route Handlerze — inaczej naprawa dotyczy dwóch plików, a nie klasy błędu',
+      'PILNOŚĆ (uzasadnienie ryzyka HIGH, do zapisania w Work Orderze): dziś dowolna osoba z internetu może uruchomić crona serwisowego i webhooka kurierskiego. Po wdrożeniu dispatchera powiadomień (NTF-DISPATCH-CRON) ta sama dziura oznacza „dowolna osoba może kazać systemowi wysyłać SMS-y do klientów" — dlatego to wymaganie idzie PRZED cronem powiadomień, nie równolegle z nim',
+    ],
+    risk: 'HIGH',
+  }),
+
+  // ── Luka RODO w soft leadach ──
+  // Potwierdzone przez Michała 2026-09-24 jako LUKA, nie decyzja projektowa. Stan tabeli
+  // sprawdzony na żywej bazie 2026-09-24: soft_leady ma pięć kolumn (id, dane_kontaktowe,
+  // dane_cząstkowe, status, created_at) — ani pola zgody, ani odwołania do wersji dokumentu.
+  R('B2C-SOFT-LEAD-CONSENT', {
+    source: 'Potwierdzenie Michała 2026-09-24, że to luka RODO; gałąź feat/b2c-triage włącza zbieranie numeru telefonu na stronie lądowania; stan tabeli soft_leady potwierdzony odczytem information_schema na żywej bazie 2026-09-24',
+    domain: 'b2c',
+    statement: 'Porzucony lead (soft lead) zapisuje się wyłącznie razem ze zgodą wskazującą KONKRETNĄ wersję dokumentu prawnego — tak samo jak lead pełny.',
+    acceptance: [
+      'STAN WYJŚCIOWY DO USUNIĘCIA: tabela soft_leady ma dziś kolumny id, dane_kontaktowe, dane_cząstkowe, status, created_at — ani pola zgody, ani odwołania do wersji dokumentu (potwierdzone na żywej bazie 2026-09-24). Numer telefonu zbierany na stronie lądowania jest więc dziś zapisywany bez zarejestrowanej podstawy',
+      'WZORZEC B2C-CONSENT-RODO, BEZ ODSTĘPSTW: nigdy sama flaga logiczna, zawsze WSKAZANIE WERSJI kluczem obcym do legal_document_versions plus moment udzielenia (timestamptz). Numer wersji jako tekst też nie wystarcza — wskazanie nieistniejącej wersji ma odrzucać BAZA, nie walidacja aplikacyjna',
+      'Walidacja po stronie SERWERA schematem Zod: test wysyła żądanie z pominięciem interfejsu, bez znacznika zgody, i oczekuje błędu walidacji zamiast zapisu — pole wyboru w formularzu nie jest zabezpieczeniem',
+      'Zgoda i soft lead powstają w JEDNEJ transakcji albo nie powstaje żaden z nich — nie istnieje soft lead bez zgody',
+      'Formularz zawiera ODNOŚNIK do polityki prywatności prowadzący do strony istniejącej (B2C-CONTENT-PAGES), a prezentowana wersja dokumentu jest TĄ SAMĄ wartością, którą zapisuje zgoda — zgoda na treść, do której klient nie miał dostępu, jest bezwartościowa dowodowo',
+      'Późniejsza publikacja nowej wersji dokumentu nie modyfikuje wersji zapisanej przy istniejących soft leadach',
+      'MIGRACJA JEST ADDYTYWNA I DWUKROKOWA, bo tabela ma dane produkcyjne: kolumny wchodzą jako NULLABLE, a ograniczenie NOT NULL (o ile w ogóle) dopiero po rozstrzygnięciu, co zrobić z wierszami sprzed zmiany. Kolumna NOT NULL bez wartości domyślnej na istniejącej tabeli jest zabroniona',
+      'CO ZROBIĆ Z ISTNIEJĄCYMI WIERSZAMI BEZ ZGODY, jest pytaniem do Work Ordera, a nie do implementacji: backfill fałszywą zgodą jest ODRZUCONY wprost (wytworzyłby dowód po fakcie, dokładnie tak jak poprawiony wpis w employee_consents). Realne warianty to usunięcie albo oznaczenie jako niekontaktowalne',
+    ],
+    risk: 'HIGH',
+  }),
+
+  // ── Bramki: wykrywanie omijania i status E2E ──
+  // KOLEJNOŚĆ DWÓCH WYMAGAŃ E2E JEST WIĄŻĄCA I JEST POWODEM, DLA KTÓREGO SĄ DWA, A NIE JEDNO.
+  R('QA-E2E-SUITE-REPAIR', {
+    source: 'Decyzja Michała 2026-09-24 o wpięciu E2E jako wymaganego statusu, poprzedzona naprawą pakietu; stan pakietu Playwright stwierdzony w recenzji (selektory wskazują na tekst, którego nie ma w komponentach)',
+    domain: 'qa',
+    statement: 'Pakiet E2E (Playwright) jest sprawny: testy faktycznie się uruchamiają, selektory wskazują na tekst istniejący w komponentach, a brak testów przestaje być traktowany jak sukces.',
+    acceptance: [
+      'Selektory odpowiadają FAKTYCZNEJ treści komponentów — przykład wzorcowy z recenzji: button:has-text("Zobacz szczegóły") przy przycisku, który nazywa się „Szczegóły urządzenia". Test musi wskazywać na tekst, który w aplikacji istnieje, inaczej mierzy własną nieaktualność',
+      '„No tests found" PRZESTAJE BYĆ SUKCESEM: uruchomienie, które nie wykonało ani jednego testu, kończy się niepowodzeniem. To jest osobne kryterium, bo bez niego wszystkie pozostałe można spełnić pustym pakietem',
+      'Dowodem domknięcia jest PRZEBIEG w CI pokazujący liczbę WYKONANYCH testów większą od zera oraz ich wynik — nie zielony job, nie „0 failed", i nie przebieg lokalny',
+      'Pakiet biegnie na znanym, odtwarzalnym stanie danych; test, który przechodzi albo nie zależnie od zawartości bazy, jest usuwany albo naprawiany, a nie ponawiany',
+      'Wymaganie NIE OBEJMUJE wpięcia pakietu jako wymaganego statusu bramki — to jest QA-E2E-REQUIRED-CHECK i ma nastąpić PO tym wymaganiu',
+    ],
+    risk: 'MEDIUM',
+  }),
+  R('QA-E2E-REQUIRED-CHECK', {
+    source: 'Decyzja Michała 2026-09-24 (E2E jako wymagany status bramki)',
+    domain: 'qa',
+    statement: 'Pakiet E2E jest wymaganym statusem bramki — czerwony pakiet blokuje merge.',
+    acceptance: [
+      'WARUNEK WEJŚCIA, NIEPODLEGAJĄCY POMINIĘCIU: QA-E2E-SUITE-REPAIR ma status DONE. Wpięcie wymaganego statusu przed naprawą daje bramkę CZERWONĄ OD PIERWSZEGO DNIA, a nagłówki narzędzi w tym repozytorium tłumaczą, dlaczego to jest GORSZE od braku bramki: bramka zawsze czerwona nie niesie sygnału, tylko uczy jej omijania (dosłownie ten argument stoi w scripts/verify.sh przy wyborze --check-baseline zamiast pełnego skanu nazewnictwa)',
+      'Pakiet jest wymaganym statusem gałęzi chronionej, a nie krokiem, który wolno pominąć',
+      'Krok E2E w scripts/verify.sh przestaje być optional i staje się step — dziś sonda „has test:e2e" zamienia brak skryptu w uczciwe POMINIĘTE, a po tej zmianie brak skryptu ma być czerwienią',
+      'POMINIĘTY ETAP NIE JEST ETAPEM ZALICZONYM — to zdanie jest już w podsumowaniu verify.sh i tutaj staje się egzekwowalne',
+      'Zmiana w .github/workflows/ jest POZA zakresem zapisu contract-steward (korzeń repozytorium) — wykonuje ją człowiek albo rola z odpowiednim zakresem, a to wymaganie ją zamawia, nie realizuje',
+    ],
+    risk: 'MEDIUM',
+  }),
+  R('GATE-EVASION-DETECT', {
+    source: 'Trzy wzorce omijania bramek znalezione w recenzjach 2026-09-24: sklejanie identyfikatorów ze stringów (feat/crm-cards), „prisma as unknown as SomeDynamicType" (as any w przebraniu), test definiujący testowaną funkcję wewnątrz pliku testu (dwie gałęzie niezależnie)',
+    domain: 'security',
+    statement: 'Bramka wykrywa udokumentowane wzorce jej omijania: sklejanie porzuconych identyfikatorów ze stringów oraz zdejmowanie typów Prismy podwójnym rzutowaniem.',
+    acceptance: [
+      'WZORZEC 1 — sklejanie identyfikatora z kawałków, żeby skaner nazewnictwa go nie zobaczył: tablica krótkich literałów spięta metodą join oraz konkatenacja literałów operatorem. Reguła celuje w SAM MECHANIZM (literały sklejane w identyfikator), a nie w listę konkretnych porzuconych nazw — zawężenie do dzisiejszego słownika umarłoby po cichu przy następnej nazwie',
+      'WZORZEC 2 — podwójne rzutowanie klienta Prismy przez unknown: zdejmuje typy z całego pliku i jest „as any" w przebraniu, a regułę as-any omija, bo nie zawiera słowa any',
+      'KAŻDA REGUŁA MA MUTACJĘ w tools/kk-selftest.mjs — reguła bez mutacji jest deklaracją, nie bramką; dowodem żywotności jest DOSŁOWNY komunikat, którym reguła się zapala, a nie licznik n/n',
+      'Reguły mają przypadki NEGATYWNE: legalne podwójne rzutowanie poza kontekstem Prismy i legalna konkatenacja łańcuchów nie mogą zapalać bramki — reguła z fałszywymi alarmami zostanie wyciszona, czyli usunięta w praktyce',
+      'WZORZEC 3 (test asertujący własną kopię logiki produkcyjnej zamiast kodu produkcyjnego) NIE JEST objęty regułą automatyczną — uzasadnienie i granica w nocie tego wymagania. Pozostaje jako zadanie dla recenzji, a to kryterium istnieje po to, żeby brak reguły był ZAPISANY, a nie wyglądał na przeoczenie',
+    ],
+    note: 'DLACZEGO WZORZEC 3 NIE DOSTAŁ REGUŁY (decyzja projektowa contract-steward, 2026-09-24): odróżnienie POMOCNIKA TESTOWEGO od REIMPLEMENTACJI LOGIKI PRODUKCYJNEJ nie jest rozstrzygalne statyczną regułą regexową, a zlecenie było w tym punkcie wyraźne — lepiej napisać wprost, że nie umiem tego rozdzielić, niż dołożyć regułę, która będzie wyciszana. Obie konstrukcje wyglądają identycznie: definicja funkcji w pliku testu. Odróżnia je WYŁĄCZNIE to, czy gdzieś w apps/ istnieje funkcja o tej samej SEMANTYCE — czego regex nie widzi, a porównanie po nazwie dawałoby fałszywe alarmy na każdym buildFixture, makeLead czy renderWithProviders (tych w repozytorium są dziesiątki). Reguła zawężona do heurystyki „plik testu nie importuje niczego z apps/" łapałaby też legalne testy czysto kontraktowe, czytające wyłącznie contracts/. Możliwy kierunek na osobne WO, jeśli wzorzec wróci: wymóg, żeby KAŻDY plik testu importował co najmniej jeden symbol z kodu produkcyjnego albo jawnie deklarował się jako kontraktowy — to jest zmiana konwencji testów, czyli decyzja człowieka i zakres test-author, a nie reguła do cichego dołożenia. IMPLEMENTACJA REGUŁ 1 i 2 JEST WYKONANA w tym oknie (tools/kk.config.mjs + mutacje w tools/kk-selftest.mjs); status TODO dotyczy WYŁĄCZNIE brakującego testu z tagiem @REQ, którego contract-steward nie ma prawa napisać (zakres test-author).',
+    risk: 'MEDIUM',
+  }),
 ];
