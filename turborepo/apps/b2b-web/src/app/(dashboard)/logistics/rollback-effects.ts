@@ -1,6 +1,14 @@
 import { Prisma } from "@repo/database"
 import { InstallationStatus } from "@repo/database"
 import { NOTIFICATIONS } from "@klikklima/contracts"
+// Import WZGLĘDNY, nie `@/lib/...` (alias): `@/*` jest rozwiązywany przez `paths` w
+// tsconfig, ale vitest.config.mts (root) nie ma go w `resolve.alias` — import wartości
+// (nie tylko typu) pod tym aliasem wywala się w czasie działania testów jednostkowych
+// (`Cannot find package '@/...'`). `import type` gdzie indziej w tym katalogu (np.
+// `logistics/actions.ts`) unika tego wyłącznie dlatego, że jest wycinany w całości przy
+// transpilacji — tu potrzebne są prawdziwe funkcje, więc ścieżka względna.
+import { resolveCurrentTemplateContent, renderMessageTemplate, type MessageTemplateStore } from "../../../lib/notifications/templates"
+import { calculateInitialAttemptTime } from "../../../lib/notifications/window"
 
 /**
  * D1 (FNL-ROLLBACK): zwalnia slot ekipy dla wszystkich wierszy `instalacje` danego
@@ -117,12 +125,38 @@ export async function releasePhaseTwoBooking(tx: Prisma.TransactionClient, leadI
 type EnqueueNotificationParams = {
   notificationId: string
   idempotencyKey: string
-  leadId?: string
-  installationId?: string
-  serviceId?: string
-  incidentId?: string
-  recipientOverride?: string
-  payload?: Prisma.InputJsonValue
+  // `| null` dopuszczony obok `undefined`, żeby `EnqueueNotificationParams` z
+  // `lib/notifications/types.ts` (używany przez `enqueueNotificationEx`, wołany z tymi samymi
+  // polami dopuszczającymi `null`) był strukturalnie przypisywalny bez rzutowania.
+  leadId?: string | null
+  installationId?: string | null
+  serviceId?: string | null
+  incidentId?: string | null
+  recipientOverride?: string | null
+  payload?: Prisma.InputJsonValue | Record<string, unknown>
+}
+
+/**
+ * Interfejs WYMAGANY przez `enqueueNotification`, nie „cały `Prisma.TransactionClient`" — ta
+ * funkcja dotyka wyłącznie `notificationQueue.create` i (przez `resolveCurrentTemplateContent`)
+ * opcjonalnie `messageTemplate.findFirst`. Wąski interfejs zamiast `Prisma.TransactionClient`
+ * pozwala `enqueueNotificationEx` (`lib/notifications/enqueue.ts`, alias cienki po scaleniu,
+ * runda 3 audytu feat/ntf-gateway 2026-09-24) przekazać swój `EnqueueTx` WPROST, bez rzutowania
+ * przez `unknown` — `gate-evasion-prisma-recast` blokuje dokładnie taki cast, i słusznie: prawdziwy
+ * `Prisma.TransactionClient` (osiem wywołujących w produkcji) spełnia ten węższy interfejs
+ * strukturalnie, więc żadnego rzutowania nie trzeba w żadną stronę.
+ */
+interface EnqueueNotificationTx extends MessageTemplateStore {
+  notificationQueue: {
+    // Składnia METODY (`create(args): ...`), NIE właściwości funkcyjnej (`create: (args) =>
+    // ...`) — pod `strictFunctionTypes` (tsconfig `strict: true`) druga forma jest sprawdzana
+    // kontrawariantnie i realny `Prisma.TransactionClient` (osiem wywołujących w produkcji, z
+    // dużo bogatszym, wymaganym kształtem `data`) NIE byłby przypisywalny do tego węższego
+    // interfejsu. Składnia metody daje sprawdzanie biwariantne — bezpieczne tutaj, bo ten
+    // interfejs opisuje MINIMUM, którego funkcja faktycznie używa, a nie kontrakt do
+    // odtworzenia w obie strony.
+    create(args: { data: Record<string, unknown> }): Promise<{ id: string }>
+  }
 }
 
 /**
@@ -154,9 +188,19 @@ type EnqueueNotificationParams = {
  * łapiemy kod kolizji unikalności per wiersz i zwracamy istniejący efekt dla TEGO
  * kanału zamiast rzucać dalej — kolizja na jednym kanale nie przerywa tworzenia
  * pozostałych kanałów tego samego wywołania.
+ *
+ * SCALENIE Z `enqueueNotificationEx` (runda 3 audytu feat/ntf-gateway, 2026-09-24, BLOCKER 2):
+ * ten helper był duplikatem `enqueueNotificationEx` (`src/lib/notifications/enqueue.ts`) — ten
+ * TUTAJ jest wołany przez WSZYSTKICH ośmiu wywołujących w produkcji, tamten NIE był wołany
+ * przez żaden kod produkcyjny. Dwie ścieżki renderowania treści to dokładnie ten defekt, który
+ * NTF-QUEUE-RENDERED-BODY miało zamknąć: bez tego scalenia realne kolejkowanie nigdy nie
+ * wypełniało `renderedBody`/`renderedSubject`/`templateVersionId`/`nextAttemptAt`, więc
+ * dispatcher zawsze czytał AKTUALNĄ wersję szablonu zamiast zamrożonej. Logika walidacji domen
+ * (SERVICE/INCIDENT/FUNNEL) i renderowania przeniesiona tutaj W CAŁOŚCI z `enqueueNotificationEx`,
+ * która stała się cienkim aliasem wołającym tę funkcję.
  */
 export async function enqueueNotification(
-  tx: Prisma.TransactionClient,
+  tx: EnqueueNotificationTx,
   params: EnqueueNotificationParams,
 ): Promise<{ id: string; created: boolean; channel: string }[]> {
   const ownerIds = [params.leadId, params.installationId, params.serviceId, params.incidentId]
@@ -173,10 +217,32 @@ export async function enqueueNotification(
     throw new Error(`enqueueNotification: brak definicji w katalogu dla id "${params.notificationId}"`)
   }
 
+  // Wymuszenie powiązań domenowych (NTF-POLY), przeniesione z `enqueueNotificationEx`.
+  if (definition.domain === "SERVICE" && !params.serviceId) {
+    throw new Error(`Powiadomienie ${definition.id} z domeny SERVICE musi być powiązane z serviceId`)
+  }
+  if (definition.domain === "INCIDENT" && !params.incidentId) {
+    throw new Error(`Powiadomienie ${definition.id} z domeny INCIDENT musi być powiązane z incidentId`)
+  }
+  if (definition.domain === "FUNNEL" && !params.leadId && !params.installationId) {
+    throw new Error(`Powiadomienie ${definition.id} z domeny FUNNEL musi być powiązane z leadId lub installationId`)
+  }
+
   const results: { id: string; created: boolean; channel: string }[] = []
 
   for (const channel of definition.channels) {
     const channelIdempotencyKey = `${params.idempotencyKey}:${channel}`
+
+    // NTF-QUEUE-RENDERED-BODY: treść WYRENDEROWANA w chwili kolejkowania, z AKTUALNEJ wersji
+    // szablonu — nie w chwili wysyłki (patrz komentarz przy `QUEUE_POLICY.persistsRenderedBody`
+    // w kontrakcie). `resolveCurrentTemplateContent` sama spada na fallback `TEMPLATE_DEFINITIONS`,
+    // gdy `tx` nie ma modelu `messageTemplate` (atrapy starszych testów jednostkowych) albo gdy
+    // baza nie ma jeszcze opublikowanej wersji — więc to wywołanie jest bezpieczne dla obu grup
+    // wywołujących (osiem Server Actions produkcyjnych i testy z uproszczonym `tx`).
+    const payloadObj = (params.payload as Record<string, unknown>) ?? {}
+    const content = await resolveCurrentTemplateContent(tx, definition.templateKey, channel)
+    const rendered = renderMessageTemplate(content, payloadObj)
+    const initialAttemptAt = calculateInitialAttemptTime(channel)
 
     try {
       const row = await tx.notificationQueue.create({
@@ -186,7 +252,11 @@ export async function enqueueNotification(
           channel,
           recipientType: definition.recipient,
           recipientAddress: params.recipientOverride ?? null,
-          payload: params.payload ?? {},
+          payload: (params.payload as Prisma.InputJsonValue) ?? {},
+          renderedBody: rendered.body,
+          renderedSubject: rendered.subject ?? null,
+          templateVersionId: content.templateVersionId,
+          nextAttemptAt: initialAttemptAt,
           status: "PENDING",
           attempts: 0,
           idempotencyKey: channelIdempotencyKey,

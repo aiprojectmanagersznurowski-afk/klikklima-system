@@ -95,12 +95,12 @@ export async function runServiceInspectionCron(referenceDate = new Date()): Prom
           }
 
           // 2. Zakolejkuj N10 (service.reminder) z kluczem idempotencji per cykl roczny
-          if (n10Def && (client.email || client.telefon)) {
+          if (n10Def && (client.email || client.telefon) && serviceId) {
             const dateFormatted = `${String(nextDate.getDate()).padStart(2, "0")}.${String(nextDate.getMonth() + 1).padStart(2, "0")}.${nextDate.getFullYear()}`
             const queued = await enqueueNotification(tx, {
               notificationId: n10Def.id,
               idempotencyKey,
-              installationId: inst.id,
+              serviceId,
               recipientOverride: (client.email || client.telefon) ?? undefined,
               payload: {
                 first_name: client.imie_i_nazwisko || "",
