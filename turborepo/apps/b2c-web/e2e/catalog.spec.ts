@@ -16,8 +16,8 @@ test.describe('Catalog Page', () => {
     const firstProduct = page.locator('.group.relative').first();
     await expect(firstProduct).toBeVisible();
     
-    // We click the button inside it "Zobacz szczegóły"
-    await firstProduct.locator('button:has-text("Zobacz szczegóły")').click();
+    // We click the button inside it "Szczegóły urządzenia"
+    await firstProduct.locator('button:has-text("Szczegóły urządzenia")').click();
 
     // Verify modal appears
     const modal = page.locator('div[role="dialog"]');

@@ -62,7 +62,7 @@ test.describe('Navigation & Back Button State', () => {
     const initialUrl = page.url();
 
     // Otwarcie modala z pierwszej karty produktu
-    const firstProductBtn = page.locator('#bestsellery button:has-text("Zobacz szczegóły")').first();
+    const firstProductBtn = page.locator('#bestsellery button:has-text("Szczegóły urządzenia")').first();
     await firstProductBtn.click();
 
     const modal = page.locator('div[role="dialog"]');
