@@ -96,7 +96,8 @@ describe('NTF-TEMPLATE-STORE — treść z bazy, nie ze stałej TypeScript (żyw
     });
     createdQueueIds.push(queueRow.id);
 
-    await processNotificationQueue(prisma as never, { limit: 10 });
+    const now = new Date("2026-06-15T12:00:00+02:00");
+    await processNotificationQueue(prisma as never, { limit: 10, now });
 
     expect(smsSendMock).toHaveBeenCalledTimes(1);
     const [sentArgs] = smsSendMock.mock.calls[0];

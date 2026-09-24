@@ -79,8 +79,9 @@ describe('NTF-QUEUE-CLAIM — przejęcie wiersza kolejki pod współbieżności�
     // Bez await między wywołaniami — dokładnie ten scenariusz, którego atrapa
     // Prismy nie może udowodnić: dwa procesy pytają bazę "PENDING?" w tym samym
     // oknie czasowym.
-    const run1 = processNotificationQueue(prisma as never, { limit: 10 });
-    const run2 = processNotificationQueue(prisma as never, { limit: 10 });
+    const now = new Date("2026-06-15T12:00:00+02:00");
+    const run1 = processNotificationQueue(prisma as never, { limit: 10, now });
+    const run2 = processNotificationQueue(prisma as never, { limit: 10, now });
 
     const [result1, result2] = await Promise.all([run1, run2]);
 
