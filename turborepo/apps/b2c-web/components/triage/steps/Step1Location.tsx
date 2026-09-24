@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import { Building2, Home, Store } from 'lucide-react';
+import { BUILDING_TYPE_PL } from '@klikklima/contracts';
 import { useTriageStore, LocationType } from '@/store/triageStore';
 import { OptionCard } from '../OptionCard';
 import { StepWrapper } from '../StepWrapper';
@@ -20,10 +21,10 @@ export const Step1Location = () => {
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <OptionCard
-          title="Mieszkanie"
+          title={BUILDING_TYPE_PL.APARTMENT}
           icon={<Building2 size={40} strokeWidth={1.5} />}
-          selected={state.location === 'Mieszkanie'}
-          onClick={() => handleSelect('Mieszkanie')}
+          selected={state.location === BUILDING_TYPE_PL.APARTMENT}
+          onClick={() => handleSelect(BUILDING_TYPE_PL.APARTMENT as LocationType)}
         />
         <OptionCard
           title="Dom"

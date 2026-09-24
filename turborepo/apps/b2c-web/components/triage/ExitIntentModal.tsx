@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useExitIntent } from "@/hooks/useExitIntent";
 import { useState, useEffect } from "react";
-import { saveSoftLead } from "@/app/actions/leads";
+import { saveSoftLead, getCurrentSoftLeadConsentVersionId } from "@/app/actions/leads";
 import { useTriageStore } from "@/store/triageStore";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Phone, ArrowRight, CheckCircle2, PhoneCall } from "lucide-react";
@@ -13,6 +14,17 @@ export default function ExitIntentModal() {
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [acceptedConsent, setAcceptedConsent] = useState(false);
+  const [consentError, setConsentError] = useState("");
+  // B2C-SOFT-LEAD-CONSENT: zgoda musi wskazywać KONKRETNĄ wersję dokumentu (FK do
+  // legal_document_versions), nie samą flagę. `null` = brak zarejestrowanej wersji
+  // (DOC-LEGAL-VERSION-REGISTRY jeszcze nie istnieje dla dokumentów B2C) — w takim
+  // stanie wysyłka jest blokowana, formularz nie fabrykuje zgody.
+  const [consentVersionId, setConsentVersionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getCurrentSoftLeadConsentVersionId().then(setConsentVersionId);
+  }, []);
 
   // Bezpieczne pobranie danych z Zustand
   // Aby uniknąć błędów hydratacji, czasami używa się useEffect,
@@ -20,8 +32,19 @@ export default function ExitIntentModal() {
   const triageData = useTriageStore((state) => state.data);
 
   useExitIntent(() => {
-    // Pokazujemy tylko raz, jeśli nie zostało jeszcze wypełnione
-    if (!submitted && !isOpen) {
+    // Sprawdzenie czy konfigurator urządzenia / DeviceModal jest otwarty w DOM
+    const isDeviceModalOpen = typeof document !== 'undefined' && Boolean(
+      document.querySelector('[data-device-modal-open="true"]') ||
+      document.querySelector('[role="dialog"]')
+    );
+    if (isDeviceModalOpen) return;
+
+    // Pokazujemy tylko raz w sesji
+    const hasShownInSession = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('kk_exit_intent_shown');
+    if (!submitted && !isOpen && !hasShownInSession) {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('kk_exit_intent_shown', 'true');
+      }
       setIsOpen(true);
     }
   });
@@ -41,11 +64,31 @@ export default function ExitIntentModal() {
       return;
     }
 
+    if (!acceptedConsent) {
+      setConsentError("Zgoda jest wymagana.");
+      return;
+    }
+
+    if (!consentVersionId) {
+      // Brak zarejestrowanej wersji dokumentu — nie wolno fabrykować zgody (patrz
+      // komentarz przy getCurrentSoftLeadConsentVersionId w app/actions/leads.ts).
+      setConsentError("Formularz jest tymczasowo niedostępny. Spróbuj zadzwonić do nas bezpośrednio.");
+      return;
+    }
+
     setIsSubmitting(true);
-    // Wywołanie Server Action do zapisu w Supabase
-    await saveSoftLead(phone, triageData);
+    // Wywołanie Server Action do zapisu w Supabase — zgoda wskazuje KONKRETNĄ wersję
+    // dokumentu (FK), nie samą flagę (B2C-SOFT-LEAD-CONSENT).
+    const result = await saveSoftLead(phone, {
+      ...triageData,
+      consentDocumentVersionId: consentVersionId,
+    });
 
     setIsSubmitting(false);
+    if (!result.success) {
+      setError("Nie udało się zapisać zgłoszenia. Spróbuj ponownie.");
+      return;
+    }
     setSubmitted(true);
 
     // Auto-zamknięcie po 3 sekundach od sukcesu
@@ -96,7 +139,7 @@ export default function ExitIntentModal() {
             {!submitted ? (
               <div className="flex flex-col">
                 {/* Header z grafiką / kolorem */}
-                <div className="relative bg-gradient-to-br from-[#0d1b2e] to-[#1750c8] pt-10 pb-12 px-8 text-center overflow-hidden">
+                <div className="relative bg-gradient-to-br from-slate-900 to-blue-700 pt-10 pb-12 px-8 text-center overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
 
                   <div className="relative z-10 w-16 h-16 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-5 border border-white/20 shadow-lg">
@@ -135,6 +178,29 @@ export default function ExitIntentModal() {
                         <p className="text-red-500 text-xs mt-2 ml-1 font-medium">{error}</p>
                       )}
                     </div>
+
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        id="exit-intent-consent"
+                        checked={acceptedConsent}
+                        onChange={(e) => {
+                          setAcceptedConsent(e.target.checked);
+                          if (e.target.checked) setConsentError("");
+                        }}
+                        className="mt-1 w-5 h-5 rounded-md border border-border text-primary focus:ring-2 focus:ring-primary/40 focus-visible:ring-2 focus-visible:ring-primary cursor-pointer outline-none"
+                      />
+                      <label htmlFor="exit-intent-consent" className="text-xs text-gray-600 leading-relaxed">
+                        Wyrażam zgodę na kontakt telefoniczny i przetwarzanie moich danych zgodnie z{" "}
+                        <Link href="/polityka-prywatnosci" className="text-primary hover:underline" target="_blank">
+                          Polityką Prywatności
+                        </Link>
+                        .
+                      </label>
+                    </div>
+                    {consentError && (
+                      <p className="text-red-500 text-xs -mt-2 ml-1 font-medium">{consentError}</p>
+                    )}
 
                     <button
                       type="submit"

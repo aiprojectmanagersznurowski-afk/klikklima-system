@@ -36,6 +36,7 @@
     "use-places-autocomplete": "^4.0.1",
     "ws": "^8.21.0",
     "zustand": "^5.0.14",
+    "zod": "^3.24.1",
     "@klikklima/contracts": "*"
   },
   "devDependencies": {
@@ -45,11 +46,13 @@
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.20",
     "@types/google.maps": "^3.65.1",
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "jsdom": "^30.0.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

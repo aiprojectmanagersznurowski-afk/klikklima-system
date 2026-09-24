@@ -11,7 +11,74 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { calcBrutto } from "@/components/ui/ProductCard";
 
+export interface CatalogFilters {
+  roomType: string;
+  brands: string[];
+  colors: string[];
+  area: string;
+  features: {
+    wifi: boolean;
+    silent: boolean;
+    presence: boolean;
+  };
+}
 
+/**
+ * Czysta funkcja filtrująca katalog — wydzielona z `useMemo` komponentu, żeby dało
+ * się jej użyć bez renderowania (zgłoszenie z BLOCKER 5, test-author odblokowany
+ * do napisania testu na złożenie filtrów marka+kolor w kolejnej turze).
+ * Zachowanie identyczne z dawną logiką wewnątrz `CatalogPage`.
+ */
+export function filterProducts(products: Product[], filters: CatalogFilters): Product[] {
+  let result = [...products];
+
+  // Przeznaczenie (Jedno / Wiele)
+  if (filters.roomType === 'single') {
+    result = result.filter(p => p._raw?.is_single_compatible);
+  } else if (filters.roomType === 'multi') {
+    result = result.filter(p => p._raw?.is_multi_compatible);
+  }
+
+  // Marka
+  if (filters.brands.length > 0) {
+    result = result.filter(p => filters.brands.includes(p.brand));
+  }
+
+  // Kolor
+  if (filters.colors.length > 0) {
+    result = result.filter(p => filters.colors.includes(p._raw?.color || 'Biały'));
+  }
+
+  // Powierzchnia
+  if (filters.area !== 'all') {
+    result = result.filter(p => {
+      const areas = p._raw?.all_areas || [];
+      if (areas.length === 0) return false;
+
+      if (filters.area === 'Do 20 m²') return areas.some((a: number) => a <= 25);
+      if (filters.area === '21-25 m²') return areas.some((a: number) => a > 25 && a <= 35);
+      if (filters.area === '26-35 m²') return areas.some((a: number) => a > 35 && a <= 50);
+      if (filters.area === 'Powyżej 35 m²') return areas.some((a: number) => a > 50);
+      return true;
+    });
+  }
+
+  // Cechy
+  if (filters.features.wifi) {
+    result = result.filter(p => p._raw?.has_wifi);
+  }
+  if (filters.features.silent) {
+    result = result.filter(p => p._raw?.is_silent_mode);
+  }
+  if (filters.features.presence) {
+    result = result.filter(p => p._raw?.has_presence_sensor);
+  }
+
+  // Sortowanie po cenie rosnąco - odbywa się już na bazie, ale dla pewności przy filtrach upewniamy się.
+  result.sort((a, b) => a.deviceNettoPrice - b.deviceNettoPrice);
+
+  return result;
+}
 
 export default function CatalogPage() {
   const router = useRouter();
@@ -52,56 +119,15 @@ export default function CatalogPage() {
     return Array.from(colors).sort();
   }, [allProducts]);
 
-  // Logika filtrowania
+  // Logika filtrowania — delegowana do czystej funkcji `filterProducts` (patrz wyżej).
   const filteredProducts = useMemo(() => {
-    let result = [...allProducts];
-
-    // Przeznaczenie (Jedno / Wiele)
-    if (filterRoomType === 'single') {
-      result = result.filter(p => p._raw?.is_single_compatible);
-    } else if (filterRoomType === 'multi') {
-      result = result.filter(p => p._raw?.is_multi_compatible);
-    }
-
-    // Marka
-    if (filterBrands.length > 0) {
-      result = result.filter(p => filterBrands.includes(p.brand));
-    }
-
-    // Kolor
-    if (filterColors.length > 0) {
-      result = result.filter(p => filterColors.includes(p._raw?.color || 'Biały'));
-    }
-
-    // Powierzchnia
-    if (filterArea !== 'all') {
-      result = result.filter(p => {
-        const areas = p._raw?.all_areas || [];
-        if (areas.length === 0) return false;
-        
-        if (filterArea === 'Do 20 m²') return areas.some((a: number) => a <= 25);
-        if (filterArea === '21-25 m²') return areas.some((a: number) => a > 25 && a <= 35);
-        if (filterArea === '26-35 m²') return areas.some((a: number) => a > 35 && a <= 50);
-        if (filterArea === 'Powyżej 35 m²') return areas.some((a: number) => a > 50);
-        return true;
-      });
-    }
-
-    // Cechy
-    if (filterFeatures.wifi) {
-      result = result.filter(p => p._raw?.has_wifi);
-    }
-    if (filterFeatures.silent) {
-      result = result.filter(p => p._raw?.is_silent_mode);
-    }
-    if (filterFeatures.presence) {
-      result = result.filter(p => p._raw?.has_presence_sensor);
-    }
-
-    // Sortowanie po cenie rosnąco - odbywa się już na bazie, ale dla pewności przy filtrach upewniamy się.
-    result.sort((a, b) => a.deviceNettoPrice - b.deviceNettoPrice);
-
-    return result;
+    return filterProducts(allProducts, {
+      roomType: filterRoomType,
+      brands: filterBrands,
+      colors: filterColors,
+      area: filterArea,
+      features: filterFeatures,
+    });
   }, [allProducts, filterRoomType, filterBrands, filterColors, filterArea, filterFeatures]);
 
   const toggleArrayFilter = (arr: string[], setArr: (val: string[]) => void, item: string) => {

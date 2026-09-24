@@ -89,7 +89,7 @@ function GlassCard({
   desc: string;
 }) {
   return (
-    <div className="relative bg-white/70 backdrop-blur-md border border-white/80 rounded-2xl p-7 flex flex-col gap-4 shadow-[0_4px_24px_rgba(23,80,200,0.07)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(23,80,200,0.13)]">
+    <div className="relative bg-white/70 backdrop-blur-md border border-white/80 rounded-2xl p-7 flex flex-col gap-4 shadow-[0_4px_24px_color-mix(in_srgb,var(--color-primary)_7%,transparent)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_color-mix(in_srgb,var(--color-primary)_13%,transparent)]">
       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
         <Icon className="w-6 h-6 text-primary" strokeWidth={1.75} />
       </div>
@@ -111,8 +111,42 @@ export default function HomePageClient({
   initialDbProducts: Product[];
 }) {
   const [fomoData, setFomoData] = useState<FomoData | null>(initialFomoData);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [dbProducts, setDbProducts] = useState<Product[]>(initialDbProducts);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const handleOpenProduct = (product: Product) => {
+    setSelectedProduct(product);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('device', product.model);
+      window.history.pushState({ device: product.model }, '', url.toString());
+    }
+  };
+
+  const handleCloseProduct = () => {
+    setSelectedProduct(null);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('device');
+      window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const deviceModel = params.get('device');
+      if (deviceModel) {
+        const found = dbProducts.find((p) => p.model === deviceModel);
+        if (found) setSelectedProduct(found);
+      } else {
+        setSelectedProduct(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [dbProducts]);
+  
 
   useEffect(() => {
     // If we wanted to refresh bestsellers on the client side periodically, we could do it here
@@ -127,7 +161,7 @@ export default function HomePageClient({
       <Navbar />
 
       {/* ── Hero ───────────────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden bg-[#0d1b2e]">
+      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden bg-hero-navy">
         {/* Full-bleed background photo */}
         <img
           src="https://images.unsplash.com/photo-1761330440311-16e160cad236?w=1800&h=1100&fit=crop&auto=format"
@@ -135,20 +169,17 @@ export default function HomePageClient({
           className="absolute inset-0 w-full h-full object-cover object-center opacity-55"
         />
         {/* Gradient vignette — stronger on left for text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0d1b2e]/90 via-[#0d1b2e]/55 to-[#0d1b2e]/10 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1b2e]/60 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-hero-navy/90 via-hero-navy/55 to-hero-navy/10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-hero-navy/60 via-transparent to-transparent pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 py-24 sm:py-32 w-full">
           {/* Glassmorphism text panel */}
           <div className="max-w-xl lg:max-w-2xl">
             <div
-              className="rounded-3xl p-8 sm:p-10 lg:p-12"
+              className="rounded-3xl p-8 sm:p-10 lg:p-12 bg-white/[0.07] border border-white/[0.13] shadow-[0_8px_48px_color-mix(in_srgb,black_25%,transparent)]"
               style={{
-                background: "rgba(255,255,255,0.07)",
                 backdropFilter: "blur(18px)",
                 WebkitBackdropFilter: "blur(18px)",
-                border: "1px solid rgba(255,255,255,0.13)",
-                boxShadow: "0 8px 48px rgba(0,0,0,0.25)",
               }}
             >
               {/* FOMO / Scarcity badge */}
@@ -184,18 +215,18 @@ export default function HomePageClient({
 
               <h1
                 className="text-5xl sm:text-6xl lg:text-[4.5rem] font-extrabold text-white leading-[1.05] tracking-tight mb-5"
-                style={{ textShadow: "0 2px 24px rgba(0,0,0,0.35)" }}
+                style={{ textShadow: "0 2px 24px color-mix(in srgb, black 35%, transparent)" }}
               >
                 Idealna
                 <br />
                 temperatura
                 <br />
-                <span className="text-[#60a5fa]">przez cały rok</span>
+                <span className="text-blue-400">przez cały rok</span>
               </h1>
 
               <p
                 className="text-lg sm:text-xl text-white/80 leading-relaxed mb-9 max-w-lg"
-                style={{ textShadow: "0 1px 8px rgba(0,0,0,0.4)" }}
+                style={{ textShadow: "0 1px 8px color-mix(in srgb, black 40%, transparent)" }}
               >
                 Dobierz klimatyzator w 2 minuty i poznaj szacunkową wycenę
                 z montażem online i umów naszego eksperta na darmowy audyt
@@ -204,7 +235,7 @@ export default function HomePageClient({
               <div className="flex flex-col sm:flex-row gap-3">
                 <a
                   href="/triage"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-base rounded-xl px-8 py-4 transition-all duration-200 hover:bg-[#1244b0] hover:shadow-[0_12px_32px_rgba(23,80,200,0.55)] active:scale-[0.97]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-base rounded-xl px-8 py-4 transition-all duration-200 hover:bg-blue-700 hover:shadow-[0_12px_32px_color-mix(in_srgb,var(--color-primary)_55%,transparent)] active:scale-[0.97]"
                 >
                   Wstępna wycena i termin
                   <ArrowRight className="w-5 h-5" />
@@ -225,7 +256,7 @@ export default function HomePageClient({
                   "Montaż w 1 dzień",
                 ].map((b) => (
                   <div key={b} className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#60a5fa] flex-shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-blue-400 flex-shrink-0" />
                     <span className="text-sm font-medium text-white/70">{b}</span>
                   </div>
                 ))}
@@ -237,7 +268,7 @@ export default function HomePageClient({
 
       {/* ── Dlaczego My ────────────────────────────────────────────────── */}
       <section id="oferta" className="py-24 sm:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-[#e8effa] to-background pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-blue-50/50 to-background pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
           <div className="text-center mb-16">
             <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
@@ -282,7 +313,7 @@ export default function HomePageClient({
                 className="relative flex flex-col items-center text-center gap-5 group"
               >
                 <div className="relative">
-                  <div className="w-28 h-28 rounded-full bg-white border-2 border-primary/15 flex items-center justify-center shadow-[0_8px_32px_rgba(23,80,200,0.10)] transition-all duration-300 group-hover:border-primary/40 group-hover:shadow-[0_12px_40px_rgba(23,80,200,0.18)]">
+                  <div className="w-28 h-28 rounded-full bg-white border-2 border-primary/15 flex items-center justify-center shadow-[0_8px_32px_color-mix(in_srgb,var(--color-primary)_10%,transparent)] transition-all duration-300 group-hover:border-primary/40 group-hover:shadow-[0_12px_40px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]">
                     <step.icon className="w-10 h-10 text-primary" strokeWidth={1.5} />
                   </div>
                   <span className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-black flex items-center justify-center shadow-md">
@@ -328,7 +359,7 @@ export default function HomePageClient({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {dbProducts.map((p) => (
-              <ProductCard key={p.id} product={p} onOpenModal={setSelectedProduct} />
+              <ProductCard key={p.id} product={p} onOpenModal={handleOpenProduct} />
             ))}
             {dbProducts.length === 0 && (
               <p className="col-span-full text-center text-muted-foreground py-10">
@@ -346,7 +377,7 @@ export default function HomePageClient({
 
       {/* ── Final CTA ──────────────────────────────────────────────────── */}
       <section id="wycena" className="py-24 sm:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0d1b2e] via-[#1750c8] to-[#0a3fa8]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-700 to-blue-900" />
         {/* Subtle mesh circles */}
         <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white/5 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full bg-accent/10 blur-3xl pointer-events-none" />
@@ -371,7 +402,7 @@ export default function HomePageClient({
 
           <a
             href="/triage"
-            className="inline-flex items-center justify-center gap-3 bg-white text-primary font-bold text-base sm:text-lg rounded-2xl px-10 py-5 transition-all duration-200 hover:bg-[#f0f6ff] hover:shadow-[0_16px_48px_rgba(0,0,0,0.25)] active:scale-[0.97]"
+            className="inline-flex items-center justify-center gap-3 bg-white text-primary font-bold text-base sm:text-lg rounded-2xl px-10 py-5 transition-all duration-200 hover:bg-blue-50 hover:shadow-[0_16px_48px_color-mix(in_srgb,black_25%,transparent)] active:scale-[0.97]"
           >
             Oblicz koszty w 2 minuty
             <ArrowRight className="w-5 h-5" />
@@ -383,13 +414,15 @@ export default function HomePageClient({
       <Footer />
 
       {/* Wyłapywanie wychodzących użytkowników (Soft Leads) - ukryte gdy otwarty Modal */}
+      {/* Wyłączone 2026-09-24 — czeka na DOC-LEGAL-VERSION-REGISTRY, dokument klienta nie ma dziś
+          własnego typu w LegalDocumentKind (patrz audyt feat/b2c-triage runda 3, BLOCKER 4) */}
       {/* {!selectedProduct && <ExitIntentModal />} */}
 
       {/* Global Device Modal */}
       {selectedProduct && (
         <DeviceModal
           isOpen={!!selectedProduct}
-          onClose={() => setSelectedProduct(null)}
+          onClose={handleCloseProduct}
           device={selectedProduct}
         />
       )}
