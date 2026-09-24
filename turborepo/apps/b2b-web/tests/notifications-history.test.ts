@@ -181,11 +181,37 @@ describe("NTF-HISTORY — Historia komunikacji z klientem na Karcie 360", () => 
     };
     const allRows = [rowOwnedByOurClient, rowOwnedByOtherClient];
 
+    // Rozwiązanie clientId -> leadIds musi przejść przez PRAWDZIWĄ relację
+    // (`leady.klient_id`), nie przez domysł. Fikstura mapuje każdego klienta
+    // na WŁASNY lead, żeby atrapa mogła odróżnić "client-1" od "client-2" —
+    // dokładnie tak, jak zrobiłaby to prawdziwa tabela `leady`.
+    const leadsByClient: Record<string, { id: string }[]> = {
+      "client-1": [{ id: "lead-client-1" }],
+      "client-2": [{ id: "lead-client-2" }],
+    };
+
     const mockPrisma = {
       notificationQueue: {
         findMany: vi.fn().mockImplementation(async ({ where }) =>
           allRows.filter((r) => matchesWhere(r, where)),
         ),
+      },
+      leady: {
+        findMany: vi.fn().mockImplementation(
+          async ({ where }: { where: { klient_id?: string } }) =>
+            leadsByClient[where.klient_id ?? ""] ?? [],
+        ),
+      },
+      // Klient nie ma jeszcze instalacji/serwisów/usterek w tym scenariuszu —
+      // relacje istnieją (kod stąpa przez nie), po prostu nic nie znajdują.
+      instalacje: {
+        findMany: vi.fn().mockImplementation(async () => []),
+      },
+      serwisy: {
+        findMany: vi.fn().mockImplementation(async () => []),
+      },
+      usterki_incidents: {
+        findMany: vi.fn().mockImplementation(async () => []),
       },
     };
 
