@@ -59,7 +59,12 @@ describe("P1 — Silnik wysyłki powiadomień (Dispatcher, SMSAPI, Mailtrap)", (
       },
     };
 
-    const result = await processNotificationQueue(mockPrisma as never);
+    // Zegar wstrzyknięty jawnie w środku okna wysyłki SMS (08:00-18:00
+    // Europe/Warsaw) — bez tego test miga w zależności od godziny, o której
+    // uruchamia się CI/dev machine (dispatcher poza oknem odkłada wiersz
+    // zamiast go wysłać, patrz krok 1 w dispatcher.ts).
+    const now = new Date("2026-06-15T12:00:00+02:00");
+    const result = await processNotificationQueue(mockPrisma as never, { now });
 
     expect(result.sentCount).toBe(1);
     expect(smsSendMock).toHaveBeenCalledTimes(1);
@@ -113,7 +118,16 @@ describe("P1 — Silnik wysyłki powiadomień (Dispatcher, SMSAPI, Mailtrap)", (
     smsSendMock.mockResolvedValue({ success: true, messageId: "sms-msg-999" });
 
     const queueRow = makePendingRow();
-    const updateManyMock = vi.fn().mockResolvedValue({ count: 1 });
+    // Dispatcher robi DWA updateMany na notificationQueue per przebieg: (1)
+    // odzyskanie wierszy osieroconych w SENDING (NTF-QUEUE-CLAIM, dopełnienie
+    // — patrz krok 0 w dispatcher.ts), (2) właściwe przejęcie testowanego
+    // wiersza. Odróżniamy je mockResolvedValueOnce w KOLEJNOŚCI wywołań —
+    // odzyskanie idzie pierwsze, więc dostaje count: 0 (nic do odzyskania),
+    // przejęcie drugie, dostaje count: 1 (wygrało wyścig).
+    const updateManyMock = vi
+      .fn()
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 1 });
 
     const mockPrisma = {
       notificationQueue: {
@@ -123,13 +137,23 @@ describe("P1 — Silnik wysyłki powiadomień (Dispatcher, SMSAPI, Mailtrap)", (
       },
     };
 
-    const result = await processNotificationQueue(mockPrisma as never);
+    const now = new Date("2026-06-15T12:00:00+02:00");
+    const result = await processNotificationQueue(mockPrisma as never, { now });
 
     // Nie sprawdzamy zwrotki atrapy — sprawdzamy DOSŁOWNE argumenty przekazane
     // do bazy: przejęcie musi iść przez updateMany z warunkiem na POPRZEDNIM
     // statusie, nie przez bezwarunkowy update.
-    expect(updateManyMock).toHaveBeenCalledTimes(1);
-    const [claimArgs] = updateManyMock.mock.calls[0];
+    expect(updateManyMock).toHaveBeenCalledTimes(2);
+
+    // Wywołanie 1 (indeks 0): odzyskanie wierszy osieroconych w SENDING —
+    // NIE dotyczy naszego testowanego wiersza (jest PENDING), warunkuje po
+    // statusie SENDING i progu `claimedAt`, nie po id.
+    const [recoveryArgs] = updateManyMock.mock.calls[0];
+    expect(recoveryArgs.where).toMatchObject({ status: "SENDING", claimedAt: { lt: expect.any(Date) } });
+    expect(recoveryArgs.data).toMatchObject({ status: "PENDING", claimedAt: null });
+
+    // Wywołanie 2 (indeks 1): właściwe przejęcie testowanego wiersza.
+    const [claimArgs] = updateManyMock.mock.calls[1];
     expect(claimArgs.where).toMatchObject({ id: queueRow.id, status: "PENDING" });
     expect(claimArgs.data).toMatchObject({ status: "SENDING" });
 
