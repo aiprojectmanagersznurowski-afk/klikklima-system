@@ -2,13 +2,16 @@ import { NOTIFICATIONS, byId } from "@klikklima/contracts";
 import type { Prisma } from "@repo/database";
 import type { EnqueueNotificationParams, EnqueuedResult } from "./types";
 import { calculateInitialAttemptTime } from "./window";
+import { resolveCurrentTemplateContent, renderMessageTemplate, type MessageTemplateStore } from "./templates";
+
+export interface EnqueueTx extends MessageTemplateStore {
+  notificationQueue: {
+    create: (args: { data: Record<string, unknown> }) => Promise<{ id: string }>;
+  };
+}
 
 export async function enqueueNotificationEx(
-  tx: {
-    notificationQueue: {
-      create: (args: { data: Record<string, unknown> }) => Promise<{ id: string }>;
-    };
-  },
+  tx: EnqueueTx,
   params: EnqueueNotificationParams
 ): Promise<EnqueuedResult[]> {
   const ownerIds = [params.leadId, params.installationId, params.serviceId, params.incidentId];
@@ -50,6 +53,15 @@ export async function enqueueNotificationEx(
     const channelIdempotencyKey = `${params.idempotencyKey}:${channel}`;
     const initialAttemptAt = calculateInitialAttemptTime(channel);
 
+    // NTF-QUEUE-RENDERED-BODY: treść WYRENDEROWANA w chwili kolejkowania, z
+    // AKTUALNEJ wersji szablonu — nie w chwili wysyłki. Odtworzenie treści z
+    // payloadu + gita przestało działać, odkąd szablon mieszka w edytowalnej
+    // tabeli (NTF-TEMPLATE-STORE): odtworzenie dałoby treść AKTUALNĄ, nie tę,
+    // która realnie miałaby zostać wysłana w chwili zakolejkowania.
+    const payloadObj = (params.payload as Record<string, unknown>) ?? {};
+    const content = await resolveCurrentTemplateContent(tx, definition.templateKey, channel);
+    const rendered = renderMessageTemplate(content, payloadObj);
+
     try {
       const row = await tx.notificationQueue.create({
         data: {
@@ -59,6 +71,9 @@ export async function enqueueNotificationEx(
           recipientType: definition.recipient,
           recipientAddress: params.recipientOverride ?? null,
           payload: (params.payload as Prisma.InputJsonValue) ?? {},
+          renderedBody: rendered.body,
+          renderedSubject: rendered.subject ?? null,
+          templateVersionId: content.templateVersionId,
           status: "PENDING",
           attempts: 0,
           idempotencyKey: channelIdempotencyKey,

@@ -22,9 +22,6 @@ export async function sendSms(params: SmsSendParams): Promise<GatewaySendResult>
   const from = params.from ?? SMSAPI_DEFAULT_SENDER;
 
   if (!token) {
-    if (process.env.NODE_ENV === "test") {
-      return { success: true, messageId: "mock-sms-id" };
-    }
     return { success: false, error: "Brak skonfigurowanego tokena SMS_API_TOKEN" };
   }
 

@@ -1,15 +1,26 @@
-import { getTemplateByKey, renderMessageTemplate } from "./templates";
+import { resolveCurrentTemplateContent, renderMessageTemplate, type MessageTemplateStore } from "./templates";
 import { isWithinSendWindow, getNextWindowStart } from "./window";
 import { recordNotificationFailure } from "./retry";
 import { sendSms } from "./gateways/smsapi";
+import * as smsapiModule from "./gateways/smsapi";
+import { sendEmail } from "./gateways/mailtrap";
 
-function normalizePhoneNumber(raw: string): string {
+/// `normalizePhoneNumber` żyje kanonicznie w `gateways/smsapi.ts` — importowana
+/// przez namespace (nie destructuring) i sprawdzana `in`, żeby starsze testy,
+/// które mockują CAŁY moduł `smsapi` wymieniając WYŁĄCZNIE `sendSms`, nie
+/// wywalały się na dostępie do właściwości nieobecnej w atrapie (proxy Vitest
+/// rzuca na `get`, nie na `in` — ten sam wzorzec co przy legacy fixture
+/// regressions, patrz .claude/agent-memory/implementer-server). W produkcji
+/// (prawdziwy moduł) `in` jest zawsze `true`, więc zachowanie się nie zmienia.
+function normalizeSmsRecipient(raw: string): string {
+  if ("normalizePhoneNumber" in smsapiModule) {
+    return smsapiModule.normalizePhoneNumber(raw);
+  }
   const digits = raw.replace(/\D/g, "");
   if (digits.length === 9) return "+48" + digits;
   if (digits.length === 11 && digits.startsWith("48")) return "+" + digits;
-  return raw.startsWith("+") ? "+" + digits : "+" + digits;
+  return "+" + digits;
 }
-import { sendEmail } from "./gateways/mailtrap";
 
 export interface NotificationQueueItem {
   id: string;
@@ -32,16 +43,22 @@ export interface DispatcherResult {
   deferredCount: number;
 }
 
+export interface DispatcherPrisma extends MessageTemplateStore {
+  notificationQueue: {
+    findMany: (args: { where: Record<string, unknown>; take?: number }) => Promise<NotificationQueueItem[]>;
+    updateMany: (args: {
+      where: { id: string; status: string };
+      data: Record<string, unknown>;
+    }) => Promise<{ count: number }>;
+    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<NotificationQueueItem>;
+  };
+}
+
 export async function processNotificationQueue(
-  prisma: {
-    notificationQueue: {
-      findMany: (args: { where: Record<string, unknown>; take?: number }) => Promise<NotificationQueueItem[]>;
-      update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<NotificationQueueItem>;
-    };
-  },
+  prisma: DispatcherPrisma,
   options: { limit?: number; now?: Date } = {}
 ): Promise<DispatcherResult> {
-  const now = options.now ?? (process.env.NODE_ENV === "test" ? new Date("2026-06-15T12:00:00+02:00") : new Date());
+  const now = options.now ?? new Date();
   const limit = options.limit ?? 50;
 
   // Pobieramy wyłącznie wiadomości PENDING gotowe do wysyłki
@@ -61,12 +78,27 @@ export async function processNotificationQueue(
   };
 
   for (const row of pendingRows) {
+    // 0. Przejęcie wiersza jest ATOMOWE (NTF-QUEUE-CLAIM): updateMany z warunkiem
+    // na POPRZEDNIM statusie. Wysyłka następuje WYŁĄCZNIE gdy count === 1 — bez
+    // tego dwa równoległe uruchomienia dispatcher-a wysyłają ten sam SMS dwa razy.
+    const claim = await prisma.notificationQueue.updateMany({
+      where: { id: row.id, status: "PENDING" },
+      data: { status: "SENDING", claimedAt: now },
+    });
+
+    if (claim.count !== 1) {
+      // Ktoś inny (drugi proces) przejął ten wiersz pierwszy — pomijamy go bez
+      // żadnego skutku ubocznego, nie jest to błąd.
+      continue;
+    }
+
     // 1. Sprawdzenie okna wysyłki (NTF-QUEUE-WINDOW)
     if (!isWithinSendWindow(row.channel, now)) {
       const nextWindowStart = getNextWindowStart(row.channel, now);
       await prisma.notificationQueue.update({
         where: { id: row.id },
         data: {
+          status: "PENDING",
           nextAttemptAt: nextWindowStart,
         },
       });
@@ -74,14 +106,15 @@ export async function processNotificationQueue(
       continue;
     }
 
-    // 2. Przygotowanie szablonu i treści
+    // 2. Przygotowanie szablonu i treści — AKTUALNA wersja z bazy (NTF-TEMPLATE-STORE),
+    // fallback na stałą TypeScript gdy brak modelu/wersji opublikowanej.
     let renderedSubject: string | undefined;
     let renderedBody: string;
 
     try {
-      const template = getTemplateByKey(row.templateKey);
+      const content = await resolveCurrentTemplateContent(prisma, row.templateKey, row.channel);
       const payloadObj = (row.payload as Record<string, unknown>) ?? {};
-      const rendered = renderMessageTemplate(template, payloadObj);
+      const rendered = renderMessageTemplate(content, payloadObj);
       renderedSubject = rendered.subject;
       renderedBody = rendered.body;
     } catch (err) {
@@ -102,7 +135,7 @@ export async function processNotificationQueue(
       if (!row.recipientAddress) {
         sendResult = { success: false, error: "Brak numeru telefonu w recipientAddress" };
       } else {
-        const to = normalizePhoneNumber(row.recipientAddress);
+        const to = normalizeSmsRecipient(row.recipientAddress);
         sendResult = await sendSms({
           to,
           message: renderedBody,

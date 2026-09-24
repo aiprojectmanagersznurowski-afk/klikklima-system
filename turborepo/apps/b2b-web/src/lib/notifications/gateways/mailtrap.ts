@@ -8,9 +8,6 @@ export async function sendEmail(params: EmailSendParams): Promise<GatewaySendRes
   const fromEmail = params.from ?? MAILTRAP_DEFAULT_FROM;
 
   if (!token) {
-    if (process.env.NODE_ENV === "test") {
-      return { success: true, messageId: "mock-email-id" };
-    }
     return { success: false, error: "Brak skonfigurowanego tokena EMAIL_PROVIDER_KEY" };
   }
 

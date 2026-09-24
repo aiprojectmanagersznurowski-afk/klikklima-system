@@ -69,17 +69,44 @@ export function recordNotificationFailure(
   };
 }
 
+export interface RetryOutcome {
+  id: string;
+  status: "PENDING";
+  deadLetteredAt: null;
+  lastError: null;
+  nextAttemptAt: Date;
+}
+
+/// Odrzucenie ponowienia wiersza, który NIE jest (już) w DEAD_LETTER — błąd DOMENOWY
+/// (CLAUDE.md: błędy domenowe jako wynik, nie wyjątek 500), łapany przez wołający
+/// Server Action i zwracany użytkownikowi jako komunikat.
+export class RetryNotAllowedError extends Error {
+  constructor(notificationQueueId: string) {
+    super(
+      `Ponowienie odrzucone: wiersz ${notificationQueueId} nie jest w statusie DEAD_LETTER (albo nie istnieje) — mógł już zostać ponowiony przez inny proces.`
+    );
+    this.name = "RetryNotAllowedError";
+  }
+}
+
 export async function retryNotificationRecord(
   prisma: {
     notificationQueue: {
-      update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<NotificationQueueRecord>;
+      updateMany: (args: {
+        where: { id: string; status: string };
+        data: Record<string, unknown>;
+      }) => Promise<{ count: number }>;
     };
   },
   notificationQueueId: string,
   now: Date = new Date()
-): Promise<NotificationQueueRecord> {
-  return await prisma.notificationQueue.update({
-    where: { id: notificationQueueId },
+): Promise<RetryOutcome> {
+  // Przejęcie jest ATOMOWE (analogicznie do NTF-QUEUE-CLAIM w dispatcherze):
+  // updateMany z warunkiem na POPRZEDNIM statusie (DEAD_LETTER). Sprawdzenie w JS
+  // "czy rekord jest DEAD_LETTER" nie wystarcza — dwa równoległe ponowienia tego
+  // samego wiersza muszą skutkować JEDNĄ faktyczną zmianą, rozstrzygniętą w bazie.
+  const claim = await prisma.notificationQueue.updateMany({
+    where: { id: notificationQueueId, status: "DEAD_LETTER" },
     data: {
       status: "PENDING",
       deadLetteredAt: null,
@@ -87,4 +114,16 @@ export async function retryNotificationRecord(
       nextAttemptAt: now,
     },
   });
+
+  if (claim.count !== 1) {
+    throw new RetryNotAllowedError(notificationQueueId);
+  }
+
+  return {
+    id: notificationQueueId,
+    status: "PENDING",
+    deadLetteredAt: null,
+    lastError: null,
+    nextAttemptAt: now,
+  };
 }

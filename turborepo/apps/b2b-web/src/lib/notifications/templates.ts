@@ -174,8 +174,63 @@ export function getTemplateByKey(templateKey: string): MessageTemplate {
   return found;
 }
 
+/// NTF-TEMPLATE-STORE (2026-09-24): treść AKTUALNIE obowiązująca mieszka w tabeli
+/// `message_templates` (model Prisma `MessageTemplate`), edytowalnej z panelu — nie
+/// w stałej `TEMPLATE_DEFINITIONS` powyżej. Ta stała ZOSTAJE jako fallback/seed:
+/// gdy w bazie nie ma jeszcze opublikowanej wersji dla danego templateKey/channel
+/// (dane historyczne, środowisko bez seeda, albo atrapa Prismy w testach
+/// jednostkowych bez modelu `messageTemplate`), ścieżka wysyłki nie ma się na czym
+/// wywalić — wraca do znanej, poprawnej treści zamiast pustego SMS-a do klienta.
+export interface ResolvedTemplateContent {
+  subject?: string;
+  bodyTemplate: string;
+  /// UUID wersji z `message_templates`, gdy treść faktycznie przyszła z bazy;
+  /// `null` gdy zadziałał fallback na stałą (nic do zapisania w `templateVersionId`).
+  templateVersionId: string | null;
+}
+
+export interface MessageTemplateStore {
+  messageTemplate?: {
+    findFirst: (args: {
+      where: { templateKey: string; channel: string; isCurrent: boolean };
+      orderBy?: Record<string, "asc" | "desc">;
+    }) => Promise<{ id: string; subject: string | null; body: string } | null>;
+  };
+}
+
+/// Czyta AKTUALNĄ (opublikowaną, `isCurrent: true`) wersję szablonu z bazy dla
+/// danego `templateKey` + `channel` (SMS i EMAIL tego samego powiadomienia mają
+/// różną treść — patrz komentarz przy modelu `MessageTemplate`). Brak modelu
+/// `messageTemplate` na przekazanym kliencie (atrapa w testach jednostkowych) albo
+/// brak opublikowanej wersji w bazie -> fallback na `TEMPLATE_DEFINITIONS`.
+export async function resolveCurrentTemplateContent(
+  prisma: MessageTemplateStore | undefined,
+  templateKey: string,
+  channel: string
+): Promise<ResolvedTemplateContent> {
+  const dbRow = await prisma?.messageTemplate?.findFirst?.({
+    where: { templateKey, channel, isCurrent: true },
+    orderBy: { versionNo: "desc" },
+  });
+
+  if (dbRow) {
+    return {
+      subject: dbRow.subject ?? undefined,
+      bodyTemplate: dbRow.body,
+      templateVersionId: dbRow.id,
+    };
+  }
+
+  const fallback = getTemplateByKey(templateKey);
+  return {
+    subject: fallback.subject,
+    bodyTemplate: fallback.bodyTemplate,
+    templateVersionId: null,
+  };
+}
+
 export function renderMessageTemplate(
-  template: MessageTemplate,
+  template: { subject?: string; bodyTemplate: string },
   payload: Record<string, unknown>
 ): { subject?: string; body: string } {
   let body = template.bodyTemplate;

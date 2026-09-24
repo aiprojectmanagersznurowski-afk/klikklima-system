@@ -55,6 +55,10 @@ export function NotificationsClient({ initialItems, total }: NotificationsClient
             prev.map((it) => (it.id === id ? { ...it, ...res.item, status: "PENDING" } : it))
           );
           setMessage({ text: "Wiadomość została przywrócona do kolejki oczekujących" });
+        } else if (!res.success) {
+          // Błąd domenowy (np. wiersz nie jest już w DEAD_LETTER) — komunikat,
+          // nie wyjątek.
+          setMessage({ text: res.message ?? "Ponowienie zostało odrzucone", isError: true });
         }
       } catch (err) {
         setMessage({ text: err instanceof Error ? err.message : "Błąd ponawiania", isError: true });

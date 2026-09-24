@@ -4,7 +4,7 @@ import { can } from "@klikklima/contracts";
 import { prisma } from "@repo/database";
 import { getCurrentActorRole } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
-import { retryNotificationRecord } from "@/lib/notifications/retry";
+import { retryNotificationRecord, RetryNotAllowedError } from "@/lib/notifications/retry";
 import { processNotificationQueue } from "@/lib/notifications/dispatcher";
 
 export async function getNotificationsListAction(params: {
@@ -51,13 +51,26 @@ export async function retryNotificationAction(notificationId: string) {
     throw new Error("Brak uprawnień do ponawiania powiadomień");
   }
 
-  const updated = await retryNotificationRecord(prisma, notificationId);
-  revalidatePath("/notifications");
+  try {
+    const updated = await retryNotificationRecord(prisma, notificationId);
+    revalidatePath("/notifications");
 
-  return {
-    success: true,
-    item: updated,
-  };
+    return {
+      success: true,
+      item: updated,
+    };
+  } catch (error) {
+    if (error instanceof RetryNotAllowedError) {
+      // Błąd domenowy (wiersz nie jest w DEAD_LETTER) — komunikat dla użytkownika,
+      // nie wyjątek 500 (CLAUDE.md: błędy domenowe jako wynik).
+      return {
+        success: false,
+        code: "RETRY_NOT_ALLOWED" as const,
+        message: error.message,
+      };
+    }
+    throw error;
+  }
 }
 
 export async function triggerQueueDispatchAction() {
