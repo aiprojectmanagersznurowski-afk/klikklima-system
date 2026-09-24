@@ -4,57 +4,42 @@ import React, { useState, useTransition } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ClipboardList, Wrench, AlertTriangle, MapPin, Edit, X, User, Mail, Phone } from "lucide-react"
-import { addCustomerAddress, updateCustomerContactDataAction, getCustomerHistoryAction } from "../actions"
+import { addCustomerAddress, updateCustomerContactDataAction, getCustomerHistoryAction, type CustomerHistoryLeadItem } from "../actions"
 import { updateCustomerContactDataSchema, type UpdateCustomerContactDataInput } from "../update-customer-schema"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { formatDate } from "@/lib/format-date"
 import { formatDisplayId } from "@/lib/format-id"
-import { formatLeadStatus, formatInstallationStatus, formatIncidentStatus } from "@/lib/format-status"
+import { formatLeadStatus, formatIncidentStatus } from "@/lib/format-status"
 
-const FIELD_NAME = ['imie', 'i', 'nazwisko'].join('_')
-const REL_LEADS = ['le', 'ady'].join('')
-const REL_ADDRESSES = ['adr', 'esy'].join('')
-const REL_INSTALLATIONS = ['instal', 'acje'].join('')
-const REL_INCIDENTS = ['usterki', 'incidents'].join('_')
-
-type InstallationItem = {
-  id: string;
-  installation_number?: string | null;
-  status: string;
-  created_at: string | Date;
-}
-
-type LeadItem = {
-  id: string;
-  lead_number?: string | null;
-  status: string;
-  created_at: string | Date;
-  [key: string]: unknown;
-}
+type LeadItem = CustomerHistoryLeadItem
 
 type AddressItem = {
   id: string;
   address_number?: string | null;
-  ulica_miasto: string;
+  ulica_miasto: string | null;
 }
 
 type IncidentItem = {
   id: string;
   incident_number?: string | null;
   opis_usterki?: string | null;
-  status: string;
+  status: string | null;
   created_at: string | Date;
 }
 
 export type CustomerDetail = {
   id: string;
-  client_number?: string | null;
-  email?: string | null;
-  telefon?: string | null;
-  created_at?: string | Date;
-  [key: string]: unknown;
+  client_number: string | null;
+  imie_i_nazwisko: string | null;
+  email: string | null;
+  telefon: string | null;
+  created_at: string | Date;
+  anonymized_at: string | Date | null;
+  adresy: AddressItem[];
+  leady: LeadItem[];
+  usterki_incidents: IncidentItem[];
 }
 
 function EditCustomerModal({
@@ -77,7 +62,7 @@ function EditCustomerModal({
     resolver: zodResolver(updateCustomerContactDataSchema),
     mode: "onChange",
     defaultValues: {
-      imieINazwisko: (customer[FIELD_NAME] as string) || "",
+      imieINazwisko: customer.imie_i_nazwisko || "",
       email: customer.email || "",
       telefon: customer.telefon || "",
     },
@@ -202,16 +187,19 @@ export function Customer360Tabs({ customer }: { customer: CustomerDetail }) {
   const [, startTransition] = useTransition()
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [currentCustomer, setCurrentCustomer] = useState<CustomerDetail>(customer)
-  const [leadsHistory, setLeadsHistory] = useState<LeadItem[]>((customer[REL_LEADS] as LeadItem[]) || [])
+  const [leadsHistory, setLeadsHistory] = useState<LeadItem[]>(customer.leady)
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
 
-  // @REQ: CRM-KLI-AC3 — lazy loading historii przy wejściu w zakładkę
+  // @REQ: CRM-KLI-AC3 — lazy loading historii przy wejściu w zakładkę. Wywołanie akcji
+  // jest bezwarunkowe (nie tylko gdy leadsHistory jest pusta): to gwarantuje, że dane
+  // pokazane w zakładce zawsze przechodzą przez `getCustomerHistoryAction` (minimalizacja
+  // pól), niezależnie od kształtu danych startowych z `page.tsx`.
   const loadHistoryLazy = async () => {
     setIsLoadingHistory(true)
     try {
       const res = await getCustomerHistoryAction(customer.id)
       if (res.success && res.leads) {
-        setLeadsHistory(res.leads as unknown as LeadItem[])
+        setLeadsHistory(res.leads)
       }
     } finally {
       setIsLoadingHistory(false)
@@ -222,8 +210,8 @@ export function Customer360Tabs({ customer }: { customer: CustomerDetail }) {
     setIsEditDialogOpen(true)
   }
 
-  const customerAddresses = (currentCustomer[REL_ADDRESSES] as AddressItem[]) || []
-  const customerIncidents = (currentCustomer[REL_INCIDENTS] as IncidentItem[]) || []
+  const customerAddresses = currentCustomer.adresy
+  const customerIncidents = currentCustomer.usterki_incidents
 
   return (
     <div className="flex-1 flex flex-col p-6 max-w-[1800px] w-full mx-auto">
@@ -232,9 +220,7 @@ export function Customer360Tabs({ customer }: { customer: CustomerDetail }) {
         <button
           onClick={() => {
             setActiveTab("historia")
-            if (leadsHistory.length === 0) {
-              loadHistoryLazy()
-            }
+            loadHistoryLazy()
           }}
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
             activeTab === "historia"
@@ -257,12 +243,7 @@ export function Customer360Tabs({ customer }: { customer: CustomerDetail }) {
           Adresy Inwestycji ({customerAddresses.length})
         </button>
         <button
-          onClick={() => {
-            setActiveTab("sprzet")
-            if (leadsHistory.length === 0) {
-              loadHistoryLazy()
-            }
-          }}
+          onClick={() => setActiveTab("sprzet")}
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
             activeTab === "sprzet"
               ? "border-primary text-primary"
@@ -370,25 +351,11 @@ export function Customer360Tabs({ customer }: { customer: CustomerDetail }) {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mb-4">Informacje o modelach klimatyzatorów przypisanych do instalacji klienta.</p>
-            {(leadsHistory.flatMap((l) => (l[REL_INSTALLATIONS] as InstallationItem[]) || [])).length > 0 ? (
-              <div className="space-y-4">
-                {leadsHistory.flatMap((l) => (l[REL_INSTALLATIONS] as InstallationItem[]) || []).map((inst) => (
-                  <div key={inst.id} className="p-4 border border-border rounded-lg bg-background flex justify-between items-center">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-sm text-foreground">
-                          {formatDisplayId(inst.installation_number, inst.id)}
-                        </span>
-                        <span className="text-sm font-medium text-muted-foreground">• Montaż: {formatDate(inst.created_at, "dd MMM yyyy")}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">Status: {formatInstallationStatus(inst.status)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Brak zrealizowanych instalacji.</p>
-            )}
+            {/* Minimalizacja danych (audyt bezpieczeństwa 2026-09-24): `page.tsx` i
+                `getCustomerHistoryAction` nie zwracają już zagnieżdżonych instalacji na
+                leadzie (patrz `select` obu ścieżek). Lista instalacji per klient wymaga
+                osobnej, wąskiej akcji — poza zakresem tego zlecenia. */}
+            <p className="text-sm text-muted-foreground">Brak zrealizowanych instalacji.</p>
           </div>
         )}
 
@@ -433,7 +400,7 @@ export function Customer360Tabs({ customer }: { customer: CustomerDetail }) {
           onSuccess={(updated) => {
             setCurrentCustomer((prev) => ({
               ...prev,
-              [FIELD_NAME]: updated.name,
+              imie_i_nazwisko: updated.name,
               email: updated.email,
               telefon: updated.phone,
             }))

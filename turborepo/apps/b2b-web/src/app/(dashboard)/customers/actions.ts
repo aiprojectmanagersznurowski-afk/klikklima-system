@@ -201,13 +201,23 @@ export async function updateCustomerContactDataAction(
   }
 }
 
+// Kształt zwracany przez getCustomerHistoryAction — dokładnie te pola, które renderuje
+// zakładka "Historia" w tabs-client.tsx. Eksportowany, żeby klient nie musiał rzutować
+// przez `unknown` na własny typ (patrz `Customer360Tabs`).
+export type CustomerHistoryLeadItem = {
+  id: string;
+  lead_number: string | null;
+  status: string | null;
+  created_at: Date;
+};
+
 /**
  * @REQ: CRM-KLI-AC3 — Karta 360 ładuje historię asynchronicznie (lazy loading),
  * eliminując N+1 zapytań przy dużej historii klienta.
  */
 export async function getCustomerHistoryAction(
   id: string
-): Promise<{ success: boolean; error?: string; leads?: Array<Record<string, unknown>> }> {
+): Promise<{ success: boolean; error?: string; leads?: CustomerHistoryLeadItem[] }> {
   let actorRole;
   try {
     actorRole = await getCurrentActorRole();

@@ -23,8 +23,6 @@ import { StatusPill } from "@/components/ui/status-pill"
 import { EMPTY_VALUE } from "@/lib/empty-value"
 import type { InstallationStatus } from "@repo/database"
 
-const TBL_REALTIME_INSTALLATIONS = ['instal', 'acje'].join('')
-
 export function InstallationsClient({
   initialInstallations,
   actorRole,
@@ -57,7 +55,7 @@ export function InstallationsClient({
           {
             event: 'UPDATE',
             schema: 'public',
-            table: TBL_REALTIME_INSTALLATIONS,
+            table: 'instalacje',
           },
           (payload) => {
             if (payload.new && typeof payload.new === 'object') {

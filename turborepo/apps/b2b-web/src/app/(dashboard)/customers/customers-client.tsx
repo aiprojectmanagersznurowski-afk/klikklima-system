@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Search, MoreHorizontal, User, Mail, Phone, Calendar, ExternalLink, ShieldAlert, FileText, Wrench, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CustomerSummary, anonymizeClientAction } from "./actions"
+import { CustomerSummary, anonymizeClientAction, getCustomers } from "./actions"
 import { AUDIT_REQUIREMENTS, type Role } from "@klikklima/contracts"
 import { isAnonymizeMenuItemVisible } from "./menu-visibility"
 import { getPaginationState } from "./pagination-state"
@@ -161,17 +161,15 @@ export function CustomersClient({
   actorRole,
   totalPages,
   currentPage,
-  initialQuery = "",
 }: {
   initialCustomers: CustomerSummary[]
   actorRole: Role | null
   totalPages: number
   currentPage: number
-  initialQuery?: string
 }) {
   const router = useRouter()
   const [customers, setCustomers] = useState<CustomerSummary[]>(initialCustomers)
-  const [searchQuery, setSearchQuery] = useState(initialQuery)
+  const [searchQuery, setSearchQuery] = useState("")
   const [isPending, startTransition] = useTransition()
   const [anonymizeTarget, setAnonymizeTarget] = useState<CustomerSummary | null>(null)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -187,27 +185,22 @@ export function CustomersClient({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // MAJOR (audyt bezpieczeństwa 2026-09-24): fraza wyszukiwania NIE trafia do query
-    // stringu URL-a (historia przeglądarki, nagłówek Referer, logi serwera to wyciek PII
-    // poza bazę danych). Filtrowanie działa wyłącznie przez lokalny stan `searchQuery`
-    // (patrz `filtered` poniżej); paginacja zostaje w URL-u.
+    // MAJOR (audyt bezpieczeństwa 2026-09-24, runda 3): fraza wyszukiwania NIE trafia do
+    // query stringu URL-a (historia przeglądarki, nagłówek Referer, logi serwera to wyciek
+    // PII poza bazę danych) — leci wyłącznie jako argument wywołania Server Action
+    // (`getCustomers`), która egzekwuje bramkę `clients.read` i szuka po CAŁEJ bazie, nie
+    // tylko po bieżącej stronie ≤50 wierszy widocznych dziś na ekranie. Paginacja zostaje
+    // sterowana przez URL (`prevHref`/`nextHref` niżej) jak dotychczas — wyszukiwanie
+    // zastępuje wyłącznie zawartość bieżącej listy.
+    const trimmed = searchQuery.trim()
     startTransition(() => {
-      const params = new URLSearchParams()
-      params.set("page", "1")
-      router.push(`/customers?${params.toString()}`)
+      getCustomers({ query: trimmed }).then((result) => {
+        setCustomers(result.customers)
+      })
     })
   }
 
-  const filtered = customers.filter(c => {
-    if (searchQuery && !initialQuery) {
-      const q = searchQuery.toLowerCase();
-      return c.name.toLowerCase().includes(q) || 
-             (c.email && c.email.toLowerCase().includes(q)) || 
-             (c.phone && c.phone.includes(q)) ||
-             c.id.toLowerCase().includes(q);
-    }
-    return true;
-  });
+  const filtered = customers;
 
   return (
     <div className="h-full flex flex-col max-w-[1800px] mx-auto animate-in fade-in duration-300">
