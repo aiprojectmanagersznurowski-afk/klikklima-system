@@ -88,6 +88,59 @@ export const config = {
     { id: 'magic-sla', re: '(differenceInDays|differenceInHours|daysUntil|hoursSince)\\s*\\([^)]*\\)\\s*(<|>|<=|>=|===)\\s*\\d+', appliesTo: 'apps/.*\\.(ts|tsx)$', msg: 'ADR-011: próg SLA jako literał. Importuj nazwaną politykę z @klikklima/contracts/sla — cztery różne mechanizmy nazywały się „SLA" i to jest sposób, w jaki próg z jednego trafiał do drugiego.', allowIn: ['packages/contracts/'] },
     { id: 'magic-sla-hour', re: '(getHours\\(\\)|hour)\\s*(>=|>|===)\\s*16\\b', appliesTo: 'apps/.*\\.(ts|tsx)$', msg: 'ADR-011: godzina alertu instalacyjnego to SLA.INSTALL_DAY_ALERT.hourOfDay, nie literał 16.' },
     { id: 'magic-sla-days', re: '\\b(14|30|48)\\s*\\*\\s*24\\s*\\*\\s*60|\\b48\\s*\\*\\s*60\\s*\\*\\s*60', appliesTo: 'apps/.*\\.(ts|tsx)$', msg: 'ADR-011: okres SLA przeliczany z literału. Użyj nazwanej polityki z kontraktu.' },
+
+    // ══════════════════════════════════════════════════════════════════════════════════════
+    // WYKRYWANIE OMIJANIA BRAMEK (2026-09-24, wymaganie GATE-EVASION-DETECT)
+    //
+    // Te dwie reguły różnią się w zamiarze od wszystkich powyższych. Tamte pilnują DECYZJI
+    // (ADR-001, ADR-002, ADR-008…) i łamie się je przez nieuwagę. Te pilnują SAMEJ BRAMKI
+    // i łamie się je CELOWO — każdy z dwóch wzorców pochodzi z realnej gałęzi, nie z rozważań
+    // o tym, co ktoś mógłby zrobić. Dlatego komunikat mówi wprost, że rzecz wygląda na obejście:
+    // jeżeli w danym przypadku obejściem nie jest, to jest to rozmowa z człowiekiem i wpis
+    // w allowIn, a nie cicha zmiana kodu tak, żeby regex przestał trafiać.
+    //
+    // ROZSZERZENIE TYCH REGUŁ JEST OBJĘTE TĄ SAMĄ DYSCYPLINĄ CO REGUŁY WALIDATORA: każda ma
+    // stałą sondę w tools/kk-selftest.mjs (sekcja SONDY REGUŁ TREŚCIOWYCH), w tym sondę
+    // NEGATYWNĄ. Reguła bez sondy negatywnej jest regułą, która zostanie wyciszona.
+    // ══════════════════════════════════════════════════════════════════════════════════════
+
+    // WZORZEC 1 (gałąź feat/crm-cards): identyfikator sklejony z kawałków, żeby skaner
+    // nazewnictwa go nie zobaczył — `const TBL = ['kli','enci'].join('')`.
+    //
+    // DYSKRYMINATOR JEST WĄSKI I ŚWIADOMY: łapiemy wyłącznie join z PUSTYM separatorem oraz
+    // konkatenację dwóch literałów BEZ SPACJI. Powód: `['a','b'].join(', ')` buduje tekst dla
+    // człowieka i jest całkowicie legalne, a `'Witaj, ' + imie` to zwykła interpolacja. Sklejenie
+    // pustym separatorem daje JEDEN identyfikator i nie ma innego zastosowania niż to, żeby
+    // nazwa nie wystąpiła w pliku dosłownie. Reguła celuje w MECHANIZM, nie w listę porzuconych
+    // nazw — zawężenie do dzisiejszego słownika (leady, klienci…) umarłoby po cichu w dniu,
+    // w którym ktoś sklei nazwę spoza niego.
+    //
+    // allowIn NA ŚCIEŻKI TESTOWE JEST KONIECZNE, NIE WYGODNE — i jest znanym ograniczeniem:
+    // dwa istniejące testy (no-as-any-odpowiedzi-triage.test.ts, chat-ai-input.test.ts) używają
+    // DOKŁADNIE tego mechanizmu w celu legalnym — budują zakazany token (`['an','y'].join('')`),
+    // żeby plik testu asertujący o zakazie sam się o ten zakaz nie odbił. Bez wyłączenia reguła
+    // byłaby czerwona od pierwszego dnia na kodzie, który jest poprawny. CENA: obejście ukryte
+    // w pliku testowym nie zostanie złapane. To jest akceptowalne, bo skaner nazewnictwa pilnuje
+    // identyfikatorów PRODUKCYJNYCH — a tam reguła działa bez wyłączeń.
+    { id: 'gate-evasion-split-identifier', re: '\\[\\s*(?:[\'"][A-Za-z_][A-Za-z0-9_]{0,15}[\'"]\\s*,\\s*)+[\'"][A-Za-z_][A-Za-z0-9_]{0,15}[\'"]\\s*\\]\\s*\\.\\s*join\\(\\s*(?:\'\'|"")\\s*\\)|[\'"][A-Za-z_][A-Za-z0-9_]*[\'"]\\s*\\+\\s*[\'"][A-Za-z_][A-Za-z0-9_]*[\'"]', appliesTo: '\\.(ts|tsx)$', allowIn: ['/tests/', '.test.', '.spec.', '/e2e/'], msg: 'Identyfikator sklejany z kawałków (join z pustym separatorem albo konkatenacja dwóch literałów bez spacji). To wygląda na omijanie skanera nazewnictwa (ADR-002) — nazwa nie występuje w pliku dosłownie, więc kk-naming jej nie widzi. Napisz nazwę wprost. Jeżeli to naprawdę nie jest obejście, dopisz ścieżkę do allowIn tej reguły ŚWIADOMIE, a nie przepisuj kodu tak, żeby regex przestał trafiać.' },
+
+    // WZORZEC 2: `prisma as unknown as SomeDynamicType` — `as any` w przebraniu.
+    //
+    // Podwójne rzutowanie przez `unknown` zdejmuje typy Prismy z CAŁEGO pliku (od tego miejsca
+    // każde wywołanie klienta jest nietypowane), a regułę `as-any` omija, bo nie zawiera słowa
+    // `any`. Skutek jest gorszy niż przy `as any` w jednym miejscu: tamto widać w recenzji, to
+    // wygląda na porządne typowanie.
+    //
+    // REGUŁA JEST CELOWO WĄSKA I TO JEST ROZSTRZYGNIĘCIE, NIE NIEDBAŁOŚĆ: `as unknown as`
+    // SAMO W SOBIE ma w tym repozytorium ~20 zastosowań LEGALNYCH, w przeważającej części
+    // w testach, które celowo podsuwają wartość niepoprawnego typu, żeby sprawdzić walidację
+    // po stronie serwera (`undefined as unknown as string`, `badWeekday as unknown as number`).
+    // Zakaz całej konstrukcji byłby maszynką do fałszywych alarmów, czyli regułą do wyciszenia.
+    // Łapiemy zatem dwa kształty i tylko je: rzutowanie czegoś o nazwie zawierającej `prisma`
+    // oraz rzutowanie NA typ prismowy. Oba miały w repozytorium ZERO wystąpień w chwili
+    // dodania reguły (sprawdzone 2026-09-24), więc reguła wchodzi jako blokująca, a nie jako
+    // ostrzeżenie do posprzątania kiedyś.
+    { id: 'gate-evasion-prisma-recast', re: '\\b\\w*[Pp]risma\\w*\\s+as\\s+unknown\\s+as\\b|\\bas\\s+unknown\\s+as\\s+\\w*(?:Prisma|Delegate)\\w*\\b', appliesTo: '\\.(ts|tsx)$', msg: 'Podwójne rzutowanie klienta Prismy przez unknown (`prisma as unknown as X`). To jest `as any` w przebraniu: zdejmuje typy Prismy z całego pliku, a regułę as-any omija, bo nie zawiera słowa any. Opieramy się na typach generowanych przez Prismę (engineering_standards.md §Types) — jeżeli typ nie pasuje, to jest problem do zgłoszenia w Work Orderze, nie do rzutowania.' },
   ],
 
   // Komendy blokowane w Bashu agenta

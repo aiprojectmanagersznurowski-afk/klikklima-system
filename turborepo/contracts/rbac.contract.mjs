@@ -56,11 +56,40 @@ export const RESOURCES = [
   // Gdyby kiedykolwiek pojawiła się potrzeba innego prawa do pozycji niż do oferty (np. ekipa
   // widzi pozycje, ale nie widzi cen) — to jest moment na osobny zasób, nie wcześniej.
   'price_list_items', 'installation_contracts', 'signatures', 'installation_photos',
+  // ── D-API-2 (2026-09-24, okno KK-IMPL-2026Q4) ──
+  // Odpowiada tabeli public.security_events (migracja 20260926091000).
+  //
+  // CZEGO TU ŚWIADOMIE NIE MA: `field_request_idempotency` (D-API-1, migracja 20260926090000).
+  // To jest infrastruktura TRANSPORTU, a nie zasób biznesowy — wiersz jest zużytym biletem na
+  // powtórzenie żądania, nie danymi, do których ktokolwiek ma albo nie ma prawa. Nikt go nie
+  // czyta z panelu, nie ma ekranu, nie ma odczytu przez `can()`. Dopisanie go tutaj wymusiłoby
+  // wiersz w MATRIX (R13), czyli zmyśloną odpowiedź na pytanie, którego nikt nie zadaje, i przy
+  // okazji zasugerowałoby, że istnieje ścieżka odczytu — a jedynym konsumentem jest INSERT
+  // wewnątrz transakcji zapisu. Decyzja wprost potwierdzona w zleceniu.
+  'security_events',
 ];
 
 /** capability: read | create | update | delete | assign */
 export const MATRIX = [
-  { resource: 'clients',            read: ['admin', 'dyspozytor'],                     create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor'], delete: ['admin'] },
+  // `read` rozszerzone o 'audytor:own' i 'monter:own' 2026-09-24 (wyjaśnienie Michała do
+  // CRM-KLI-AC2): audytor i ekipa montażowa MUSZĄ widzieć dane kontaktowe swojego zlecenia —
+  // bez telefonu do klienta nie da się dojechać ani uprzedzić o spóźnieniu — ale nie mogą
+  // dostać przy tej okazji dostępu do CRM.
+  //
+  // CO ZNACZY TU `:own` (to jest nietypowe i dlatego wymaga zapisania): klient NIE MA
+  // przypisanego audytora ani ekipy. Przypisanie wisi na LEADZIE i na MONTAŻU. `own` znaczy
+  // więc „klient osiągalny przez leada albo montaż przypisany do tego aktora", a nie
+  // „klient z kolumną wskazującą na tego aktora" — kolumny takiej nie ma i nie powstaje.
+  // To jest ten sam kształt zawężenia co przy `installations.read: monter:own`, tylko o jedno
+  // złączenie dalej, i musi go wyrazić funkcja domenowa, bo macierz nie opisuje ścieżek złączeń.
+  //
+  // CZEGO TO ROZSZERZENIE NIE DAJE: `create`, `update` i `delete` zostają bez zmian przy
+  // ['admin', 'dyspozytor'] / ['admin']. Prawo zobaczenia numeru telefonu na swoim zleceniu
+  // nie może nieść prawa poprawienia tego numeru — inaczej korekta w terenie rozjeżdżałaby
+  // kartotekę klienta bez śladu w CRM. Macierz nie rozróżnia KOLUMN, więc zawężenie odczytu
+  // do trzech pól (imię i nazwisko, telefon, adres) NIE jest wyrażone tym wierszem — wyraża
+  // je funkcja domenowa i to jest jawnie zapisane w kryteriach CRM-KLI-AC2.
+  { resource: 'clients',            read: ['admin', 'dyspozytor', 'audytor:own', 'monter:own'], create: ['admin', 'dyspozytor'], update: ['admin', 'dyspozytor'], delete: ['admin'] },
   // `create` rozszerzone o rolę `audytor` 2026-09-23 (decyzja Michała D14 z 2026-09-21,
   // okno KK-IMPL-2026Q4): audytor zakłada leada w terenie dla klienta, który nie przeszedł
   // przez Triage (FLD-AUDIT-LEAD-CREATE). To jest DRUGIE wejście do lejka i zarazem jedyny
@@ -222,6 +251,38 @@ export const MATRIX = [
   // komukolwiek; pomyłka naprawia się nowym zdjęciem, nie nadpisaniem starego.
   // `delete` wyłącznie admin — zgodnie z globalną zasadą „usuwa wyłącznie admin".
   { resource: 'installation_photos', read: ['admin', 'dyspozytor', 'audytor:own', 'monter:own'], create: ['audytor', 'monter'], update: [],           delete: ['admin'] },
+  //
+  // ── D-API-2: security_events — dziennik odmów dostępu (2026-09-24) ──
+  //
+  // DLACZEGO OSOBNA TABELA, A NIE audit_log (decyzja Michała, uzasadnienie powtórzone
+  // w komentarzu migracji, bo to jest pytanie, które wróci): `audit_log` odpowiada na pytanie
+  // „co się działo z danymi TEJ OSOBY" i cały jego kształt z tego wynika — `record_id NOT NULL`
+  // (musi wskazywać rekord), `justification` o długości ≥ 10 znaków (człowiek tłumaczy, czemu
+  // to zrobił) i `legal_basis` ze słownika RODO. Odmowa dostępu nie ma rekordu, którego
+  // dotyczy (bywa, że właśnie dlatego jest odmową), nie ma uzasadnienia od człowieka i nie ma
+  // podstawy prawnej — wpisanie jej tam wymagałoby ATRAP w trzech kolumnach naraz, a atrapa
+  // w rejestrze dowodowym psuje ten rejestr dla jego własnego zastosowania.
+  // Drugi, niezależny powód: PROFIL RUCHU. `audit_log` to pojedyncze wpisy przy operacjach
+  // wrażliwych; odmowy potrafią przyjść seriami przy skanowaniu. Wspólna tabela znaczy, że
+  // skan zasypuje dowody RODO i psuje retencję 1825 dni policzoną dla zupełnie innego wolumenu.
+  // Dlatego `access_denied` NIE zostało dopisane do AUDIT_REQUIREMENTS.mustLog.
+  //
+  // APPEND-ONLY, profil audit_log / employee_consents / signatures: `update: []`, `delete: []` —
+  // NIKT, łącznie z administratorem. Powód ten sam i wart powtórzenia po raz czwarty: dziennik
+  // odmów, który administrator może poprawić, nie jest dowodem niczego, a to właśnie konto
+  // administratora jest najciekawszym kontem dla kogoś, kto te odmowy generuje.
+  //
+  // `read: ['admin']` — jak przy audit_log. Dyspozytora tu NIE MA świadomie: dziennik odmów
+  // jest narzędziem bezpieczeństwa, nie narzędziem operacyjnym, a lista „kto czego próbował"
+  // jest sama w sobie mapą tego, co warto spróbować.
+  // `create: ['admin']` jest formalnością wymuszoną przez R22-owy kształt wiersza append-only
+  // i NIE opisuje faktycznego producenta: wiersze wstawia warstwa autoryzacji po stronie
+  // serwera przy odmowie, a nie administrator z panelu.
+  //
+  // GRANICA, KTÓRĄ TRZEBA ZNAĆ (kryterium SEC-ACCESS-DENIED-LOG): logujemy odmowy aktora
+  // UWIERZYTELNIONEGO. Ruch anonimowy NIE tworzy wierszy — inaczej dziennik odmów sam staje
+  // się wektorem zapełnienia dysku, czyli zamienia się w podatność, którą miał wykrywać.
+  { resource: 'security_events',    read: ['admin'],                                   create: ['admin'],               update: [],                      delete: [] },
 ];
 
 /**
