@@ -9,7 +9,7 @@ export type Role = (typeof ROLES)[number];
 export type Capability = 'read' | 'create' | 'update' | 'delete' | 'assign';
 
 export const PERMISSIONS: Record<string, Partial<Record<Capability, string[]>>> = {
-  clients: { read: ["admin","dyspozytor"], create: ["admin","dyspozytor"], update: ["admin","dyspozytor"], delete: ["admin"] },
+  clients: { read: ["admin","dyspozytor","audytor:own","monter:own"], create: ["admin","dyspozytor"], update: ["admin","dyspozytor"], delete: ["admin"] },
   leads: { read: ["admin","dyspozytor","audytor:own"], create: ["admin","dyspozytor","audytor"], update: ["admin","dyspozytor"], delete: ["admin"], assign: ["admin"] },
   quotes: { read: ["admin","dyspozytor","audytor:own"], create: ["audytor","admin"], update: ["audytor:own","admin"], delete: ["admin"] },
   installations: { read: ["admin","dyspozytor","monter:own"], create: ["admin","dyspozytor"], update: ["admin","dyspozytor","monter:own"], delete: ["admin"] },
@@ -41,6 +41,7 @@ export const PERMISSIONS: Record<string, Partial<Record<Capability, string[]>>> 
   installation_contracts: { read: ["admin","dyspozytor","audytor:own"], create: ["admin","dyspozytor","audytor"], update: ["admin","audytor:own"], delete: ["admin"] },
   signatures: { read: ["admin","dyspozytor","audytor:own","monter:own"], create: ["audytor","monter"], update: [], delete: [] },
   installation_photos: { read: ["admin","dyspozytor","audytor:own","monter:own"], create: ["audytor","monter"], update: [], delete: ["admin"] },
+  security_events: { read: ["admin"], create: ["admin"], update: [], delete: [] },
 };
 
 export const DELETE_POLICIES = [

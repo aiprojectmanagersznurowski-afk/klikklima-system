@@ -214,6 +214,31 @@ model soft_leady {
   dane_cz_stkowe  Json?    @map("dane_cząstkowe")
   status          String?  @default("Nowy")
   created_at      DateTime @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+
+  /// ── B2C-SOFT-LEAD-CONSENT (2026-09-24, migracja 20260926094000) ──
+  /// Luka RODO potwierdzona przez Michała 2026-09-24: tabela zbierała numer telefonu ze strony
+  /// lądowania (gałąź feat/b2c-triage) BEZ jakiejkolwiek zarejestrowanej podstawy — przed tą
+  /// zmianą miała dokładnie pięć kolumn i ani jednej dotyczącej zgody.
+  ///
+  /// Wzorzec B2C-CONSENT-RODO i FLD-CONSENT-ACCEPT, bez odstępstw: NIGDY sama flaga logiczna,
+  /// zawsze WSKAZANIE WERSJI kluczem obcym + moment. Flaga „zgodził się" nie odpowiada na
+  /// pytanie „na co", a to jest jedyne pytanie, które pada przy kontroli.
+  ///
+  /// OBIE KOLUMNY SĄ NULLOWALNE I TO JEST ŚWIADOME, NIE NIEDOKOŃCZONE: tabela ma dane
+  /// produkcyjne, a kolumna NOT NULL bez wartości domyślnej na istniejącej tabeli jest
+  /// zabroniona. Zaostrzenie do NOT NULL wymaga najpierw rozstrzygnięcia, co zrobić
+  /// z wierszami sprzed zmiany — backfill fałszywą zgodą jest ODRZUCONY wprost (byłby
+  /// dowodem wytworzonym po fakcie). To jest pytanie do Work Ordera, nie do implementacji.
+  /// Egzekwowanie „nie ma soft leada bez zgody" żyje do tego czasu w Server Action (Zod).
+  consentVersionId String?   @map("consent_version_id") @db.Uuid
+  consentGrantedAt DateTime? @map("consent_granted_at") @db.Timestamptz(6)
+
+  /// RESTRICT, nie CASCADE i nie SET NULL — dokładnie jak przy employee_consents.version_id:
+  /// wersji dokumentu, na którą ktoś się powołał, nie wolno usunąć, a zgoda wskazująca
+  /// „coś, czego już nie ma" nie jest dowodem niczego.
+  consentVersion LegalDocumentVersion? @relation(fields: [consentVersionId], references: [id], onDelete: Restrict)
+
+  @@index([consentVersionId], map: "soft_leady_consent_version_id_idx")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -655,6 +680,10 @@ model LegalDocumentVersion {
 
   consents EmployeeConsent[]
 
+  /// B2C-SOFT-LEAD-CONSENT (2026-09-24): zgody przy porzuconych leadach wskazują wersję
+  /// dokumentu TYM SAMYM mechanizmem co zgody pracownicze — kluczem obcym, nigdy flagą.
+  softLeadConsents soft_leady[]
+
   @@unique([documentKind, versionNo], map: "legal_document_versions_document_kind_version_no_key")
   @@map("legal_document_versions")
 }
@@ -813,8 +842,49 @@ model NotificationQueue {
 
   payload Json
 
-  /// CHECK notification_queue_status_check w bazie: PENDING|SENT|ERROR|DEAD_LETTER.
+  /// ── NTF-QUEUE-RENDERED-BODY (2026-09-24, migracja 20260926093000) ──
+  /// Treść WYRENDEROWANA w chwili kolejkowania. Dopóki szablony były stałą w TypeScripcie,
+  /// treść dawała się odtworzyć z gita (klucz + payload + commit z dnia wysyłki). Po
+  /// przeniesieniu szablonów do edytowalnej tabeli message_templates (NTF-TEMPLATE-STORE)
+  /// ta droga znika: odtworzenie dałoby treść AKTUALNĄ, nie tę wysłaną.
+  ///
+  /// Pytanie, na które to odpowiada, nie jest techniczne: „co dokładnie napisaliście klientowi
+  /// 14 marca" pada w sporze o ofertę albo o termin, a odpowiedź „nie wiemy, szablon zmieniono"
+  /// jest przegraną.
+  ///
+  /// NULLOWALNE, bo tabela ma dane produkcyjne sprzed tej zmiany (wiersze zakolejkowane
+  /// wcześniej nie mają czego tu mieć i backfill nie ma z czego powstać). Dla NOWYCH wierszy
+  /// wypełnienie jest wymogiem wymagania, nie bazy — zaostrzenie do NOT NULL po opróżnieniu
+  /// kolejki z wierszy historycznych jest osobną decyzją.
+  renderedBody String? @map("rendered_body")
+
+  /// Temat — wypełniany dla EMAIL, NULL dla SMS i PUSH (te nie mają tematu). To nie jest
+  /// brakujące dane, tylko kanał bez tego pojęcia.
+  renderedSubject String? @map("rendered_subject")
+
+  /// Wersja szablonu UŻYTA do wyrenderowania. Zapisywana OBOK treści, nie zamiast niej:
+  /// sam numer wymagałby dołączenia do tabeli wersji przy każdym pytaniu, a treść bez numeru
+  /// nie mówi, którą wersję widział wtedy administrator.
+  templateVersionId String?          @map("template_version_id") @db.Uuid
+  templateVersion   MessageTemplate? @relation(fields: [templateVersionId], references: [id], onDelete: Restrict)
+
+  /// CHECK notification_queue_status_check w bazie: PENDING|SENDING|SENT|ERROR|DEAD_LETTER.
+  /// Słownik pochodzi z QUEUE_POLICY.statuses (contracts/notifications.contract.mjs), nie
+  /// z literału w migracji — patrz NTF-QUEUE-CLAIM.
+  ///
+  /// SENDING (2026-09-24) to STAN PRZEJĘCIA WIERSZA, nie etykieta postępu. Dispatcher
+  /// przejmuje wiersz atomowo (updateMany z warunkiem na poprzednim statusie) i wysyła
+  /// WYŁĄCZNIE gdy count === 1 — bez tego dwa równoległe uruchomienia wysyłają klientowi
+  /// ten sam SMS dwa razy (bloker z recenzji feat/ntf-gateway; pułapka nr 4 z CLAUDE.md
+  /// w wydaniu kolejkowym).
   status String @default("PENDING")
+
+  /// Moment przejęcia wiersza przez dispatcher. Istnieje WYŁĄCZNIE po to, żeby dało się
+  /// odzyskać wiersze osierocone: proces zabity między przejęciem a wysyłką zostawia wiersz
+  /// w SENDING, którego nikt nigdy nie podejmie. „SENDING starsze niż próg wraca do PENDING"
+  /// jest częścią NTF-QUEUE-CLAIM, a nie ulepszeniem na później — bez tego mechanizm
+  /// przejęcia zamienia duble na wiadomości, których nikt nie wyśle.
+  claimedAt DateTime? @map("claimed_at") @db.Timestamptz(6)
 
   attempts Int @default(0)
 
@@ -1583,4 +1653,171 @@ model InstallationPhoto {
 
   @@index([installationId, kind])
   @@map("installation_photos")
+}
+
+/// ════════════════════════════════════════════════════════════════════════════════════
+/// PACZKA KONTRAKTOWA 2 (2026-09-24, okno KK-IMPL-2026Q4)
+/// ════════════════════════════════════════════════════════════════════════════════════
+
+/// FLD-API-IDEMPOTENCY-REGISTRY (D-API-1) — migracja 20260926090000.
+///
+/// JEDEN centralny rejestr kluczy idempotencji dla CAŁEJ warstwy zapisu Field App, a nie
+/// tabela pomocnicza przy każdym endpoincie. Warunek 3 z ADR-013 mówi „każdy zapis z urządzenia
+/// niesie klucz idempotencji", ale nie mówi, gdzie ten klucz mieszka — a dopóki nie mieszka
+/// nigdzie, każdy endpoint rozwiązuje to po swojemu, czyli powstaje tyle rejestrów, ile endpointów.
+///
+/// MECHANIZM, KTÓRY TRZEBA ZROZUMIEĆ, ŻEBY GO NIE ZEPSUĆ: wiersz klucza jest wstawiany
+/// JAKO PIERWSZY KROK transakcji wykonującej operację. Blokadą jest SAMO `INSERT` —
+/// dwa równoległe żądania kolidują na UNIQUE natychmiast, zanim którekolwiek wykona pracę.
+/// Wzorzec „sprawdź, czy klucz istnieje, potem wykonaj, potem zapisz klucz" jest ODRZUCONY:
+/// między sprawdzeniem a zapisem mieści się drugie żądanie.
+///
+/// CZEGO TU NIE MA I DLACZEGO: tabela NIE jest zasobem w RESOURCES i nie ma wiersza w MATRIX.
+/// To infrastruktura TRANSPORTU, nie byt uprawnieniowy — wiersz jest zużytym biletem na
+/// powtórzenie żądania, a nie danymi, do których ktokolwiek ma albo nie ma prawa.
+///
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model FieldRequestIdempotency {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// Klucz nadany NA URZĄDZENIU (FLD-OFFLINE-OUTBOX). UNIQUE jest tu całym mechanizmem,
+  /// a nie zabezpieczeniem pomocniczym.
+  idempotencyKey String @unique @map("idempotency_key")
+
+  /// Kto wykonał żądanie — e-mail z ZWERYFIKOWANEGO tokenu, nigdy z treści żądania
+  /// (kryterium 2 z FLD-API-LAYER). Tekst, a nie klucz obcy: pracownik nie jest dziś encją
+  /// (audytorzy i zespoly_monterskie to dwie niepowiązane tabele), a ten rejestr i tak nie
+  /// jest dowodem — nie warto kupować za to polimorfizmu.
+  actorEmail String @map("actor_email")
+
+  /// Endpoint, którego dotyczyło żądanie. Ten sam klucz na DWÓCH różnych endpointach to błąd
+  /// generatora na urządzeniu, a nie legalne powtórzenie.
+  endpoint String
+
+  /// Odcisk treści żądania. TEN SAM KLUCZ Z INNYM request_hash TO JAWNY BŁĄD — nigdy ciche
+  /// nadpisanie i nigdy ciche zwrócenie starej odpowiedzi. Bez tego kolizja kluczy zwracałaby
+  /// telefonowi odpowiedź na CUDZE żądanie.
+  requestHash String @map("request_hash")
+
+  /// Zapisana odpowiedź. Powtórzenie z tym samym kluczem I tym samym odciskiem oddaje TO,
+  /// zamiast wykonywać operację drugi raz — kolejka offline ponawia z definicji, więc
+  /// powtórzenie jest przypadkiem normalnym, nie błędem.
+  responseBody Json? @map("response_body")
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+
+  /// Retencja: SLA.FIELD_IDEMPOTENCY_RETENTION (30 dni), nie literał w zadaniu czyszczącym.
+  @@index([createdAt], map: "field_request_idempotency_created_at_idx")
+  @@map("field_request_idempotency")
+}
+
+/// SEC-ACCESS-DENIED-LOG (D-API-2) — migracja 20260926091000.
+///
+/// DLACZEGO TO NIE JEST audit_log (decyzja Michała 2026-09-24, powtórzona w komentarzu
+/// migracji, bo to jest pytanie, które wróci): audit_log odpowiada na pytanie „co się działo
+/// z danymi TEJ OSOBY" i cały jego kształt z tego wynika — record_id NOT NULL, justification
+/// o długości ≥ 10 znaków i legal_basis ze słownika RODO. Odmowa dostępu nie ma rekordu,
+/// którego dotyczy (bywa, że właśnie dlatego jest odmową), nie ma uzasadnienia od człowieka
+/// i nie ma podstawy prawnej. Wpisanie jej tam wymagałoby ATRAP w trzech kolumnach naraz,
+/// a atrapa w rejestrze dowodowym psuje ten rejestr dla jego własnego zastosowania.
+/// Drugi, niezależny powód: PROFIL RUCHU — odmowy przychodzą seriami przy skanowaniu,
+/// więc wspólna tabela znaczy, że skan zasypuje dowody RODO.
+/// Dlatego `access_denied` NIE zostało dopisane do AUDIT_REQUIREMENTS.mustLog.
+///
+/// APPEND-ONLY wymuszone WYZWALACZEM security_events_append_only_trg, nie samą macierzą:
+/// Prisma omija RLS, więc wyzwalacz jest jedyną warstwą działającą przeciw zapisowi z panelu.
+///
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model SecurityEvent {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// GRANICA, KTÓRA JEST CZĘŚCIĄ PROJEKTU: logujemy odmowy aktora UWIERZYTELNIONEGO, więc
+  /// to pole jest NOT NULL. Ruch anonimowy NIE tworzy wierszy — inaczej dziennik odmów sam
+  /// staje się wektorem zapełnienia dysku, czyli zamienia się w podatność, którą miał wykrywać.
+  actorEmail String @map("actor_email")
+
+  /// Rola aktora w chwili odmowy. Zapisana jako tekst, a nie klucz obcy do authorized_users:
+  /// dziennik ma pamiętać stan z MOMENTU zdarzenia, a rola bywa później zmieniana
+  /// (SEC-AUTHZ-ROLE-CHANGE). Wskazanie na konto pokazywałoby rolę dzisiejszą.
+  actorRole String @map("actor_role")
+
+  /// Zasób i uprawnienie, o które aktor się odbił — słownictwo z RESOURCES i z capability
+  /// w MATRIX (contracts/rbac.contract.mjs), żeby dziennik dał się zestawić z macierzą.
+  resource          String
+  attemptedCapability String @map("attempted_capability")
+
+  /// Rozstrzygnięcie. Kolumna istnieje, mimo że dziś wartość jest w praktyce jedna
+  /// („odmowa"), bo bez niej wiersz nie mówi, CO się stało — mówi tylko, że coś się stało.
+  decision String
+
+  /// Ścieżka żądania. NULL dopuszczalne dla odmów spoza kontekstu HTTP (np. zadanie w tle).
+  endpoint String?
+
+  occurredAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("occurred_at") @db.Timestamptz(6)
+
+  @@index([occurredAt], map: "security_events_occurred_at_idx")
+  @@index([actorEmail], map: "security_events_actor_email_idx")
+  @@map("security_events")
+}
+
+/// NTF-TEMPLATE-STORE — migracja 20260926092000.
+///
+/// NAZWA TABELI NIE JEST WYBOREM: `message_templates` jest w RESOURCES od ADR-012 i jest
+/// nazwą, o której mówi kryterium NTF-CATALOG-PARITY („test kontraktowy porównuje katalog
+/// z tabelą message_templates"). Do 2026-09-24 był to zasób BEZ TABELI, a treści siedziały
+/// w stałej TypeScript — czyli kryterium było niewykonalne od dnia zapisania.
+///
+/// WERSJONOWANIE WZOREM legal_document_versions, i to jest sedno, a nie ozdoba: JEDEN WIERSZ
+/// TO JEDNA WERSJA. Edycja w panelu TWORZY NOWĄ WERSJĘ, stara zostaje nietknięta, a wersja
+/// opublikowana jest zamrożona wyzwalaczem message_templates_freeze_published_trg.
+/// Bez tego po pierwszej edycji nie da się odpowiedzieć, co dokładnie wysłano klientowi
+/// 14 marca — a to jest pytanie ze sporu o ofertę albo o termin.
+///
+/// CZEGO PRISMA TU NIE WIDZI, A BAZA MA (nie wolno zgubić przy `prisma migrate diff`):
+///   1. Częściowy indeks unikalny message_templates_current_per_key_key ON (template_key)
+///      WHERE is_current — DOKŁADNIE JEDNA obowiązująca wersja na klucz szablonu. Dwa
+///      równoległe żądania publikacji nie mogą zostawić dwóch obowiązujących wersji, bo
+///      drugie odbije się od indeksu. „Sprawdź, czy jest inna, potem ustaw" przegrywa ten wyścig.
+///   2. Wyzwalacz zamrażający treść opublikowaną.
+///
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model MessageTemplate {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// templateKey z katalogu powiadomień (contracts/notifications.contract.mjs NOTIFICATIONS),
+  /// np. "funnel.auditor_assigned". Parzystość w obie strony pilnuje NTF-CATALOG-PARITY.
+  templateKey String @map("template_key")
+
+  /// Numer wersji rosnący W OBRĘBIE KLUCZA SZABLONU — jak version_no przy dokumentach prawnych.
+  /// Nadawany przez Server Action, nie sekwencją: sekwencja globalna dawałaby jednemu szablonowi
+  /// numery z dziurami po wersjach innego.
+  versionNo Int @map("version_no")
+
+  /// Kanał, dla którego jest ta treść. SMS i EMAIL tego samego powiadomienia to różne treści
+  /// (SMS ma limit znaków, EMAIL ma temat), więc klucz szablonu sam nie wystarcza.
+  channel String
+
+  /// Temat — wypełniany dla EMAIL, NULL dla SMS i PUSH.
+  subject String?
+
+  body String
+
+  /// NULL = szkic. Szkic wolno edytować i usunąć; publikacja zamraża treść.
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(6)
+
+  /// „Obowiązująca teraz". Osobna flaga, a nie „najwyższy versionNo", bo wycofanie się do
+  /// poprzedniej treści musi być możliwe bez podmiany numeracji — dokładnie jak przy
+  /// legal_document_versions.
+  isCurrent Boolean @default(false) @map("is_current")
+
+  createdAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  /// Wiersze kolejki, które wyrenderowano Z TEJ wersji (NTF-QUEUE-RENDERED-BODY).
+  /// FK jest RESTRICT: wersji, na którą powołuje się wysłana wiadomość, nie wolno usunąć.
+  queuedMessages NotificationQueue[]
+
+  @@unique([templateKey, channel, versionNo], map: "message_templates_key_channel_version_key")
+  @@map("message_templates")
 }

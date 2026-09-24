@@ -135,6 +135,7 @@ Każdy próg ma nazwę i dokładnie jeden kształt pomiaru (R21). Literał liczb
 | `GEOFENCE_UNLOCK_RADIUS` | meters | 20 | Promień w metrach od punktu docelowego, w którym Field App odblokowuje rozpoczęcie i zakończenie zlecenia | FLD-GEO-UNLOCK |
 | `GEOFENCE_EN_ROUTE_RADIUS` | meters | 3000 | Promień w metrach (3 km), którego przecięcie w oknie dnia wizyty wyzwala klientowi SMS „w drodze" — N3/N7/N13/N17 | FLD-GEO-EN-ROUTE |
 | `PROPERTY_AREA_VAT_THRESHOLD` | sqm | 300 | Powierzchnia lokalu mieszkalnego w m², do której (włącznie) obowiązuje obniżona stawka VAT na montaż; powyżej — stawka podstawowa | PRICE-VAT-RATE, B2C-PROPERTY-AREA-BAND |
+| `FIELD_IDEMPOTENCY_RETENTION` | days | 30 | Po ilu dniach wiersz rejestru field_request_idempotency wolno usunąć — po tym czasie powtórzone żądanie z tym samym kluczem NIE jest już rozpoznawane jako powtórzenie | FLD-API-IDEMPOTENCY-REGISTRY |
 
 ## Elementy oczekujące na decyzję człowieka
 
