@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { BUILDING_TYPE_PL } from '@klikklima/contracts';
 import { useTriageStore } from '@/store/triageStore';
 import { OptionCard } from '../OptionCard';
 import { StepWrapper } from '../StepWrapper';
@@ -13,12 +14,12 @@ export const Step5Conditions = () => {
 
   useEffect(() => {
     // If not an apartment, skip this step automatically when mounted
-    if (state.location !== 'Mieszkanie') {
+    if (state.location !== BUILDING_TYPE_PL.APARTMENT) {
       nextStep();
     }
   }, [state.location, nextStep]);
 
-  if (state.location !== 'Mieszkanie') return null;
+  if (state.location !== BUILDING_TYPE_PL.APARTMENT) return null;
 
   const [showNextBtn] = React.useState(state.hasBalcony === true || (state.hasBalcony === false && state.floor !== null));
   const isComplete = state.hasBalcony === true || (state.hasBalcony === false && state.floor !== null);

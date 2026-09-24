@@ -94,14 +94,16 @@ export type SaveSoftLeadResult =
 
 // M8 — jednorazowość zapisu po stronie serwera, nie tylko sessionStorage klienta.
 //
-// ZABEZPIECZENIE TYMCZASOWE, NIE FINALNE: tabela `soft_leady` NIE MA dziś unikalnego
-// indeksu na `dane_kontaktowe` (sprawdzone: packages/database/prisma/schema.prisma,
-// supabase/migrations/) — dodanie go jest migracją i jest POZA zakresem tej zmiany
-// (implementer-ui nie dotyka schema.prisma/migracji). Ten `Set` chroni tylko w obrębie
-// JEDNEJ instancji procesu serwera: nie chroni przed dwoma równoległymi żądaniami
-// trafiającymi w różne instancje/regiony ani nie przetrwa restartu/cold startu.
-// Finalne rozwiązanie: unikalny indeks na `dane_kontaktowe` w bazie + `upsert(...,
-// { onConflict: 'dane_kontaktowe' })` bez tej furtki — zgłoszone jako blokujące.
+// DEDUPLIKACJA W PAMIĘCI PROCESU, NIE JEST GWARANCJĄ: tabela `soft_leady` NIE MA dziś
+// unikalnego ograniczenia na `dane_kontaktowe` (sprawdzone: packages/database/prisma/schema.prisma,
+// supabase/migrations/), więc ten `Set` jest jedynym zabezpieczeniem przed duplikatem —
+// i to best-effort. Nie przetrwa restartu procesu ani nie chroni między wieloma instancjami/
+// regionami (każda ma własną pamięć). Wcześniej ta funkcja używała `upsert(...,
+// { onConflict: 'dane_kontaktowe' })`, co ZAKŁADAŁO istnienie unikalnego indeksu, którego nie
+// ma — na żywym Postgresie/PostgREST to rzuca SQLSTATE 42P10 (brak pasującego ograniczenia
+// ON CONFLICT), więc KAŻDY zapis soft leada kończył się błędem. Naprawione zwykłym `insert`
+// (decyzja Michała 2026-09-24, D3). Prawdziwe rozwiązanie wymaga unikalnego indeksu na
+// `dane_kontaktowe` w migracji — zarejestrowane jako dług do następnego okna kontraktowego.
 const processedPhoneNumbers = new Set<string>();
 
 export async function saveSoftLead(
@@ -132,20 +134,17 @@ export async function saveSoftLead(
   try {
     const supabaseAdmin = getAdminClient();
 
-    // Docelowo `upsert` wymaga unikalnego indeksu na `dane_kontaktowe` (patrz komentarz
-    // wyżej) — dziś ta gałąź nie jest wywoływana drugi raz dla tego samego numeru w
-    // obrębie jednej instancji procesu wyłącznie dzięki `processedPhoneNumbers`.
-    const { error } = await supabaseAdmin.from("soft_leady").upsert(
-      [
-        {
-          dane_kontaktowe: contactInfo,
-          dane_cząstkowe: domainData,
-          consent_version_id: consentDocumentVersionId,
-          consent_granted_at: new Date().toISOString(),
-        },
-      ],
-      { onConflict: "dane_kontaktowe" },
-    );
+    // `insert`, nie `upsert` — patrz komentarz przy `processedPhoneNumbers` powyżej (D3,
+    // 2026-09-24). `upsert(..., { onConflict: 'dane_kontaktowe' })` zakładał unikalny indeks,
+    // którego tabela nie ma, więc rzucał SQLSTATE 42P10 na każdym wywołaniu.
+    const { error } = await supabaseAdmin.from("soft_leady").insert([
+      {
+        dane_kontaktowe: contactInfo,
+        dane_cząstkowe: domainData,
+        consent_version_id: consentDocumentVersionId,
+        consent_granted_at: new Date().toISOString(),
+      },
+    ]);
 
     if (error) throw error;
 
