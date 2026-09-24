@@ -37,6 +37,12 @@ export interface SmsSendParams {
   to: string;
   message: string;
   from?: string;
+  /// Klucz idempotencji SMSAPI (`idx`, dokumentacja SMSAPI REST). Bez niego SMSAPI nie ma jak
+  /// odróżnić ponowionej wysyłki (retry po timeoucie sieciowym, drugi bieg cron) od nowej
+  /// wiadomości — dwa wywołania z tym samym `idx` w oknie deduplikacji SMSAPI wysyłają SMS
+  /// RAZ. `notification_queue.idempotency_key` jest już unikalny w naszej bazie (NTF-QUEUE-TABLE);
+  /// to przekazuje tę samą gwarancję na stronę dostawcy, która jest poza naszą kontrolą.
+  idx?: string;
 }
 
 export interface EmailSendParams {

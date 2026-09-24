@@ -27,13 +27,20 @@ export async function sendSms(params: SmsSendParams): Promise<GatewaySendResult>
 
   try {
     const toParam = to.replace(/^\+/, "");
-    const body = new URLSearchParams({
+    const bodyParams: Record<string, string> = {
       to: toParam,
       message: params.message,
       from,
       format: "json",
       encoding: "utf-8",
-    });
+    };
+    // Klucz idempotencji SMSAPI — patrz komentarz przy `SmsSendParams.idx` (types.ts).
+    // Opcjonalny wyłącznie dla wywołań spoza dispatchera (nie ma czego przekazać); dispatcher
+    // przekazuje go zawsze (`row.idempotencyKey`).
+    if (params.idx) {
+      bodyParams.idx = params.idx;
+    }
+    const body = new URLSearchParams(bodyParams);
 
     const response = await fetch("https://api.smsapi.pl/sms.do", {
       method: "POST",

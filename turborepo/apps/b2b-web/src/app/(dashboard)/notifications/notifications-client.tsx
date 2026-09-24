@@ -110,6 +110,20 @@ export function NotificationsClient({ initialItems, total }: NotificationsClient
             Oczekuje
           </span>
         );
+      case "SENDING":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+            <RefreshCw className="w-3 h-3" />
+            Wysyłanie
+          </span>
+        );
+      case "ERROR":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
+            <AlertTriangle className="w-3 h-3" />
+            Błąd
+          </span>
+        );
       case "DEAD_LETTER":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive font-semibold">
@@ -171,7 +185,9 @@ export function NotificationsClient({ initialItems, total }: NotificationsClient
         {[
           { key: "ALL", label: "Wszystkie" },
           { key: "PENDING", label: "Oczekujące" },
+          { key: "SENDING", label: "Wysyłane" },
           { key: "SENT", label: "Wysłane" },
+          { key: "ERROR", label: "Błąd" },
           { key: "DEAD_LETTER", label: "Dead Letter" },
         ].map((tab) => (
           <button

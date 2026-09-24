@@ -34,6 +34,15 @@ export interface NotificationQueueItem {
   attempts: number;
   idempotencyKey: string;
   nextAttemptAt: Date | null;
+  /// NTF-QUEUE-RENDERED-BODY: treść WYRENDEROWANA w chwili kolejkowania
+  /// (`enqueueNotification`/`enqueueNotificationEx`). Gdy obecna, dispatcher MUSI ją użyć
+  /// wprost — czytanie AKTUALNEJ wersji szablonu w chwili wysyłki cofałoby zamrożenie treści
+  /// do stanu sprzed tej decyzji. `null` wyłącznie dla wierszy zakolejkowanych starą ścieżką,
+  /// zanim ta kolumna istniała — fallback na `resolveCurrentTemplateContent` zostaje dla nich.
+  renderedBody?: string | null;
+  /// Temat wyrenderowany w chwili kolejkowania, obok `renderedBody` — wypełniony wyłącznie
+  /// dla EMAIL. Ten sam priorytet co `renderedBody`: obecny -> użyty wprost, brak -> fallback.
+  renderedSubject?: string | null;
 }
 
 export interface DispatcherResult {
@@ -47,12 +56,19 @@ export interface DispatcherPrisma extends MessageTemplateStore {
   notificationQueue: {
     findMany: (args: { where: Record<string, unknown>; take?: number }) => Promise<NotificationQueueItem[]>;
     updateMany: (args: {
-      where: { id: string; status: string };
+      where: Record<string, unknown>;
       data: Record<string, unknown>;
     }) => Promise<{ count: number }>;
     update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<NotificationQueueItem>;
   };
 }
+
+// TODO(kontrakt): brak w QUEUE_POLICY/SLA stałej na próg odzyskiwania wierszy osieroconych w
+// SENDING — zgłoszone do rejestracji w kolejnym oknie kontraktowym (patrz raport implementera,
+// bloker 3 rundy 3 audytu feat/ntf-gateway, 2026-09-24). Do czasu decyzji kontraktowej literał
+// tymczasowy: proces zabity między przejęciem (`claimedAt`) a wysyłką zostawiałby wiersz w
+// SENDING NA ZAWSZE bez tego kroku (pułapka nr 4 z CLAUDE.md w wydaniu kolejkowym).
+const SENDING_RECOVERY_THRESHOLD_MS = 10 * 60 * 1000; // 10 minut
 
 export async function processNotificationQueue(
   prisma: DispatcherPrisma,
@@ -60,6 +76,17 @@ export async function processNotificationQueue(
 ): Promise<DispatcherResult> {
   const now = options.now ?? new Date();
   const limit = options.limit ?? 50;
+
+  // 0. Odzyskanie wierszy osieroconych w SENDING (NTF-QUEUE-CLAIM, dopełnienie): proces
+  // zabity między przejęciem a wysyłką zostawia wiersz zablokowany na zawsze, bo nic poza
+  // tym krokiem nigdy nie czyta `claimedAt`. Próg — patrz TODO(kontrakt) przy stałej powyżej.
+  await prisma.notificationQueue.updateMany({
+    where: {
+      status: "SENDING",
+      claimedAt: { lt: new Date(now.getTime() - SENDING_RECOVERY_THRESHOLD_MS) },
+    },
+    data: { status: "PENDING", claimedAt: null },
+  });
 
   // Pobieramy wyłącznie wiadomości PENDING gotowe do wysyłki
   const pendingRows = await prisma.notificationQueue.findMany({
@@ -106,26 +133,33 @@ export async function processNotificationQueue(
       continue;
     }
 
-    // 2. Przygotowanie szablonu i treści — AKTUALNA wersja z bazy (NTF-TEMPLATE-STORE),
-    // fallback na stałą TypeScript gdy brak modelu/wersji opublikowanej.
+    // 2. Treść: PRIORYTET dla `renderedBody` ZAMROŻONEJ w chwili kolejkowania
+    // (NTF-QUEUE-RENDERED-BODY) — dopiero brak tej kolumny (wiersze sprzed jej istnienia)
+    // cofa się do odczytu AKTUALNEJ wersji szablonu z bazy (NTF-TEMPLATE-STORE) w chwili
+    // wysyłki, co jest dokładnie zachowaniem, które zamrożenie treści miało wyeliminować.
     let renderedSubject: string | undefined;
     let renderedBody: string;
 
-    try {
-      const content = await resolveCurrentTemplateContent(prisma, row.templateKey, row.channel);
-      const payloadObj = (row.payload as Record<string, unknown>) ?? {};
-      const rendered = renderMessageTemplate(content, payloadObj);
-      renderedSubject = rendered.subject;
-      renderedBody = rendered.body;
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      const failure = recordNotificationFailure(row, errMsg, now);
-      await prisma.notificationQueue.update({
-        where: { id: row.id },
-        data: failure as unknown as Record<string, unknown>,
-      });
-      result.failedCount++;
-      continue;
+    if (row.renderedBody) {
+      renderedSubject = row.renderedSubject ?? undefined;
+      renderedBody = row.renderedBody;
+    } else {
+      try {
+        const content = await resolveCurrentTemplateContent(prisma, row.templateKey, row.channel);
+        const payloadObj = (row.payload as Record<string, unknown>) ?? {};
+        const rendered = renderMessageTemplate(content, payloadObj);
+        renderedSubject = rendered.subject;
+        renderedBody = rendered.body;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        const failure = recordNotificationFailure(row, errMsg, now);
+        await prisma.notificationQueue.update({
+          where: { id: row.id },
+          data: failure as unknown as Record<string, unknown>,
+        });
+        result.failedCount++;
+        continue;
+      }
     }
 
     // 3. Wysłanie odpowiednim kanałem
@@ -140,6 +174,7 @@ export async function processNotificationQueue(
           to,
           message: renderedBody,
           from: "KlikKlima",
+          idx: row.idempotencyKey,
         });
       }
     } else if (row.channel === "EMAIL") {
