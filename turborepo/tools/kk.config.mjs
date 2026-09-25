@@ -22,7 +22,12 @@ export const config = {
   agentWriteScopes: {
     'spec-analyst': ['.claude/state/', 'docs/workorders/', '.claude/agent-memory/'],
     'contract-steward': ['contracts/', 'packages/contracts/', 'packages/database/prisma/', 'supabase/migrations/', 'docs/architecture/generated/', '.claude/state/', 'tools/', '.claude/agent-memory/'],
-    'test-author': ['tests/', 'e2e/', '__tests__/', '.claude/state/', 'apps/**/tests/', 'packages/**/tests/'],
+    // '.claude/agent-memory/' dodane 2026-09-25: pozostałe role z pamięcią międzysesyjną
+    // (spec-analyst, contract-steward, reviewer, rls-security-auditor) już je mają.
+    // test-author zgłosił próbę zapisu notatki o wzorcu fikstury, zablokowaną przez ten
+    // brak — przeoczenie przy pierwszym wprowadzeniu tej listy (patrz komentarz przy
+    // reviewer/rls-security-auditor niżej), nie świadoma decyzja o innym traktowaniu roli.
+    'test-author': ['tests/', 'e2e/', '__tests__/', '.claude/state/', 'apps/**/tests/', 'packages/**/tests/', '.claude/agent-memory/'],
     'implementer-server': ['apps/', 'packages/', '.claude/state/'],
     'implementer-ui': ['apps/', 'packages/ui/', '.claude/state/'],
     'e2e-runner': ['.claude/state/', 'test-results/'],
