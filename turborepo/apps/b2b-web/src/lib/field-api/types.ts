@@ -1,4 +1,5 @@
 import type { ROLES } from '@klikklima/contracts';
+import type { Prisma } from '@repo/database';
 
 export type FieldActorRole = (typeof ROLES)[number];
 
@@ -18,7 +19,7 @@ export interface IdempotencyParams {
   actorEmail: string;
   endpoint: string;
   body: unknown;
-  operation: (tx?: unknown) => Promise<{ status: number; body: unknown }>;
+  operation: (tx?: Prisma.TransactionClient) => Promise<{ status: number; body: unknown }>;
 }
 
 export interface SecurityEventParams {
