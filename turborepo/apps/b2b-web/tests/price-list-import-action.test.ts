@@ -165,7 +165,15 @@ describe('importPriceListAction — AC-I6, bramka roli (przed jakimkolwiek zapis
     const result = await importPriceListAction(CSV_CONTENT);
 
     expect(result.success).toBe(true);
-    expect(importPriceListMock).toHaveBeenCalledWith(CSV_CONTENT);
+    // Wpisy audytowe dla NOWYCH POZYCJI są pisane wewnątrz zamockowanej
+    // `importPriceList` — bez kontekstu prawdziwego aktora dostałyby domyślnego,
+    // fałszywego autora (`system@klikklima.pl` / `system`) w `price-list.ts`.
+    // AC-I6 wymaga prawdziwego aktora dla KAŻDEGO wpisu audytowego, nie tylko dla
+    // zmian ceny dopisywanych osobno w tej Server Action.
+    expect(importPriceListMock).toHaveBeenCalledWith(CSV_CONTENT, {
+      actorEmail: ADMIN_EMAIL,
+      actorRole: 'admin',
+    });
   });
 
   // Sesja bez e-maila (np. `auth.getUser()` zwraca użytkownika bez pola `email`) łapie mutanta,
