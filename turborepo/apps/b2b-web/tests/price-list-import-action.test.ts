@@ -24,10 +24,26 @@ import { PERMISSIONS, can, AUDIT_REQUIREMENTS } from '@klikklima/contracts';
  * priceChanges: { itemId, itemName, before, after }[] }` — `priceChanges` opisuje
  * WYŁĄCZNIE pozycje, którym import przypisał nową wersję ceny (AC-I5), z wartościami
  * przed i po (WO AC-I6: "uzasadnienie z wartością przed i po").
+ *
+ * DECYZJA CZŁOWIEKA (nieodwołalna, uzasadnienie: implementer wykazał, że jeden wpis
+ * zbiorczy na koniec importu jest strukturalnie niekompatybilny z atomowością per-wiersz
+ * — błąd w wierszu N nie może cofać dobrych wierszy 1..N-1, więc nie da się mieć jednej
+ * transakcji na cały import ani czekać do końca z audytem): `audit_log` przechodzi z
+ * modelu "jeden wpis zbiorczy po zakończeniu importu" na "jeden wpis audytowy PER
+ * faktyczna zmiana (nowa pozycja LUB zmiana ceny), zapisany OD RAZU w swojej WŁASNEJ
+ * `$transaction`". Na poziomie tej Server Action (gdzie `importPriceList` jest
+ * zamockowane w całości — czarna skrzynka zwracająca gotowy raport) to oznacza: pętla po
+ * "faktycznych zmianach" opisanych raportem (bulk-create jako jedna pozycja raportu, bo
+ * report nie ma rozbicia per-item dla `createdItems`; plus jeden wpis per `priceChanges`)
+ * wywołuje `prisma.$transaction` RAZ PER wpis — nie jedną transakcję obejmującą całą
+ * pętlę. Wzorzec mockowania `$transaction` 1:1 z `auditors-delete.test.ts` /
+ * `fld-base-location-edit-audit-log.test.ts`: `prisma` udostępnia WYŁĄCZNIE
+ * `$transaction`, a `tx` przekazywany do callbacku ma `auditLog.create`.
  */
 
 const {
   importPriceListMock,
+  transactionMock,
   auditLogCreateMock,
   revalidatePathMock,
   getCurrentActorRoleMock,
@@ -35,6 +51,7 @@ const {
   createClientMock,
 } = vi.hoisted(() => ({
   importPriceListMock: vi.fn(),
+  transactionMock: vi.fn(),
   auditLogCreateMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   getCurrentActorRoleMock: vi.fn(),
@@ -44,7 +61,7 @@ const {
 
 vi.mock('@repo/database', () => ({
   prisma: {
-    auditLog: { create: auditLogCreateMock },
+    $transaction: transactionMock,
   },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
@@ -90,6 +107,7 @@ const PRICE_CHANGE_REPORT = {
 describe('importPriceListAction — AC-I6, bramka roli (przed jakimkolwiek zapisem)', () => {
   beforeEach(() => {
     importPriceListMock.mockReset();
+    transactionMock.mockReset();
     auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
@@ -100,6 +118,9 @@ describe('importPriceListAction — AC-I6, bramka roli (przed jakimkolwiek zapis
     getUserMock.mockResolvedValue({ data: { user: { email: ADMIN_EMAIL } } });
     createClientMock.mockResolvedValue({ auth: { getUser: getUserMock } });
     auditLogCreateMock.mockResolvedValue({ id: 'audit-1' });
+    transactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
+      cb({ auditLog: { create: auditLogCreateMock } }),
+    );
     importPriceListMock.mockResolvedValue(CREATE_ONLY_REPORT);
   });
 
@@ -114,6 +135,7 @@ describe('importPriceListAction — AC-I6, bramka roli (przed jakimkolwiek zapis
       expect(result.success).toBe(false);
       expect(importPriceListMock).not.toHaveBeenCalled();
       expect(auditLogCreateMock).not.toHaveBeenCalled();
+      expect(transactionMock).not.toHaveBeenCalled();
       expect(can(role, 'price_list_items', 'create')).toBe('no');
       // Whitelist całej macierzy, nie blacklista jednej roli — mutant rozszerzający
       // PERMISSIONS.price_list_items.create przechodziłby obok blacklisty tej jednej roli.
@@ -131,6 +153,7 @@ describe('importPriceListAction — AC-I6, bramka roli (przed jakimkolwiek zapis
     expect(result.success).toBe(false);
     expect(importPriceListMock).not.toHaveBeenCalled();
     expect(auditLogCreateMock).not.toHaveBeenCalled();
+    expect(transactionMock).not.toHaveBeenCalled();
   });
 
   // Kontrola pozytywna — bez niej zestaw przechodziłby także dla akcji, która odrzuca
@@ -158,6 +181,7 @@ describe('importPriceListAction — AC-I6, bramka roli (przed jakimkolwiek zapis
     expect(result.success).toBe(false);
     expect(importPriceListMock).not.toHaveBeenCalled();
     expect(auditLogCreateMock).not.toHaveBeenCalled();
+    expect(transactionMock).not.toHaveBeenCalled();
   });
 
   // Wariant: `user` sam jest `null`/`undefined` (brak sesji Supabase), nie tylko brak `email`
@@ -171,12 +195,14 @@ describe('importPriceListAction — AC-I6, bramka roli (przed jakimkolwiek zapis
     expect(result.success).toBe(false);
     expect(importPriceListMock).not.toHaveBeenCalled();
     expect(auditLogCreateMock).not.toHaveBeenCalled();
+    expect(transactionMock).not.toHaveBeenCalled();
   });
 });
 
 describe('importPriceListAction — AC-I6, ślad audytowy (rola admin)', () => {
   beforeEach(() => {
     importPriceListMock.mockReset();
+    transactionMock.mockReset();
     auditLogCreateMock.mockReset();
     revalidatePathMock.mockReset();
     getCurrentActorRoleMock.mockReset();
@@ -187,15 +213,24 @@ describe('importPriceListAction — AC-I6, ślad audytowy (rola admin)', () => {
     getUserMock.mockResolvedValue({ data: { user: { email: ADMIN_EMAIL } } });
     createClientMock.mockResolvedValue({ auth: { getUser: getUserMock } });
     auditLogCreateMock.mockResolvedValue({ id: 'audit-1' });
+    // Decyzja człowieka: każdy wpis audytowy dostaje WŁASNĄ `$transaction`, nie jedną
+    // transakcję obejmującą całą pętlę zmian — dlatego callback przekazuje nowy obiekt tx
+    // za każdym wywołaniem, a asercje niżej liczą `transactionMock.mock.calls.length`
+    // osobno od `auditLogCreateMock`, żeby złapać mutanta, który zwinąłby N wpisów do
+    // jednego wspólnego `$transaction`.
+    transactionMock.mockImplementation(async (cb: (tx: unknown) => unknown) =>
+      cb({ auditLog: { create: auditLogCreateMock } }),
+    );
   });
 
   // @REQ: PRICE-LIST-IMPORT
-  it('AC-I6 — utworzenie pozycji w pustej bazie zostawia JEDEN wpis zbiorczy, nie 39', async () => {
+  it('AC-I6 — utworzenie pozycji w pustej bazie zostawia JEDEN wpis zbiorczy, nie 39, we WŁASNEJ transakcji', async () => {
     importPriceListMock.mockResolvedValue(CREATE_ONLY_REPORT);
 
     await importPriceListAction(CSV_CONTENT);
 
     expect(auditLogCreateMock).toHaveBeenCalledTimes(1);
+    expect(transactionMock).toHaveBeenCalledTimes(1);
     const call = auditLogCreateMock.mock.calls[0]![0];
     expect(call.data.operation).toBe('field_update');
     expect(call.data.resource).toBe('price_list_items');
@@ -206,12 +241,13 @@ describe('importPriceListAction — AC-I6, ślad audytowy (rola admin)', () => {
   });
 
   // @REQ: PRICE-LIST-IMPORT
-  it('AC-I6 — zmiana ceny istniejącej pozycji zostawia wpis audit_log z record_id pozycji i wartościami przed/po', async () => {
+  it('AC-I6 — zmiana ceny istniejącej pozycji zostawia wpis audit_log z record_id pozycji i wartościami przed/po, we WŁASNEJ transakcji', async () => {
     importPriceListMock.mockResolvedValue(PRICE_CHANGE_REPORT);
 
     await importPriceListAction(CSV_CONTENT);
 
     expect(auditLogCreateMock).toHaveBeenCalledTimes(1);
+    expect(transactionMock).toHaveBeenCalledTimes(1);
     const call = auditLogCreateMock.mock.calls[0]![0];
     expect(call.data.operation).toBe('field_update');
     expect(call.data.resource).toBe('price_list_items');
@@ -246,13 +282,14 @@ describe('importPriceListAction — AC-I6, ślad audytowy (rola admin)', () => {
     await importPriceListAction(CSV_CONTENT);
 
     expect(auditLogCreateMock).toHaveBeenCalledTimes(1);
+    expect(transactionMock).toHaveBeenCalledTimes(1);
     const call = auditLogCreateMock.mock.calls[0]![0];
     expect(call.data.recordId).toBe('item-3');
     expect(call.data.justification).toMatch(/crew_cost_net\s+\(brak\)\s*→\s*15\.00/);
   });
 
   // @REQ: PRICE-LIST-IMPORT
-  it('AC-I6 — dwie pozycje ze zmianą ceny w jednym imporcie zostawiają DWA osobne wpisy audit_log, po jednym na pozycję', async () => {
+  it('AC-I6 — dwie pozycje ze zmianą ceny w jednym imporcie zostawiają DWA osobne wpisy audit_log, KAŻDY w OSOBNEJ transakcji (nie jedna transakcja na całą pętlę)', async () => {
     importPriceListMock.mockResolvedValue({
       ...PRICE_CHANGE_REPORT,
       updatedVersions: 2,
@@ -270,6 +307,11 @@ describe('importPriceListAction — AC-I6, ślad audytowy (rola admin)', () => {
     await importPriceListAction(CSV_CONTENT);
 
     expect(auditLogCreateMock).toHaveBeenCalledTimes(2);
+    // Dwa wpisy audytowe muszą odpowiadać DWÓM wywołaniom `$transaction`, nie jednemu
+    // wywołaniu obejmującemu obie zmiany — mutant, który opakowałby całą pętlę
+    // `for (const change of report.priceChanges)` w jedno `$transaction` na zewnątrz,
+    // przeżyłby asercję samego `auditLogCreateMock`, ale nie tę.
+    expect(transactionMock).toHaveBeenCalledTimes(2);
     const recordIds = auditLogCreateMock.mock.calls.map((c) => c[0].data.recordId);
     expect(recordIds.sort()).toEqual(['item-1', 'item-2']);
   });
@@ -291,5 +333,6 @@ describe('importPriceListAction — AC-I6, ślad audytowy (rola admin)', () => {
 
     expect(result.success).toBe(true);
     expect(auditLogCreateMock).not.toHaveBeenCalled();
+    expect(transactionMock).not.toHaveBeenCalled();
   });
 });

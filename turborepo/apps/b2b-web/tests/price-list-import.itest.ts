@@ -27,6 +27,15 @@ import { prisma } from '@repo/database';
  * `npm run test:integration`. Środowisko piaskownicy tego agenta NIE MA Dockera (pamięć
  * `project_itest_no_docker_sandbox`) — plik zweryfikowany przez `tsc --noEmit` i przegląd,
  * nie wykonany na żywo w tej sesji.
+ *
+ * DECYZJA CZŁOWIEKA (nieodwołalna, patrz komentarz przy teście "import atomowy względem
+ * pozycji" niżej): `audit_log` dla utworzenia nowej pozycji przechodzi z modelu "jeden wpis
+ * zbiorczy po zakończeniu CAŁEGO importu" (dawniej wyłącznie w Server Action, PO zwrocie z
+ * `importPriceList`) na "jeden wpis PER nowa pozycja, w TEJ SAMEJ transakcji co
+ * `priceListItem.create`/`priceListItemVersion.create`, natychmiast" — to, w odróżnieniu od
+ * pozostałych testów tego pliku (RED z powodu braku modułu), jest RED z powodu braku NOWEJ
+ * funkcjonalności w istniejącym module: `importPriceList` musi teraz SAMO pisać `audit_log`,
+ * nie zostawiać tego wyłącznie akcji serwerowej.
  */
 
 const { importPriceList } = await import('../src/lib/pricing/price-list');
@@ -507,5 +516,35 @@ describe('importPriceList — przypadki brzegowe', () => {
     });
     expect(goodItems).toHaveLength(2);
     expect(goodItems.every((i) => i.versions.length === 1 && i.versions[0]!.isCurrent)).toBe(true);
+
+    // DECYZJA CZŁOWIEKA (nieodwołalna, po tej samej turze audytu, uzasadnienie: bulk-summary
+    // audit_log na koniec CAŁEGO importu jest strukturalnie niekompatybilne z atomowością
+    // per-wiersz — błąd w wierszu N nie może cofać dobrych wierszy 1..N-1, więc audyt MUSI
+    // powstawać natychmiast, w TEJ SAMEJ transakcji co sam zapis pozycji/wersji, nie czekać do
+    // końca pętli w Server Action). `importPriceList` (ten moduł, nie akcja) musi więc pisać
+    // WŁASNY wpis `audit_log` dla KAŻDEJ nowej pozycji, w TEJ SAMEJ `$transaction` co
+    // `priceListItem.create`/`priceListItemVersion.create` — błąd zapisu wycofuje OBIE części
+    // razem (zero wpisu audytowego dla `badName`), a poprawny zapis zostawia OBIE części w
+    // komplecie (wpis audytowy dla `goodNameA`/`goodNameB` istnieje).
+    //
+    // ZAŁOŻENIE test-authora (WO nie podaje dokładnej treści `justification` dla tej ścieżki —
+    // do potwierdzenia przez implementera, TEST-DEFECT jeśli błędne): uzasadnienie wpisu
+    // audytowego dla utworzenia nowej pozycji zawiera jej `name` — jedyny stabilny, unikalny w
+    // tym teście marker, którym można odnaleźć wpis dla pozycji `badName`, która NIE powstała i
+    // nie ma `id` (więc `recordId` nie da się użyć do wykluczenia badName — brak `id` = brak
+    // możliwości odpytania po nim). Dla `goodNameA`/`goodNameB` pozycje ISTNIEJĄ, więc dla nich
+    // dodatkowo sprawdzamy `recordId` po ich prawdziwym `id`.
+    const badAuditEntries = await prisma.auditLog.findMany({
+      where: { resource: 'price_list_items', justification: { contains: badName } },
+    });
+    expect(badAuditEntries).toHaveLength(0);
+
+    const goodItemIds = goodItems.map((i) => i.id);
+    const goodAuditEntriesByRecordId = await prisma.auditLog.findMany({
+      where: { resource: 'price_list_items', recordId: { in: goodItemIds } },
+    });
+    expect(goodAuditEntriesByRecordId.length).toBeGreaterThanOrEqual(2);
+    const goodAuditRecordIds = new Set(goodAuditEntriesByRecordId.map((entry) => entry.recordId));
+    expect(goodItemIds.every((id) => goodAuditRecordIds.has(id))).toBe(true);
   });
 });
