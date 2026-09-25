@@ -3,8 +3,10 @@ import {
   BUILDING_TYPE_PL,
   disqualifyingRules,
   isExpertScreen as isExpertScreenContract,
+  isTriageFieldVisible,
   type BuildingTypeId,
   type DisqualificationRuleId,
+  type PropertyAreaBandId,
   type TriageAnswers,
 } from "@klikklima/contracts";
 
@@ -24,6 +26,7 @@ export type BuildingState = 'Wykończony / Zamieszkany' | 'W trakcie remontu' | 
 export interface TriageStateData {
   // --- Krok 1 do 5 ---
   location: LocationType;
+  propertyAreaBand: PropertyAreaBandId | null;
   roomCount: RoomCount;
   roomSizes: Record<number, RoomSize>;
   buildingState: BuildingState;
@@ -69,7 +72,11 @@ interface TriageStore {
 }
 
 /** Odpowiedzi kreatora w kształcie oczekiwanym przez predykaty kontraktu (null-safe). */
-function toTriageAnswers(location: LocationType, roomCount: RoomCount): TriageAnswers {
+function toTriageAnswers(
+  location: LocationType,
+  roomCount: RoomCount,
+  propertyAreaBand?: PropertyAreaBandId | null
+): TriageAnswers {
   const answers: TriageAnswers = {};
   if (location) {
     const buildingType = BUILDING_TYPE_ID_BY_PL[location];
@@ -78,11 +85,15 @@ function toTriageAnswers(location: LocationType, roomCount: RoomCount): TriageAn
   if (typeof roomCount === 'number') {
     answers.ROOM_COUNT = roomCount;
   }
+  if (propertyAreaBand) {
+    answers.PROPERTY_AREA_BAND = propertyAreaBand;
+  }
   return answers;
 }
 
 const initialState: TriageStateData = {
   location: null,
+  propertyAreaBand: null,
   roomCount: null,
   roomSizes: {},
   buildingState: null,
@@ -114,8 +125,8 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
   // `set()` — kolejne aktualizacje `data` nigdy by go już nie przeliczyły.
   // Dlatego te pola są zwykłymi wartościami, przeliczanymi jawnie w `updateData`
   // i `reset` — jedynych akcjach zmieniających `data`.
-  isExpertScreen: isExpertScreenContract(toTriageAnswers(initialState.location, initialState.roomCount)),
-  disqualifyingRuleIds: disqualifyingRules(toTriageAnswers(initialState.location, initialState.roomCount)),
+  isExpertScreen: isExpertScreenContract(toTriageAnswers(initialState.location, initialState.roomCount, initialState.propertyAreaBand)),
+  disqualifyingRuleIds: disqualifyingRules(toTriageAnswers(initialState.location, initialState.roomCount, initialState.propertyAreaBand)),
 
   goToStep: (stepNumber) => set((state) => ({
     step: stepNumber, 
@@ -162,7 +173,13 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
   
   updateData: (newData) => set((state) => {
     const data = { ...state.data, ...newData };
-    const answers = toTriageAnswers(data.location, data.roomCount);
+    // AC1: Zmiana typu (np. na Lokal komercyjny), gdy pole PROPERTY_AREA_BAND
+    // przestaje być widoczne wg kontraktu, usuwa odpowiedź ze stanu.
+    const answersBeforeGuard = toTriageAnswers(data.location, data.roomCount, data.propertyAreaBand);
+    if (!isTriageFieldVisible('PROPERTY_AREA_BAND', answersBeforeGuard)) {
+      data.propertyAreaBand = null;
+    }
+    const answers = toTriageAnswers(data.location, data.roomCount, data.propertyAreaBand);
     return {
       data,
       isExpertScreen: isExpertScreenContract(answers),
@@ -189,7 +206,7 @@ export const useTriageStore = create<TriageStore>((set, get) => ({
     step: 1,
     direction: 1,
     data: initialState,
-    isExpertScreen: isExpertScreenContract(toTriageAnswers(initialState.location, initialState.roomCount)),
-    disqualifyingRuleIds: disqualifyingRules(toTriageAnswers(initialState.location, initialState.roomCount)),
+    isExpertScreen: isExpertScreenContract(toTriageAnswers(initialState.location, initialState.roomCount, initialState.propertyAreaBand)),
+    disqualifyingRuleIds: disqualifyingRules(toTriageAnswers(initialState.location, initialState.roomCount, initialState.propertyAreaBand)),
   }),
 }));
