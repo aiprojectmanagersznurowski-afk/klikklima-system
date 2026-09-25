@@ -1,6 +1,7 @@
 import { prisma } from "@repo/database"
 import type { PriceListItemVersion } from "@repo/database"
 import { extractSqlState } from "@repo/scheduling"
+import { AUDIT_REQUIREMENTS } from "@klikklima/contracts"
 
 /**
  * WO: docs/workorders/PRICE-LIST-IMPORT.md — PRICE-LIST-SCHEMA (AC-S5, przypadek brzegowy
@@ -20,6 +21,18 @@ const ALLOWED_CATEGORIES = new Set(["MATERIAL", "LABOR", "MATERIAL_LABOR"])
 
 /** NUMERIC(12,2) w bazie — kwota musi mieć co najwyżej 2 miejsca po przecinku, separator: kropka. */
 const AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/
+
+/** legal_basis neutralny — import cennika nie jest operacją RODO, nie ma sensownej wartości w słowniku. */
+const IMPORT_LEGAL_BASIS = AUDIT_REQUIREMENTS.legalBases.at(-1)!
+
+/**
+ * Kontekst audytowy przekazywany przez wołający kod (Server Action, który ZNA sesję
+ * użytkownika). Wartość domyślna istnieje wyłącznie dla wywołań, którym kontekst nie ma
+ * skąd przyjść (np. testy integracyjne wołające `importPriceList` bez sesji) — `actorEmail`
+ * w `audit_log` jest NOT NULL, więc funkcja domenowa nie może zostawić go puste.
+ */
+export type ImportAuditContext = { actorEmail: string; actorRole: string }
+const DEFAULT_AUDIT_CONTEXT: ImportAuditContext = { actorEmail: "system@klikklima.pl", actorRole: "system" }
 
 export type PublishPriceVersionInput = {
   priceListItemId: string
@@ -244,7 +257,10 @@ function parseRow(fields: string[]): ParseRowResult {
  * wersji ani wersji bez `is_current`. Utworzenie nowej pozycji i jej pierwszej wersji
  * idzie w JEDNEJ transakcji z tego samego powodu.
  */
-export async function importPriceList(csvContent: string): Promise<PriceListImportReport> {
+export async function importPriceList(
+  csvContent: string,
+  auditContext: ImportAuditContext = DEFAULT_AUDIT_CONTEXT
+): Promise<PriceListImportReport> {
   const report: PriceListImportReport = {
     createdItems: 0,
     createdVersions: 0,
@@ -285,6 +301,21 @@ export async function importPriceList(csvContent: string): Promise<PriceListImpo
           })
           await tx.priceListItemVersion.create({
             data: { priceListItemId: item.id, salePriceNet, crewCostNet, isCurrent: true },
+          })
+          // DECYZJA CZŁOWIEKA (nieodwołalna): wpis audytowy powstaje TERAZ, w TEJ SAMEJ
+          // transakcji co zapis pozycji/wersji — błąd zapisu (np. przekroczenie precyzji
+          // NUMERIC(12,2)) wycofuje OBIE części razem, zamiast zostawić audyt bez pozycji
+          // albo pozycję bez audytu.
+          await tx.auditLog.create({
+            data: {
+              operation: "field_update",
+              resource: "price_list_items",
+              recordId: item.id,
+              actorEmail: auditContext.actorEmail,
+              actorRole: auditContext.actorRole,
+              justification: `Import cennika utworzył nową pozycję "${name}".`,
+              legalBasis: IMPORT_LEGAL_BASIS,
+            },
           })
         })
       } catch {

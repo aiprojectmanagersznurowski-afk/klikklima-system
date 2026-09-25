@@ -71,35 +71,42 @@ export async function importPriceListAction(csvContent: string): Promise<ImportP
   try {
     const report = await importPriceList(parsed.data)
 
+    // Decyzja człowieka: każdy wpis audytowy dostaje WŁASNĄ `$transaction`, nie jedną
+    // transakcję obejmującą całą pętlę zmian — błąd zapisu jednego wpisu nie może cofnąć
+    // poprzednich, już potwierdzonych wpisów.
     if (report.createdItems > 0) {
-      await prisma.auditLog.create({
-        data: {
-          operation: "field_update",
-          resource: "price_list_items",
-          recordId: "bulk-import",
-          actorEmail,
-          actorRole,
-          justification: `Import cennika utworzył ${report.createdItems} nowych pozycji (${report.createdVersions} wersji cen).`,
-          legalBasis: OTHER_LEGAL_BASIS,
-        },
+      await prisma.$transaction(async (tx) => {
+        await tx.auditLog.create({
+          data: {
+            operation: "field_update",
+            resource: "price_list_items",
+            recordId: "bulk-import",
+            actorEmail,
+            actorRole,
+            justification: `Import cennika utworzył ${report.createdItems} nowych pozycji (${report.createdVersions} wersji cen).`,
+            legalBasis: OTHER_LEGAL_BASIS,
+          },
+        })
       })
     }
 
     for (const change of report.priceChanges) {
-      await prisma.auditLog.create({
-        data: {
-          operation: "field_update",
-          resource: "price_list_items",
-          recordId: change.itemId,
-          actorEmail,
-          actorRole,
-          justification: `Import cennika zmienił cenę pozycji "${change.itemName}": sale_price_net ${formatMoney(
-            change.before.salePriceNet
-          )} → ${formatMoney(change.after.salePriceNet)}; crew_cost_net ${
-            change.before.crewCostNet === null ? "(brak)" : formatMoney(change.before.crewCostNet)
-          } → ${change.after.crewCostNet === null ? "(brak)" : formatMoney(change.after.crewCostNet)}.`,
-          legalBasis: OTHER_LEGAL_BASIS,
-        },
+      await prisma.$transaction(async (tx) => {
+        await tx.auditLog.create({
+          data: {
+            operation: "field_update",
+            resource: "price_list_items",
+            recordId: change.itemId,
+            actorEmail,
+            actorRole,
+            justification: `Import cennika zmienił cenę pozycji "${change.itemName}": sale_price_net ${formatMoney(
+              change.before.salePriceNet
+            )} → ${formatMoney(change.after.salePriceNet)}; crew_cost_net ${
+              change.before.crewCostNet === null ? "(brak)" : formatMoney(change.before.crewCostNet)
+            } → ${change.after.crewCostNet === null ? "(brak)" : formatMoney(change.after.crewCostNet)}.`,
+            legalBasis: OTHER_LEGAL_BASIS,
+          },
+        })
       })
     }
 
