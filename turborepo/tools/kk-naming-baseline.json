@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T21:56:22.466Z",
+  "generatedAt": "2026-09-25T09:42:26.321Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -174,6 +174,7 @@
     "apps/b2b-web/tests/middleware-auditor-blocked.test.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/notifications-history.test.ts::adr002-pl-columns": 2,
     "apps/b2b-web/tests/notifications-history.test.ts::adr002-pl-tables": 4,
+    "apps/b2b-web/tests/price-list-schema.itest.ts::adr002-pl-tables": 2,
     "apps/b2b-web/tests/read-pages-authz.test.ts::adr002-pl-columns": 1,
     "apps/b2b-web/tests/read-pages-authz.test.ts::adr002-pl-tables": 5,
     "apps/b2b-web/tests/rls-deny-by-default-freeze.test.ts::adr002-pl-tables": 20,
@@ -266,5 +267,5 @@
     "supabase/migrations/20260925092000_invoices_and_installation_photos.sql::adr002-pl-tables": 8,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2694
+  "total": 2696
 }
