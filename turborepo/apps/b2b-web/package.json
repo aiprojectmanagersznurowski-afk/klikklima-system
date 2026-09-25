@@ -24,6 +24,7 @@
     "@nivo/core": "^0.99.0",
     "@nivo/sankey": "^0.99.0",
     "@repo/database": "*",
+    "@repo/documents": "*",
     "@repo/pricing": "*",
     "@repo/scheduling": "*",
     "@shadcn/react": "^0.3.1",

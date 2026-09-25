@@ -1,0 +1,19 @@
+{
+  "name": "@repo/documents",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "lint": "eslint \"src/**/*.ts*\"",
+    "check-types": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@repo/database": "*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "*",
+    "@repo/typescript-config": "*",
+    "typescript": "^5.3.3"
+  }
+}
