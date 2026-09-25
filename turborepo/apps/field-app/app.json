@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "KlikKlima Field",
+    "slug": "klikklima-field",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "pl.klikklima.field"
+    },
+    "android": {
+      "package": "pl.klikklima.field",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    }
+  }
+}

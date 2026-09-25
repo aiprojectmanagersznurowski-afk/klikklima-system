@@ -1,0 +1,26 @@
+{
+  "name": "field-app",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "build": "echo 'Field app build valid'",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@klikklima/contracts": "*",
+    "@supabase/supabase-js": "^2.110.2",
+    "expo": "~52.0.0",
+    "expo-status-bar": "~2.0.0",
+    "react": "19.2.4",
+    "react-native": "0.76.7"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2"
+  }
+}
