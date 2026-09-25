@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T13:51:14.068Z",
+  "generatedAt": "2026-09-25T19:39:59.473Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -62,12 +62,19 @@
     "apps/b2b-web/src/app/(dashboard)/services/actions.ts::adr002-pl-tables": 5,
     "apps/b2b-web/src/app/(dashboard)/services/cron.ts::adr002-pl-columns": 5,
     "apps/b2b-web/src/app/(dashboard)/services/cron.ts::adr002-pl-tables": 5,
+    "apps/b2b-web/src/app/(dashboard)/settings/privacy/actions.ts::adr002-pl-columns": 3,
+    "apps/b2b-web/src/app/(dashboard)/settings/privacy/actions.ts::adr002-pl-tables": 1,
     "apps/b2b-web/src/app/api/webhooks/shipping/route.ts::adr002-pl-columns": 4,
     "apps/b2b-web/src/app/api/webhooks/shipping/route.ts::adr002-pl-tables": 5,
     "apps/b2b-web/src/components/global-search/actions.ts::adr002-pl-columns": 15,
     "apps/b2b-web/src/components/global-search/actions.ts::adr002-pl-tables": 6,
     "apps/b2b-web/src/lib/notifications/history.ts::adr002-pl-columns": 3,
     "apps/b2b-web/src/lib/notifications/history.ts::adr002-pl-tables": 8,
+    "apps/b2b-web/src/lib/rodo/anonymization.ts::adr002-pl-columns": 5,
+    "apps/b2b-web/src/lib/rodo/anonymization.ts::adr002-pl-tables": 4,
+    "apps/b2b-web/src/lib/rodo/export.ts::adr002-pl-columns": 1,
+    "apps/b2b-web/src/lib/rodo/export.ts::adr002-pl-tables": 13,
+    "apps/b2b-web/src/lib/rodo/retention.ts::adr002-pl-tables": 3,
     "apps/b2b-web/src/utils/supabase/middleware.ts::adr002-pl-tables": 1,
     "apps/b2b-web/tests/add-auditor-modal-formdata-boundary.test.ts::adr002-pl-columns": 3,
     "apps/b2b-web/tests/add-crew-modal-formdata-boundary.test.ts::adr002-pl-columns": 4,
@@ -269,5 +276,5 @@
     "supabase/migrations/20260925092000_invoices_and_installation_photos.sql::adr002-pl-tables": 8,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2706
+  "total": 2736
 }
