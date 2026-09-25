@@ -20,6 +20,7 @@ import { CalendarDays, BookOpen } from "lucide-react";
 import type { Role } from "@klikklima/contracts";
 import { isScheduleNavItemVisible } from "../../lib/schedule/nav-visibility";
 import { isDocsNavItemVisible } from "../../lib/docs/nav-visibility";
+import { isPricingNavItemVisible } from "../../lib/pricing/nav-visibility";
 import { AppSidebar } from "./_components/sidebar/app-sidebar";
 import { DashboardBreadcrumbs } from "./_components/header/breadcrumbs";
 import { GlobalSearch } from "@/components/global-search/global-search";
@@ -116,7 +117,27 @@ export function buildNavItems(actorRole: Role | null): NavItem[] {
     ? { id: 'docs', label: 'Dokumentacja', icon: BookOpen, href: '/dokumentacja' }
     : null;
 
-  return docsNavItem ? [...itemsWithSchedule, docsNavItem] : itemsWithSchedule;
+  const itemsWithDocs: NavItem[] = docsNavItem ? [...itemsWithSchedule, docsNavItem] : itemsWithSchedule;
+
+  const showPricing = isPricingNavItemVisible(actorRole);
+  return itemsWithDocs.map((item) => {
+    if (item.id === 'settings' && item.subItems) {
+      const filtered = item.subItems.filter((s) => s.href !== '/settings/pricing');
+      if (showPricing) {
+        const calIndex = filtered.findIndex((s) => s.href === '/settings/calendar');
+        const pricingItem = { id: 'pricing_settings', label: 'Cennik wyceny', href: '/settings/pricing' };
+        const updated = [...filtered];
+        if (calIndex !== -1) {
+          updated.splice(calIndex + 1, 0, pricingItem);
+        } else {
+          updated.push(pricingItem);
+        }
+        return { ...item, subItems: updated };
+      }
+      return { ...item, subItems: filtered };
+    }
+    return item;
+  });
 }
 
 export default async function DashboardLayout({

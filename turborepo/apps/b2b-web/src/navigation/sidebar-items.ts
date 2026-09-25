@@ -14,6 +14,7 @@ import {
 import type { Role } from '@klikklima/contracts';
 import { isScheduleNavItemVisible } from '../lib/schedule/nav-visibility';
 import { isDocsNavItemVisible } from '../lib/docs/nav-visibility';
+import { isPricingNavItemVisible } from '../lib/pricing/nav-visibility';
 
 export interface NavSubItem {
   id: string;
@@ -104,9 +105,27 @@ export function getNavItemsForRole(actorRole: Role | null): NavItem[] {
     : baseNavItems;
 
   const showDocs = isDocsNavItemVisible(actorRole);
-  const docsNavItem: NavItem | null = showDocs
-    ? { id: 'docs', label: 'Dokumentacja', icon: BookOpen, href: '/dokumentacja' }
-    : null;
+  const itemsWithDocs = showDocs
+    ? [...itemsWithSchedule, { id: 'docs', label: 'Dokumentacja', icon: BookOpen, href: '/dokumentacja' } as NavItem]
+    : itemsWithSchedule;
 
-  return docsNavItem ? [...itemsWithSchedule, docsNavItem] : itemsWithSchedule;
+  const showPricing = isPricingNavItemVisible(actorRole);
+  return itemsWithDocs.map((item) => {
+    if (item.id === 'settings' && item.subItems) {
+      const filtered = item.subItems.filter((s) => s.href !== '/settings/pricing');
+      if (showPricing) {
+        const calIndex = filtered.findIndex((s) => s.href === '/settings/calendar');
+        const pricingItem: NavSubItem = { id: 'pricing_settings', label: 'Cennik wyceny', href: '/settings/pricing' };
+        const updated = [...filtered];
+        if (calIndex !== -1) {
+          updated.splice(calIndex + 1, 0, pricingItem);
+        } else {
+          updated.push(pricingItem);
+        }
+        return { ...item, subItems: updated };
+      }
+      return { ...item, subItems: filtered };
+    }
+    return item;
+  });
 }
