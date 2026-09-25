@@ -171,7 +171,9 @@ describe('importPriceList — AC-I3 (jawny brak wartości, nie zero)', () => {
     });
     const nullCrewCost = items.filter((i) => i.versions[0]?.crewCostNet === null);
     expect(nullCrewCost).toHaveLength(13);
-    const zeroCrewCost = items.filter((i) => i.versions[0] && Number(i.versions[0].crewCostNet) === 0);
+    const zeroCrewCost = items.filter(
+      (i) => i.versions[0] && i.versions[0].crewCostNet !== null && Number(i.versions[0].crewCostNet) === 0,
+    );
     expect(zeroCrewCost).toHaveLength(0);
   });
 
@@ -323,8 +325,11 @@ describe('importPriceList — AC-I5 (idempotencja)', () => {
     // naiwny byłby błędny. Zamiast tego zamieniamy WYŁĄCZNIE ogon linii po zamykającym cudzysłowie
     // (`unit,crew_cost_net,sale_price_net,scope`, tu: `szt,,1000.00,ROOM`), który dla tej pozycji jest
     // unikalny — crew_cost_net (drugie pole ogona) jest puste między dwoma przecinkami.
+    // Plik źródłowy ma zakończenia linii CRLF — każda linia z `split('\n')` niesie końcowy `\r`,
+    // więc `endsWith` musi sprawdzać treść PO przycięciu białych znaków na końcu; sam `.replace(...)`
+    // niżej nie jest tym dotknięty, bo szuka podciągu, nie końca całego stringa.
     const originalTail = 'szt,,1000.00,ROOM';
-    expect(lines[targetLineIndex]!.endsWith(originalTail)).toBe(true);
+    expect(lines[targetLineIndex]!.trimEnd().endsWith(originalTail)).toBe(true);
     lines[targetLineIndex] = lines[targetLineIndex]!.replace(originalTail, 'szt,15.00,1000.00,ROOM');
     const modifiedCsv = lines.join('\n');
 

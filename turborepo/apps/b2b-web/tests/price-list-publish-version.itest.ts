@@ -98,17 +98,69 @@ describe('publishPriceVersion — AC-S5 (nowa wersja nie nadpisuje starej)', () 
 
   // Przypadek brzegowy z WO: "Współbieżność publikacji ceny" — dwie RÓWNOLEGŁE publikacje
   // nowej ceny tej samej pozycji.
+  //
+  // TEST-DEFECT naprawiony (recenzja PR #9, CI job `integracja`): goły `Promise.all` na
+  // dwóch wywołaniach `publishPriceVersion` NIE dowodzi tu niczego, w odróżnieniu od
+  // `create-booking-concurrency.itest.ts` AC4/AC5 — tam PRZEGRANY ma naturalny mechanizm
+  // odmowy nawet przy czysto SEKWENCYJNYM wykonaniu (jego własny pre-check
+  // `findAvailableSlots` widzi już zajęty slot i odmawia, zanim dotrze do bazy).
+  // `publishPriceVersion` nie ma takiego pre-checku: bezwarunkowo zdejmuje `is_current` ze
+  // starej wersji i wstawia nową. Jeśli dwa wywołania wykonają się w PRAWDZIE sekwencyjnie
+  // (drugie zaczyna się po pełnym COMMIT pierwszego), OBIE po prostu się udają — to jest
+  // poprawne zachowanie „ostatni zapis wygrywa", nie wyścig, i `Promise.all` sam z siebie
+  // NIE GWARANTUJE, że dwie transakcje SQL faktycznie nałożą się w czasie na Postgresie
+  // (potwierdzone w CI: 2 sukcesy, 0 błędów). Dowód właściwości izolacji `Serializable`
+  // wymaga WYMUSZENIA prawdziwego nakładania się dwóch transakcji — stąd blokada
+  // `SELECT ... FOR UPDATE` na TYM SAMYM wierszu, który `updateMany` wewnątrz
+  // `publishPriceVersion` też będzie chciał zmodyfikować, utrzymywana z ZEWNĄTRZ w osobnej
+  // transakcji testu i zwalniana TYLKO PO tym, jak obie publikacje realnie zawisły na niej.
+  // Nie dotyka `publishPriceVersion` — woła go dokładnie tak samo jak wcześniej, tylko
+  // otacza jego wywołanie kontrolowaną blokadą.
   // @REQ: PRICE-LIST-SCHEMA
   it(
-    'współbieżność — dwie RÓWNOLEGŁE publikacje tej samej pozycji: dokładnie jedna is_current w bazie po zakończeniu, przegrany dostaje błąd DOMENOWY (nie surowy P2002/23505), pozycja nigdy nie zostaje bez wersji bieżącej',
+    'współbieżność — dwie RÓWNOLEGŁE publikacje tej samej pozycji, wymuszone do PRAWDZIWEGO nakładania się w czasie blokadą wiersza: dokładnie jedna is_current w bazie po zakończeniu, przegrany dostaje błąd DOMENOWY (nie surowy P2002/23505/40001), pozycja nigdy nie zostaje bez wersji bieżącej',
     async () => {
       const item = await createTestItem();
       await publishPriceVersion({ priceListItemId: item.id, salePriceNet: 100 });
 
-      const [resultA, resultB] = await Promise.all([
-        publishPriceVersion({ priceListItemId: item.id, salePriceNet: 200 }),
-        publishPriceVersion({ priceListItemId: item.id, salePriceNet: 300 }),
-      ]);
+      function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+        let resolveFn!: (value: T) => void;
+        const promise = new Promise<T>((resolve) => {
+          resolveFn = resolve;
+        });
+        return { promise, resolve: resolveFn };
+      }
+
+      const lockAcquired = deferred<void>();
+      const releaseLock = deferred<void>();
+
+      // Transakcja BLOKUJĄCA, kontrolowana przez test — trzyma zablokowany (`FOR UPDATE`)
+      // dokładnie ten wiersz, który `updateMany` wewnątrz `publishPriceVersion` też próbuje
+      // zmodyfikować (`WHERE price_list_item_id = ... AND is_current = true`). Obie
+      // publikacje poniżej MUSZĄ na niej zawisnąć, zanim ją zwolnimy.
+      const lockTxPromise = prisma.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe(
+          'SELECT id FROM price_list_item_versions WHERE price_list_item_id = $1 AND is_current = true FOR UPDATE',
+          item.id,
+        );
+        lockAcquired.resolve();
+        await releaseLock.promise;
+      });
+
+      await lockAcquired.promise;
+
+      const publishA = publishPriceVersion({ priceListItemId: item.id, salePriceNet: 200 });
+      const publishB = publishPriceVersion({ priceListItemId: item.id, salePriceNet: 300 });
+
+      // Obie publikacje muszą realnie WYSŁAĆ swój UPDATE i zawisnąć na blokadzie wiersza
+      // (żywy Postgres, nie atrapa) — 300ms to wielokrotność czasu potrzebnego na dwa
+      // krótkie round-tripy do lokalnej bazy, zanim zwolnimy blokadę.
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      releaseLock.resolve();
+      await lockTxPromise;
+
+      const [resultA, resultB] = await Promise.all([publishA, publishB]);
 
       const outcomes = [resultA, resultB];
       const successes = outcomes.filter((r) => r.ok);
@@ -117,9 +169,11 @@ describe('publishPriceVersion — AC-S5 (nowa wersja nie nadpisuje starej)', () 
       expect(successes).toHaveLength(1);
       expect(failures).toHaveLength(1);
       if (failures[0]!.ok) throw new Error('unreachable');
-      // Błąd domenowy: kod rozpoznawalny przez wołającego, NIE surowy SQLSTATE ('23505')
-      // ani kod Prisma ('P2002') przeciekający przez warstwę domenową.
+      // Błąd domenowy: kod rozpoznawalny przez wołającego, NIE surowy SQLSTATE ('23505',
+      // '40001' — porażka serializowalności, którą ta blokada teraz REALNIE wywołuje) ani
+      // kod Prisma ('P2002') przeciekający przez warstwę domenową.
       expect(failures[0]!.error.code).not.toBe('23505');
+      expect(failures[0]!.error.code).not.toBe('40001');
       expect(failures[0]!.error.code).not.toBe('P2002');
       expect(typeof failures[0]!.error.code).toBe('string');
       expect(failures[0]!.error.code.length).toBeGreaterThan(0);
