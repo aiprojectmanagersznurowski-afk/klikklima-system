@@ -1,5 +1,6 @@
 import { prisma } from "@repo/database"
 import type { PriceListItemVersion } from "@repo/database"
+import { extractSqlState } from "@repo/scheduling"
 
 /**
  * WO: docs/workorders/PRICE-LIST-IMPORT.md — PRICE-LIST-SCHEMA (AC-S5, przypadek brzegowy
@@ -63,12 +64,21 @@ export async function publishPriceVersion(
 
     return { ok: true, version }
   } catch (error) {
+    // Surowy SQLSTATE/kod Prisma NIGDY nie przecieka do wołającego (WO, AC-S5) — może
+    // zawierać nazwy kolumn/tabel albo fragmenty zapytania. Rozróżniamy WYŁĄCZNIE kody
+    // spójne z wyścigiem publikacji (40001 — porażka izolacji `Serializable`; 23505/P2002 —
+    // naruszenie indeksu częściowego `..._current_per_item_key`, gdyby wyścig zdążył
+    // wstawić drugi wiersz przed sprawdzeniem serializowalności) od pozostałych błędów bazy.
+    const sqlState = extractSqlState(error)
+    if (sqlState === "40001" || sqlState === "23505") {
+      return {
+        ok: false,
+        error: { code: "PRICE_LIST_VERSION_CONFLICT", message: "Konflikt równoległej publikacji ceny." },
+      }
+    }
     return {
       ok: false,
-      error: {
-        code: "PRICE_LIST_VERSION_CONFLICT",
-        message: error instanceof Error ? error.message : String(error),
-      },
+      error: { code: "PRICE_LIST_VERSION_WRITE_FAILED", message: "Nie udało się zapisać nowej wersji ceny." },
     }
   }
 }
@@ -138,6 +148,18 @@ function parseCsvLine(line: string): string[] {
   return result
 }
 
+/** Kolumny w tej dokładnej kolejności — arkusz z zamienionymi `crew_cost_net`/`sale_price_net`
+ * (albo jakąkolwiek inną permutacją) MUSI być odrzucony w całości, nie zaimportowany po cichu
+ * z pomieszanymi wartościami. */
+const EXPECTED_HEADER = "category,item_name,description,unit,crew_cost_net,sale_price_net,scope"
+
+function assertHeader(csvContent: string): void {
+  const firstLine = csvContent.split(/\r?\n/)[0]?.trim() ?? ""
+  if (firstLine !== EXPECTED_HEADER) {
+    throw new Error("PRICE_LIST_HEADER_MISMATCH")
+  }
+}
+
 function parseCsvRows(csvContent: string): string[][] {
   const lines = csvContent.split(/\r?\n/).filter((line) => line.trim().length > 0)
   return lines.slice(1).map(parseCsvLine)
@@ -164,6 +186,10 @@ function parseRow(fields: string[]): ParseRowResult {
   const [categoryRaw = "", nameRaw = "", descriptionRaw = "", unitRaw = "", crewCostRaw = "", salePriceRaw = "", scopeRaw = ""] =
     fields
   const name = nameRaw.trim()
+
+  if (name === "") {
+    return { ok: false, name, reason: "Nazwa pozycji jest pusta — wiersz pominięty" }
+  }
 
   const category = mapCategory(categoryRaw)
   if (!category.ok) {
@@ -228,6 +254,8 @@ export async function importPriceList(csvContent: string): Promise<PriceListImpo
     priceChanges: [],
   }
 
+  assertHeader(csvContent)
+
   const rows = parseCsvRows(csvContent)
 
   for (const fields of rows) {
@@ -245,15 +273,24 @@ export async function importPriceList(csvContent: string): Promise<PriceListImpo
     })
 
     if (!existing) {
-      // Import atomowy: pozycja i jej pierwsza wersja powstają razem albo wcale.
-      await prisma.$transaction(async (tx) => {
-        const item = await tx.priceListItem.create({
-          data: { name, description, unit, category, scope },
+      // Import atomowy: pozycja i jej pierwsza wersja powstają razem albo wcale. Błąd bazy
+      // (np. `sale_price_net` przekraczające precyzję NUMERIC(12,2)) NIE MOŻE przerwać
+      // przetwarzania pozostałych wierszy tego samego pliku — transakcja tej jednej pozycji
+      // wycofuje się sama, a wiersz trafia do `skipped` z sanitized przyczyną (surowy
+      // SQLSTATE/komunikat Postgresa nigdy nie przecieka do raportu).
+      try {
+        await prisma.$transaction(async (tx) => {
+          const item = await tx.priceListItem.create({
+            data: { name, description, unit, category, scope },
+          })
+          await tx.priceListItemVersion.create({
+            data: { priceListItemId: item.id, salePriceNet, crewCostNet, isCurrent: true },
+          })
         })
-        await tx.priceListItemVersion.create({
-          data: { priceListItemId: item.id, salePriceNet, crewCostNet, isCurrent: true },
-        })
-      })
+      } catch {
+        report.skipped.push({ name, reason: "Błąd zapisu w bazie danych — wiersz pominięty" })
+        continue
+      }
       report.createdItems += 1
       report.createdVersions += 1
       continue
@@ -302,6 +339,14 @@ export async function importPriceList(csvContent: string): Promise<PriceListImpo
         itemName: name,
         before: { salePriceNet: currentSale ?? 0, crewCostNet: currentCrew ?? null },
         after: { salePriceNet: Number(salePriceNet), crewCostNet: nextCrew },
+      })
+    } else {
+      // MAJOR (audyt): publikacja nieudana (konflikt równoległej publikacji albo błąd
+      // zapisu) nie może po cichu zniknąć — admin widzi w raporcie, że TA pozycja NIE
+      // zmieniła ceny, mimo że wiersz z nową ceną był w pliku.
+      report.skipped.push({
+        name,
+        reason: `Publikacja nowej ceny nie powiodła się — konflikt publikacji (${published.error.code})`,
       })
     }
   }

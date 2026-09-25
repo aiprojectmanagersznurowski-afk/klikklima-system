@@ -22,7 +22,13 @@ import { importPriceList } from "../../../../lib/pricing/price-list"
 
 const OTHER_LEGAL_BASIS = AUDIT_REQUIREMENTS.legalBases.at(-1)!
 
-const importPriceListActionSchema = z.string().min(1, "Plik CSV jest wymagany.")
+// Górny limit (MINOR, audyt): 10 MB — pochłania z naddatkiem realny arkusz cennika (kilka
+// tysięcy wierszy), a jednocześnie odrzuca ewidentnie nieprawidłowy/złośliwy upload przed
+// jakimkolwiek parsowaniem CSV.
+const importPriceListActionSchema = z
+  .string()
+  .min(1, "Plik CSV jest wymagany.")
+  .max(10_000_000, "Plik CSV jest zbyt duży.")
 
 export type ImportPriceListActionResult = { success: boolean; error?: string }
 
