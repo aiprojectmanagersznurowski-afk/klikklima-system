@@ -12,7 +12,7 @@ export const SLA = {
   CERT_EXPIRY_WARNING: {"days":30,"scope":"Ile dni przed wygaśnięciem F-Gaz/SEP alarmujemy administratora"},
   AUDITOR_DAILY_CAP: {"count":5,"scope":"Maksymalna liczba audytów przypisanych jednemu audytorowi na dzień"},
   INSTALL_DAY_ALERT: {"hourOfDay":16,"scope":"Godzina, po której niezakończona dzisiejsza instalacja podświetla się na pomarańczowo"},
-  GEOFENCE_UNLOCK_RADIUS: {"meters":20,"scope":"Promień w metrach od punktu docelowego, w którym Field App odblokowuje rozpoczęcie i zakończenie zlecenia"},
+  GEOFENCE_UNLOCK_RADIUS: {"meters":50,"scope":"Promień w metrach od punktu docelowego, w którym Field App odblokowuje rozpoczęcie i zakończenie zlecenia"},
   GEOFENCE_EN_ROUTE_RADIUS: {"meters":3000,"scope":"Promień w metrach (3 km), którego przecięcie w oknie dnia wizyty wyzwala klientowi SMS „w drodze\" — N3/N7/N13/N17"},
   PROPERTY_AREA_VAT_THRESHOLD: {"sqm":300,"scope":"Powierzchnia lokalu mieszkalnego w m², do której (włącznie) obowiązuje obniżona stawka VAT na montaż; powyżej — stawka podstawowa"},
   FIELD_IDEMPOTENCY_RETENTION: {"days":30,"scope":"Po ilu dniach wiersz rejestru field_request_idempotency wolno usunąć — po tym czasie powtórzone żądanie z tym samym kluczem NIE jest już rozpoznawane jako powtórzenie"},
