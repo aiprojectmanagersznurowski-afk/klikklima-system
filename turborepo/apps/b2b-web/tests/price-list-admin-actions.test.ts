@@ -73,7 +73,7 @@ describe('PRICE-LIST-ADMIN — Server Actions w /settings/pricing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getCurrentActorRoleMock.mockResolvedValue('admin');
-    getUserMock.mockResolvedValue({ user: { email: ADMIN_EMAIL } });
+    getUserMock.mockResolvedValue({ data: { user: { email: ADMIN_EMAIL } } });
     createClientMock.mockResolvedValue({
       auth: {
         getUser: getUserMock,
