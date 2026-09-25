@@ -140,7 +140,7 @@ describe('publishPriceVersion — AC-S5 (nowa wersja nie nadpisuje starej)', () 
       // publikacje poniżej MUSZĄ na niej zawisnąć, zanim ją zwolnimy.
       const lockTxPromise = prisma.$transaction(async (tx) => {
         await tx.$executeRawUnsafe(
-          'SELECT id FROM price_list_item_versions WHERE price_list_item_id = $1 AND is_current = true FOR UPDATE',
+          'SELECT id FROM price_list_item_versions WHERE price_list_item_id = $1::uuid AND is_current = true FOR UPDATE',
           item.id,
         );
         lockAcquired.resolve();
