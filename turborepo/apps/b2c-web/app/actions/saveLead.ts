@@ -1,10 +1,21 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import {
+  BUILDING_TYPE_PL,
+  isTriageFieldVisible,
+  PROPERTY_AREA_BAND_IDS,
+  type BuildingTypeId,
+  type TriageAnswers,
+} from "@klikklima/contracts";
 import { supabase } from "@/lib/supabaseClient";
 import { createCalendarEvent } from "./calendar";
 import { prisma } from "@repo/database";
 import { createBooking } from "@repo/scheduling";
+
+const BUILDING_TYPE_ID_BY_PL: Record<string, BuildingTypeId> = Object.fromEntries(
+  (Object.entries(BUILDING_TYPE_PL) as [BuildingTypeId, string][]).map(([id, pl]) => [pl, id])
+);
 
 export interface SaveLeadData {
   name: string;
@@ -27,6 +38,31 @@ function toNullableCoordinate(value: number | string | undefined): number | null
 
 export async function saveLead(data: SaveLeadData) {
   try {
+    // 0. Walidacja Triage (B2C-PROPERTY-AREA-BAND, AC4, AC6)
+    // Sprawdzamy typ budynku oraz widoczność pola PROPERTY_AREA_BAND wg kontraktu PRZED jakimkolwiek zapisem.
+    const rawTriage = data.triageData ? { ...data.triageData } : {};
+    const rawLocation = rawTriage.location;
+    const buildingType = (rawLocation && BUILDING_TYPE_ID_BY_PL[rawLocation]) || rawLocation || rawTriage.buildingType;
+    const answers: TriageAnswers = {};
+    if (buildingType) {
+      answers.BUILDING_TYPE = buildingType;
+    }
+
+    if (isTriageFieldVisible('PROPERTY_AREA_BAND', answers)) {
+      const band = rawTriage.propertyAreaBand;
+      if (!band || !PROPERTY_AREA_BAND_IDS.includes(band)) {
+        return {
+          success: false,
+          code: 'VALIDATION_ERROR',
+          error: 'Wymagane określenie przedziału powierzchni lokalu (wartość ze słownika PROPERTY_AREA_BANDS).',
+        };
+      }
+    } else {
+      // Dla nieruchomości, dla których pytanie nie jest widoczne (np. COMMERCIAL),
+      // wartość przysłana przez klienta nie może trafić do odpowiedzi_triage (AC6).
+      delete rawTriage.propertyAreaBand;
+    }
+
     // 1. Zapisz klienta
     // SEC-RLS-BASELINE: `id` generowane tu, nie odczytywane przez `.select().single()`
     // (INSERT ... RETURNING) — `anon` ma na `klienci` wyłącznie politykę INSERT, nie SELECT,
@@ -65,8 +101,8 @@ export async function saveLead(data: SaveLeadData) {
     // zależy od wyniku `createBooking`, którego jeszcze nie znamy (D-6 wariant (a),
     // FK `Booking.lead` wymaga, żeby lead istniał PRZED próbą rezerwacji).
     let estimatedQuote = null;
-    if (data.triageData?.priceDevices || data.triageData?.priceInstallation) {
-      const total = (data.triageData.priceDevices || 0) + (data.triageData.priceInstallation || 0);
+    if (rawTriage.priceDevices || rawTriage.priceInstallation) {
+      const total = (rawTriage.priceDevices || 0) + (rawTriage.priceInstallation || 0);
       if (total > 0) {
         estimatedQuote = `${total} PLN netto`;
       }
@@ -79,7 +115,7 @@ export async function saveLead(data: SaveLeadData) {
         id: leadId,
         klient_id: klientId,
         adres_id: adresId,
-        odpowiedzi_triage: data.triageData,
+        odpowiedzi_triage: rawTriage,
         estymowana_wycena: estimatedQuote,
         status: 'NEW_LEAD',
         data_rezerwacji: null
