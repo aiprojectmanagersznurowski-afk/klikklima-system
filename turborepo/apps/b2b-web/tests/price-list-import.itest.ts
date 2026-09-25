@@ -289,6 +289,61 @@ describe('importPriceList — AC-I5 (idempotencja)', () => {
     });
     expect(otherItems.every((i) => i.versions.length === 1)).toBe(true);
   });
+
+  // @REQ: PRICE-LIST-IMPORT
+  it("AC-I5 — import pliku, w którym crew_cost_net JEDNEJ pozycji zmienia się z pustego na liczbę, tworzy JEDNĄ nową wersję tej pozycji (WO AC-I5: \"albo crew_cost_net zmienione z pustego na liczbę\")", async () => {
+    const csv = realCsv();
+    const names = extractItemNames(csv);
+    trackNames(names);
+    await importPriceList(csv);
+
+    // 'podłączenie ściennej' ma crew_cost_net puste w arkuszu realnym (AC-I3).
+    const targetName = 'podłączenie ściennej';
+    const before = await prisma.priceListItem.findUnique({
+      where: { name: targetName },
+      include: { versions: { where: { isCurrent: true } } },
+    });
+    expect(before?.versions[0]).toBeDefined();
+    expect(before?.versions[0]?.crewCostNet).toBeNull();
+    const oldVersionId = before!.versions[0]!.id;
+
+    const lines = csv.split('\n');
+    const targetLineIndex = lines.findIndex((l) => l.includes(`,${targetName},`));
+    expect(targetLineIndex).toBeGreaterThan(-1);
+    // `description` tej pozycji jest CYTOWANY i ZAWIERA przecinki ("Montaż wspornika...") — split(',')
+    // naiwny byłby błędny. Zamiast tego zamieniamy WYŁĄCZNIE ogon linii po zamykającym cudzysłowie
+    // (`unit,crew_cost_net,sale_price_net,scope`, tu: `szt,,1000.00,ROOM`), który dla tej pozycji jest
+    // unikalny — crew_cost_net (drugie pole ogona) jest puste między dwoma przecinkami.
+    const originalTail = 'szt,,1000.00,ROOM';
+    expect(lines[targetLineIndex]!.endsWith(originalTail)).toBe(true);
+    lines[targetLineIndex] = lines[targetLineIndex]!.replace(originalTail, 'szt,15.00,1000.00,ROOM');
+    const modifiedCsv = lines.join('\n');
+
+    await importPriceList(modifiedCsv);
+
+    const afterItems = await prisma.priceListItem.findMany({ where: { name: { in: names } } });
+    expect(afterItems).toHaveLength(39);
+    const itemIds = afterItems.map((i) => i.id);
+    const totalVersionsAfter = await prisma.priceListItemVersion.count({ where: { priceListItemId: { in: itemIds } } });
+    expect(totalVersionsAfter).toBe(40); // 39 + jedna nowa wersja tej jednej pozycji
+
+    const oldVersionReread = await prisma.priceListItemVersion.findUnique({ where: { id: oldVersionId } });
+    expect(oldVersionReread?.isCurrent).toBe(false);
+    expect(oldVersionReread?.crewCostNet).toBeNull();
+
+    const afterTarget = await prisma.priceListItem.findUnique({
+      where: { name: targetName },
+      include: { versions: { where: { isCurrent: true } } },
+    });
+    expect(afterTarget?.versions[0]?.crewCostNet?.toFixed(2)).toBe('15.00');
+
+    const otherNames = names.filter((n) => n !== targetName);
+    const otherItems = await prisma.priceListItem.findMany({
+      where: { name: { in: otherNames } },
+      include: { versions: true },
+    });
+    expect(otherItems.every((i) => i.versions.length === 1)).toBe(true);
+  });
 });
 
 describe('importPriceList — przypadki brzegowe', () => {
@@ -393,8 +448,11 @@ describe('importPriceList — przypadki brzegowe', () => {
       where: { name },
       include: { versions: { where: { isCurrent: true } } },
     });
-    expect(item?.versions[0]?.salePriceNet.toString()).toBe('130.00');
-    expect(item?.versions[0]?.crewCostNet?.toString()).toBe('18.72');
+    // `decimal.js` (Prisma 6.19) obcina końcowe zera we `.toString()` (`Decimal('130.00').toString()
+    // === '130'`), więc porównanie stringów z zerami końcowymi byłoby fałszywie czerwone. `.toFixed(2)`
+    // wymusza dwa miejsca po przecinku niezależnie od reprezentacji wewnętrznej.
+    expect(item?.versions[0]?.salePriceNet.toFixed(2)).toBe('130.00');
+    expect(item?.versions[0]?.crewCostNet?.toFixed(2)).toBe('18.72');
   });
 
   // Przypadek pusty (WO, "Zawsze dopisujesz").
@@ -408,25 +466,40 @@ describe('importPriceList — przypadki brzegowe', () => {
     expect(report.createdItems).toBe(0);
   });
 
-  // Import atomowy względem pozycji (WO): wiersz odrzucony przez CHECK (nieznana jednostka)
-  // wymieszany z wierszami poprawnymi nie zostawia ani pozycji bez wersji, ani wersji bez
-  // is_current — pozycje poprawne z TEGO SAMEGO pliku importują się kompletnie.
+  // Import atomowy względem pozycji (WO): błąd zapisu W ŚRODKU importu jednej pozycji (nie błąd
+  // walidacji — ten jest testowany osobno w "przypadkach brzegowych" wyżej i NIGDY nie dociera do
+  // bazy) nie zostawia ani pozycji bez wersji, ani wersji bez is_current — pozycje poprawne z TEGO
+  // SAMEGO pliku importują się kompletnie. Wiersz z jednostką `kg` (jak w poprzedniej wersji tego
+  // testu) jest odrzucony NA WALIDACJI aplikacji, więc nigdy nie trafia do `$transaction` — nie
+  // dowodzi atomowości transakcji, tylko filtrowania wejścia. Zamiast tego `sale_price_net` dostaje
+  // wartość, która PRZECHODZI walidację aplikacji (parsowalna, nieujemna liczba), ale przekracza
+  // precyzję kolumny `NUMERIC(12,2)` (`price_list_item_versions.sale_price_net`, migracja
+  // `20260925090000_price_list_and_quotes.sql:108`, maks. 10 cyfr całkowitych + 2 po przecinku) —
+  // Postgres odrzuca zapis realnym błędem `numeric field overflow` W TRAKCIE `$transaction`, po
+  // stronie bazy, nie aplikacji.
   // @REQ: PRICE-LIST-IMPORT
-  it('brzeg — import atomowy względem pozycji: wiersz z błędem nie zostawia półzaimportowanej pozycji, poprawne wiersze tego samego pliku importują się w całości', async () => {
+  it('brzeg — import atomowy względem pozycji: błąd zapisu w bazie (przekroczenie precyzji NUMERIC) nie zostawia półzaimportowanej pozycji, poprawne wiersze tego samego pliku importują się w całości', async () => {
     const badName = `ITEST ATOMIC-BAD ${randomUUID()}`;
     const goodNameA = `ITEST ATOMIC-GOOD-A ${randomUUID()}`;
     const goodNameB = `ITEST ATOMIC-GOOD-B ${randomUUID()}`;
     trackNames([badName, goodNameA, goodNameB]);
+    // '99999999999999.00' (14 cyfr całkowitych) parsuje się jako liczba dodatnia i przechodzi
+    // każdą walidację aplikacyjną (skończona, nieujemna) — łamie WYŁĄCZNIE ograniczenie bazy.
     const csv = buildCsv([
       ['Materiał', goodNameA, 'opis', 'szt', '10.00', '20.00', 'ROOM'],
-      ['Materiał', badName, 'opis', 'kg', '10.00', '20.00', 'ROOM'],
+      ['Materiał', badName, 'opis', 'szt', '10.00', '99999999999999.00', 'ROOM'],
       ['Materiał', goodNameB, 'opis', 'szt', '10.00', '20.00', 'INSTALLATION'],
     ]);
 
     await importPriceList(csv);
 
-    const badItem = await prisma.priceListItem.findUnique({ where: { name: badName } });
-    expect(badItem).toBeNull();
+    const badItem = await prisma.priceListItem.findUnique({
+      where: { name: badName },
+      include: { versions: true },
+    });
+    // Kryterium atomowości: albo pozycja wcale nie istnieje, albo istnieje BEZ żadnej wersji — nigdy
+    // pozycja z wersją bez is_current, ani pozycja z wersją zapisaną błędną (przepełnioną) kwotą.
+    expect(badItem === null || badItem.versions.length === 0).toBe(true);
 
     const goodItems = await prisma.priceListItem.findMany({
       where: { name: { in: [goodNameA, goodNameB] } },

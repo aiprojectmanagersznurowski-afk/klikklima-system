@@ -144,6 +144,34 @@ describe('importPriceListAction — AC-I6, bramka roli (przed jakimkolwiek zapis
     expect(result.success).toBe(true);
     expect(importPriceListMock).toHaveBeenCalledWith(CSV_CONTENT);
   });
+
+  // Sesja bez e-maila (np. `auth.getUser()` zwraca użytkownika bez pola `email`) łapie mutanta,
+  // który dziś przeżywa: usunięcie `if (!actorEmail) return { success: false, ... }` w
+  // `importPriceListAction` (`.../settings/pricing/actions.ts:61-63`). Rola admina przechodzi
+  // bramkę RBAC, ale bez e-maila nie ma autora wpisu audytowego — zero zapisów, fail-closed.
+  // @REQ: PRICE-LIST-IMPORT
+  it('AC-I6 — sesja bez e-maila (auth.getUser() bez email) jest odrzucona PRZED zapisem, zero wywołań importPriceList i auditLog.create', async () => {
+    getUserMock.mockResolvedValue({ data: { user: { email: undefined } } });
+
+    const result = await importPriceListAction(CSV_CONTENT);
+
+    expect(result.success).toBe(false);
+    expect(importPriceListMock).not.toHaveBeenCalled();
+    expect(auditLogCreateMock).not.toHaveBeenCalled();
+  });
+
+  // Wariant: `user` sam jest `null`/`undefined` (brak sesji Supabase), nie tylko brak `email`
+  // na obiekcie użytkownika.
+  // @REQ: PRICE-LIST-IMPORT
+  it('AC-I6 — sesja bez użytkownika (auth.getUser() zwraca user: null) jest odrzucona PRZED zapisem, zero wywołań importPriceList i auditLog.create', async () => {
+    getUserMock.mockResolvedValue({ data: { user: null } });
+
+    const result = await importPriceListAction(CSV_CONTENT);
+
+    expect(result.success).toBe(false);
+    expect(importPriceListMock).not.toHaveBeenCalled();
+    expect(auditLogCreateMock).not.toHaveBeenCalled();
+  });
 });
 
 describe('importPriceListAction — AC-I6, ślad audytowy (rola admin)', () => {
@@ -188,8 +216,39 @@ describe('importPriceListAction — AC-I6, ślad audytowy (rola admin)', () => {
     expect(call.data.operation).toBe('field_update');
     expect(call.data.resource).toBe('price_list_items');
     expect(call.data.recordId).toBe('item-1');
-    expect(call.data.justification).toContain('120');
-    expect(call.data.justification).toContain('125');
+    // Asercja na SAM podciąg '120'/'125' przechodziłaby także dla kierunku odwróconego
+    // (125 → 120), dla wpisu bez crew_cost_net, albo dla braku kosztu ekipy zapisanego jako
+    // "0.00" — wymuszamy strzałkę kierunku, zgodną z `formatFieldChange`
+    // (`apps/b2b-web/src/app/(dashboard)/settings/calendar/actions.ts:19`, `→`) i implementacją
+    // `importPriceListAction` (`.../settings/pricing/actions.ts:90-94`).
+    expect(call.data.justification).toMatch(/sale_price_net\s+120\.00\s*→\s*125\.00/);
+    expect(call.data.justification).toMatch(/crew_cost_net\s+77\.00\s*→\s*77\.00/);
+  });
+
+  // @REQ: PRICE-LIST-IMPORT
+  it('AC-I6 — zmiana crew_cost_net z pustego (NULL) na liczbę zapisuje "(brak)" jako wartość przed, nie "0.00"', async () => {
+    importPriceListMock.mockResolvedValue({
+      createdItems: 0,
+      createdVersions: 0,
+      updatedVersions: 1,
+      skipped: [],
+      metadataWarnings: [],
+      priceChanges: [
+        {
+          itemId: 'item-3',
+          itemName: 'podłączenie ściennej',
+          before: { salePriceNet: 1000, crewCostNet: null },
+          after: { salePriceNet: 1000, crewCostNet: 15 },
+        },
+      ],
+    });
+
+    await importPriceListAction(CSV_CONTENT);
+
+    expect(auditLogCreateMock).toHaveBeenCalledTimes(1);
+    const call = auditLogCreateMock.mock.calls[0]![0];
+    expect(call.data.recordId).toBe('item-3');
+    expect(call.data.justification).toMatch(/crew_cost_net\s+\(brak\)\s*→\s*15\.00/);
   });
 
   // @REQ: PRICE-LIST-IMPORT
