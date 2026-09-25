@@ -69,7 +69,7 @@ export async function importPriceListAction(csvContent: string): Promise<ImportP
   }
 
   try {
-    const report = await importPriceList(parsed.data)
+    const report = await importPriceList(parsed.data, { actorEmail, actorRole })
 
     // Decyzja człowieka: każdy wpis audytowy dostaje WŁASNĄ `$transaction`, nie jedną
     // transakcję obejmującą całą pętlę zmian — błąd zapisu jednego wpisu nie może cofnąć
