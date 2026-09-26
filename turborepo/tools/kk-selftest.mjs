@@ -77,13 +77,13 @@ const MUTATIONS = [
   // Rozszerzenie MEASURES o 'meters' to moment, w którym reguła pilnująca kształtu pomiaru
   // najłatwiej przestaje czegokolwiek pilnować. Ta mutacja dowodzi, że R21 NADAL łapie próg,
   // który nie mierzy niczego — po rozszerzeniu listy, nie przed nim.
-  { rule: 'R21-sla-shape',         file: 'sla.contract.mjs', from: "meters: 20,   req: ['FLD-GEO-UNLOCK']", to: "req: ['FLD-GEO-UNLOCK']", desc: 'próg geofencingu bez żadnego kształtu pomiaru — sam opis i wymaganie, bez liczby' },
+  { rule: 'R21-sla-shape',         file: 'sla.contract.mjs', from: "meters: 50,   req: ['FLD-GEO-UNLOCK']", to: "req: ['FLD-GEO-UNLOCK']", desc: 'próg geofencingu bez żadnego kształtu pomiaru — sam opis i wymaganie, bez liczby' },
   // Odwrotna strona tej samej reguły: nie „zero kształtów", tylko „dwa naraz". Próg z metrami I dniami
   // nie mówi, co właściwie mierzy — kod importujący go musiałby zgadywać, a dokumentacja pokaże jeden
   // z dwóch (kk-codegen bierze PIERWSZY pasujący skalar i drugi znika po cichu).
-  { rule: 'R21-sla-shape',         file: 'sla.contract.mjs', from: "meters: 20,   req: ['FLD-GEO-UNLOCK']", to: "meters: 20, days: 14, req: ['FLD-GEO-UNLOCK']", desc: 'próg z dwoma kształtami pomiaru naraz — metry i dni w jednej polityce' },
+  { rule: 'R21-sla-shape',         file: 'sla.contract.mjs', from: "meters: 50,   req: ['FLD-GEO-UNLOCK']", to: "meters: 50, days: 14, req: ['FLD-GEO-UNLOCK']", desc: 'próg z dwoma kształtami pomiaru naraz — metry i dni w jednej polityce' },
   // R28: wartość skalara. R21 przepuszcza każdą liczbę, także niemożliwą.
-  { rule: 'R28-sla-range',         file: 'sla.contract.mjs', from: "meters: 20,   req: ['FLD-GEO-UNLOCK']", to: "meters: -20,  req: ['FLD-GEO-UNLOCK']", desc: 'ujemny promień geofencingu — warunek, którego monter pod adresem nigdy nie spełni' },
+  { rule: 'R28-sla-range',         file: 'sla.contract.mjs', from: "meters: 50,   req: ['FLD-GEO-UNLOCK']", to: "meters: -50,  req: ['FLD-GEO-UNLOCK']", desc: 'ujemny promień geofencingu — warunek, którego monter pod adresem nigdy nie spełni' },
 
   // ── Etap 0 Field App: aktor systemowy i pytanie warunkowe (2026-09-23) ──
   // R31 i R32 to dwie NOWE reguły, a nowa reguła bez mutacji jest deklaracją, nie bramką.

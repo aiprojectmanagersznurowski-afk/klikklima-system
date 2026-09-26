@@ -41,7 +41,9 @@ export const SLA_POLICIES = [
   // istnieje wyłącznie `meters`, nie da się pomylić metra z kilometrem ani wprowadzić przeliczania do kodu.
   // Świadomy koszt: literał 3000 czyta się gorzej niż „3 km" — dlatego jednostkę mówi słowami `scope`.
   // Specyfikacja rekomendowała nazwy z sufiksem (_M, _KM); sufiksy odrzucone razem z drugą jednostką.
-  { id: 'GEOFENCE_UNLOCK_RADIUS',   scope: 'Promień w metrach od punktu docelowego, w którym Field App odblokowuje rozpoczęcie i zakończenie zlecenia', meters: 20,   req: ['FLD-GEO-UNLOCK'] },
+  // Promień odblokowania: 50 m (decyzja człowieka 2026-09-25, wcześniej 20 m). Jeden promień dla wszystkich
+  // typów wizyt — audyt i montaż — bez rozbicia na osobne progi per typ zlecenia.
+  { id: 'GEOFENCE_UNLOCK_RADIUS',   scope: 'Promień w metrach od punktu docelowego, w którym Field App odblokowuje rozpoczęcie i zakończenie zlecenia', meters: 50,   req: ['FLD-GEO-UNLOCK'] },
   { id: 'GEOFENCE_EN_ROUTE_RADIUS', scope: 'Promień w metrach (3 km), którego przecięcie w oknie dnia wizyty wyzwala klientowi SMS „w drodze" — N3/N7/N13/N17', meters: 3000, req: ['FLD-GEO-EN-ROUTE'] },
 
   // ── Próg podatkowy wyceny (D16/D17, rozstrzygnięte 2026-09-23) ──
