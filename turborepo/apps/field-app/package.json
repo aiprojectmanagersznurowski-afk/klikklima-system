@@ -15,10 +15,10 @@
   "dependencies": {
     "@klikklima/contracts": "*",
     "@supabase/supabase-js": "^2.110.2",
-    "expo": "~52.0.0",
-    "expo-status-bar": "~2.0.0",
+    "expo": "~57.0.0",
+    "expo-status-bar": "~57.0.0",
     "react": "19.2.4",
-    "react-native": "0.76.7"
+    "react-native": "0.86.3"
   },
   "devDependencies": {
     "typescript": "5.9.2"

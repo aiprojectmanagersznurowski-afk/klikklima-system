@@ -38,6 +38,11 @@ export const theme = {
     red500: '#ef4444',
     red700: '#b91c1c',
 
+    // Indigo / Secondary
+    indigo50: '#eef2ff',
+    indigo200: '#c7d2fe',
+    indigo600: '#4f46e5',
+
     // Neutral
     white: '#ffffff',
     black: '#000000',

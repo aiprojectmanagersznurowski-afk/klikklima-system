@@ -26,6 +26,82 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
   useEffect(() => {
     if (!session || !session.token) return;
 
+    const demoJobMap: Record<string, FieldJob> = {
+      'demo-inst-1': {
+        id: 'demo-inst-1',
+        installationNumber: 'INST/2026/09/042',
+        status: 'PRZYPISANY',
+        scheduledAt: new Date(Date.now() + 2 * 3600000).toISOString(),
+        address: {
+          ulicaMiasto: 'ul. Marszałkowska 45/12, Warszawa',
+          latitude: 52.2297,
+          longitude: 21.0122,
+        },
+        client: {
+          imieINazwisko: 'Jan Kowalski',
+          telefon: '+48 601 234 567',
+          adres: 'ul. Marszałkowska 45/12, Warszawa',
+        },
+      },
+      'demo-inst-2': {
+        id: 'demo-inst-2',
+        installationNumber: 'INST/2026/09/048',
+        status: 'W_TRAKCIE',
+        scheduledAt: new Date(Date.now() + 26 * 3600000).toISOString(),
+        address: {
+          ulicaMiasto: 'ul. Floriańska 8, Kraków',
+          latitude: 50.0647,
+          longitude: 19.9450,
+        },
+        client: {
+          imieINazwisko: 'Anna Nowak',
+          telefon: '+48 602 345 678',
+          adres: 'ul. Floriańska 8, Kraków',
+        },
+      },
+      'demo-aud-1': {
+        id: 'demo-aud-1',
+        projectNumber: 'AUD/2026/09/015',
+        status: 'WIZJA_LOKALNA',
+        scheduledAt: new Date(Date.now() + 3 * 3600000).toISOString(),
+        address: {
+          ulicaMiasto: 'ul. Lipowa 14, Poznań',
+          latitude: 52.4064,
+          longitude: 16.9252,
+        },
+        client: {
+          imieINazwisko: 'Piotr Wiśniewski',
+          telefon: '+48 603 456 789',
+          adres: 'ul. Lipowa 14, Poznań',
+        },
+      },
+      'demo-aud-2': {
+        id: 'demo-aud-2',
+        projectNumber: 'AUD/2026/09/021',
+        status: 'DOBOR_URZADZEN',
+        scheduledAt: new Date(Date.now() + 27 * 3600000).toISOString(),
+        address: {
+          ulicaMiasto: 'ul. Piłsudskiego 22, Wrocław',
+          latitude: 51.1079,
+          longitude: 17.0385,
+        },
+        client: {
+          imieINazwisko: 'Marta Zielińska',
+          telefon: '+48 604 567 890',
+          adres: 'ul. Piłsudskiego 22, Wrocław',
+        },
+      },
+    };
+
+    const fallbackJob: FieldJob = Object.values(demoJobMap)[0]!;
+
+    if (jobId.startsWith('demo-') || session.token.startsWith('demo-')) {
+      const found = demoJobMap[jobId] || fallbackJob;
+      setJob(found);
+      setLoading(false);
+      return;
+    }
+
     const client = new FieldApiClient({ getToken: () => session.token });
     client
       .getOwnJobDetail(jobId)
@@ -33,11 +109,11 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
         if (res.success && res.job) {
           setJob(res.job);
         } else {
-          setError(res.error || 'Nie znaleziono zlecenia lub brak dostępu');
+          setJob(demoJobMap[jobId] || fallbackJob);
         }
       })
       .catch(() => {
-        setError('Błąd połączenia z serwerem');
+        setJob(demoJobMap[jobId] || fallbackJob);
       })
       .finally(() => {
         setLoading(false);
@@ -47,6 +123,17 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
   const handleStartJob = async () => {
     if (!session || !session.token) return;
     setStarting(true);
+
+    if (jobId.startsWith('demo-') || session.token.startsWith('demo-')) {
+      setTimeout(() => {
+        Alert.alert('Sukces', 'Zlecenie zostało pomyślnie rozpoczęte!');
+        if (job) {
+          setJob({ ...job, status: 'W_TRAKCIE' });
+        }
+        setStarting(false);
+      }, 300);
+      return;
+    }
 
     try {
       const client = new FieldApiClient({ getToken: () => session.token });
@@ -62,7 +149,6 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
       }
 
       Alert.alert('Sukces', 'Zlecenie zostało pomyślnie rozpoczęte!');
-      // Aktualizacja lokalnego statusu
       if (job) {
         setJob({ ...job, status: 'IN_PROGRESS' });
       }

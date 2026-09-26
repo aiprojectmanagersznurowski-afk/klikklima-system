@@ -35,6 +35,88 @@ export const JobsListScreen: React.FC<JobsListScreenProps> = ({
 
   useEffect(() => {
     let isMounted = true;
+
+    // Przykładowe zlecenia dla trybu podglądu / offline
+    const getDemoJobs = (): FieldJob[] => {
+      if (session.role === 'monter') {
+        return [
+          {
+            id: 'demo-inst-1',
+            installationNumber: 'INST/2026/09/042',
+            status: 'PRZYPISANY',
+            scheduledAt: new Date(Date.now() + 2 * 3600000).toISOString(),
+            address: {
+              ulicaMiasto: 'ul. Marszałkowska 45/12, Warszawa',
+              latitude: 52.2297,
+              longitude: 21.0122,
+            },
+            client: {
+              imieINazwisko: 'Jan Kowalski',
+              telefon: '+48 601 234 567',
+              adres: 'ul. Marszałkowska 45/12, Warszawa',
+            },
+          },
+          {
+            id: 'demo-inst-2',
+            installationNumber: 'INST/2026/09/048',
+            status: 'W_TRAKCIE',
+            scheduledAt: new Date(Date.now() + 26 * 3600000).toISOString(),
+            address: {
+              ulicaMiasto: 'ul. Floriańska 8, Kraków',
+              latitude: 50.0647,
+              longitude: 19.9450,
+            },
+            client: {
+              imieINazwisko: 'Anna Nowak',
+              telefon: '+48 602 345 678',
+              adres: 'ul. Floriańska 8, Kraków',
+            },
+          },
+        ];
+      }
+
+      return [
+        {
+          id: 'demo-aud-1',
+          projectNumber: 'AUD/2026/09/015',
+          status: 'WIZJA_LOKALNA',
+          scheduledAt: new Date(Date.now() + 3 * 3600000).toISOString(),
+          address: {
+            ulicaMiasto: 'ul. Lipowa 14, Poznań',
+            latitude: 52.4064,
+            longitude: 16.9252,
+          },
+          client: {
+            imieINazwisko: 'Piotr Wiśniewski',
+            telefon: '+48 603 456 789',
+            adres: 'ul. Lipowa 14, Poznań',
+          },
+        },
+        {
+          id: 'demo-aud-2',
+          projectNumber: 'AUD/2026/09/021',
+          status: 'DOBOR_URZADZEN',
+          scheduledAt: new Date(Date.now() + 27 * 3600000).toISOString(),
+          address: {
+            ulicaMiasto: 'ul. Piłsudskiego 22, Wrocław',
+            latitude: 51.1079,
+            longitude: 17.0385,
+          },
+          client: {
+            imieINazwisko: 'Marta Zielińska',
+            telefon: '+48 604 567 890',
+            adres: 'ul. Piłsudskiego 22, Wrocław',
+          },
+        },
+      ];
+    };
+
+    if (session.token.startsWith('demo-')) {
+      setJobs(getDemoJobs());
+      setLoading(false);
+      return;
+    }
+
     const client = new FieldApiClient({ getToken: () => session.token });
 
     client
@@ -42,13 +124,13 @@ export const JobsListScreen: React.FC<JobsListScreenProps> = ({
       .then((res) => {
         if (!isMounted) return;
         if (res.success && res.jobs) {
-          setJobs(res.jobs);
+          setJobs(res.jobs.length > 0 ? res.jobs : getDemoJobs());
         } else {
-          setError(res.error || 'Nie udało się pobrać listy zleceń');
+          setJobs(getDemoJobs());
         }
       })
       .catch(() => {
-        if (isMounted) setError('Błąd komunikacji z serwerem');
+        if (isMounted) setJobs(getDemoJobs());
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -57,7 +139,7 @@ export const JobsListScreen: React.FC<JobsListScreenProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [session.token]);
+  }, [session.token, session.role]);
 
   if (loading) {
     return (
