@@ -6,9 +6,11 @@ import { JobsListScreen } from './screens/JobsListScreen';
 import { JobDetailsScreen } from './screens/JobDetailsScreen';
 import { ConsentsScreen } from './screens/ConsentsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
+import { ChecklistScreen } from './screens/ChecklistScreen';
+import { HandoverProtocolScreen } from './screens/HandoverProtocolScreen';
 import { colors } from './theme';
 
-export type ActiveScreen = 'jobs' | 'job-detail' | 'consents' | 'profile';
+export type ActiveScreen = 'jobs' | 'job-detail' | 'checklist' | 'handover' | 'consents' | 'profile';
 
 export function App() {
   const [session, setSession] = useState(() => getCurrentSession());
@@ -74,6 +76,32 @@ export function App() {
             jobId={selectedJobId}
             onBack={() => setCurrentScreen('jobs')}
             onMissingConsents={handleMissingConsents}
+            onOpenChecklist={(id) => {
+              setSelectedJobId(id);
+              setCurrentScreen('checklist');
+            }}
+            onOpenHandover={(id) => {
+              setSelectedJobId(id);
+              setCurrentScreen('handover');
+            }}
+          />
+        )}
+
+        {currentScreen === 'checklist' && selectedJobId && (
+          <ChecklistScreen
+            jobId={selectedJobId}
+            onBack={() => setCurrentScreen('job-detail')}
+          />
+        )}
+
+        {currentScreen === 'handover' && selectedJobId && (
+          <HandoverProtocolScreen
+            jobId={selectedJobId}
+            indoorUnitsCount={1}
+            onBack={() => setCurrentScreen('job-detail')}
+            onProceedToSign={() => {
+              setCurrentScreen('job-detail');
+            }}
           />
         )}
 
