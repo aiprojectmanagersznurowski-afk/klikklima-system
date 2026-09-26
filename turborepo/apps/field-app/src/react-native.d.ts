@@ -53,12 +53,18 @@ declare module 'react-native' {
   }
   export const ActivityIndicator: import('react').FC<ActivityIndicatorProps>;
 
+  export interface ScrollViewProps extends ViewProps {
+    contentContainerStyle?: StyleProp<ViewStyle>;
+  }
+  export const ScrollView: import('react').FC<ScrollViewProps>;
+
   export interface FlatListProps<T> {
     data: T[];
     keyExtractor: (item: T, index: number) => string;
     renderItem: (info: { item: T; index: number }) => import('react').ReactElement | null;
     contentContainerStyle?: StyleProp<ViewStyle>;
     ListEmptyComponent?: import('react').ReactElement | import('react').ComponentType | null;
+    ListHeaderComponent?: import('react').ReactElement | import('react').ComponentType | null;
   }
   export function FlatList<T>(props: FlatListProps<T>): import('react').ReactElement;
 

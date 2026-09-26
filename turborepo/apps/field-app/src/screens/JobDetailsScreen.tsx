@@ -9,12 +9,16 @@ interface JobDetailsScreenProps {
   jobId: string;
   onBack: () => void;
   onMissingConsents: (missing: string[]) => void;
+  onOpenChecklist?: (jobId: string) => void;
+  onOpenHandover?: (jobId: string) => void;
 }
 
 export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
   jobId,
   onBack,
   onMissingConsents,
+  onOpenChecklist,
+  onOpenHandover,
 }) => {
   const [job, setJob] = useState<FieldJob | null>(null);
   const [loading, setLoading] = useState(true);
@@ -209,6 +213,22 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
         <Text style={styles.hintText}>Promień odblokowania: 50 m (SLA.GEOFENCE_UNLOCK_RADIUS)</Text>
       </View>
 
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => onOpenChecklist?.(jobId)}
+        >
+          <Text style={styles.actionBtnText}>📋 Checklista</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => onOpenHandover?.(jobId)}
+        >
+          <Text style={styles.actionBtnText}>📑 Protokół</Text>
+        </TouchableOpacity>
+      </View>
+
       <TouchableOpacity
         style={[styles.startButton, starting && styles.startButtonDisabled]}
         onPress={handleStartJob}
@@ -300,6 +320,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.slate500,
     marginTop: 4,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  actionBtn: {
+    flex: 1,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.sky600,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  actionBtnText: {
+    color: colors.sky700,
+    fontSize: 14,
+    fontWeight: '700',
   },
   startButton: {
     backgroundColor: colors.sky600,
