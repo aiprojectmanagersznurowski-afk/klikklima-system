@@ -13,11 +13,43 @@ declare module 'react-native' {
 
   export const StyleSheet: {
     create<T extends StyleSheetNamedStyles>(styles: T): T;
+    absoluteFillObject: ViewStyle;
+  };
+
+  export interface GestureResponderEvent {
+    nativeEvent: {
+      locationX: number;
+      locationY: number;
+      pageX: number;
+      pageY: number;
+      [key: string]: unknown;
+    };
+  }
+
+  export interface PanResponderCallbacks {
+    onStartShouldSetPanResponder?: (evt: GestureResponderEvent) => boolean;
+    onMoveShouldSetPanResponder?: (evt: GestureResponderEvent) => boolean;
+    onPanResponderGrant?: (evt: GestureResponderEvent) => void;
+    onPanResponderMove?: (evt: GestureResponderEvent) => void;
+    onPanResponderRelease?: (evt: GestureResponderEvent) => void;
+    onPanResponderTerminate?: (evt: GestureResponderEvent) => void;
+  }
+
+  export interface PanResponderInstance {
+    panHandlers: {
+      [key: string]: unknown;
+    };
+  }
+
+  export const PanResponder: {
+    create(config: PanResponderCallbacks): PanResponderInstance;
   };
 
   export interface ViewProps {
     style?: StyleProp<ViewStyle>;
+    pointerEvents?: 'box-none' | 'none' | 'box-only' | 'auto';
     children?: import('react').ReactNode;
+    [key: string]: unknown;
   }
   export const View: import('react').FC<ViewProps>;
 

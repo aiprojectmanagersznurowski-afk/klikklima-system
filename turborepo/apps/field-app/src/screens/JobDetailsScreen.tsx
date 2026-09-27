@@ -11,6 +11,7 @@ interface JobDetailsScreenProps {
   onMissingConsents: (missing: string[]) => void;
   onOpenChecklist?: (jobId: string) => void;
   onOpenHandover?: (jobId: string) => void;
+  onOpenSignature?: (jobId: string) => void;
 }
 
 export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
@@ -19,6 +20,7 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
   onMissingConsents,
   onOpenChecklist,
   onOpenHandover,
+  onOpenSignature,
 }) => {
   const [job, setJob] = useState<FieldJob | null>(null);
   const [loading, setLoading] = useState(true);
@@ -226,6 +228,13 @@ export const JobDetailsScreen: React.FC<JobDetailsScreenProps> = ({
           onPress={() => onOpenHandover?.(jobId)}
         >
           <Text style={styles.actionBtnText}>📑 Protokół</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => onOpenSignature?.(jobId)}
+        >
+          <Text style={styles.actionBtnText}>✍️ Podpis</Text>
         </TouchableOpacity>
       </View>
 
