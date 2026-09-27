@@ -8,9 +8,10 @@ import { ConsentsScreen } from './screens/ConsentsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { ChecklistScreen } from './screens/ChecklistScreen';
 import { HandoverProtocolScreen } from './screens/HandoverProtocolScreen';
+import { SignatureScreen } from './screens/SignatureScreen';
 import { colors } from './theme';
 
-export type ActiveScreen = 'jobs' | 'job-detail' | 'checklist' | 'handover' | 'consents' | 'profile';
+export type ActiveScreen = 'jobs' | 'job-detail' | 'checklist' | 'handover' | 'signature' | 'consents' | 'profile';
 
 export function App() {
   const [session, setSession] = useState(() => getCurrentSession());
@@ -84,6 +85,10 @@ export function App() {
               setSelectedJobId(id);
               setCurrentScreen('handover');
             }}
+            onOpenSignature={(id) => {
+              setSelectedJobId(id);
+              setCurrentScreen('signature');
+            }}
           />
         )}
 
@@ -100,8 +105,16 @@ export function App() {
             indoorUnitsCount={1}
             onBack={() => setCurrentScreen('job-detail')}
             onProceedToSign={() => {
-              setCurrentScreen('job-detail');
+              setCurrentScreen('signature');
             }}
+          />
+        )}
+
+        {currentScreen === 'signature' && selectedJobId && (
+          <SignatureScreen
+            jobId={selectedJobId}
+            onBack={() => setCurrentScreen('job-detail')}
+            onComplete={() => setCurrentScreen('job-detail')}
           />
         )}
 
