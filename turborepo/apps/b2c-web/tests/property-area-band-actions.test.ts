@@ -4,40 +4,51 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * WO: docs/workorders/B2C-PROPERTY-AREA-BAND.md
  * Wymaganie: @REQ: B2C-PROPERTY-AREA-BAND
  * AC4, AC6, AC7
+ *
+ * MECHANIZM MOCKOWANIA ZMIENIONY (WO B2C-LEAD-ATOMIC, AC10 — "test-author przepisuje z
+ * mocka supabase.from na Prismę — asercje merytoryczne bez zmian"): `saveLead.ts` przestaje
+ * importować `@/lib/supabaseClient` (P-3), cały zapis idzie przez `@repo/database` (Prisma) w
+ * jednej `prisma.$transaction`, a rezerwacja przez `prepareBookingCandidates` +
+ * `writeBookingCandidate` z `@repo/scheduling` (P-2) — NIE `createBooking`. Wzorzec identyczny
+ * jak w `tests/actions/saveLead.test.ts` / `tests/actions/saveLead.booking.test.ts`. Asercje
+ * merytoryczne dotyczące `PROPERTY_AREA_BAND` (AC4/AC6) bez zmian — zmienia się wyłącznie
+ * ścieżka odczytu argumentu wywołania (`tx.leady.create({ data })` zamiast
+ * `supabase.from('leady').insert(row)`).
  */
 
 const {
-  fromSpy,
-  klienciInsertSpy,
-  adresyInsertSpy,
-  leadyInsertSpy,
-  leadyUpdateSpy,
+  transactionSpy,
+  klienciCreateSpy,
+  adresyCreateSpy,
+  leadyCreateSpy,
   calendarSpy,
-  createBookingSpy,
+  prepareBookingCandidatesSpy,
+  writeBookingCandidateSpy,
   visitDurationBasketFindFirstMock,
 } = vi.hoisted(() => {
-  const klienciInsert = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
-  const adresyInsert = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
-  const leadyInsert = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
-  const leadyUpdateEq = vi.fn(async (_k: string, _v: string) => ({ error: null }));
-  const leadyUpdate = vi.fn((_row: Record<string, unknown>) => ({ eq: leadyUpdateEq }));
+  const klienciCreateSpy = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ ...data }));
+  const adresyCreateSpy = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ ...data }));
+  const leadyCreateSpy = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ ...data }));
 
-  const from = vi.fn((table: string) => {
-    switch (table) {
-      case 'klienci':
-        return { insert: klienciInsert };
-      case 'adresy':
-        return { insert: adresyInsert };
-      case 'leady':
-        return { insert: leadyInsert, update: leadyUpdate };
-      default:
-        throw new Error(`property-area-band-actions.test: nieoczekiwana tabela "${table}"`);
-    }
-  });
+  const fakeTx = {
+    klienci: { create: klienciCreateSpy },
+    adresy: { create: adresyCreateSpy },
+    leady: { create: leadyCreateSpy },
+  };
 
-  const calendar = vi.fn(async () => ({ success: true, eventId: 'mock-event-id' }));
+  const transactionSpy = vi.fn(async (callback: (tx: typeof fakeTx) => Promise<unknown>) => callback(fakeTx));
 
-  const createBooking = vi.fn(async () => ({
+  const calendarSpy = vi.fn(async () => ({ success: true, eventLink: 'stub' }));
+
+  const prepareBookingCandidatesSpy = vi.fn(async (_params: Record<string, unknown>) => ({
+    ok: true,
+    candidates: [{ resource_id: 'aud-1', resource_kind: 'AUDITOR' as const }],
+    resourceKind: 'AUDITOR' as const,
+    scheduledEnd: new Date('2026-10-01T11:00:00.000Z'),
+    visitBasketId: 'mock-audit-basket-id',
+  }));
+
+  const writeBookingCandidateSpy = vi.fn(async (_tx: unknown, _params: Record<string, unknown>) => ({
     ok: true,
     booking: {
       id: 'mock-booking-id',
@@ -46,43 +57,42 @@ const {
     },
   }));
 
-  const findFirst = vi.fn(async () => ({
+  const visitDurationBasketFindFirstMock = vi.fn(async (_args: Record<string, unknown>) => ({
     id: 'mock-audit-basket-id',
     code: 'AUDIT',
     isActive: true,
+    durationMinutes: 120,
+    pool: 'AUDITOR',
   }));
 
   return {
-    fromSpy: from,
-    klienciInsertSpy: klienciInsert,
-    adresyInsertSpy: adresyInsert,
-    leadyInsertSpy: leadyInsert,
-    leadyUpdateSpy: leadyUpdate,
-    calendarSpy: calendar,
-    createBookingSpy: createBooking,
-    visitDurationBasketFindFirstMock: findFirst,
+    transactionSpy,
+    klienciCreateSpy,
+    adresyCreateSpy,
+    leadyCreateSpy,
+    calendarSpy,
+    prepareBookingCandidatesSpy,
+    writeBookingCandidateSpy,
+    visitDurationBasketFindFirstMock,
   };
 });
 
-vi.mock('@/lib/supabaseClient', () => ({
-  supabase: {
-    from: fromSpy,
-  },
-}));
+// Stub NIEUŻYWANY merytorycznie — patrz uzasadnienie w `saveLead.test.ts`.
+vi.mock('@/lib/supabaseClient', () => ({ supabase: { from: vi.fn() } }));
 
-vi.mock('../../app/actions/calendar', () => ({
+vi.mock('../app/actions/calendar', () => ({
   createCalendarEvent: calendarSpy,
 }));
 
 vi.mock('@repo/scheduling', () => ({
-  createBooking: createBookingSpy,
+  prepareBookingCandidates: prepareBookingCandidatesSpy,
+  writeBookingCandidate: writeBookingCandidateSpy,
 }));
 
 vi.mock('@repo/database', () => ({
   prisma: {
-    visitDurationBasket: {
-      findFirst: visitDurationBasketFindFirstMock,
-    },
+    visitDurationBasket: { findFirst: visitDurationBasketFindFirstMock },
+    $transaction: transactionSpy,
   },
 }));
 
@@ -116,10 +126,10 @@ describe('B2C-PROPERTY-AREA-BAND — saveLead server action validation & persist
     const result = await saveLead(payload);
 
     expect(result.success).toBe(false);
-    expect(klienciInsertSpy).not.toHaveBeenCalled();
-    expect(adresyInsertSpy).not.toHaveBeenCalled();
-    expect(leadyInsertSpy).not.toHaveBeenCalled();
-    expect(createBookingSpy).not.toHaveBeenCalled();
+    expect(klienciCreateSpy).not.toHaveBeenCalled();
+    expect(adresyCreateSpy).not.toHaveBeenCalled();
+    expect(leadyCreateSpy).not.toHaveBeenCalled();
+    expect(writeBookingCandidateSpy).not.toHaveBeenCalled();
   });
 
   // @REQ: B2C-PROPERTY-AREA-BAND
@@ -135,10 +145,10 @@ describe('B2C-PROPERTY-AREA-BAND — saveLead server action validation & persist
     const result = await saveLead(payload);
 
     expect(result.success).toBe(false);
-    expect(klienciInsertSpy).not.toHaveBeenCalled();
-    expect(adresyInsertSpy).not.toHaveBeenCalled();
-    expect(leadyInsertSpy).not.toHaveBeenCalled();
-    expect(createBookingSpy).not.toHaveBeenCalled();
+    expect(klienciCreateSpy).not.toHaveBeenCalled();
+    expect(adresyCreateSpy).not.toHaveBeenCalled();
+    expect(leadyCreateSpy).not.toHaveBeenCalled();
+    expect(writeBookingCandidateSpy).not.toHaveBeenCalled();
   });
 
   // @REQ: B2C-PROPERTY-AREA-BAND
@@ -154,7 +164,7 @@ describe('B2C-PROPERTY-AREA-BAND — saveLead server action validation & persist
     };
     const result1 = await saveLead(payloadLabel);
     expect(result1.success).toBe(false);
-    expect(klienciInsertSpy).not.toHaveBeenCalled();
+    expect(klienciCreateSpy).not.toHaveBeenCalled();
 
     // Przypadek 2: liczba 300
     const payloadNumber = {
@@ -167,7 +177,7 @@ describe('B2C-PROPERTY-AREA-BAND — saveLead server action validation & persist
     };
     const result2 = await saveLead(payloadNumber as unknown as typeof payloadLabel);
     expect(result2.success).toBe(false);
-    expect(klienciInsertSpy).not.toHaveBeenCalled();
+    expect(klienciCreateSpy).not.toHaveBeenCalled();
   });
 
   // @REQ: B2C-PROPERTY-AREA-BAND
@@ -184,11 +194,11 @@ describe('B2C-PROPERTY-AREA-BAND — saveLead server action validation & persist
     const result = await saveLead(payload);
 
     expect(result.success).toBe(true);
-    expect(klienciInsertSpy).toHaveBeenCalledTimes(1);
-    expect(adresyInsertSpy).toHaveBeenCalledTimes(1);
-    expect(leadyInsertSpy).toHaveBeenCalledTimes(1);
+    expect(klienciCreateSpy).toHaveBeenCalledTimes(1);
+    expect(adresyCreateSpy).toHaveBeenCalledTimes(1);
+    expect(leadyCreateSpy).toHaveBeenCalledTimes(1);
 
-    const leadInsertedRow = leadyInsertSpy.mock.calls[0][0] as {
+    const leadInsertedRow = leadyCreateSpy.mock.calls[0][0].data as {
       odpowiedzi_triage: Record<string, unknown>;
     };
     expect(leadInsertedRow.odpowiedzi_triage.propertyAreaBand).toBe('UP_TO_300');
@@ -207,8 +217,8 @@ describe('B2C-PROPERTY-AREA-BAND — saveLead server action validation & persist
     const result = await saveLead(payload);
 
     expect(result.success).toBe(true);
-    expect(leadyInsertSpy).toHaveBeenCalledTimes(1);
-    const leadInsertedRow = leadyInsertSpy.mock.calls[0][0] as {
+    expect(leadyCreateSpy).toHaveBeenCalledTimes(1);
+    const leadInsertedRow = leadyCreateSpy.mock.calls[0][0].data as {
       odpowiedzi_triage: Record<string, unknown>;
     };
     expect(leadInsertedRow.odpowiedzi_triage.propertyAreaBand).toBeUndefined();
@@ -228,8 +238,8 @@ describe('B2C-PROPERTY-AREA-BAND — saveLead server action validation & persist
     const result = await saveLead(payload);
 
     expect(result.success).toBe(true);
-    expect(leadyInsertSpy).toHaveBeenCalledTimes(1);
-    const leadInsertedRow = leadyInsertSpy.mock.calls[0][0] as {
+    expect(leadyCreateSpy).toHaveBeenCalledTimes(1);
+    const leadInsertedRow = leadyCreateSpy.mock.calls[0][0].data as {
       odpowiedzi_triage: Record<string, unknown>;
     };
     // Wartość nie może trafić do odpowiedzi_triage dla komercyjnego

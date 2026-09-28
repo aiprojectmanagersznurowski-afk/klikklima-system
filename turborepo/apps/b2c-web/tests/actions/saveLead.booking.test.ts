@@ -176,14 +176,18 @@ describe('saveLead — rezerwacja audytu (WO B2C-BOOKING-SLOT, mechanizm mockowa
   });
 
   // @REQ: B2C-BOOKING-SLOT
-  it('AC5 (numeracja B2C-BOOKING-SLOT) — visitBasketId/bookedBy/resource_id/auditorId/status dołączone do żądania NIE są honorowane', async () => {
+  it('AC5 (numeracja B2C-BOOKING-SLOT) — visitBasketId/bookedBy/resource_id/auditorId dołączone do żądania NIE są honorowane', async () => {
+    // Pole `status` NIE wchodzi do tego payloadu: od AC8 (B2C-LEAD-ATOMIC) jego obecność —
+    // niezależnie od wartości — jest odrzucana walidacją Zod przed jakimkolwiek zapisem
+    // (patrz `saveLead.atomic.test.ts`, test AC8). Ten test sprawdza inną rzecz: że pola
+    // rezerwacji dołączone przez atakującego nie są honorowane, więc payload musi przejść
+    // walidację, żeby dotrzeć do `writeBookingCandidate`.
     const maliciousPayload = {
       ...basePayload(),
       visitBasketId: 'attacker-basket-id',
       bookedBy: 'DISPATCHER',
       resource_id: 'attacker-resource',
       auditorId: 'attacker-auditor',
-      status: 'CONFIRMED',
     };
 
     await saveLead(maliciousPayload as unknown as Parameters<typeof saveLead>[0]);
