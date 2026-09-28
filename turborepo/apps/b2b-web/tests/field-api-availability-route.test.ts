@@ -81,6 +81,62 @@ describe('FLD-API-LAYER: Route Handler /api/field/availability/self', () => {
         entityId: 'aud-1',
       }, expect.any(Object));
     });
+
+    // @REQ: FLD-API-LAYER (retro-audyt ŚR-3/M3: bramka can() w GET musi realnie odmawiać,
+    // nie tylko istnieć w kodzie — najbezpieczniejsza interpretacja: rola bez read w macierzy
+    // RBAC dostaje odmowę domyślną, nie dane)
+    it('rola bez uprawnienia read w macierzy RBAC dostaje 403 w GET, bez wywołania odczytu dostępności', async () => {
+      mockVerifyFieldActor.mockResolvedValueOnce({
+        success: true,
+        actor: {
+          email: 'anonymous_role@klikklima.pl',
+          role: 'nieznany',
+          entityId: 'unk-1',
+        },
+      });
+
+      const req = new Request('http://localhost:3000/api/field/availability/self');
+      const response = await GET(req);
+
+      expect(response.status).toBe(403);
+      const json = await response.json();
+      expect(json.success).toBe(false);
+      expect(mockExecuteGetEffectiveAvailability).not.toHaveBeenCalled();
+      expect(mockRecordAccessDenied).toHaveBeenCalledWith(expect.objectContaining({
+        actorEmail: 'anonymous_role@klikklima.pl',
+        actorRole: 'nieznany',
+        attemptedCapability: 'read',
+      }));
+    });
+
+    // @REQ: FLD-API-LAYER (retro-audyt ŚR-3/M6: tożsamość aktora MUSI pochodzić z tokenu
+    // zweryfikowanego przez verifyFieldActor, a nie z nagłówka kontrolowanego przez klienta)
+    it('fałszywy nagłówek X-Actor-Email jest ignorowany — odczyt dostępności używa tożsamości z tokenu', async () => {
+      mockVerifyFieldActor.mockResolvedValueOnce({
+        success: true,
+        actor: {
+          email: 'auditor@klikklima.pl',
+          role: 'audytor',
+          entityId: 'aud-1',
+        },
+      });
+
+      mockExecuteGetEffectiveAvailability.mockResolvedValueOnce({
+        success: true,
+        isAvailable: true,
+        rules: [],
+      });
+
+      const req = new Request('http://localhost:3000/api/field/availability/self', {
+        headers: { 'X-Actor-Email': 'attacker@evil.pl' },
+      });
+      await GET(req);
+
+      expect(mockExecuteGetEffectiveAvailability).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'auditor@klikklima.pl' }),
+        expect.any(Object)
+      );
+    });
   });
 
   describe('POST /api/field/availability/self', () => {
@@ -197,6 +253,76 @@ describe('FLD-API-LAYER: Route Handler /api/field/availability/self', () => {
         idempotencyKey: 'idemp-3',
         actorEmail: 'auditor@klikklima.pl',
         endpoint: '/api/field/availability/self',
+      }));
+    });
+
+    // @REQ: FLD-API-LAYER (retro-audyt ŚR-3/M2: bramka RBAC musi wykonać się PRZED
+    // executeWithIdempotency — autoryzacja po efekcie ubocznym pozwoliłaby zużyć cudzy klucz
+    // idempotencji nawet przy ostatecznej odmowie)
+    it('rola dyspozytora (bez update w macierzy RBAC) dostaje 403 w POST, a klucz idempotencji NIE zostaje zużyty', async () => {
+      mockVerifyFieldActor.mockResolvedValueOnce({
+        success: true,
+        actor: {
+          email: 'dyspozytor@klikklima.pl',
+          role: 'dyspozytor',
+          entityId: 'disp-1',
+        },
+      });
+
+      const req = new Request('http://localhost:3000/api/field/availability/self', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': 'idemp-dyspozytor-1',
+        },
+        body: JSON.stringify({ isAvailable: true }),
+      });
+
+      const response = await POST(req);
+
+      expect(response.status).toBe(403);
+      const json = await response.json();
+      expect(json.success).toBe(false);
+      expect(mockExecuteWithIdempotency).not.toHaveBeenCalled();
+      expect(mockExecuteSetSelfAvailability).not.toHaveBeenCalled();
+      expect(mockRecordAccessDenied).toHaveBeenCalledWith(expect.objectContaining({
+        actorEmail: 'dyspozytor@klikklima.pl',
+        actorRole: 'dyspozytor',
+        attemptedCapability: 'update',
+      }));
+    });
+
+    // @REQ: FLD-API-LAYER (retro-audyt ŚR-3/M6: tożsamość aktora MUSI pochodzić z tokenu
+    // zweryfikowanego przez verifyFieldActor, a nie z nagłówka kontrolowanego przez klienta)
+    it('fałszywy nagłówek X-Actor-Email jest ignorowany — zapis deleguje do idempotencji z tożsamością z tokenu', async () => {
+      mockVerifyFieldActor.mockResolvedValueOnce({
+        success: true,
+        actor: {
+          email: 'auditor@klikklima.pl',
+          role: 'audytor',
+          entityId: 'aud-1',
+        },
+      });
+
+      mockExecuteWithIdempotency.mockResolvedValueOnce({
+        status: 200,
+        body: { success: true, isAvailable: true },
+      });
+
+      const req = new Request('http://localhost:3000/api/field/availability/self', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': 'idemp-spoof-1',
+          'X-Actor-Email': 'attacker@evil.pl',
+        },
+        body: JSON.stringify({ isAvailable: true }),
+      });
+
+      await POST(req);
+
+      expect(mockExecuteWithIdempotency).toHaveBeenCalledWith(expect.objectContaining({
+        actorEmail: 'auditor@klikklima.pl',
       }));
     });
   });

@@ -105,12 +105,15 @@ describe('FLD-API-IDEMPOTENCY-REGISTRY', () => {
     });
   });
 
-  it('powtórzenie żądania z tym samym kluczem i tym samym hashem zwraca zapisaną odpowiedź bez ponownego wykonania operacji', async () => {
+  // @REQ: FLD-API-IDEMPOTENCY-REGISTRY (retro-audyt ŚR-1: rejestr musi wiązać powtórkę klucza z tym samym actorEmail/endpoint, nie tylko requestHash)
+  it('powtórzenie żądania z tym samym kluczem, TYM SAMYM aktorem i endpointem oraz tym samym hashem zwraca zapisaną odpowiedź bez ponownego wykonania operacji', async () => {
     const payload = { isAvailable: true };
     const hash = hashRequestBody(payload);
 
     mockFindUniqueIdempotency.mockResolvedValueOnce({
       idempotencyKey: 'idemp-uuid-1',
+      actorEmail: 'auditor@klikklima.pl',
+      endpoint: '/api/field/availability/self',
       requestHash: hash,
       responseBody: { success: true, isAvailable: true, cachedAt: '2026-09-25T12:00:00Z' },
     });
@@ -126,6 +129,68 @@ describe('FLD-API-IDEMPOTENCY-REGISTRY', () => {
 
     expect(result.status).toBe(200);
     expect(result.body).toEqual({ success: true, isAvailable: true, cachedAt: '2026-09-25T12:00:00Z' });
+    expect(mockWorker).not.toHaveBeenCalled();
+    expect(mockCreateIdempotency).not.toHaveBeenCalled();
+  });
+
+  // @REQ: FLD-API-IDEMPOTENCY-REGISTRY (retro-audyt ŚR-1: rejestr musi wiązać powtórkę klucza z tym samym actorEmail/endpoint, nie tylko requestHash)
+  it('powtórzenie żądania z tym samym kluczem ale INNYM aktorem (nawet przy identycznym requestHash) zwraca 409 Conflict, NIE odpowiedź poprzedniego aktora, i nie wykonuje ponownie operacji', async () => {
+    const payload = { isAvailable: true };
+    const hash = hashRequestBody(payload);
+
+    // Wiersz w rejestrze zapisany przez PIERWSZEGO aktora (ofiarę)
+    mockFindUniqueIdempotency.mockResolvedValueOnce({
+      idempotencyKey: 'idemp-shared-key',
+      actorEmail: 'victim-auditor@klikklima.pl',
+      endpoint: '/api/field/availability/self',
+      requestHash: hash,
+      responseBody: { success: true, isAvailable: true, installationId: 'inst-victim-123' },
+    });
+    const mockWorker = vi.fn();
+
+    // DRUGI aktor podaje ten sam klucz idempotencji i tę samą treść żądania
+    const result = await executeWithIdempotency({
+      idempotencyKey: 'idemp-shared-key',
+      actorEmail: 'attacker-auditor@klikklima.pl',
+      endpoint: '/api/field/availability/self',
+      body: payload,
+      operation: mockWorker,
+    });
+
+    expect(result.status).toBe(409);
+    expect(result.body).not.toEqual(
+      expect.objectContaining({ installationId: 'inst-victim-123' })
+    );
+    expect(mockWorker).not.toHaveBeenCalled();
+    expect(mockCreateIdempotency).not.toHaveBeenCalled();
+  });
+
+  // @REQ: FLD-API-IDEMPOTENCY-REGISTRY (retro-audyt ŚR-1: rejestr musi wiązać powtórkę klucza z tym samym actorEmail/endpoint, nie tylko requestHash)
+  it('powtórzenie żądania z tym samym kluczem i tym samym aktorem, ale INNYM endpointem (nawet przy identycznym requestHash) zwraca 409 Conflict i nie wykonuje ponownie operacji', async () => {
+    const payload = { isAvailable: true };
+    const hash = hashRequestBody(payload);
+
+    mockFindUniqueIdempotency.mockResolvedValueOnce({
+      idempotencyKey: 'idemp-shared-key-2',
+      actorEmail: 'auditor@klikklima.pl',
+      endpoint: '/api/field/installations/inst-1/complete',
+      requestHash: hash,
+      responseBody: { success: true, secretField: 'nie-nalezy-do-tego-endpointu' },
+    });
+    const mockWorker = vi.fn();
+
+    const result = await executeWithIdempotency({
+      idempotencyKey: 'idemp-shared-key-2',
+      actorEmail: 'auditor@klikklima.pl',
+      endpoint: '/api/field/availability/self',
+      body: payload,
+      operation: mockWorker,
+    });
+
+    expect(result.status).toBe(409);
+    expect(result.body).not.toEqual(
+      expect.objectContaining({ secretField: 'nie-nalezy-do-tego-endpointu' })
+    );
     expect(mockWorker).not.toHaveBeenCalled();
     expect(mockCreateIdempotency).not.toHaveBeenCalled();
   });

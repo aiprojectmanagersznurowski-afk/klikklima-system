@@ -8,6 +8,7 @@ const mockGetUser = vi.fn();
 const mockFindUniqueAuthorizedUser = vi.fn();
 const mockFindManyAudytorzy = vi.fn();
 const mockFindManyZespoly = vi.fn();
+const mockRecordAccessDenied = vi.fn();
 
 vi.mock('../src/utils/supabase/server', () => ({
   createClient: vi.fn(() => ({
@@ -15,6 +16,10 @@ vi.mock('../src/utils/supabase/server', () => ({
       getUser: mockGetUser,
     },
   })),
+}));
+
+vi.mock('../src/lib/field-api/security-event', () => ({
+  recordAccessDenied: (...args: unknown[]) => mockRecordAccessDenied(...args),
 }));
 
 const { T_AUDITORS, T_CREWS } = vi.hoisted(() => ({
@@ -117,7 +122,9 @@ describe('FLD-API-LAYER: verifyFieldActor (AC1, AC2)', () => {
       expect(mockFindUniqueAuthorizedUser).not.toHaveBeenCalled();
     });
 
-    it('T1.5: poprawny token, ale e-mail nie istnieje w AuthorizedUser daje 403 Forbidden', async () => {
+    // @REQ: SEC-ACCESS-DENIED-LOG (retro-audyt ŚR-4: posiadacz ważnego tokenu bez wiersza
+    // w authorized_users JEST uwierzytelnionym aktorem — odmowa musi zostawić ślad)
+    it('T1.5: poprawny token, ale e-mail nie istnieje w AuthorizedUser daje 403 Forbidden i zapisuje odmowę w security_events', async () => {
       mockGetUser.mockResolvedValueOnce({
         data: { user: { id: 'u1', email: 'stranger@example.com' } },
         error: null,
@@ -134,6 +141,9 @@ describe('FLD-API-LAYER: verifyFieldActor (AC1, AC2)', () => {
         expect(result.status).toBe(403);
         expect(result.error).toBe('Konto użytkownika nie zostało autoryzowane');
       }
+      expect(mockRecordAccessDenied).toHaveBeenCalledWith(
+        expect.objectContaining({ actorEmail: 'stranger@example.com' })
+      );
     });
 
     it('T1.6: poprawny token, ale rola spoza ROLES (nieautoryzowana) daje odmowę', async () => {
@@ -190,7 +200,9 @@ describe('FLD-API-LAYER: verifyFieldActor (AC1, AC2)', () => {
       }
     });
 
-    it('T2.2: zablokowany audytor (is_active = false) jest odrzucany z kodem 403 (FLD-AUTH-BLOCKED)', async () => {
+    // @REQ: SEC-ACCESS-DENIED-LOG (retro-audyt ŚR-4: zablokowany pracownik jest uwierzytelnionym
+    // aktorem — odmowa musi zostawić ślad w security_events)
+    it('T2.2: zablokowany audytor (is_active = false) jest odrzucany z kodem 403 (FLD-AUTH-BLOCKED) i zapisuje odmowę w security_events', async () => {
       mockGetUser.mockResolvedValueOnce({
         data: { user: { id: 'aud2', email: 'blocked@klikklima.pl' } },
         error: null,
@@ -214,9 +226,13 @@ describe('FLD-API-LAYER: verifyFieldActor (AC1, AC2)', () => {
         expect(result.status).toBe(403);
         expect(result.error).toBe('Konto audytora zostało zablokowane');
       }
+      expect(mockRecordAccessDenied).toHaveBeenCalledWith(
+        expect.objectContaining({ actorEmail: 'blocked@klikklima.pl', actorRole: 'audytor' })
+      );
     });
 
-    it('T2.3: zablokowany monter (aktywny = false) jest odrzucany z kodem 403', async () => {
+    // @REQ: SEC-ACCESS-DENIED-LOG (retro-audyt ŚR-4)
+    it('T2.3: zablokowany monter (aktywny = false) jest odrzucany z kodem 403 i zapisuje odmowę w security_events', async () => {
       mockGetUser.mockResolvedValueOnce({
         data: { user: { id: 'crew1', email: 'crew-blocked@klikklima.pl' } },
         error: null,
@@ -240,9 +256,14 @@ describe('FLD-API-LAYER: verifyFieldActor (AC1, AC2)', () => {
         expect(result.status).toBe(403);
         expect(result.error).toBe('Zespół został zablokowany');
       }
+      expect(mockRecordAccessDenied).toHaveBeenCalledWith(
+        expect.objectContaining({ actorEmail: 'crew-blocked@klikklima.pl', actorRole: 'monter' })
+      );
     });
 
-    it('T2.4: wielokrotne rekordy z tym samym adresem email (naruszenie unikalności) dają odmowę fail-closed', async () => {
+    // @REQ: SEC-ACCESS-DENIED-LOG (retro-audyt ŚR-4: zdublowany profil jest odmową wobec
+    // uwierzytelnionego aktora — musi zostawić ślad)
+    it('T2.4: wielokrotne rekordy z tym samym adresem email (naruszenie unikalności) dają odmowę fail-closed i zapisują odmowę w security_events', async () => {
       mockGetUser.mockResolvedValueOnce({
         data: { user: { id: 'aud3', email: 'collision@klikklima.pl' } },
         error: null,
@@ -267,6 +288,9 @@ describe('FLD-API-LAYER: verifyFieldActor (AC1, AC2)', () => {
         expect(result.status).toBe(403);
         expect(result.error).toBe('Niespójność profilu pracownika');
       }
+      expect(mockRecordAccessDenied).toHaveBeenCalledWith(
+        expect.objectContaining({ actorEmail: 'collision@klikklima.pl', actorRole: 'audytor' })
+      );
     });
   });
 });
