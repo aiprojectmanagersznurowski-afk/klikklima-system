@@ -147,6 +147,14 @@ async function afterEachCleanup(): Promise<void> {
     await cleanupByEmail(email);
   }
   if (cleanupAuditorIds.length > 0) {
+    // Klucz obcy `bookings_auditor_id_fkey` (model Prisma `Booking`, pole `auditorId`, patrz
+    // `packages/database/prisma/schema.prisma`) blokuje usunięcie audytora, dla którego
+    // istnieje jeszcze rezerwacja. `cleanupByEmail` powyżej usuwa rezerwacje wyłącznie te
+    // powiązane z leadem PIERWSZEGO znalezionego klienta o danym e-mailu (`findFirst`) — test
+    // "podwójne kliknięcie" tworzy DWA klientów z tym samym e-mailem i DWIE rezerwacje na tym
+    // samym audytorze, więc rezerwacja drugiego klienta przeżywa `cleanupByEmail` i musi być
+    // usunięta tutaj, po id audytora, zanim spróbujemy usunąć samego audytora.
+    await prisma.booking.deleteMany({ where: { auditorId: { in: cleanupAuditorIds } } });
     await prisma.availabilityRule.deleteMany({ where: { auditorId: { in: cleanupAuditorIds } } });
     await prisma.audytorzy.deleteMany({ where: { id: { in: cleanupAuditorIds } } });
   }
