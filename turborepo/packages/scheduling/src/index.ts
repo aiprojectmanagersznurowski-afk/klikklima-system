@@ -19,11 +19,18 @@ export {
 export {
   createBooking,
   extractSqlState,
+  prepareBookingCandidates,
+  writeBookingCandidate,
   type BookingSubject,
   type CreateBookingParams,
   type CreateBookingErrorCode,
   type BookingRow,
   type CreateBookingResult,
+  type BookingCandidate,
+  type PrepareBookingCandidatesParams,
+  type PrepareBookingCandidatesResult,
+  type WriteBookingCandidateParams,
+  type WriteBookingCandidateResult,
 } from "./create-booking"
 
 export {
