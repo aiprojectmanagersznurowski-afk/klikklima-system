@@ -73,7 +73,7 @@ export const auditorSchema = z
   .object({
     imie_i_nazwisko: z.string().trim().min(1, "Imię i nazwisko jest wymagane."),
     telefon: optionalTrimmedString,
-    email: z.union([z.literal(""), z.string().trim().email("Niepoprawny format e-mail.")]).transform((v) => (v === "" ? null : v)),
+    email: z.union([z.literal(""), z.string().trim().toLowerCase().email("Niepoprawny format e-mail.")]).transform((v) => (v === "" ? null : v)),
     adres: optionalTrimmedString,
     nazwa_firmy: optionalTrimmedString,
     nip: optionalTrimmedString,

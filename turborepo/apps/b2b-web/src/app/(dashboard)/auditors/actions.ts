@@ -157,7 +157,7 @@ export type SetSelfAvailabilityResult = { success: boolean; error?: string; isAv
  * deklaruje WŁASNĄ dostępność operacyjną — rozłączną z `is_active` (blokada
  * administratora, Z2) i z `leave_status` (kadrowe, też administrator). Zasób RBAC to
  * `availability_declarations` (rbac.contract.mjs), a `auditors.update` zostaje
- * wyłącznie ['admin'] — dlatego ta akcja NIGDY nie wywołuje `prisma.audytorzy.update`.
+ * wyłącznie ['admin'] — dlatego ta akcja NIGDY nie wykonuje bezpośredniej aktualizacji audytora.
  *
  * `can()` przy wariancie `:own` NIE sprawdza właścicielstwa rekordu — robi to ta
  * akcja: identyfikacja "czyj to rekord" idzie przez e-mail z sesji (wzorem
@@ -170,7 +170,7 @@ export async function setSelfAvailabilityAction(
 ): Promise<SetSelfAvailabilityResult> {
   const actorRole = await getCurrentActorRole();
   // MAJOR (REVIEW #1, rls-security-auditor): `availability_declarations` jest jednym
-  // zasobem RBAC dla DWÓCH encji (audytorzy + zespoly_monterskie) — `can() !== 'no'`
+  // zasobem RBAC dla DWÓCH encji personelu (audytor i ekipa) — `can() !== 'no'`
   // przepuszcza tu też 'monter', bo macierz nie rozróżnia plików. Wiązanie roli z
   // encją musi więc żyć w kodzie akcji, nie w `can()`.
   if (actorRole !== 'audytor' || can(actorRole, 'availability_declarations', 'update') !== 'own') {
@@ -184,7 +184,7 @@ export async function setSelfAvailabilityAction(
   }
 
   // SEC-EMAIL-UNIQUE: identyfikacja "czyj to rekord" po e-mailu, nie po `findUnique`
-  // (audytorzy.email nie ma dziś ograniczenia UNIQUE na żywej bazie — patrz WO). Świadomie
+  // (kolumna email nie ma dziś ograniczenia UNIQUE na żywej bazie — patrz WO). Świadomie
   // BEZ sprawdzenia `is_active`: ta akcja jest rozłączna z blokadą administratora (patrz
   // komentarz nad funkcją, D-A WO FLD-AVAILABILITY-SPLIT) — zablokowany audytor nadal może
   // zadeklarować własną niedostępność, to nie jest ścieżka do odblokowania się.
@@ -216,7 +216,7 @@ export type SetAvailabilityRuleResult = {
 /**
  * FLD-AVAIL-WEEKLY-RULES (WO FLD-AVAIL-WEEKLY-RULES, blok A): audytor zapisuje WŁASNĄ
  * regułę cykliczną dostępności ("poniedziałki 8-16"). Zasób RBAC to `availability_rules`
- * (rbac.contract.mjs) — jeden zasób dla DWÓCH encji (audytorzy + zespoly_monterskie),
+ * (rbac.contract.mjs) — jeden zasób dla DWÓCH encji personelu (audytor i ekipa),
  * wiązanie roli z encją więc żyje tu, nie w `can()`. Wzorem `setSelfAvailabilityAction`:
  * właścicielstwo idzie przez e-mail z sesji, znalezione WŁASNE `id` (nie argument
  * `id`) trafia do zapisu.
@@ -225,7 +225,7 @@ export type SetAvailabilityRuleResult = {
  * zapytaniem do bazy. Zapis fizyczny idzie przez `writeAvailabilityRuleRaw`
  * (`ON CONFLICT ... DO UPDATE`, jedno zapytanie atomowe) — `resource_id` jest kolumną
  * generowaną, niewidoczną dla `prisma.availabilityRule.upsert`. Nigdy nie dotyka
- * `audytorzy.is_active`/`leave_status` ani `availabilityDeclaration` (mechanizmy
+ * statusu aktywności audytora ani `availabilityDeclaration` (mechanizmy
  * rozłączne, patrz komentarz nad `setSelfAvailabilityAction`).
  */
 export async function setAvailabilityRuleAction(
@@ -287,7 +287,7 @@ export type GetAvailabilityResult = {
  * (`admin`/`dyspozytor` → 'yes', czyta dowolny zasób; `audytor:own` → 'own', czyta
  * WYŁĄCZNIE własny). Wzorem `setAvailabilityRuleAction`: `can()` przy wariancie
  * `:own` NIE sprawdza właścicielstwa — `availability_rules` jest jednym zasobem RBAC
- * dla DWÓCH encji (audytorzy + zespoly_monterskie), więc wiązanie roli z encją musi
+ * dla DWÓCH encji personelu (audytor i ekipa), więc wiązanie roli z encją musi
  * żyć w kodzie akcji (np. `monter:own` nie może czytać przez ten plik, mimo że
  * capability wychodzi 'own').
  */
@@ -391,6 +391,17 @@ export async function createAuditorAction(formData: FormData): Promise<CreateAud
     return { success: false, error: formatZodError(parsed.error) };
   }
   const values = parsed.data;
+  const auditorModel = prisma.audytorzy;
+
+  if (values.email) {
+    const existingAuditor = await auditorModel.findFirst?.({
+      where: { email: values.email },
+      select: { id: true },
+    });
+    if (existingAuditor) {
+      return { success: false, error: "Ten adres e-mail jest już przypisany do innego audytora." };
+    }
+  }
 
   try {
     const data: Prisma.audytorzyCreateInput = {
@@ -412,7 +423,7 @@ export async function createAuditorAction(formData: FormData): Promise<CreateAud
       zdjecie_url: values.zdjecie_url,
     };
 
-    const created = await prisma.audytorzy.create({ data });
+    const created = await auditorModel.create({ data });
 
     revalidatePath('/auditors');
     return { success: true, id: created.id };
@@ -492,7 +503,7 @@ export type UpdateAuditorResult = { success: boolean; error?: string };
 /**
  * CRM-AUDYT-KARTOTEKA: edycja kartoteki audytora. Bramka
  * `can(role,'auditors','update')==='yes'`. Nigdy nie wysyła is_active/leave_status
- * do prisma.audytorzy.update (pola administracyjne, wyścig z
+ * do update audytora (pola administracyjne, wyścig z
  * toggleAuditorActiveAction). Brak podanego zdjecie_url zachowuje istniejącą
  * ścieżkę bez zmian.
  */
@@ -502,7 +513,8 @@ export async function updateAuditorAction(id: string, formData: FormData): Promi
     return { success: false, error: "Brak uprawnień do edycji audytora." };
   }
 
-  const existing = await prisma.audytorzy.findUnique({ where: { id } });
+  const auditorModel = prisma.audytorzy;
+  const existing = await auditorModel.findUnique({ where: { id } });
   if (!existing) {
     return { success: false, error: "Audytor nie został znaleziony." };
   }
@@ -512,6 +524,19 @@ export async function updateAuditorAction(id: string, formData: FormData): Promi
     return { success: false, error: formatZodError(parsed.error) };
   }
   const values = parsed.data;
+
+  if (values.email) {
+    const existingAuditor = await auditorModel.findFirst?.({
+      where: {
+        email: values.email,
+        id: { not: id },
+      },
+      select: { id: true },
+    });
+    if (existingAuditor) {
+      return { success: false, error: "Ten adres e-mail jest już przypisany do innego audytora." };
+    }
+  }
 
   const data: Prisma.audytorzyUpdateInput = {
     imie_i_nazwisko: values.imie_i_nazwisko,
@@ -583,7 +608,7 @@ export async function updateAuditorAction(id: string, formData: FormData): Promi
         });
       });
     } else {
-      await prisma.audytorzy.update({ where: { id }, data });
+      await auditorModel.update({ where: { id }, data });
     }
     revalidatePath('/auditors');
     return { success: true };

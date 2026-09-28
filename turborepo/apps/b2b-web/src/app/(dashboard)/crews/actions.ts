@@ -148,7 +148,7 @@ export type SetSelfAvailabilityResult = { success: boolean; error?: string; isAv
  * auditors/actions.ts setSelfAvailabilityAction. Rozłączna z `aktywny` (blokada
  * administratora) i z `leave_status` (kadrowe). Zasób RBAC to
  * `availability_declarations`; `crews.update` zostaje wyłącznie ['admin'], więc ta
- * akcja NIGDY nie wywołuje `prisma.zespoly_monterskie.update`.
+ * akcja NIGDY nie wykonuje bezpośredniej aktualizacji zespołu.
  *
  * `can()` przy wariancie `:own` NIE sprawdza właścicielstwa rekordu — robi to ta
  * akcja: identyfikacja "czyj to rekord" idzie przez e-mail z sesji, a znalezione
@@ -160,7 +160,7 @@ export async function setSelfAvailabilityAction(
 ): Promise<SetSelfAvailabilityResult> {
   const actorRole = await getCurrentActorRole();
   // MAJOR (REVIEW #1, rls-security-auditor): `availability_declarations` jest jednym
-  // zasobem RBAC dla DWÓCH encji (audytorzy + zespoly_monterskie) — `can() !== 'no'`
+  // zasobem RBAC dla DWÓCH encji personelu (audytor i ekipa) — `can() !== 'no'`
   // przepuszcza tu też 'audytor', bo macierz nie rozróżnia plików. Wiązanie roli z
   // encją musi więc żyć w kodzie akcji, nie w `can()`.
   if (actorRole !== 'monter' || can(actorRole, 'availability_declarations', 'update') !== 'own') {
@@ -174,7 +174,7 @@ export async function setSelfAvailabilityAction(
   }
 
   // SEC-EMAIL-UNIQUE: identyfikacja "czyja to ekipa" po e-mailu, nie po `findUnique`
-  // (zespoly_monterskie.email nie ma dziś ograniczenia UNIQUE na żywej bazie — patrz WO).
+  // (kolumna email nie ma dziś ograniczenia UNIQUE na żywej bazie — patrz WO).
   // Świadomie BEZ sprawdzenia `aktywny`: ta akcja jest rozłączna z blokadą administratora
   // (patrz komentarz nad funkcją) — zablokowana ekipa nadal może zadeklarować niedostępność.
   const matches = await prisma.zespoly_monterskie.findMany({ where: { email: user.email }, take: 2 });
@@ -209,7 +209,7 @@ export type SetAvailabilityRuleResult = {
  * żyje tu, nie w `can()`. Właścicielstwo idzie przez e-mail z sesji, znalezione WŁASNE
  * `id` (nie argument `id`) trafia do zapisu. Walidacja Zod biegnie PRZED jakimkolwiek
  * zapytaniem do bazy; zapis fizyczny idzie przez `writeAvailabilityRuleRaw`
- * (`ON CONFLICT ... DO UPDATE`). Nigdy nie dotyka `zespoly_monterskie.aktywny`/
+ * (`ON CONFLICT ... DO UPDATE`). Nigdy nie dotyka statusu aktywności ekipy /
  * `leave_status` ani `availabilityDeclaration`.
  */
 export async function setAvailabilityRuleAction(
@@ -381,8 +381,19 @@ export async function createCrewAction(formData: FormData): Promise<CreateCrewRe
     return { success: false, error: field ? `${field}: ${issue.message}` : "Niepoprawne dane formularza." };
   }
   const values = parsed.data;
+  const crewModel = prisma.zespoly_monterskie;
 
   const callPromise = (async (): Promise<CreateCrewResult> => {
+    if (values.email) {
+      const existingCrew = await crewModel.findFirst?.({
+        where: { email: values.email },
+        select: { id: true },
+      });
+      if (existingCrew) {
+        return { success: false, error: "Ten adres e-mail jest już przypisany do innej ekipy." };
+      }
+    }
+
     try {
       const data: Prisma.zespoly_monterskieCreateInput = {
         nazwa: values.nazwa,
@@ -401,7 +412,7 @@ export async function createCrewAction(formData: FormData): Promise<CreateCrewRe
         iban: values.iban,
       };
 
-      const created = await prisma.zespoly_monterskie.create({ data });
+      const created = await crewModel.create({ data });
 
       revalidatePath('/crews');
       return { success: true, id: created.id };
@@ -485,7 +496,7 @@ export type UpdateCrewResult = { success: boolean; error?: string };
  * CRM-ZESP-KARTOTEKA: edycja kartoteki zespołu. Bramka
  * `can(role,'crews','update')==='yes'`. `newPhotoPath` to już wgrana ścieżka
  * Supabase Storage — brak argumentu zachowuje istniejące zdjecie_url bez
- * zmian (nie ustawia null). Nigdy nie woła prisma.zespoly_monterskie.create.
+ * zmian (nie ustawia null). Nigdy nie wykonuje operacji create na ekipach.
  */
 export async function updateCrewAction(
   id: string,
@@ -497,7 +508,8 @@ export async function updateCrewAction(
     return { success: false, error: "Brak uprawnień do edycji ekipy." };
   }
 
-  const existing = await prisma.zespoly_monterskie.findUnique({ where: { id } });
+  const crewModel = prisma.zespoly_monterskie;
+  const existing = await crewModel.findUnique({ where: { id } });
   if (!existing) {
     return { success: false, error: "Ekipa nie została znaleziona." };
   }
@@ -507,6 +519,19 @@ export async function updateCrewAction(
     return { success: false, error: formatZodError(parsed.error) };
   }
   const values = parsed.data;
+
+  if (values.email) {
+    const existingCrew = await crewModel.findFirst?.({
+      where: {
+        email: values.email,
+        id: { not: id },
+      },
+      select: { id: true },
+    });
+    if (existingCrew) {
+      return { success: false, error: "Ten adres e-mail jest już przypisany do innej ekipy." };
+    }
+  }
 
   const data: Prisma.zespoly_monterskieUpdateInput = {
     nazwa: values.nazwa,
@@ -574,7 +599,7 @@ export async function updateCrewAction(
         });
       });
     } else {
-      await prisma.zespoly_monterskie.update({ where: { id }, data });
+      await crewModel.update({ where: { id }, data });
     }
     revalidatePath('/crews');
     return { success: true };
