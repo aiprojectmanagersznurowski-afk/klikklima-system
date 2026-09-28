@@ -192,6 +192,10 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
   it(
     'AC2 — krok KLIENT: id kolidujący z istniejącym wierszem klienci (naruszenie PRIMARY KEY) -> success:false, ZERO nowego klienta/adresu/leada',
     async () => {
+      const auditor = await createTestAuditor();
+      cleanupAuditorIds.push(auditor.id);
+      await createTestSaturdayRule(auditor.id, '08:00', '16:00');
+
       const email = testEmail('krok-klient');
       cleanupEmails.push(email);
 
@@ -222,6 +226,10 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
   it(
     'AC2 — krok ADRES: id kolidujący z istniejącym wierszem adresy (naruszenie PRIMARY KEY) -> success:false, ZERO nowego klienta/adresu/leada (rollback obejmuje krok klienta)',
     async () => {
+      const auditor = await createTestAuditor();
+      cleanupAuditorIds.push(auditor.id);
+      await createTestSaturdayRule(auditor.id, '08:00', '16:00');
+
       const email = testEmail('krok-adres');
       cleanupEmails.push(email);
 
@@ -261,6 +269,10 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
   it(
     'AC2 — krok LEAD: id kolidujący z istniejącym wierszem leady (naruszenie PRIMARY KEY) -> success:false, ZERO nowego klienta/adresu/leada (rollback obejmuje kroki klienta i adresu)',
     async () => {
+      const auditor = await createTestAuditor();
+      cleanupAuditorIds.push(auditor.id);
+      await createTestSaturdayRule(auditor.id, '08:00', '16:00');
+
       const email = testEmail('krok-lead');
       cleanupEmails.push(email);
 
