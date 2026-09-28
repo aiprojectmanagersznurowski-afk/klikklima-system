@@ -60,13 +60,7 @@ export async function executeWithIdempotency(params: IdempotencyParams): Promise
   });
 
   if (existing) {
-    if (existing.requestHash === requestHash) {
-      // Replay z tą samą treścią żądania -> oddajemy zapisaną odpowiedź
-      return {
-        status: 200,
-        body: existing.responseBody,
-      };
-    } else {
+    if (existing.requestHash !== requestHash) {
       // Ten sam klucz z inną treścią -> błąd konfliktu 409
       return {
         status: 409,
@@ -76,6 +70,23 @@ export async function executeWithIdempotency(params: IdempotencyParams): Promise
         },
       };
     }
+
+    if (existing.actorEmail !== actorEmail || existing.endpoint !== endpoint) {
+      // Ten sam klucz i hash, ale inny aktor lub inny endpoint -> błąd konfliktu 409
+      return {
+        status: 409,
+        body: {
+          success: false,
+          error: 'Konflikt klucza idempotencji: klucz został już użyty przez innego aktora lub dla innego zasobu',
+        },
+      };
+    }
+
+    // Replay z tą samą treścią żądania, tym samym aktorem i endpointem -> oddajemy zapisaną odpowiedź
+    return {
+      status: 200,
+      body: existing.responseBody,
+    };
   }
 
   // 2. Nowe wykonanie w transakcji bazy danych

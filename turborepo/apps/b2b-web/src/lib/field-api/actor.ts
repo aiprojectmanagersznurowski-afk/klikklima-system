@@ -1,6 +1,7 @@
 import { prisma } from '@repo/database';
 import { ROLES } from '@klikklima/contracts';
 import { createClient } from '../../utils/supabase/server';
+import { recordAccessDenied } from './security-event';
 import type { VerifyFieldActorResult, FieldActorRole } from './types';
 
 /**
@@ -24,6 +25,7 @@ export async function verifyFieldActor(request: Request): Promise<VerifyFieldAct
   }
 
   const token = parts[1];
+  const endpoint = new URL(request.url).pathname;
 
   let userEmail: string;
   try {
@@ -44,6 +46,13 @@ export async function verifyFieldActor(request: Request): Promise<VerifyFieldAct
   });
 
   if (!authUser) {
+    await recordAccessDenied({
+      actorEmail: userEmail,
+      actorRole: null,
+      resource: 'authorized_users',
+      attemptedCapability: 'authenticate',
+      endpoint,
+    });
     return { success: false, status: 403, error: 'Konto użytkownika nie zostało autoryzowane' };
   }
 
@@ -61,10 +70,24 @@ export async function verifyFieldActor(request: Request): Promise<VerifyFieldAct
       take: 2,
     });
     if (matches.length !== 1) {
+      await recordAccessDenied({
+        actorEmail: userEmail,
+        actorRole: role,
+        resource: 'authorized_users',
+        attemptedCapability: 'authenticate',
+        endpoint,
+      });
       return { success: false, status: 403, error: 'Niespójność profilu pracownika' };
     }
     const auditor = matches[0];
     if (auditor.is_active === false) {
+      await recordAccessDenied({
+        actorEmail: userEmail,
+        actorRole: role,
+        resource: 'authorized_users',
+        attemptedCapability: 'authenticate',
+        endpoint,
+      });
       return { success: false, status: 403, error: 'Konto audytora zostało zablokowane' };
     }
     entityId = auditor.id;
@@ -75,10 +98,24 @@ export async function verifyFieldActor(request: Request): Promise<VerifyFieldAct
       take: 2,
     });
     if (matches.length !== 1) {
+      await recordAccessDenied({
+        actorEmail: userEmail,
+        actorRole: role,
+        resource: 'authorized_users',
+        attemptedCapability: 'authenticate',
+        endpoint,
+      });
       return { success: false, status: 403, error: 'Niespójność profilu pracownika' };
     }
     const crew = matches[0];
     if (crew.aktywny === false) {
+      await recordAccessDenied({
+        actorEmail: userEmail,
+        actorRole: role,
+        resource: 'authorized_users',
+        attemptedCapability: 'authenticate',
+        endpoint,
+      });
       return { success: false, status: 403, error: 'Zespół został zablokowany' };
     }
     entityId = crew.id;
