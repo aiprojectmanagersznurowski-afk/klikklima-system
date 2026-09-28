@@ -51,7 +51,7 @@ export const crewSchema = z
   .object({
     nazwa: z.string().trim().min(1, "Nazwa ekipy jest wymagana."),
     telefon_kontaktowy: optionalTrimmedString,
-    email: z.union([z.literal(""), z.string().trim().email("Niepoprawny format e-mail.")]).transform((v) => (v === "" ? null : v)),
+    email: z.union([z.literal(""), z.string().trim().toLowerCase().email("Niepoprawny format e-mail.")]).transform((v) => (v === "" ? null : v)),
     nip: optionalTrimmedString,
     koordynator_imie_nazwisko: optionalTrimmedString,
     certyfikat_fgaz: optionalFgazCertificateString,
