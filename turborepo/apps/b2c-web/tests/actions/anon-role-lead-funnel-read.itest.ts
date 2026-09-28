@@ -171,7 +171,7 @@ async function buildFullFunnelFixture(): Promise<{
 async function selectAsAnon(tableName: string, id: string): Promise<unknown[]> {
   return prisma.$transaction(async (tx) => {
     await tx.$executeRawUnsafe('SET LOCAL ROLE anon');
-    return tx.$queryRawUnsafe<unknown[]>(`SELECT id FROM ${tableName} WHERE id = $1`, id);
+    return tx.$queryRawUnsafe<unknown[]>(`SELECT id FROM ${tableName} WHERE id = $1::uuid`, id);
   });
 }
 
