@@ -38,11 +38,13 @@ import { START_STATE } from '@klikklima/contracts';
  */
 
 const {
+  fakeTx,
   transactionSpy,
   klienciCreateSpy,
   adresyCreateSpy,
   leadyCreateSpy,
   calendarSpy,
+  calendarCallsInsideTx,
   prepareBookingCandidatesSpy,
   writeBookingCandidateSpy,
   visitDurationBasketFindFirstMock,
@@ -57,9 +59,34 @@ const {
     leady: { create: leadyCreateSpy },
   };
 
-  const transactionSpy = vi.fn(async (callback: (tx: typeof fakeTx) => Promise<unknown>) => callback(fakeTx));
+  // BLOCKER 4 (recenzja PR): `insideTxRef` jest true DOKŁADNIE na czas wykonywania callbacku
+  // `$transaction` (ustawiane true przed jego wywołaniem, false w `finally` PO nim — więc
+  // true nawet jeśli callback rzuci). `calendarSpy` ZAPISUJE (nie rzuca — `saveLead.ts`
+  // łyka każdy wyjątek z `createCalendarEvent` w wewnętrznym try/catch, więc rzucenie stąd
+  // zostałoby niewidocznie połknięte i test nic by nie wykrył) wartość tej flagi przy
+  // KAŻDYM wywołaniu do `calendarCallsInsideTx` — mutant „kalendarz wołany w środku
+  // callbacku, po zapisaniu rezerwacji, przed jego zakończeniem" zapisałby tu `true`.
+  // Poprzednia wersja porównywała WYŁĄCZNIE `invocationCallOrder` momentu WEJŚCIA do
+  // `$transaction` z momentem wywołania kalendarza — to NIE wykrywa wywołania kalendarza W
+  // ŚRODKU callbacku, bo `transactionSpy` sam jest wywołany (i jego `invocationCallOrder`
+  // zarejestrowany) PRZED uruchomieniem callbacku, niezależnie od tego, co dzieje się w jego
+  // wnętrzu.
+  const insideTxRef = { value: false };
+  const calendarCallsInsideTx: boolean[] = [];
 
-  const calendarSpy = vi.fn(async () => ({ success: true, eventLink: 'stub' }));
+  const transactionSpy = vi.fn(async (callback: (tx: typeof fakeTx) => Promise<unknown>) => {
+    insideTxRef.value = true;
+    try {
+      return await callback(fakeTx);
+    } finally {
+      insideTxRef.value = false;
+    }
+  });
+
+  const calendarSpy = vi.fn(async () => {
+    calendarCallsInsideTx.push(insideTxRef.value);
+    return { success: true, eventLink: 'stub' };
+  });
 
   const prepareBookingCandidatesSpy = vi.fn(async (_params: Record<string, unknown>) => ({
     ok: true,
@@ -94,11 +121,13 @@ const {
   }));
 
   return {
+    fakeTx,
     transactionSpy,
     klienciCreateSpy,
     adresyCreateSpy,
     leadyCreateSpy,
     calendarSpy,
+    calendarCallsInsideTx,
     prepareBookingCandidatesSpy,
     writeBookingCandidateSpy,
     visitDurationBasketFindFirstMock,
@@ -141,6 +170,7 @@ function resetAllMocks(): void {
   prepareBookingCandidatesSpy.mockClear();
   writeBookingCandidateSpy.mockClear();
   visitDurationBasketFindFirstMock.mockClear();
+  calendarCallsInsideTx.length = 0;
 
   visitDurationBasketFindFirstMock.mockResolvedValue({
     id: 'basket-audit-id',
@@ -199,6 +229,15 @@ describe('saveLead — transakcja atomowa (WO B2C-LEAD-ATOMIC)', () => {
     // zarejestrował te wywołania, jest tu wystarczającym dowodem na poziomie jednostkowym —
     // atomowość na żywym Postgresie jest dowiedziona w `saveLead-atomic.itest.ts`.
     expect(transactionSpy.mock.invocationCallOrder[0]).toBeLessThan(klienciCreateSpy.mock.invocationCallOrder[0]);
+
+    // MAJOR M2 (recenzja PR): `writeBookingCandidate` musi być wołane z PIERWSZYM
+    // argumentem będącym DOKŁADNIE tym `tx`, który callback `$transaction` dostał w TEJ
+    // SAMEJ iteracji — nie z globalnym `prisma` (sam fakt, że `klienci.create`/`adresy.
+    // create`/`leady.create` trafiają do TEGO SAMEGO obiektu `tx` dowodzi tylko połowy —
+    // `writeBookingCandidate` mogłoby dostać zupełnie inny, niepowiązany argument, np.
+    // globalny `prisma`, i test by tego nie zauważył bez porównania tożsamości). `fakeTx`
+    // jest EKSPORTOWANY z `vi.hoisted` właśnie po to, żeby dało się tu porównać `toBe`.
+    expect(writeBookingCandidateSpy.mock.calls[0]![0]).toBe(fakeTx);
   });
 
   // @REQ: B2C-LEAD-ATOMIC
@@ -227,11 +266,16 @@ describe('saveLead — transakcja atomowa (WO B2C-LEAD-ATOMIC)', () => {
   });
 
   // @REQ: B2C-LEAD-ATOMIC
-  it('AC4 — kalendarz jest wołany DOKŁADNIE PO tym, jak $transaction już się rozstrzygnęła (kolejność wywołań)', async () => {
+  it('AC4 — kalendarz jest wołany DOKŁADNIE PO tym, jak callback $transaction już się ZAKOŃCZYŁ (nie tylko po WEJŚCIU do $transaction — BLOCKER 4)', async () => {
     await saveLead(basePayload());
 
     expect(calendarSpy).toHaveBeenCalledTimes(1);
     expect(transactionSpy.mock.invocationCallOrder[0]).toBeLessThan(calendarSpy.mock.invocationCallOrder[0]);
+    // Dowód właściwy (BLOCKER 4): w momencie wywołania kalendarza `insideTxRef.value` było
+    // `false` — czyli callback `$transaction` już się ZAKOŃCZYŁ (nie tylko „`$transaction`
+    // zostało wywołane", co samo `invocationCallOrder` powyżej dowodzi tylko połowicznie —
+    // przetrwałby mutant wołający kalendarz W ŚRODKU callbacku, po zapisaniu rezerwacji).
+    expect(calendarCallsInsideTx).toEqual([false]);
   });
 
   // @REQ: B2C-LEAD-ATOMIC
@@ -247,11 +291,20 @@ describe('saveLead — transakcja atomowa (WO B2C-LEAD-ATOMIC)', () => {
   });
 
   // @REQ: B2C-LEAD-ENTRY
-  it('AC6 (statyczny) — dokładnie jeden plik w apps/b2c-web zapisuje do tabeli leady (Prisma leady.create/createMany albo from(\'leady\').insert/upsert)', () => {
+  it('AC6 (statyczny) — dokładnie jeden plik w apps/b2c-web zapisuje do tabeli leady (Prisma leady.create/createMany/upsert przez dowolny prefiks (prisma./tx./{leady}), from(\'leady\')/`leady`.insert/upsert, albo $executeRaw/$queryRaw INSERT INTO leady)', () => {
     const roots = ['app', 'components', 'lib'].map((dir) => path.resolve(__dirname, '../../', dir));
+    // BLOCKER 3 (recenzja PR): martwa strefa naprawiona. Poprzednia wersja wymagała, żeby
+    // ZNAK PRZED `leady` nie był ani literą/cyfrą/`_` ANI `.` — czyli WYKLUCZAŁA dokładnie
+    // `tx.leady.create(`/`prisma.leady.create(`. Nowy wzorzec dopuszcza `.` bezpośrednio
+    // przed `leady` (dowolny prefiks przed kropką: `tx.`, `prisma.`, cokolwiek), a start
+    // linii/spacja/nawias (destructuring: `const { leady } = tx; leady.create(...)`) nadal
+    // działa, bo `.` i biały znak oba mieszczą się w klasie „nie jest literą/cyfrą/`_`".
+    // Dodano `.upsert` (obok `.create`/`.createMany`), wariant z backtickiem w
+    // `from(\`leady\`)`, i wariant `$executeRaw`/`$queryRaw` z surowym `INSERT INTO leady`.
     const writePatterns = [
-      /(?:^|[^a-zA-Z0-9_.])leady\s*\.\s*create(?:Many)?\s*\(/,
-      /from\(\s*['"]leady['"]\s*\)\s*\.\s*(?:insert|upsert)\s*\(/,
+      /(?:^|[^a-zA-Z0-9_])leady\s*\.\s*(?:create(?:Many)?|upsert)\s*\(/,
+      /from\(\s*['"`]leady['"`]\s*\)\s*\.\s*(?:insert|upsert)\s*\(/,
+      /\$(?:executeRaw|queryRaw)[a-zA-Z]*`[^`]*INSERT\s+INTO\s+"?leady"?/i,
     ];
 
     const matchingFiles: string[] = [];
@@ -337,10 +390,15 @@ describe('saveLead — transakcja atomowa (WO B2C-LEAD-ATOMIC)', () => {
       ['imię i nazwisko — sam biały znak', { name: '   ' }],
       ['adres — brak pola', { address: undefined }],
       ['adres — pusty string', { address: '' }],
+      // MINOR N2 (recenzja PR): dotąd "sam biały znak" był pokryty WYŁĄCZNIE dla `name` —
+      // dopisane analogiczne przypadki dla `address`/`phone`/`email`.
+      ['adres — sam biały znak', { address: '   ' }],
       ['telefon — brak pola', { phone: undefined }],
       ['telefon — pusty string', { phone: '' }],
+      ['telefon — sam biały znak', { phone: '   ' }],
       ['e-mail — brak pola', { email: undefined }],
       ['e-mail — pusty string', { email: '' }],
+      ['e-mail — sam biały znak', { email: '   ' }],
       ['odpowiedzi Triage — brak pola', { triageData: undefined }],
     ];
 

@@ -37,6 +37,7 @@ const {
   calendarSpy,
   prepareBookingCandidatesSpy,
   writeBookingCandidateSpy,
+  findPoolSlotsSpy,
   visitDurationBasketFindFirstMock,
 } = vi.hoisted(() => {
   const klienciCreateSpy = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ ...data }));
@@ -97,6 +98,14 @@ const {
     pool: 'AUDITOR',
   }));
 
+  // MAJOR (recenzja PR, "wyczerpanie kandydatów -> SLOT_TAKEN"): `saveLead.ts` woła
+  // `findPoolSlots` WYŁĄCZNIE po wyczerpaniu CAŁEJ puli kandydatów na 23P01/40P01, do
+  // wyliczenia alternatyw. Domyślnie pusta lista — testy poniżej, którym zależy na
+  // konkretnych alternatywach, nadpisują `mockResolvedValueOnce`.
+  const findPoolSlotsSpy = vi.fn(async (_visitBasketId: string, _window: unknown, _opts: unknown) => ({
+    slots: [] as unknown[],
+  }));
+
   return {
     transactionSpy,
     klienciCreateSpy,
@@ -105,6 +114,7 @@ const {
     calendarSpy,
     prepareBookingCandidatesSpy,
     writeBookingCandidateSpy,
+    findPoolSlotsSpy,
     visitDurationBasketFindFirstMock,
   };
 });
@@ -117,6 +127,7 @@ vi.mock('../../app/actions/calendar', () => ({ createCalendarEvent: calendarSpy 
 vi.mock('@repo/scheduling', () => ({
   prepareBookingCandidates: prepareBookingCandidatesSpy,
   writeBookingCandidate: writeBookingCandidateSpy,
+  findPoolSlots: findPoolSlotsSpy,
 }));
 vi.mock('@repo/database', () => ({
   prisma: {
@@ -144,7 +155,9 @@ function resetAllMocks(): void {
   calendarSpy.mockClear();
   prepareBookingCandidatesSpy.mockClear();
   writeBookingCandidateSpy.mockClear();
+  findPoolSlotsSpy.mockClear();
   visitDurationBasketFindFirstMock.mockClear();
+  findPoolSlotsSpy.mockResolvedValue({ slots: [] });
 
   visitDurationBasketFindFirstMock.mockResolvedValue({
     id: 'basket-audit-id',
@@ -188,6 +201,10 @@ describe('saveLead — rezerwacja audytu (WO B2C-BOOKING-SLOT, mechanizm mockowa
       bookedBy: 'DISPATCHER',
       resource_id: 'attacker-resource',
       auditorId: 'attacker-auditor',
+      // MINOR N2 (recenzja PR): `klientId`/`adresId` dołączone do żądania też nie mogą być
+      // honorowane — serwer generuje je sam (P-1/P-3 WO).
+      klientId: 'attacker-klient-id',
+      adresId: 'attacker-adres-id',
     };
 
     await saveLead(maliciousPayload as unknown as Parameters<typeof saveLead>[0]);
@@ -202,6 +219,21 @@ describe('saveLead — rezerwacja audytu (WO B2C-BOOKING-SLOT, mechanizm mockowa
 
     const prepareArg = prepareBookingCandidatesSpy.mock.calls[0][0] as Record<string, unknown>;
     expect(prepareArg.visitBasketId).not.toBe('attacker-basket-id');
+    // MINOR N2 (recenzja PR): zestaw kluczy przekazanych do `prepareBookingCandidates` musi
+    // być DOKŁADNIE `{startAt, visitBasketId}` — asercja wcześniej sprawdzała tylko WARTOŚĆ
+    // jednego pola (`visitBasketId`), nie zamykała możliwości, że atakujące pole (np.
+    // `bookedBy`, `resource_id`) zostałoby DOŁĄCZONE do argumentu obok legalnych pól.
+    expect(Object.keys(prepareArg).sort()).toEqual(['startAt', 'visitBasketId']);
+
+    // MINOR N2 (recenzja PR): `klientId`/`adresId` z żądania są IGNOROWANE — asercja na
+    // wartościach faktycznie zapisanych przez `klienciCreateSpy`/`adresyCreateSpy` (serwer
+    // wygenerował własne id), nie na wartościach z żądania klienta.
+    expect(klienciCreateSpy).toHaveBeenCalledTimes(1);
+    expect(adresyCreateSpy).toHaveBeenCalledTimes(1);
+    const klientRow = klienciCreateSpy.mock.calls[0][0].data as Record<string, unknown>;
+    const adresRow = adresyCreateSpy.mock.calls[0][0].data as Record<string, unknown>;
+    expect(klientRow.id).not.toBe('attacker-klient-id');
+    expect(adresRow.id).not.toBe('attacker-adres-id');
   });
 
   // @REQ: B2C-BOOKING-SLOT
@@ -315,6 +347,86 @@ describe('saveLead — rezerwacja audytu (WO B2C-BOOKING-SLOT, mechanizm mockowa
       expect((result as { success: boolean }).success).toBe(false);
       expect((result as { code?: string }).code).toBe(code);
       expect(calendarSpy).not.toHaveBeenCalled();
+
+      // MAJOR M1 (recenzja PR): błąd domenowy zwrócony przez `writeBookingCandidate`
+      // (`ok:false`) musi rzucić WEWNĄTRZ callbacku `prisma.$transaction` (BookingWriteRejected)
+      // i wycofać CAŁĄ transakcję — nie zatwierdzić ją z częściowym zapisem. Atrapa
+      // `transactionSpy` (`async (callback) => callback(fakeTx)`) propaguje odrzucenie
+      // callbacku jako odrzucenie własnej obietnicy — dokładnie tak, jak prawdziwe
+      // `prisma.$transaction` na wyjątku z callbacku.
+      expect(transactionSpy).toHaveBeenCalledTimes(1);
+      await expect(transactionSpy.mock.results[0]!.value).rejects.toThrow();
+    }
+  });
+
+  // @REQ: B2C-LEAD-ATOMIC
+  it('MAJOR — wyścig retryowalny (23P01) na PIERWSZYM kandydacie: druga, NOWA transakcja na drugim kandydacie kończy się sukcesem; writeBookingCandidate/$transaction wywołane DWA razy', async () => {
+    resetAllMocks();
+    prepareBookingCandidatesSpy.mockResolvedValueOnce({
+      ok: true,
+      candidates: [
+        { resource_id: 'aud-1', resource_kind: 'AUDITOR' },
+        { resource_id: 'aud-2', resource_kind: 'AUDITOR' },
+      ],
+      resourceKind: 'AUDITOR',
+      scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
+      visitBasketId: 'basket-audit-id',
+    });
+    // 23P01 (przegrany wyścig o zasób) NIE jest łapane przez `writeBookingCandidate` —
+    // patrz komentarz w `create-booking.ts` — wydostaje się jako WYJĄTEK z tx-callbacku.
+    writeBookingCandidateSpy
+      .mockRejectedValueOnce(Object.assign(new Error('conflicting key value'), { meta: { code: '23P01' } }))
+      .mockResolvedValueOnce({
+        ok: true,
+        booking: {
+          id: 'booking-second-candidate',
+          scheduledStart: new Date('2026-11-16T07:00:00.000Z'),
+          scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
+        },
+      });
+
+    const result = await saveLead(basePayload());
+
+    expect(result.success).toBe(true);
+    expect(transactionSpy).toHaveBeenCalledTimes(2);
+    expect(writeBookingCandidateSpy).toHaveBeenCalledTimes(2);
+    // Pierwsza transakcja rzuciła (odrzucona) — druga (NOWA) zakończyła się sukcesem.
+    await expect(transactionSpy.mock.results[0]!.value).rejects.toThrow();
+    await expect(transactionSpy.mock.results[1]!.value).resolves.toBeTruthy();
+    expect(calendarSpy).toHaveBeenCalledTimes(1);
+  });
+
+  // @REQ: B2C-LEAD-ATOMIC
+  it('MAJOR — wyczerpanie CAŁEJ puli kandydatów na 23P01/40P01: success:false, code SLOT_TAKEN, alternatywy BEZ resource_id, zero wywołań kalendarza', async () => {
+    resetAllMocks();
+    prepareBookingCandidatesSpy.mockResolvedValueOnce({
+      ok: true,
+      candidates: [
+        { resource_id: 'aud-1', resource_kind: 'AUDITOR' },
+        { resource_id: 'aud-2', resource_kind: 'AUDITOR' },
+      ],
+      resourceKind: 'AUDITOR',
+      scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
+      visitBasketId: 'basket-audit-id',
+    });
+    writeBookingCandidateSpy
+      .mockRejectedValueOnce(Object.assign(new Error('conflicting key value'), { meta: { code: '23P01' } }))
+      .mockRejectedValueOnce(Object.assign(new Error('deadlock detected'), { meta: { code: '40P01' } }));
+    findPoolSlotsSpy.mockResolvedValueOnce({
+      slots: [{ start_at: new Date('2026-11-17T07:00:00.000Z'), end_at: new Date('2026-11-17T09:00:00.000Z'), date: '2026-11-17' }],
+    });
+
+    const result = await saveLead(basePayload());
+
+    expect(result).toMatchObject({ success: false, code: 'SLOT_TAKEN' });
+    expect(transactionSpy).toHaveBeenCalledTimes(2);
+    expect(writeBookingCandidateSpy).toHaveBeenCalledTimes(2);
+    expect(calendarSpy).not.toHaveBeenCalled();
+
+    const alternatives = (result as { alternatives?: unknown[] }).alternatives ?? [];
+    expect(alternatives.length).toBeGreaterThan(0);
+    for (const alt of alternatives) {
+      expect(alt).not.toHaveProperty('resource_id');
     }
   });
 

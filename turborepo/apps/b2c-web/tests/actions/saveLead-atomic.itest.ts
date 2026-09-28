@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
-import { randomUUID } from 'node:crypto';
 import { fromZonedTime } from 'date-fns-tz';
 import { prisma } from '@repo/database';
 
@@ -32,6 +31,21 @@ import { prisma } from '@repo/database';
  * implementer zmieni tę kolejność, ten plik pada na złym kroku — zgłoszone w podsumowaniu tury
  * jako ryzyko, nie jako TEST-DEFECT z automatu (WO nie zamraża tej kolejności explicite, ale
  * opisuje ją konsekwentnie w tej samej sekwencji we WSZYSTKICH miejscach, gdzie ją wymienia).
+ *
+ * BRAK PRZYPADKU POOL_MISMATCH NA ŻYWYM POSTGRESIE (recenzja PR, MAJOR M1) — ŚWIADOMIE. Ten
+ * kod odkrywany jest przez wyzwalacz `bookings_pool_matches_basket_trg` WYŁĄCZNIE, gdy pula
+ * koszyka (`visit_duration_baskets.pool`) nie zgadza się z `resource_kind` wpisu `bookings`.
+ * `saveLead.ts` ZAWSZE ustawia `resourceKind` na `prepared.resourceKind`, który
+ * `prepareBookingCandidates` wylicza WPROST z `pool` TEGO SAMEGO koszyka AUDIT, w TEJ SAMEJ
+ * (poprzedzającej transakcję) fazie przygotowawczej — więc w normalnym przebiegu żądania
+ * niezgodność nie może powstać. Jedyny sposób wymuszenia jej na żywym Postgresie to zmiana
+ * `pool` koszyka AUDIT (globalna, współdzielona konfiguracja) MIĘDZY fazą przygotowawczą a
+ * transakcją tego samego żądania — wymagałoby to mutacji współdzielonego fixture'u
+ * (`visit_duration_baskets`, wiersz używany przez WSZYSTKIE testy w tym pakiecie
+ * uruchamiane równolegle) z realnym ryzykiem zafałszowania innych testów uruchamianych w tym
+ * samym oknie. Uznane za nieosiągalne w rozsądny, nieinwazyjny sposób w TYM pliku — pokrycie
+ * kodu POOL_MISMATCH jest na poziomie jednostkowym w `saveLead.booking.test.ts` (mock
+ * `writeBookingCandidate` zwracający `{ok:false, error:{code:'POOL_MISMATCH'}}`).
  */
 
 const TIME_ZONE = 'Europe/Warsaw';
@@ -56,13 +70,21 @@ function futureSaturday(weeksFromNow: number, hhmm: string): Date {
   return localMoment(dateStr, hhmm);
 }
 
-const {
-  cryptoRandomUUIDSpy,
-} = vi.hoisted(() => ({ cryptoRandomUUIDSpy: vi.fn() }));
+// Referencja do PRAWDZIWEGO `randomUUID`, uchwycona PRZED zamockowaniem `node:crypto` (przez
+// `vi.importActual`, wewnątrz `vi.hoisted`) — celowo NIGDY nie importujemy `randomUUID`
+// zwykłym `import { randomUUID } from 'node:crypto'` w tym pliku: taki import zostałby PO
+// zamockowaniu podmieniony na `cryptoRandomUUIDSpy` (ten sam moduł co w `saveLead.ts`), więc
+// każde użycie w pomocnikach testu/`afterEach` wywoływałoby samo siebie ->
+// „Maximum call stack size exceeded" (BLOCKER 1, recenzja PR). `actualRandomUUID` jest
+// jedynym dozwolonym źródłem „prawdziwych" id w tym pliku.
+const { actualRandomUUID, cryptoRandomUUIDSpy } = await vi.hoisted(async () => {
+  const actual = await vi.importActual<typeof import('node:crypto')>('node:crypto');
+  return { actualRandomUUID: actual.randomUUID, cryptoRandomUUIDSpy: vi.fn() };
+});
 
 vi.mock('node:crypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:crypto')>();
-  cryptoRandomUUIDSpy.mockImplementation(() => actual.randomUUID());
+  cryptoRandomUUIDSpy.mockImplementation(() => actualRandomUUID());
   return { ...actual, randomUUID: cryptoRandomUUIDSpy };
 });
 
@@ -77,7 +99,7 @@ vi.mock('@/lib/supabaseClient', () => ({ supabase: { from: vi.fn() } }));
 const { saveLead } = await import('../../app/actions/saveLead');
 
 async function createTestAuditor(): Promise<{ id: string }> {
-  const suffix = randomUUID();
+  const suffix = actualRandomUUID();
   const auditor = await prisma.audytorzy.create({
     data: {
       imie_i_nazwisko: `ITEST B2C-LEAD-ATOMIC ${suffix}`,
@@ -96,7 +118,7 @@ async function createTestSaturdayRule(auditorId: string, start: string, end: str
 }
 
 function testEmail(marker: string): string {
-  return `itest-b2c-lead-atomic-${marker}-${randomUUID()}@example.invalid`;
+  return `itest-b2c-lead-atomic-${marker}-${actualRandomUUID()}@example.invalid`;
 }
 
 async function countByEmail(email: string): Promise<{ klienci: number; adresy: number; leady: number }> {
@@ -151,7 +173,7 @@ beforeAll(async () => {
 afterEach(async () => {
   await afterEachCleanup();
   cryptoRandomUUIDSpy.mockReset();
-  cryptoRandomUUIDSpy.mockImplementation(() => randomUUID());
+  cryptoRandomUUIDSpy.mockImplementation(() => actualRandomUUID());
 });
 
 function basePayload(email: string, startAtIso: string) {
@@ -173,7 +195,7 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
       const email = testEmail('krok-klient');
       cleanupEmails.push(email);
 
-      const collisionId = randomUUID();
+      const collisionId = actualRandomUUID();
       await prisma.klienci.create({ data: { id: collisionId, email: 'kolidujacy@example.invalid' } });
 
       cryptoRandomUUIDSpy.mockReturnValueOnce(collisionId);
@@ -182,6 +204,11 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
       const result = await saveLead(basePayload(email, startAt.toISOString()));
 
       expect(result.success).toBe(false);
+      // Przyczyna błędu musi dotyczyć modelu `klienci` (Prisma formatuje nagłówek błędu
+      // P2002 jako `Invalid \`prisma.<model>.<action>()\` invocation`, niezależnie od
+      // nazwy zmiennej użytej przy wywołaniu w kodzie produkcyjnym — zawsze z nazwą
+      // modelu z DMMF, więc jest to niezawodny sposób odróżnienia kroku).
+      expect((result as { error?: string }).error).toMatch(/klienci\.create/);
 
       const counts = await countByEmail(email);
       expect(counts).toEqual({ klienci: 0, adresy: 0, leady: 0 });
@@ -198,20 +225,29 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
       const email = testEmail('krok-adres');
       cleanupEmails.push(email);
 
-      const collisionId = randomUUID();
+      const collisionId = actualRandomUUID();
       await prisma.adresy.create({ data: { id: collisionId, ulica_miasto: 'kolidujący' } });
 
-      // Pierwsze wywołanie (klientId) — id prawdziwe, wygenerowane normalnie. Drugie
-      // (adresId) — kolidujące. Trzecie i dalsze (leadId, jeśli implementacja próbowałaby
-      // kontynuować mimo błędu klienta/adresu — nie powinna) — normalne.
+      // Pierwsze wywołanie (klientId) — id prawdziwe, wygenerowane normalnie (wartość
+      // ustalona TERAZ, synchronicznie, `mockReturnValueOnce` — NIE
+      // `mockImplementationOnce(async () => ...)`: to drugie zwraca Promise jako wartość
+      // klientId, którą Prisma odrzuca na kroku KLIENTA, więc kolizja adresu nigdy nie
+      // zostałaby osiągnięta — BLOCKER 2, recenzja PR). Drugie (adresId) — kolidujące.
+      // Trzecie i dalsze (leadId, jeśli implementacja próbowałaby kontynuować mimo błędu
+      // klienta/adresu — nie powinna) — normalne (domyślny `mockImplementation`).
       cryptoRandomUUIDSpy
-        .mockImplementationOnce(async () => randomUUID())
+        .mockReturnValueOnce(actualRandomUUID())
         .mockReturnValueOnce(collisionId);
 
       const startAt = futureSaturday(9, '08:00');
       const result = await saveLead(basePayload(email, startAt.toISOString()));
 
       expect(result.success).toBe(false);
+      // Przyczyna błędu musi dotyczyć modelu `adresy` (kolizja na kroku ADRES), NIE
+      // `klienci` — inaczej ten test dowodziłby dokładnie tego samego co „krok KLIENT"
+      // (BLOCKER 2).
+      expect((result as { error?: string }).error).toMatch(/adresy\.create/);
+      expect((result as { error?: string }).error).not.toMatch(/klienci\.create/);
 
       const counts = await countByEmail(email);
       expect(counts).toEqual({ klienci: 0, adresy: 0, leady: 0 });
@@ -228,18 +264,26 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
       const email = testEmail('krok-lead');
       cleanupEmails.push(email);
 
-      const collisionId = randomUUID();
+      const collisionId = actualRandomUUID();
       await prisma.leady.create({ data: { id: collisionId } });
 
+      // Trzy wartości ustalone TERAZ, synchronicznie (patrz komentarz w teście „krok
+      // ADRES" — BLOCKER 2): klientId i adresId prawdziwe, leadId kolidujące.
       cryptoRandomUUIDSpy
-        .mockImplementationOnce(async () => randomUUID())
-        .mockImplementationOnce(async () => randomUUID())
+        .mockReturnValueOnce(actualRandomUUID())
+        .mockReturnValueOnce(actualRandomUUID())
         .mockReturnValueOnce(collisionId);
 
       const startAt = futureSaturday(10, '08:00');
       const result = await saveLead(basePayload(email, startAt.toISOString()));
 
       expect(result.success).toBe(false);
+      // Przyczyna błędu musi dotyczyć modelu `leady` (kolizja na kroku LEAD), NIE
+      // `klienci`/`adresy` — inaczej ten test dowodziłby zachowania wcześniejszego kroku
+      // (BLOCKER 2).
+      expect((result as { error?: string }).error).toMatch(/leady\.create/);
+      expect((result as { error?: string }).error).not.toMatch(/klienci\.create/);
+      expect((result as { error?: string }).error).not.toMatch(/adresy\.create/);
 
       const counts = await countByEmail(email);
       expect(counts).toEqual({ klienci: 0, adresy: 0, leady: 0 });
