@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@repo/database"
+import { verifyWebhookSecret } from "../../../../lib/security/webhook-auth"
 
 export const dynamic = "force-dynamic"
 
@@ -18,13 +19,14 @@ const shippingWebhookSchema = z.object({
  * FNL-E6-E7 / T08: Webhook kurierski (np. DPD, InPost, DHL, Rohlig Suus).
  * Po odebraniu statusu DELIVERED przesuwa leada ze statusu HARDWARE_IN_TRANSIT
  * na AWAITING_INSTALLATION (E7) i aktualizuje status przesyłki w logistyce.
+ * SEC-WEBHOOK-SECRET-REQUIRED: fail-closed ochrona sekretu SHIPPING_WEBHOOK_SECRET.
  */
 // AUTHZ-EXEMPT: Zewnetrzny webhook kurierski zabezpieczony naglowkiem x-webhook-secret, brak sesji uzytkownika
 export async function POST(request: NextRequest) {
   const secretHeader = request.headers.get("x-webhook-secret")
   const expectedSecret = process.env.SHIPPING_WEBHOOK_SECRET
 
-  if (expectedSecret && secretHeader !== expectedSecret) {
+  if (!verifyWebhookSecret(secretHeader, expectedSecret)) {
     return NextResponse.json({ error: "Brak autoryzacji webhooka" }, { status: 401 })
   }
 
