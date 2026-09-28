@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
 import { runServiceInspectionCron } from "../../../(dashboard)/services/cron"
+import { verifyBearerToken } from "../../../../lib/security/webhook-auth"
 
 export const dynamic = "force-dynamic"
 
 /**
  * CRM-SRV-TRIGGER: Webhook / Cron trigger dla nocnego zadania sprawdzania
  * terminów serwisów gwarancyjnych i generowania powiadomień N10.
+ * SEC-WEBHOOK-SECRET-REQUIRED: fail-closed ochrona sekretu CRON_SECRET.
  */
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get("authorization")
-  const cronSecret = process.env.CRON_SECRET
+  const isAuthorized = verifyBearerToken(
+    request.headers.get("authorization"),
+    process.env.CRON_SECRET
+  )
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!isAuthorized) {
     return NextResponse.json({ error: "Brak autoryzacji" }, { status: 401 })
   }
 

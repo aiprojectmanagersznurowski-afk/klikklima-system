@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { NextRequest } from "next/server"
 import { LeadStatus } from "@repo/database"
 
@@ -51,14 +51,22 @@ vi.mock("@repo/database", () => ({
 }))
 
 describe("FNL-E6-E7 / T08: Courier Shipping Webhook (/api/webhooks/shipping)", () => {
+  const TEST_SECRET = "test-shipping-webhook-secret"
+  const originalEnv = { ...process.env }
+
   beforeEach(() => {
     vi.clearAllMocks()
+    process.env.SHIPPING_WEBHOOK_SECRET = TEST_SECRET
     transactionMock.mockImplementation(async (cb: (tx: any) => Promise<any>) => {
       return cb({
         leady: { update: leadyUpdateMock },
         logistyka_zamowienia: { update: logistykaUpdateMock },
       })
     })
+  })
+
+  afterEach(() => {
+    process.env = { ...originalEnv }
   })
 
   function createRequest(body: any, headers: Record<string, string> = {}) {
@@ -68,6 +76,7 @@ describe("FNL-E6-E7 / T08: Courier Shipping Webhook (/api/webhooks/shipping)", (
       body: jsonString,
       headers: {
         "content-type": "application/json",
+        "x-webhook-secret": TEST_SECRET,
         ...headers,
       },
     })
@@ -78,7 +87,10 @@ describe("FNL-E6-E7 / T08: Courier Shipping Webhook (/api/webhooks/shipping)", (
     const req = new NextRequest("http://localhost:3000/api/webhooks/shipping", {
       method: "POST",
       body: "{ invalid json",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-webhook-secret": TEST_SECRET,
+      },
     })
 
     const res = await POST(req)
