@@ -3,67 +3,93 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 /**
- * WO: docs/workorders/B2C-BOOKING-SLOT.md (wersja 2, rozstrzygnięta 2026-09-14) — AC5,
- * AC6, AC7, AC9, AC10 + przypadek brzegowy "strefa czasowa" na `data_rezerwacji`.
+ * WO: docs/workorders/B2C-BOOKING-SLOT.md (wersja 2) — AC6, AC7, AC10 + przypadek brzegowy
+ * "strefa czasowa" NIETKNIĘTE. AC5 z tamtego WO ZASTĘPUJE swój test tutaj (patrz niżej).
  *
- * Plik SIOSTRZANY, NIE zamiennik `saveLead.test.ts` (ten drugi dowodzi geokodowania,
- * WO B2C-LEAD-GEO-PERSIST — DONE, nietknięte tutaj). `saveLead.ts` DZIŚ przyjmuje
- * `bookingDate` + `bookingSlot`; WO zamienia to na jedno pole `startAtIso` i dodaje
- * wywołanie `createBooking` z `@repo/scheduling`. Do chwili przepisania `saveLead.ts`
- * ten plik pada, bo dzisiejsza implementacja: (a) nie rozpoznaje `startAtIso`, (b) nie
- * importuje `createBooking`, (c) nie robi UPDATE na `leady` (którego mock poniżej
- * wymaga) — to jest oczekiwany, właściwy powód czerwieni (WO, "Kolejność ról" pkt 4).
+ * WO: docs/workorders/B2C-LEAD-ATOMIC.md — AC5 nowej postaci (zastępuje AC9 z
+ * B2C-BOOKING-SLOT, "D-6 wariant (a)" — Michał 2026-09-14, WO sekcja "Wymagania": wariant (a)
+ * jest tymczasowy, pełna atomowość zostaje przy tym WO). AC10 (mechanizm mockowania: Prisma).
  *
- * Konsekwencja wynikająca z porządku FK (WO, D-6/architektura "Zapis rezerwacji"):
- * `createBooking` wymaga `subject: { kind: 'LEAD', leadId }`, a lead musi istnieć
- * PRZED próbą rezerwacji — więc `saveLead` MUSI: 1) wstawić `leady` bez
- * `data_rezerwacji` (nieznana, dopóki wynik rezerwacji nie jest znany), 2) wywołać
- * `createBooking`, 3) TYLKO gdy `ok:true` — zrobić UPDATE na `leady` ustawiający
- * `data_rezerwacji`. Stąd mock na `leady` w tym pliku ma DWIE metody (insert + update),
- * w przeciwieństwie do `saveLead.test.ts`, gdzie leady ma tylko insert. To nie jest
- * dowolna preferencja test-authora — to bezpośrednia konsekwencja FK
- * (`Booking.lead` → `leady`, `onDelete: Cascade`) opisanej w WO.
+ * MECHANIZM MOCKOWANIA ZMIENIONY (AC10): jak w `saveLead.test.ts` — `@repo/database` mockuje
+ * `prisma.$transaction` wołające callback z fałszywym `tx` (`klienci.create`/`adresy.create`/
+ * `leady.create`), `@repo/scheduling` mockuje `prepareBookingCandidates` +
+ * `writeBookingCandidate` (NIE `createBooking` — ten jest wewnętrznym detalem pakietu,
+ * złożonym z tych samych dwóch części, ale `saveLead` woła je z osobna, per P-2 WO
+ * B2C-LEAD-ATOMIC: "saveLead iteruje po uporządkowanych kandydatach; każda iteracja to
+ * osobna, pełna prisma.$transaction"). Sygnatura tych dwóch funkcji jest decyzją test-authora
+ * (WO nie podaje "Proponowanej sygnatury") — patrz `saveLead.atomic.test.ts` dla pełnego
+ * uzasadnienia kontraktu.
+ *
+ * `data_rezerwacji` wchodzi teraz w TEN SAM `leady.create` (P-4) — NIE osobny UPDATE. AC10
+ * (oryginalne, z B2C-BOOKING-SLOT: "data_rezerwacji ustawiane WYŁĄCZNIE po ok:true") jest więc
+ * przeformułowane na poziomie tego, CO wchodzi do create(): przy sukcesie
+ * `data_rezerwacji` w argumencie `leady.create` jest niepuste i równe `scheduledStart` z wyniku
+ * rezerwacji; przy porażce cały `leady.create` się NIE odbywa (bo cała transakcja jest wycofana
+ * — AC5 poniżej), więc pytanie "czy data_rezerwacji jest null w INSERCIE" nie ma już sensu
+ * osobno od AC5.
  */
 
 const {
-  fromSpy,
-  klienciInsertSpy,
-  adresyInsertSpy,
-  leadyInsertSpy,
-  leadyUpdateSpy,
-  leadyUpdateEqSpy,
+  transactionSpy,
+  klienciCreateSpy,
+  adresyCreateSpy,
+  leadyCreateSpy,
   calendarSpy,
-  createBookingSpy,
+  prepareBookingCandidatesSpy,
+  writeBookingCandidateSpy,
+  findPoolSlotsSpy,
   visitDurationBasketFindFirstMock,
 } = vi.hoisted(() => {
-  const klienciInsertSpy = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
-  const adresyInsertSpy = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
-  const leadyInsertSpy = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }));
-  const leadyUpdateEqSpy = vi.fn(async (_col: string, _val: unknown) => ({ error: null }));
-  const leadyUpdateSpy = vi.fn((_row: Record<string, unknown>) => ({ eq: leadyUpdateEqSpy }));
+  const klienciCreateSpy = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ ...data }));
+  const adresyCreateSpy = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ ...data }));
+  const leadyCreateSpy = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ ...data }));
+
+  const fakeTx = {
+    klienci: { create: klienciCreateSpy },
+    adresy: { create: adresyCreateSpy },
+    leady: { create: leadyCreateSpy },
+  };
+
+  const transactionSpy = vi.fn(async (callback: (tx: typeof fakeTx) => Promise<unknown>) => callback(fakeTx));
+
   const calendarSpy = vi.fn(async () => ({ success: true, eventLink: 'stub' }));
 
-  type FakeBookingRow = { id: string; scheduledStart: Date; scheduledEnd: Date; [key: string]: unknown };
-  type FakeCreateBookingResult =
-    | { ok: true; booking: FakeBookingRow; error: null }
-    | { ok: false; booking: null; error: { code: string; message: string; alternatives: unknown[] } };
+  type FakePrepareResult =
+    | {
+        ok: true;
+        candidates: { resource_id: string; resource_kind: 'AUDITOR' | 'CREW' }[];
+        resourceKind: 'AUDITOR' | 'CREW';
+        scheduledEnd: Date;
+        visitBasketId: string;
+      }
+    | { ok: false; error: { code: string; message: string; alternatives: unknown[] } };
 
-  const createBookingSpy = vi.fn(async (_params: Record<string, unknown>): Promise<FakeCreateBookingResult> => ({
-    ok: true,
-    booking: {
-      id: 'booking-default',
-      scheduledStart: new Date('2026-11-16T07:00:00.000Z'),
+  const prepareBookingCandidatesSpy = vi.fn(
+    async (_params: Record<string, unknown>): Promise<FakePrepareResult> => ({
+      ok: true,
+      candidates: [{ resource_id: 'aud-1', resource_kind: 'AUDITOR' }],
+      resourceKind: 'AUDITOR',
       scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
-    },
-    error: null,
-  }));
+      visitBasketId: 'basket-audit-id',
+    }),
+  );
 
-  // Higiena testów (WO ad-hoc, patrz podsumowanie tury): `saveLead.ts` woła
-  // `prisma.visitDurationBasket.findFirst(...)` (`@repo/database`) PRZED `createBooking`.
-  // Ten plik testuje wyłącznie rezerwację (AC5/AC6/AC7/AC9/AC10) — koszyk AUDIT musi
-  // się zawsze rozwiązać, więc mock zwraca stały, prawdziwy wiersz (nie `null`), inaczej
-  // każdy test padłby wcześniej na `BASKET_NOT_FOUND`, zanim `createBookingSpy` w ogóle
-  // zostanie wywołany.
+  type FakeBookingRow = { id: string; scheduledStart: Date; scheduledEnd: Date; [key: string]: unknown };
+  type FakeWriteResult =
+    | { ok: true; booking: FakeBookingRow }
+    | { ok: false; error: { code: string; message: string; alternatives: unknown[] } };
+
+  const writeBookingCandidateSpy = vi.fn(
+    async (_tx: unknown, _params: Record<string, unknown>): Promise<FakeWriteResult> => ({
+      ok: true,
+      booking: {
+        id: 'booking-default',
+        scheduledStart: new Date('2026-11-16T07:00:00.000Z'),
+        scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
+      },
+    }),
+  );
+
   const visitDurationBasketFindFirstMock = vi.fn(async (_args: Record<string, unknown>) => ({
     id: 'basket-audit-id',
     code: 'AUDIT',
@@ -72,40 +98,41 @@ const {
     pool: 'AUDITOR',
   }));
 
-  const fromSpy = vi.fn((table: string) => {
-    switch (table) {
-      case 'klienci':
-        return { insert: klienciInsertSpy };
-      case 'adresy':
-        return { insert: adresyInsertSpy };
-      case 'leady':
-        return { insert: leadyInsertSpy, update: leadyUpdateSpy };
-      default:
-        throw new Error(
-          `saveLead.booking.test: nieoczekiwana tabela "${table}" — dopisz obsługę w mocku zanim rozszerzysz test.`,
-        );
-    }
-  });
+  // MAJOR (recenzja PR, "wyczerpanie kandydatów -> SLOT_TAKEN"): `saveLead.ts` woła
+  // `findPoolSlots` WYŁĄCZNIE po wyczerpaniu CAŁEJ puli kandydatów na 23P01/40P01, do
+  // wyliczenia alternatyw. Domyślnie pusta lista — testy poniżej, którym zależy na
+  // konkretnych alternatywach, nadpisują `mockResolvedValueOnce`.
+  const findPoolSlotsSpy = vi.fn(async (_visitBasketId: string, _window: unknown, _opts: unknown) => ({
+    slots: [] as unknown[],
+  }));
 
   return {
-    fromSpy,
-    klienciInsertSpy,
-    adresyInsertSpy,
-    leadyInsertSpy,
-    leadyUpdateSpy,
-    leadyUpdateEqSpy,
+    transactionSpy,
+    klienciCreateSpy,
+    adresyCreateSpy,
+    leadyCreateSpy,
     calendarSpy,
-    createBookingSpy,
+    prepareBookingCandidatesSpy,
+    writeBookingCandidateSpy,
+    findPoolSlotsSpy,
     visitDurationBasketFindFirstMock,
   };
 });
 
-vi.mock('@/lib/supabaseClient', () => ({ supabase: { from: fromSpy } }));
+// Stub NIEUŻYWANY merytorycznie — patrz uzasadnienie w saveLead.test.ts (import realnego
+// `@/lib/supabaseClient` bez mocka pada na nierozwiązywalnym aliasie `@/*`, RED z
+// niewłaściwego powodu, dopóki implementer nie usunie tego importu z saveLead.ts, P-3).
+vi.mock('@/lib/supabaseClient', () => ({ supabase: { from: vi.fn() } }));
 vi.mock('../../app/actions/calendar', () => ({ createCalendarEvent: calendarSpy }));
-vi.mock('@repo/scheduling', () => ({ createBooking: createBookingSpy }));
+vi.mock('@repo/scheduling', () => ({
+  prepareBookingCandidates: prepareBookingCandidatesSpy,
+  writeBookingCandidate: writeBookingCandidateSpy,
+  findPoolSlots: findPoolSlotsSpy,
+}));
 vi.mock('@repo/database', () => ({
   prisma: {
     visitDurationBasket: { findFirst: visitDurationBasketFindFirstMock },
+    $transaction: transactionSpy,
   },
 }));
 
@@ -116,20 +143,22 @@ const basePayload = () => ({
   email: 'jan.kowalski@example.com',
   phone: '500600700',
   address: 'Marszałkowska 1, Warszawa',
-  startAtIso: '2026-11-16T08:00:00.000+01:00', // poniedziałek, 08:00 czasu Warszawy (zima)
+  startAtIso: '2026-11-16T08:00:00.000+01:00',
   triageData: {},
 });
 
 function resetAllMocks(): void {
-  fromSpy.mockClear();
-  klienciInsertSpy.mockClear();
-  adresyInsertSpy.mockClear();
-  leadyInsertSpy.mockClear();
-  leadyUpdateSpy.mockClear();
-  leadyUpdateEqSpy.mockClear();
+  transactionSpy.mockClear();
+  klienciCreateSpy.mockClear();
+  adresyCreateSpy.mockClear();
+  leadyCreateSpy.mockClear();
   calendarSpy.mockClear();
-  createBookingSpy.mockClear();
+  prepareBookingCandidatesSpy.mockClear();
+  writeBookingCandidateSpy.mockClear();
+  findPoolSlotsSpy.mockClear();
   visitDurationBasketFindFirstMock.mockClear();
+  findPoolSlotsSpy.mockResolvedValue({ slots: [] });
+
   visitDurationBasketFindFirstMock.mockResolvedValue({
     id: 'basket-audit-id',
     code: 'AUDIT',
@@ -137,43 +166,74 @@ function resetAllMocks(): void {
     durationMinutes: 120,
     pool: 'AUDITOR',
   });
-  createBookingSpy.mockResolvedValue({
+  prepareBookingCandidatesSpy.mockResolvedValue({
+    ok: true,
+    candidates: [{ resource_id: 'aud-1', resource_kind: 'AUDITOR' }],
+    resourceKind: 'AUDITOR',
+    scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
+    visitBasketId: 'basket-audit-id',
+  });
+  writeBookingCandidateSpy.mockResolvedValue({
     ok: true,
     booking: {
       id: 'booking-default',
       scheduledStart: new Date('2026-11-16T07:00:00.000Z'),
       scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
     },
-    error: null,
   });
 }
 
-describe('saveLead — rezerwacja audytu (WO B2C-BOOKING-SLOT)', () => {
+describe('saveLead — rezerwacja audytu (WO B2C-BOOKING-SLOT, mechanizm mockowania zaktualizowany przez WO B2C-LEAD-ATOMIC AC10)', () => {
   beforeEach(() => {
     resetAllMocks();
   });
 
   // @REQ: B2C-BOOKING-SLOT
-  it('AC5 — visitBasketId/bookedBy/resource_id/auditorId/status dołączone do żądania NIE są honorowane: createBooking woła z bookedBy=CLIENT i serwerowym visitBasketId', async () => {
+  it('AC5 (numeracja B2C-BOOKING-SLOT) — visitBasketId/bookedBy/resource_id/auditorId dołączone do żądania NIE są honorowane', async () => {
+    // Pole `status` NIE wchodzi do tego payloadu: od AC8 (B2C-LEAD-ATOMIC) jego obecność —
+    // niezależnie od wartości — jest odrzucana walidacją Zod przed jakimkolwiek zapisem
+    // (patrz `saveLead.atomic.test.ts`, test AC8). Ten test sprawdza inną rzecz: że pola
+    // rezerwacji dołączone przez atakującego nie są honorowane, więc payload musi przejść
+    // walidację, żeby dotrzeć do `writeBookingCandidate`.
     const maliciousPayload = {
       ...basePayload(),
       visitBasketId: 'attacker-basket-id',
       bookedBy: 'DISPATCHER',
       resource_id: 'attacker-resource',
       auditorId: 'attacker-auditor',
-      status: 'CONFIRMED',
+      // MINOR N2 (recenzja PR): `klientId`/`adresId` dołączone do żądania też nie mogą być
+      // honorowane — serwer generuje je sam (P-1/P-3 WO).
+      klientId: 'attacker-klient-id',
+      adresId: 'attacker-adres-id',
     };
 
     await saveLead(maliciousPayload as unknown as Parameters<typeof saveLead>[0]);
 
-    expect(createBookingSpy).toHaveBeenCalledTimes(1);
-    const callArg = createBookingSpy.mock.calls[0][0] as Record<string, unknown>;
+    expect(writeBookingCandidateSpy).toHaveBeenCalledTimes(1);
+    const callArg = writeBookingCandidateSpy.mock.calls[0][1] as Record<string, unknown>;
 
     expect(callArg.bookedBy).toBe('CLIENT');
-    expect(callArg.visitBasketId).not.toBe('attacker-basket-id');
     expect(callArg).not.toHaveProperty('resource_id');
     expect(callArg).not.toHaveProperty('auditorId');
     expect(callArg).not.toHaveProperty('status');
+
+    const prepareArg = prepareBookingCandidatesSpy.mock.calls[0][0] as Record<string, unknown>;
+    expect(prepareArg.visitBasketId).not.toBe('attacker-basket-id');
+    // MINOR N2 (recenzja PR): zestaw kluczy przekazanych do `prepareBookingCandidates` musi
+    // być DOKŁADNIE `{startAt, visitBasketId}` — asercja wcześniej sprawdzała tylko WARTOŚĆ
+    // jednego pola (`visitBasketId`), nie zamykała możliwości, że atakujące pole (np.
+    // `bookedBy`, `resource_id`) zostałoby DOŁĄCZONE do argumentu obok legalnych pól.
+    expect(Object.keys(prepareArg).sort()).toEqual(['startAt', 'visitBasketId']);
+
+    // MINOR N2 (recenzja PR): `klientId`/`adresId` z żądania są IGNOROWANE — asercja na
+    // wartościach faktycznie zapisanych przez `klienciCreateSpy`/`adresyCreateSpy` (serwer
+    // wygenerował własne id), nie na wartościach z żądania klienta.
+    expect(klienciCreateSpy).toHaveBeenCalledTimes(1);
+    expect(adresyCreateSpy).toHaveBeenCalledTimes(1);
+    const klientRow = klienciCreateSpy.mock.calls[0][0].data as Record<string, unknown>;
+    const adresRow = adresyCreateSpy.mock.calls[0][0].data as Record<string, unknown>;
+    expect(klientRow.id).not.toBe('attacker-klient-id');
+    expect(adresRow.id).not.toBe('attacker-adres-id');
   });
 
   // @REQ: B2C-BOOKING-SLOT
@@ -182,14 +242,14 @@ describe('saveLead — rezerwacja audytu (WO B2C-BOOKING-SLOT)', () => {
 
     await saveLead(maliciousPayload as unknown as Parameters<typeof saveLead>[0]);
 
-    expect(leadyInsertSpy).toHaveBeenCalledTimes(1);
-    const leadRow = leadyInsertSpy.mock.calls[0][0] as Record<string, unknown>;
+    expect(leadyCreateSpy).toHaveBeenCalledTimes(1);
+    const leadRow = leadyCreateSpy.mock.calls[0][0].data as Record<string, unknown>;
     const generatedLeadId = leadRow.id as string;
     expect(generatedLeadId).not.toBe('attacker-lead-id');
     expect(typeof generatedLeadId).toBe('string');
 
-    expect(createBookingSpy).toHaveBeenCalledTimes(1);
-    const callArg = createBookingSpy.mock.calls[0][0] as { subject: { kind: string; leadId: string } };
+    expect(writeBookingCandidateSpy).toHaveBeenCalledTimes(1);
+    const callArg = writeBookingCandidateSpy.mock.calls[0][1] as { subject: { kind: string; leadId: string } };
     expect(callArg.subject.kind).toBe('LEAD');
     expect(callArg.subject.leadId).toBe(generatedLeadId);
     expect(callArg.subject.leadId).not.toBe('attacker-lead-id');
@@ -231,98 +291,173 @@ describe('saveLead — rezerwacja audytu (WO B2C-BOOKING-SLOT)', () => {
     }
   });
 
-  // @REQ: B2C-BOOKING-SLOT
-  it('AC9 (D-6 wariant a) — po SLOT_TAKEN klient/adres/lead zostają zapisane, kalendarz nie jest wywoływany; ponowna próba tworzy NOWY, niezależny komplet z innym leadId', async () => {
-    createBookingSpy.mockResolvedValueOnce({
-      ok: false,
-      booking: null,
-      error: { code: 'SLOT_TAKEN', message: 'Termin zajęty.', alternatives: [] },
-    });
+  /**
+   * @REQ: B2C-LEAD-ATOMIC
+   *
+   * ZASTĘPUJE test AC9 z WO B2C-BOOKING-SLOT ("D-6 wariant a" — po SLOT_TAKEN klient/adres/
+   * lead ZOSTAJĄ zapisane). WO B2C-LEAD-ATOMIC, sekcja "Wymagania": ten wariant jest
+   * "zaakceptowany, tymczasowy skutek — pełna atomowość zostaje przy B2C-LEAD-ATOMIC" i AC9
+   * (kryt. rejestru B2C-BOOKING-SLOT NIE zawiera go) przestaje obowiązywać na rzecz nowego
+   * AC5 z tego WO: po każdym kodzie błędu rezerwacji w bazie NIE MA nowego klienta/adresu/
+   * leada. Na poziomie jednostkowym (mockowana Prisma) obserwowalny skutek to: `tx.klienci
+   * .create` / `tx.adresy.create` / `tx.leady.create` albo nie zostały wywołane wcale (kody
+   * wykryte w fazie przygotowawczej, PRZED otwarciem transakcji), albo — jeśli zostały —
+   * cała `prisma.$transaction` się odrzuca (callback rzuca), co dowodzi, że implementacja NIE
+   * ma odrębnej ścieżki "zatwierdź częściowo". Prawdziwe zero wierszy na żywym Postgresie
+   * (dla kodów odkrywanych W TRAKCIE transakcji: SLOT_TAKEN/SUBJECT_ALREADY_BOOKED/
+   * POOL_MISMATCH) jest dowiedzione w `saveLead-atomic.itest.ts` — ten test jednostkowy nie
+   * może tego dowieść (atrapa `$transaction` nie ma prawdziwego ROLLBACK).
+   */
+  it('AC5 (B2C-LEAD-ATOMIC) — po każdym kodzie błędu rezerwacji odkrytym W FAZIE PRZYGOTOWAWCZEJ (przed otwarciem transakcji) transakcja NIE jest otwierana i żaden create() na klienci/adresy/leady się nie odbywa', async () => {
+    const prepareFailureCodes = ['BASKET_NOT_FOUND', 'BASKET_INACTIVE', 'CONFIG_MISSING', 'SLOT_NOT_OFFERED'];
 
-    const first = await saveLead(basePayload());
-    expect((first as { success: boolean }).success).toBe(false);
-    expect((first as { code?: string }).code).toBe('SLOT_TAKEN');
-
-    // Klient/adres/lead POZOSTAJĄ zapisane — żaden nie jest kasowany ani wycofywany.
-    expect(klienciInsertSpy).toHaveBeenCalledTimes(1);
-    expect(adresyInsertSpy).toHaveBeenCalledTimes(1);
-    expect(leadyInsertSpy).toHaveBeenCalledTimes(1);
-    // Kalendarz jest wywoływany PO udanym createBooking (architektura WO) — po
-    // nieudanej rezerwacji nie ma czego wpisywać do kalendarza.
-    expect(calendarSpy).not.toHaveBeenCalled();
-
-    const firstLeadId = (leadyInsertSpy.mock.calls[0][0] as Record<string, unknown>).id;
-
-    const second = await saveLead({ ...basePayload(), name: 'Anna Nowak', email: 'anna.nowak@example.com' });
-    expect((second as { success: boolean }).success).toBe(true);
-
-    expect(klienciInsertSpy).toHaveBeenCalledTimes(2);
-    expect(adresyInsertSpy).toHaveBeenCalledTimes(2);
-    expect(leadyInsertSpy).toHaveBeenCalledTimes(2);
-
-    const secondLeadId = (leadyInsertSpy.mock.calls[1][0] as Record<string, unknown>).id;
-    expect(secondLeadId).not.toBe(firstLeadId);
-  });
-
-  // @REQ: B2C-BOOKING-SLOT
-  it('AC10 — data_rezerwacji NIE jest ustawiane, gdy createBooking zwraca błąd (żaden z kodów), niezależnie od kodu', async () => {
-    const failureCodes = [
-      'SLOT_TAKEN',
-      'SUBJECT_ALREADY_BOOKED',
-      'SLOT_NOT_OFFERED',
-      'POOL_MISMATCH',
-      'BASKET_NOT_FOUND',
-      'BASKET_INACTIVE',
-      'CONFIG_MISSING',
-    ];
-
-    for (const code of failureCodes) {
+    for (const code of prepareFailureCodes) {
       resetAllMocks();
-      createBookingSpy.mockResolvedValueOnce({
+      prepareBookingCandidatesSpy.mockResolvedValueOnce({
         ok: false,
-        booking: null,
         error: { code, message: 'x', alternatives: [] },
       });
 
-      await saveLead(basePayload());
+      const result = await saveLead(basePayload());
 
-      expect(leadyInsertSpy).toHaveBeenCalledTimes(1);
-      const leadRow = leadyInsertSpy.mock.calls[0][0] as Record<string, unknown>;
-      expect(leadRow.data_rezerwacji ?? null).toBeNull();
-      expect(leadyUpdateSpy).not.toHaveBeenCalled();
+      expect((result as { success: boolean }).success).toBe(false);
+      expect((result as { code?: string }).code).toBe(code);
+      expect(transactionSpy).not.toHaveBeenCalled();
+      expect(klienciCreateSpy).not.toHaveBeenCalled();
+      expect(adresyCreateSpy).not.toHaveBeenCalled();
+      expect(leadyCreateSpy).not.toHaveBeenCalled();
+      expect(writeBookingCandidateSpy).not.toHaveBeenCalled();
+      expect(calendarSpy).not.toHaveBeenCalled();
     }
   });
 
-  // @REQ: B2C-BOOKING-SLOT
-  it('AC10 — data_rezerwacji JEST ustawiane wyłącznie po ok:true, przez UPDATE na leady (nie w INSERT)', async () => {
+  // @REQ: B2C-LEAD-ATOMIC
+  it('AC5 (B2C-LEAD-ATOMIC) — po kodzie błędu odkrytym WEWNĄTRZ transakcji (SLOT_TAKEN/SUBJECT_ALREADY_BOOKED/POOL_MISMATCH) cała transakcja jest odrzucona: brak sukcesu, kalendarz niewołany, dokładnie jedna próba writeBookingCandidate na jedynego kandydata', async () => {
+    const inTransactionFailureCodes = ['SLOT_TAKEN', 'SUBJECT_ALREADY_BOOKED', 'POOL_MISMATCH'];
+
+    for (const code of inTransactionFailureCodes) {
+      resetAllMocks();
+      writeBookingCandidateSpy.mockResolvedValueOnce({
+        ok: false,
+        error: { code, message: 'x', alternatives: [] },
+      });
+
+      const result = await saveLead(basePayload());
+
+      expect((result as { success: boolean }).success).toBe(false);
+      expect((result as { code?: string }).code).toBe(code);
+      expect(calendarSpy).not.toHaveBeenCalled();
+
+      // MAJOR M1 (recenzja PR): błąd domenowy zwrócony przez `writeBookingCandidate`
+      // (`ok:false`) musi rzucić WEWNĄTRZ callbacku `prisma.$transaction` (BookingWriteRejected)
+      // i wycofać CAŁĄ transakcję — nie zatwierdzić ją z częściowym zapisem. Atrapa
+      // `transactionSpy` (`async (callback) => callback(fakeTx)`) propaguje odrzucenie
+      // callbacku jako odrzucenie własnej obietnicy — dokładnie tak, jak prawdziwe
+      // `prisma.$transaction` na wyjątku z callbacku.
+      expect(transactionSpy).toHaveBeenCalledTimes(1);
+      await expect(transactionSpy.mock.results[0]!.value).rejects.toThrow();
+    }
+  });
+
+  // @REQ: B2C-LEAD-ATOMIC
+  it('MAJOR — wyścig retryowalny (23P01) na PIERWSZYM kandydacie: druga, NOWA transakcja na drugim kandydacie kończy się sukcesem; writeBookingCandidate/$transaction wywołane DWA razy', async () => {
+    resetAllMocks();
+    prepareBookingCandidatesSpy.mockResolvedValueOnce({
+      ok: true,
+      candidates: [
+        { resource_id: 'aud-1', resource_kind: 'AUDITOR' },
+        { resource_id: 'aud-2', resource_kind: 'AUDITOR' },
+      ],
+      resourceKind: 'AUDITOR',
+      scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
+      visitBasketId: 'basket-audit-id',
+    });
+    // 23P01 (przegrany wyścig o zasób) NIE jest łapane przez `writeBookingCandidate` —
+    // patrz komentarz w `create-booking.ts` — wydostaje się jako WYJĄTEK z tx-callbacku.
+    writeBookingCandidateSpy
+      .mockRejectedValueOnce(Object.assign(new Error('conflicting key value'), { meta: { code: '23P01' } }))
+      .mockResolvedValueOnce({
+        ok: true,
+        booking: {
+          id: 'booking-second-candidate',
+          scheduledStart: new Date('2026-11-16T07:00:00.000Z'),
+          scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
+        },
+      });
+
+    const result = await saveLead(basePayload());
+
+    expect(result.success).toBe(true);
+    expect(transactionSpy).toHaveBeenCalledTimes(2);
+    expect(writeBookingCandidateSpy).toHaveBeenCalledTimes(2);
+    // Pierwsza transakcja rzuciła (odrzucona) — druga (NOWA) zakończyła się sukcesem.
+    await expect(transactionSpy.mock.results[0]!.value).rejects.toThrow();
+    await expect(transactionSpy.mock.results[1]!.value).resolves.toBeTruthy();
+    expect(calendarSpy).toHaveBeenCalledTimes(1);
+  });
+
+  // @REQ: B2C-LEAD-ATOMIC
+  it('MAJOR — wyczerpanie CAŁEJ puli kandydatów na 23P01/40P01: success:false, code SLOT_TAKEN, alternatywy BEZ resource_id, zero wywołań kalendarza', async () => {
+    resetAllMocks();
+    prepareBookingCandidatesSpy.mockResolvedValueOnce({
+      ok: true,
+      candidates: [
+        { resource_id: 'aud-1', resource_kind: 'AUDITOR' },
+        { resource_id: 'aud-2', resource_kind: 'AUDITOR' },
+      ],
+      resourceKind: 'AUDITOR',
+      scheduledEnd: new Date('2026-11-16T09:00:00.000Z'),
+      visitBasketId: 'basket-audit-id',
+    });
+    writeBookingCandidateSpy
+      .mockRejectedValueOnce(Object.assign(new Error('conflicting key value'), { meta: { code: '23P01' } }))
+      .mockRejectedValueOnce(Object.assign(new Error('deadlock detected'), { meta: { code: '40P01' } }));
+    findPoolSlotsSpy.mockResolvedValueOnce({
+      slots: [{ start_at: new Date('2026-11-17T07:00:00.000Z'), end_at: new Date('2026-11-17T09:00:00.000Z'), date: '2026-11-17' }],
+    });
+
+    const result = await saveLead(basePayload());
+
+    expect(result).toMatchObject({ success: false, code: 'SLOT_TAKEN' });
+    expect(transactionSpy).toHaveBeenCalledTimes(2);
+    expect(writeBookingCandidateSpy).toHaveBeenCalledTimes(2);
+    expect(calendarSpy).not.toHaveBeenCalled();
+
+    const alternatives = (result as { alternatives?: unknown[] }).alternatives ?? [];
+    expect(alternatives.length).toBeGreaterThan(0);
+    for (const alt of alternatives) {
+      expect(alt).not.toHaveProperty('resource_id');
+    }
+  });
+
+  // @REQ: B2C-LEAD-ATOMIC
+  it('AC1/P-4 — sukces: data_rezerwacji w argumencie leady.create (nie w osobnym update) jest niepuste i równe scheduledStart z wyniku rezerwacji', async () => {
     await saveLead(basePayload());
 
-    expect(leadyInsertSpy).toHaveBeenCalledTimes(1);
-    const insertRow = leadyInsertSpy.mock.calls[0][0] as Record<string, unknown>;
-    expect(insertRow.data_rezerwacji ?? null).toBeNull();
-
-    expect(leadyUpdateSpy).toHaveBeenCalledTimes(1);
-    const updateRow = leadyUpdateSpy.mock.calls[0][0] as Record<string, unknown>;
-    expect(updateRow.data_rezerwacji).not.toBeNull();
+    expect(leadyCreateSpy).toHaveBeenCalledTimes(1);
+    const leadRow = leadyCreateSpy.mock.calls[0][0].data as Record<string, unknown>;
+    expect(leadRow.data_rezerwacji).not.toBeNull();
+    expect(new Date(leadRow.data_rezerwacji as string | Date).getTime()).toBe(
+      new Date('2026-11-16T07:00:00.000Z').getTime(),
+    );
   });
 
   // @REQ: B2C-BOOKING-SLOT
-  it('strefa czasowa — data_rezerwacji zapisana wprost z startAtIso (bez przeliczenia w strefie procesu), dzień zmiany czasu na letni', async () => {
+  it('strefa czasowa — data_rezerwacji zapisana wprost z wyniku rezerwacji (bez przeliczenia w strefie procesu), dzień zmiany czasu na letni', async () => {
     const startAtIso = '2026-03-29T12:00:00.000+02:00'; // 12:00 czasu letniego Warszawy, po zmianie
-    createBookingSpy.mockResolvedValueOnce({
+    writeBookingCandidateSpy.mockResolvedValueOnce({
       ok: true,
       booking: {
         id: 'booking-dst',
         scheduledStart: new Date(startAtIso),
         scheduledEnd: new Date(new Date(startAtIso).getTime() + 120 * 60000),
       },
-      error: null,
     });
 
     await saveLead({ ...basePayload(), startAtIso });
 
-    expect(leadyUpdateSpy).toHaveBeenCalledTimes(1);
-    const updateRow = leadyUpdateSpy.mock.calls[0][0] as Record<string, unknown>;
-    expect(updateRow.data_rezerwacji).toBe(new Date(startAtIso).toISOString());
+    expect(leadyCreateSpy).toHaveBeenCalledTimes(1);
+    const leadRow = leadyCreateSpy.mock.calls[0][0].data as Record<string, unknown>;
+    expect(new Date(leadRow.data_rezerwacji as string | Date).toISOString()).toBe(new Date(startAtIso).toISOString());
   });
 });

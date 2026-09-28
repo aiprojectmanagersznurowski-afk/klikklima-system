@@ -21,6 +21,21 @@ import { findPoolSlots } from "./pool-slots"
  *   przerwać pętlę po kandydatach: ponowienie na innym kandydacie nie ma sensu, bo
  *   podmiot już ma aktywną rezerwację niezależnie od tego, KTO ją wykonuje.
  *   D-4 = `createBooking` NIE dotyka `leady.data_rezerwacji`.
+ *
+ * WO B2C-LEAD-ATOMIC (docs/workorders/B2C-LEAD-ATOMIC.md, P-2, "Transakcja ponawiana per
+ * kandydat"): funkcja rozbita na dwie części o wspólnej logice, żeby `saveLead` (B2C) mogła
+ * otworzyć WŁASNĄ transakcję per kandydat (klient+adres+lead+rezerwacja) bez duplikowania
+ * silnika rezerwacji (B2C-BOOKING-SLOT kryt. 7: "jedna implementacja rezerwacji"):
+ *   - `prepareBookingCandidates` — część PRZYGOTOWAWCZA, wyłącznie odczyty (koszyk,
+ *     konfiguracja, `findAvailableSlots`, D-1, `preferredResourceId`), BEZ zapisu i BEZ
+ *     transakcji.
+ *   - `writeBookingCandidate` — część ZAPISUJĄCA, przyjmuje klienta transakcyjnego `tx`,
+ *     wykonuje DOKŁADNIE jeden `tx.booking.create`. Łapie 23514 (POOL_MISMATCH) i 23505
+ *     (SUBJECT_ALREADY_BOOKED) — kody, które NIE wymagają ponowienia na innym kandydacie.
+ *     NIE łapie 23P01/40P01 — oddaje błąd wołającemu, bo po nim (u B2C: cała
+ *     `prisma.$transaction`) transakcja i tak jest martwa.
+ * `createBooking` (używany przez panel B2B) jest teraz ZŁOŻONY z tych dwóch części na
+ * globalnym `prisma` — zachowuje dokładnie dzisiejszy kontrakt zachowania.
  */
 
 const TIME_ZONE = "Europe/Warsaw"
@@ -241,12 +256,19 @@ async function orderCandidates(
   })
 }
 
+type AlternativesParams = {
+  visitBasketId: string
+  startAt: Date
+  alternativesRange?: { from: Date; to: Date }
+  now?: Date
+}
+
 /**
  * AC-A9/AC-A10: alternatywy to `AvailableSlot[]` — CAL-POOL-AGGREGATE, BEZ `resource_id`,
  * klient nie poznaje tożsamości ani obłożenia pracownika. Obcięte do 5 pozycji,
  * zdeduplikowane po momencie startu (wielu pracowników może oferować ten sam start).
  */
-async function findAlternatives(params: CreateBookingParams): Promise<AvailableSlot[]> {
+async function findAlternatives(params: AlternativesParams): Promise<AvailableSlot[]> {
   const range = params.alternativesRange ?? {
     from: params.startAt,
     to: new Date(params.startAt.getTime() + DEFAULT_ALTERNATIVES_HORIZON_DAYS * MS_PER_DAY),
@@ -256,23 +278,69 @@ async function findAlternatives(params: CreateBookingParams): Promise<AvailableS
   return result.slots
 }
 
-export async function createBooking(params: CreateBookingParams): Promise<CreateBookingResult> {
+export type BookingCandidate = { resource_id: string; resource_kind: "AUDITOR" | "CREW" }
+
+export type PrepareBookingCandidatesParams = {
+  visitBasketId: string
+  startAt: Date
+  now?: Date
+  alternativesRange?: { from: Date; to: Date }
+  preferredResourceId?: string
+}
+
+export type PrepareBookingCandidatesResult =
+  | {
+      ok: true
+      candidates: BookingCandidate[]
+      resourceKind: "AUDITOR" | "CREW"
+      scheduledEnd: Date
+      visitBasketId: string
+    }
+  | {
+      ok: false
+      error: {
+        code: CreateBookingErrorCode
+        message: string
+        alternatives: AvailableSlot[]
+      }
+    }
+
+/**
+ * WO B2C-LEAD-ATOMIC, P-2 — część PRZYGOTOWAWCZA: wyłącznie odczyty (koszyk, konfiguracja,
+ * `findAvailableSlots`, D-1, `preferredResourceId`). BEZ zapisu, BEZ transakcji. Woła się
+ * PRZED otwarciem jakiejkolwiek transakcji przez wołającego (`saveLead`/`createBooking`).
+ */
+export async function prepareBookingCandidates(
+  params: PrepareBookingCandidatesParams,
+): Promise<PrepareBookingCandidatesResult> {
   const basket = await prisma.visitDurationBasket.findUnique({ where: { id: params.visitBasketId } })
 
   if (!basket) {
-    return fail("BASKET_NOT_FOUND", `Koszyk wizyty o identyfikatorze "${params.visitBasketId}" nie istnieje.`)
+    return { ok: false, error: { code: "BASKET_NOT_FOUND", message: `Koszyk wizyty o identyfikatorze "${params.visitBasketId}" nie istnieje.`, alternatives: [] } }
   }
   if (!basket.isActive) {
-    return fail("BASKET_INACTIVE", `Koszyk wizyty "${basket.code}" jest wycofany ze słownika i nie może być rezerwowany.`)
+    return {
+      ok: false,
+      error: {
+        code: "BASKET_INACTIVE",
+        message: `Koszyk wizyty "${basket.code}" jest wycofany ze słownika i nie może być rezerwowany.`,
+        alternatives: [],
+      },
+    }
   }
 
   const configRow = await prisma.system_config.findUnique({ where: { typ_konfiguracji: "scheduling_config" } })
   const travelBufferMinutes = parseTravelBufferMinutes(configRow?.konfiguracja)
   if (travelBufferMinutes === null) {
-    return fail(
-      "CONFIG_MISSING",
-      "Brak poprawnej konfiguracji bufora dojazdu (scheduling_config.travel_buffer_minutes) — nie można bezpiecznie zarezerwować terminu.",
-    )
+    return {
+      ok: false,
+      error: {
+        code: "CONFIG_MISSING",
+        message:
+          "Brak poprawnej konfiguracji bufora dojazdu (scheduling_config.travel_buffer_minutes) — nie można bezpiecznie zarezerwować terminu.",
+        alternatives: [],
+      },
+    }
   }
 
   const resourceKind: "AUDITOR" | "CREW" = basket.pool === "CREW" ? "CREW" : "AUDITOR"
@@ -284,25 +352,28 @@ export async function createBooking(params: CreateBookingParams): Promise<Create
   )
 
   const startAtMs = params.startAt.getTime()
-  const candidates = slotsResult.resources.filter((resource) =>
+  const rawCandidates = slotsResult.resources.filter((resource) =>
     resource.slots.some((slot) => slot.start_at.getTime() === startAtMs),
   )
 
-  if (candidates.length === 0) {
+  if (rawCandidates.length === 0) {
     const alternatives = await findAlternatives(params)
-    return fail(
-      "SLOT_NOT_OFFERED",
-      "Wybrany termin nie jest dostępny — silnik nie oferuje go żadnemu kandydatowi.",
-      alternatives,
-    )
+    return {
+      ok: false,
+      error: {
+        code: "SLOT_NOT_OFFERED",
+        message: "Wybrany termin nie jest dostępny — silnik nie oferuje go żadnemu kandydatowi.",
+        alternatives,
+      },
+    }
   }
 
-  let orderedCandidates = await orderCandidates(resourceKind, candidates, params.startAt)
+  let orderedCandidates = await orderCandidates(resourceKind, rawCandidates, params.startAt)
 
   // AC7/kryt. 6: preselekcja, nie filtr. Jeśli kandydat preferowany jest w wyniku D-1
   // (czyli wolny w tym terminie), przesuwamy go na start listy bez zmiany względnej
   // kolejności pozostałych. Jeśli nie jest w wyniku (niedostępny/poza pulą), lista
-  // wraca niezmieniona — pętla poniżej i tak spróbuje innych kandydatów.
+  // wraca niezmieniona — pętla wołającego i tak spróbuje innych kandydatów.
   if (params.preferredResourceId) {
     const preferredIndex = orderedCandidates.findIndex((c) => c.resource_id === params.preferredResourceId)
     if (preferredIndex > 0) {
@@ -313,66 +384,140 @@ export async function createBooking(params: CreateBookingParams): Promise<Create
 
   const scheduledEnd = new Date(startAtMs + basket.durationMinutes * MS_PER_MINUTE)
 
-  for (const candidate of orderedCandidates) {
-    const data = {
-      ...subjectFields(params.subject),
-      resourceKind,
-      visitBasketId: params.visitBasketId,
-      scheduledStart: params.startAt,
-      scheduledEnd,
-      status: "RESERVED",
-      bookedBy: params.bookedBy,
-      assignmentMode: "AUTO",
-      auditorId: resourceKind === "AUDITOR" ? candidate.resource_id : null,
-      crewId: resourceKind === "CREW" ? candidate.resource_id : null,
+  const candidates: BookingCandidate[] = orderedCandidates.map((c) => ({
+    resource_id: c.resource_id,
+    resource_kind: c.resource_kind,
+  }))
+
+  return { ok: true, candidates, resourceKind, scheduledEnd, visitBasketId: params.visitBasketId }
+}
+
+type BookingCreateClient = { booking: { create: typeof prisma.booking.create; findFirst: typeof prisma.booking.findFirst } }
+
+export type WriteBookingCandidateParams = {
+  visitBasketId: string
+  scheduledStart: Date
+  scheduledEnd: Date
+  resourceKind: "AUDITOR" | "CREW"
+  candidate: BookingCandidate
+  subject: BookingSubject
+  bookedBy: "CLIENT" | "DISPATCHER"
+}
+
+export type WriteBookingCandidateResult =
+  | { ok: true; booking: BookingRow }
+  | {
+      ok: false
+      error: {
+        code: "POOL_MISMATCH" | "SUBJECT_ALREADY_BOOKED"
+        message: string
+        alternatives: AvailableSlot[]
+        existingBooking?: BookingRow | null
+      }
     }
 
+/**
+ * WO B2C-LEAD-ATOMIC, P-2 — część ZAPISUJĄCA: przyjmuje klienta transakcyjnego `tx`
+ * (`Prisma.TransactionClient` albo globalny `prisma` — oba mają identyczny kształt
+ * `.booking.create`/`.booking.findFirst`). Wykonuje DOKŁADNIE jeden `tx.booking.create`.
+ * Łapie 23514 (POOL_MISMATCH) i 23505 (SUBJECT_ALREADY_BOOKED) — te dwa kody NIE wymagają
+ * ponowienia na innym kandydacie (R-4, zachowanie 1:1 z dawnym `createBooking`). NIE ŁAPIE
+ * 23P01/40P01 — oddaje błąd wołającemu, bo po nim transakcja i tak jest martwa. Błąd
+ * nierozpoznany — rzuca dalej (zachowanie 1:1 z dawnym `createBooking`).
+ */
+export async function writeBookingCandidate(
+  tx: BookingCreateClient,
+  params: WriteBookingCandidateParams,
+): Promise<WriteBookingCandidateResult> {
+  const data = {
+    ...subjectFields(params.subject),
+    resourceKind: params.resourceKind,
+    visitBasketId: params.visitBasketId,
+    scheduledStart: params.scheduledStart,
+    scheduledEnd: params.scheduledEnd,
+    status: "RESERVED",
+    bookedBy: params.bookedBy,
+    assignmentMode: "AUTO",
+    auditorId: params.resourceKind === "AUDITOR" ? params.candidate.resource_id : null,
+    crewId: params.resourceKind === "CREW" ? params.candidate.resource_id : null,
+  }
+
+  try {
+    const booking = await tx.booking.create({ data })
+    return { ok: true, booking: booking as BookingRow }
+  } catch (err) {
+    const sqlState = extractSqlState(err)
+
+    if (sqlState === "23514") {
+      // Wyzwalacz bookings_pool_matches_basket_trg — pula nie zgadza się z koszykiem.
+      return {
+        ok: false,
+        error: { code: "POOL_MISMATCH", message: "Wykonawca nie należy do puli wymaganej przez koszyk wizyty.", alternatives: [] },
+      }
+    }
+    if (sqlState === "23505") {
+      // D-3: bookings_one_active_per_subject — podmiot ma już aktywną rezerwację.
+      // AC6: błąd musi nieść odesłanie do rezerwacji, z którą podmiot koliduje. Szukamy
+      // po ID podmiotu z `params.subject` (nie przez kolumnę generowaną subject_id — ta
+      // jest niewidoczna dla modelu Prisma), więc bez $queryRaw.
+      const existingBooking = (await tx.booking.findFirst({
+        where: {
+          ...subjectFields(params.subject),
+          status: { in: ACTIVE_BOOKING_STATUSES },
+        },
+      })) as BookingRow | null
+      return {
+        ok: false,
+        error: {
+          code: "SUBJECT_ALREADY_BOOKED",
+          message: "Ten podmiot (lead/serwis/usterka) ma już aktywną rezerwację.",
+          alternatives: [],
+          existingBooking,
+        },
+      }
+    }
+
+    // 23P01/40P01 (przegrany wyścig/deadlock) i błędy nierozpoznane wydostają się jako
+    // wyjątek — to WOŁAJĄCY (pętla po kandydatach, ewentualnie w NOWEJ transakcji)
+    // decyduje o ponowieniu na innym kandydacie.
+    throw err
+  }
+}
+
+export async function createBooking(params: CreateBookingParams): Promise<CreateBookingResult> {
+  const prepared = await prepareBookingCandidates(params)
+
+  if (!prepared.ok) {
+    return fail(prepared.error.code, prepared.error.message, prepared.error.alternatives)
+  }
+
+  for (const candidate of prepared.candidates) {
     try {
       // eslint-disable-next-line no-await-in-loop -- R-4: KAŻDY INSERT osobno, poza transakcją.
-      const booking = await prisma.booking.create({ data })
-      return { ok: true, booking: booking as BookingRow, error: null }
+      const writeResult = await writeBookingCandidate(prisma, {
+        visitBasketId: prepared.visitBasketId,
+        scheduledStart: params.startAt,
+        scheduledEnd: prepared.scheduledEnd,
+        resourceKind: prepared.resourceKind,
+        candidate,
+        subject: params.subject,
+        bookedBy: params.bookedBy,
+      })
+
+      if (writeResult.ok) {
+        return { ok: true, booking: writeResult.booking, error: null }
+      }
+
+      // POOL_MISMATCH/SUBJECT_ALREADY_BOOKED — PRZERWIJ pętlę: próba na innym kandydacie
+      // skończyłaby się identycznie (D-3).
+      return fail(writeResult.error.code, writeResult.error.message, writeResult.error.alternatives, writeResult.error.existingBooking)
     } catch (err) {
       const sqlState = extractSqlState(err)
 
-      if (sqlState === "23514") {
-        // Wyzwalacz bookings_pool_matches_basket_trg — pula nie zgadza się z koszykiem.
-        return fail("POOL_MISMATCH", "Wykonawca nie należy do puli wymaganej przez koszyk wizyty.")
-      }
-      if (sqlState === "23505") {
-        // D-3: bookings_one_active_per_subject — podmiot ma już aktywną rezerwację.
-        // PRZERWIJ pętlę: próba na innym kandydacie skończy się identycznie.
-        // AC6: błąd musi nieść odesłanie do rezerwacji, z którą podmiot koliduje.
-        // Szukamy po ID podmiotu z `params.subject` (nie przez kolumnę generowaną
-        // subject_id — ta jest niewidoczna dla modelu Prisma), więc bez $queryRaw.
-        const existingBooking = (await prisma.booking.findFirst({
-          where: {
-            ...subjectFields(params.subject),
-            status: { in: ACTIVE_BOOKING_STATUSES },
-          },
-        })) as BookingRow | null
-        return fail(
-          "SUBJECT_ALREADY_BOOKED",
-          "Ten podmiot (lead/serwis/usterka) ma już aktywną rezerwację.",
-          [],
-          existingBooking,
-        )
-      }
       if (sqlState === "23P01" || sqlState === "40P01") {
         // bookings_no_overlap_per_resource — ten kandydat przegrał wyścig, następny.
-        // 40P01 (deadlock detected) jest RÓWNOWAŻNY 23P01 w tym kontekście: pod
-        // realną równoczesnością na `EXCLUDE USING gist` Postgres może ALBO zwrócić
-        // czyste 23P01, ALBO wykryć deadlock między dwiema transakcjami wstawiającymi
-        // nakładające się zakresy i ubić jedną z SQLSTATE 40P01 — nondeterministyczne,
-        // zależne od dokładnego zbiegu blokad GiST (potwierdzone realnym przebiegiem CI,
-        // run 34944442379, PR #1: ten sam test raz dostał 23P01, raz 40P01).
-        // SQLSTATE sam nie mówi, na KTÓRYM ograniczeniu deadlock powstał — teoretycznie
-        // mógłby to być `bookings_one_active_per_subject` (unikalny indeks częściowy),
-        // nie tylko EXCLUDE. Ale kontynuacja pętli jest bezpiecznym domyślnym wyborem
-        // dla obu przypadków: jeśli to faktycznie był konflikt na podmiocie, następny
-        // kandydat i tak dostanie czyste 23505/P2002 (SUBJECT_ALREADY_BOOKED) w kolejnej
-        // iteracji — błąd ujawni się poprawnie, tylko jedną iterację później. Przerwanie
-        // pętli na niepewności byłoby BŁĘDNE dla prawdziwego przypadku "przegrany wyścig
-        // o zasób" (większość przypadków 40P01 tutaj).
+        // 40P01 (deadlock detected) jest RÓWNOWAŻNY 23P01 w tym kontekście — patrz
+        // uzasadnienie pełne w poprzedniej wersji tego pliku / historii repo.
         continue
       }
 
