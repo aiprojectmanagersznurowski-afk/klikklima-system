@@ -152,7 +152,8 @@ vi.mock('@repo/database', () => ({
 
 import { getActorConsentsStatus } from '../src/lib/domain/consents';
 
-// @REQ: FIX-CONSENTS-DOCUMENT-KIND-FILTER
+// Test regresyjny wewnętrznej logiki domenowej — nie realizuje osobnego wymagania z rejestru,
+// więc świadomie bez tagu @REQ (kk-trace --enforce odrzuca tagi wskazujące na nieistniejące ID).
 describe('Regresja: getActorConsentsStatus musi filtrować po documentKind (świat pracownika vs klienta)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
