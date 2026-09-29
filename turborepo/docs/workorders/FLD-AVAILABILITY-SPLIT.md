@@ -1,9 +1,8 @@
 # WO: FLD-AVAILABILITY-SPLIT — rozdzielenie blokady administracyjnej od deklaracji dostępności pracownika
 
-> **STATUS: WYMAGA DECYZJI D-A. Nie startować.**
-> Kształt schematu zależy od odpowiedzi na pytanie o właściciela statusu dostępności. Migracja jest
-> nieodwracalna w praktyce (dane produkcyjne), a zła odpowiedź daje pracownikowi możliwość zdjęcia
-> sobie blokady nałożonej przez administratora. To jest podatność, nie niedogodność.
+> **STATUS: ZREALIZOWANE 2026-08-21.** Migracje uruchomione i zweryfikowane na żywej bazie
+> (potwierdzone ponownie 2026-09-29). Decyzja D-A rozstrzygnięta — patrz sekcja na końcu dokumentu.
+> Treść poniżej (kontekst decyzyjny sprzed rozstrzygnięcia) zachowana jako dokumentacja historyczna.
 
 **Cel:** `is_active` ma pozostać wyłączną własnością administratora, a „jestem teraz niedostępny"
 ma być własnością pracownika — i te dwie rzeczy nie mogą dzielić kolumny ani ścieżki zapisu.

@@ -1,8 +1,8 @@
 # WO: FLD-CONSENT-DOCS — wersjonowane zgody RODO i regulamin pracowniczy (model danych)
 
-> **STATUS: WYMAGA DECYZJI D-C i D-D. Nie startować.**
-> Model danych da się zaprojektować dopiero po odpowiedzi, czy dokumenty prawne to nowy zasób RBAC
-> czy rozszerzenie istniejącego `documents`, oraz gdzie brak zgody ma realnie blokować pracę.
+> **STATUS: ZREALIZOWANE 2026-08-21.** Migracje uruchomione i zweryfikowane na żywej bazie
+> (potwierdzone ponownie 2026-09-29). Decyzje D-C i D-D rozstrzygnięte — patrz sekcja na końcu dokumentu.
+> Treść poniżej (kontekst decyzyjny sprzed rozstrzygnięcia) zachowana jako dokumentacja historyczna.
 
 **Cel:** administrator ma miejsce, w którym wgrywa i **wersjonuje** treść zgód RODO i regulaminu,
 a system wie, kto zaakceptował którą wersję i kiedy. Bez tego D4 („pracownik musi zaakceptować przed
