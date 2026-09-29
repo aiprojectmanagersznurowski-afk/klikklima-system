@@ -16,7 +16,11 @@ test.describe('Content and Legal Pages', () => {
     await expect(page).toHaveURL(/.*\/baza-wiedzy\/.+/);
 
     // Verify article page
-    await expect(page.locator('button:has-text("Wstecz")')).toBeVisible();
+    // Poprzednia wersja szukała `button:has-text("Wstecz")`, ale
+    // `app/baza-wiedzy/[slug]/page.tsx` renderuje `<Link href="/baza-wiedzy">`
+    // (next/link -> <a>), więc lokator nigdy nie trafiał. `<Link>` jest tu
+    // poprawnym wyborem produkcyjnym — poprawka jest wyłącznie w selektorze testu.
+    await expect(page.getByRole('link', { name: 'Wstecz' })).toBeVisible();
     await expect(page.locator('h1').first()).toBeVisible();
     
     // There should be some markdown rendered content
