@@ -17,6 +17,13 @@ jobs:
       # Realne połączenie (migracje/testy integracyjne) to osobny krok, jeszcze nieistniejący.
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/klikklima_ci_placeholder
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/klikklima_ci_placeholder
+      # Od B2C-RLS-PUBLIC AC5 (PR #31) apps/b2c-web/lib/supabaseClient.ts rzuca fail-closed
+      # przy imporcie, jeśli tych dwóch brakuje — "Budowanie projektu" poniżej biegnie PRZED
+      # "Start lokalnego stacku Supabase", więc żadna prawdziwa instancja jeszcze nie istnieje.
+      # Wartości nie są sekretem (NEXT_PUBLIC_* i tak trafiają do przeglądarki) — wystarczy,
+      # żeby konstruktor klienta nie rzucił; żadne zapytanie faktycznie nie leci w tym kroku.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-build-placeholder-not-a-real-key
 
     steps:
       - name: Pobranie kodu
