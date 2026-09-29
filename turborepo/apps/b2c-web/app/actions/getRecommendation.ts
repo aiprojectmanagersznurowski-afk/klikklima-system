@@ -2,6 +2,7 @@
 
 import { unstable_noStore as noStore } from 'next/cache';
 import { supabase } from "@/lib/supabaseClient";
+import { getAdminClient } from "../../lib/supabaseAdminClient";
 import { DISQUALIFICATION_RULES, disqualifyingRules, BUILDING_TYPE_IDS, type TriageAnswers } from "@klikklima/contracts";
 
 export interface RoomSizes {
@@ -68,17 +69,6 @@ export async function getRecommendation(
     }
     const hash = requiredCodes.sort().join('-');
 
-    // Cena montażu
-    const { data: cennik, error: cennikError } = await supabase
-      .from('cennik_uslug')
-      .select('koszt_b2c_netto')
-      .eq('nazwa_uslugi', 'Montaż wzorcowy')
-      .limit(1)
-      .single();
-
-    const installPricePerRoomNetto = (cennik && !cennikError) ? Number(cennik.koszt_b2c_netto) : 1200;
-    const totalInstallNetto = installPricePerRoomNetto * roomCount;
-
     // Szukamy dostępnych wariantów z Materialized View
     let query = supabase
       .from('available_combinations')
@@ -91,12 +81,24 @@ export async function getRecommendation(
         // Jeśli podano serię (z modalu), dajemy jej najwyższy priorytet,
         // ale sortowanie zrobimy w JS dla pewności, pobierając wszystko pasujące do hasha.
     }
-    
+
     const { data: combinations, error: combError } = await query;
-    
+
     if (combError || !combinations || combinations.length === 0) {
         throw new Error("Nie znaleziono pasujących wariantów dla tej konfiguracji.");
     }
+
+    // Cena montażu — cennik_uslug nie ma polityki anon SELECT (D-R1, migracja
+    // 20260929100000_b2c_rls_public_catalog.sql), więc wymaga dedykowanego klienta serwisowego.
+    const { data: cennik, error: cennikError } = await getAdminClient()
+      .from('cennik_uslug')
+      .select('koszt_b2c_netto')
+      .eq('nazwa_uslugi', 'Montaż wzorcowy')
+      .limit(1)
+      .single();
+
+    const installPricePerRoomNetto = (cennik && !cennikError) ? Number(cennik.koszt_b2c_netto) : 1200;
+    const totalInstallNetto = installPricePerRoomNetto * roomCount;
 
     // Sortowanie by preferowana seria była na szczycie (jeśli podano)
     let sortedCombinations = [...combinations];
