@@ -67,7 +67,17 @@ schema_paths = []
 enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
-sql_paths = ["./seed.sql"]
+#
+# fuji_seed.sql (korzeń repo) wstawia katalog urządzeń Fuji Electric
+# (indoor_units, outdoor_units, single_split_sets, multi_split_sets) —
+# bez tego `available_combinations` (migracja 20260910090000_b2c_catalog_view_tracked.sql)
+# jest zdefiniowany, ale pusty, więc katalog/rekomendacje B2C są puste
+# w każdym świeżym stacku CI/lokalnym (znana luka, e2e-runner 2026-09-29).
+# setup_combinations.sql NIE jest tu podpięty świadomie — jego treść
+# (DROP MATERIALIZED VIEW + definicja funkcji/widoku) jest już w pełni
+# odtworzona przez migrację 20260910090000, więc jest teraz zbędny/nieaktualny
+# jako źródło (nie usunięty z repo w tej zmianie, poza zakresem).
+sql_paths = ["./seed.sql", "../fuji_seed.sql"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.

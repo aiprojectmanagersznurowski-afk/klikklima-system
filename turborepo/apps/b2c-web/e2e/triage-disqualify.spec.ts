@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { ROOM_COUNT_EXPERT_THRESHOLD } from '@klikklima/contracts';
+import { ROOM_COUNT_EXPERT_THRESHOLD, PROPERTY_CONDITION_PL, SLA } from '@klikklima/contracts';
 
 /**
  * WO: docs/workorders/B2C-TRIAGE-DISQUALIFY.md
@@ -50,12 +50,23 @@ const fillSizesForRooms = async (page: Page, count: number, size = 'Do 20 m²') 
 // dopiero w kroku 6 (Step6Loader). Po nim: Step7Success (cena) ALBO StepExpert.
 const runQualifyingSteps = async (
   page: Page,
-  { location, rooms, state = 'Wykończony', balcony = 'Tak' }: { location: string; rooms: number; state?: string; balcony?: string },
+  // `state` domyślnie = pełna etykieta z kontraktu (packages/contracts/src/generated/triage.ts,
+  // PROPERTY_CONDITION_PL.FINISHED = "Wykończony / Zamieszkany"), nie literał 'Wykończony' —
+  // Step4State.tsx zawsze renderował tę pełną etykietę, dopasowanie exact do skróconej
+  // wersji było TEST-DEFECT od dnia zero.
+  { location, rooms, state = PROPERTY_CONDITION_PL.FINISHED, balcony = 'Tak' }: { location: string; rooms: number; state?: string; balcony?: string },
 ) => {
   await page.goto('/triage');
   await page.waitForLoadState('networkidle');
 
   await clickOption(page, location);
+  // Mieszkanie/Dom -> sekcja pasma metrażu na TYM SAMYM ekranie (krok wciąż = 1,
+  // B2C-PROPERTY-AREA-BAND) — nextStep() czeka na jej wybór, zanim przejdzie do kroku 2.
+  // Lokal komercyjny nie ma tej sekcji (isTriageFieldVisible zwraca false), więc tam
+  // nextStep() odpala się od razu po lokalizacji, tak jak wcześniej.
+  if (location === 'Mieszkanie' || location === 'Dom') {
+    await clickOption(page, `Do ${SLA.PROPERTY_AREA_VAT_THRESHOLD.sqm} m²`);
+  }
   await clickOption(page, roomsLabel(rooms));
   await fillSizesForRooms(page, rooms);
   await clickOption(page, state);
@@ -167,8 +178,12 @@ test.describe('Triage — dyskwalifikacja prowadzi na ekran Eksperta (D3, D6)', 
     // Krok 1 nadal się renderuje — wejście z karty produktu nie ma własnej mechaniki
     // (WO, Mechanika D3 pkt 6): dopiero wybór lokalizacji odpala `nextStep()`, który
     // przeskakuje z kroku 1 na 4, bo `selectedDeviceLine` jest już ustawiony z URL.
+    // Dla Mieszkania/Domu `nextStep()` nie odpala się od razu po lokalizacji — Step1Location
+    // dokłada na TYM SAMYM ekranie sekcję pasma metrażu (B2C-PROPERTY-AREA-BAND) i czeka na
+    // jej wybór (handleSelectAreaBand), zanim w ogóle przejdzie dalej.
     await clickOption(page, 'Mieszkanie');
-    await clickOption(page, 'Wykończony');
+    await clickOption(page, `Do ${SLA.PROPERTY_AREA_VAT_THRESHOLD.sqm} m²`);
+    await clickOption(page, PROPERTY_CONDITION_PL.FINISHED);
     await clickOption(page, 'Tak'); // balkon — krok 5, tylko dla Mieszkania
 
     await expect(page.locator('text=Twoja instalacja zasługuje na dokładną wycenę')).toBeVisible({ timeout: 20000 });
@@ -201,7 +216,7 @@ test.describe('Triage — dyskwalifikacja prowadzi na ekran Eksperta (D3, D6)', 
 
     await clickOption(page, roomsLabel(BELOW_THRESHOLD));
     await fillSizesForRooms(page, BELOW_THRESHOLD);
-    await clickOption(page, 'Wykończony');
+    await clickOption(page, PROPERTY_CONDITION_PL.FINISHED);
 
     await expect(page.locator('text=Oto propozycje zestawów dobranych specjalnie do Twojego zapotrzebowania')).toBeVisible({ timeout: 20000 });
   });
@@ -257,7 +272,11 @@ test.describe('Triage — dyskwalifikacja prowadzi na ekran Eksperta (D3, D6)', 
       await page.waitForLoadState('networkidle');
       await expect(page.locator('text=Krok 1 / 8')).toBeVisible();
 
+      // Mieszkanie -> sekcja pasma metrażu na TYM SAMYM ekranie (krok wciąż = 1,
+      // patrz komentarz w teście AC10 wyżej) — trzeba ją wybrać, zanim aplikacja
+      // przejdzie do kroku 2.
       await clickOption(page, 'Mieszkanie');
+      await clickOption(page, `Do ${SLA.PROPERTY_AREA_VAT_THRESHOLD.sqm} m²`);
       const m2 = await measureAt(2);
 
       await clickOption(page, roomsLabel(roomsCount));
@@ -266,7 +285,7 @@ test.describe('Triage — dyskwalifikacja prowadzi na ekran Eksperta (D3, D6)', 
       await fillSizesForRooms(page, roomsCount);
       const m4 = await measureAt(4);
 
-      await clickOption(page, 'Wykończony');
+      await clickOption(page, PROPERTY_CONDITION_PL.FINISHED);
       const m5 = await measureAt(5);
 
       await clickOption(page, 'Tak'); // balkon — krok 5, tylko dla Mieszkania
