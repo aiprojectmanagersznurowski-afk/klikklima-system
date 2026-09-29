@@ -45,9 +45,10 @@ export async function getActorConsentsStatus(
     return { success: false, error: 'Brak uprawnień do odczytu dokumentów prawnych' };
   }
 
-  // Pobranie wszystkich aktualnie obowiązujących wersji dokumentów prawnych
+  // Pobranie wszystkich aktualnie obowiązujących wersji dokumentów prawnych PRACOWNICZYCH
+  // (wyklucza dokumenty klienckie B2C_PRIVACY_POLICY/B2C_TERMS z rejestru B2C-CONSENT-RODO)
   const currentVersions = await prisma.legalDocumentVersion.findMany({
-    where: { isCurrent: true },
+    where: { isCurrent: true, documentKind: { in: ['RODO_CONSENT', 'EMPLOYEE_TERMS'] } },
     orderBy: { createdAt: 'asc' },
   });
 
