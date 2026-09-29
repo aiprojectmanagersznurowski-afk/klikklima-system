@@ -1,4 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { isTriageFieldVisible, BUILDING_TYPE_PL, PROPERTY_CONDITION_PL, SLA, type BuildingTypeId, type TriageAnswers } from '@klikklima/contracts';
+
+// B2C-PROPERTY-AREA-BAND (2026-09-25): patrz komentarz w triage.spec.ts — ten sam
+// dodatkowy krok metrażu dokłada się na ekranie Step1Location dla Mieszkania/Domu.
+const BUILDING_TYPE_ID_BY_PL: Record<string, BuildingTypeId> = Object.fromEntries(
+  (Object.entries(BUILDING_TYPE_PL) as [BuildingTypeId, string][]).map(([id, pl]) => [pl, id])
+);
 
 test.describe('Booking Form Validations', () => {
   test('should validate empty inputs and incorrect formats in booking form', async ({ page }) => {
@@ -14,9 +21,17 @@ test.describe('Booking Form Validations', () => {
 
     // Fast path triage
     await clickOption('Mieszkanie');
+
+    // Krok 1b: pasmo metrażu (B2C-PROPERTY-AREA-BAND) — patrz komentarz w triage.spec.ts.
+    const buildingType = BUILDING_TYPE_ID_BY_PL['Mieszkanie'];
+    const areaBandAnswers: TriageAnswers = buildingType ? { BUILDING_TYPE: buildingType } : {};
+    if (isTriageFieldVisible('PROPERTY_AREA_BAND', areaBandAnswers)) {
+      await clickOption(`Do ${SLA.PROPERTY_AREA_VAT_THRESHOLD.sqm} m²`);
+    }
+
     await clickOption('1 pomieszczenie');
     await clickOption('Do 20 m²');
-    await clickOption('Wykończony');
+    await clickOption(PROPERTY_CONDITION_PL.FINISHED);
     await clickOption('Tak');
 
     // Wait for results
