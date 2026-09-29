@@ -117,6 +117,44 @@ async function createTestSaturdayRule(auditorId: string, start: string, end: str
   });
 }
 
+/**
+ * Zgoda B2C (WO B2C-CONSENT-RODO): `saveLead()` odczytuje KAŻDĄ wersję po `id` przez
+ * `prisma.legalDocumentVersion.findUnique` i odrzuca, gdy nie jest `isCurrent` — na tym
+ * pliku (żywy Postgres) payload musi wskazywać na PRAWDZIWE wiersze obowiązujących wersji,
+ * inaczej AC5 z tamtego WO odrzuciłby WSZYSTKIE testy poniżej, niezależnie od tego, co ten
+ * plik faktycznie chce dowieść (atomowość/współbieżność, nie samą zgodę — patrz
+ * `saveLead-consent.itest.ts`).
+ */
+async function createConsentVersions(): Promise<{ privacyVersionId: string; termsVersionId: string }> {
+  const privacy = await prisma.legalDocumentVersion.create({
+    data: {
+      documentKind: 'B2C_PRIVACY_POLICY',
+      versionNo: (await nextVersionNo('B2C_PRIVACY_POLICY')),
+      content: 'Treść ITEST B2C-LEAD-ATOMIC polityka prywatności',
+      publishedAt: new Date(),
+      isCurrent: true,
+    },
+  });
+  const terms = await prisma.legalDocumentVersion.create({
+    data: {
+      documentKind: 'B2C_TERMS',
+      versionNo: (await nextVersionNo('B2C_TERMS')),
+      content: 'Treść ITEST B2C-LEAD-ATOMIC regulamin',
+      publishedAt: new Date(),
+      isCurrent: true,
+    },
+  });
+  return { privacyVersionId: privacy.id, termsVersionId: terms.id };
+}
+
+async function nextVersionNo(kind: 'B2C_PRIVACY_POLICY' | 'B2C_TERMS'): Promise<number> {
+  const last = await prisma.legalDocumentVersion.findFirst({
+    where: { documentKind: kind },
+    orderBy: { versionNo: 'desc' },
+  });
+  return (last?.versionNo ?? 0) + 1;
+}
+
 function testEmail(marker: string): string {
   return `itest-b2c-lead-atomic-${marker}-${actualRandomUUID()}@example.invalid`;
 }
@@ -141,6 +179,7 @@ async function cleanupByEmail(email: string): Promise<void> {
 
 let cleanupEmails: string[] = [];
 let cleanupAuditorIds: string[] = [];
+let cleanupVersionIds: string[] = [];
 
 async function afterEachCleanup(): Promise<void> {
   for (const email of cleanupEmails) {
@@ -158,8 +197,14 @@ async function afterEachCleanup(): Promise<void> {
     await prisma.availabilityRule.deleteMany({ where: { auditorId: { in: cleanupAuditorIds } } });
     await prisma.audytorzy.deleteMany({ where: { id: { in: cleanupAuditorIds } } });
   }
+  // Wersje dokumentów NA KOŃCU — po tym, jak wszystkie leady, które mogły je wskazywać, już
+  // nie istnieją (FK RESTRICT odrzuciłby usunięcie wersji wciąż wskazywanej).
+  if (cleanupVersionIds.length > 0) {
+    await prisma.legalDocumentVersion.deleteMany({ where: { id: { in: cleanupVersionIds } } });
+  }
   cleanupEmails = [];
   cleanupAuditorIds = [];
+  cleanupVersionIds = [];
 }
 
 let auditBasketId: string;
@@ -184,7 +229,12 @@ afterEach(async () => {
   cryptoRandomUUIDSpy.mockImplementation(() => actualRandomUUID());
 });
 
-function basePayload(email: string, startAtIso: string) {
+function basePayload(
+  email: string,
+  startAtIso: string,
+  privacyVersionId: string,
+  termsVersionId: string,
+) {
   return {
     name: 'Jan Testowy',
     email,
@@ -192,6 +242,10 @@ function basePayload(email: string, startAtIso: string) {
     address: 'Marszałkowska 1, Warszawa',
     startAtIso,
     triageData: { location: 'Dom jednorodzinny' },
+    consent: {
+      privacyPolicyConsentVersionId: privacyVersionId,
+      termsConsentVersionId: termsVersionId,
+    },
   };
 }
 
@@ -206,6 +260,8 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
 
       const email = testEmail('krok-klient');
       cleanupEmails.push(email);
+      const { privacyVersionId, termsVersionId } = await createConsentVersions();
+      cleanupVersionIds.push(privacyVersionId, termsVersionId);
 
       const collisionId = actualRandomUUID();
       await prisma.klienci.create({ data: { id: collisionId, email: 'kolidujacy@example.invalid' } });
@@ -213,7 +269,7 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
       cryptoRandomUUIDSpy.mockReturnValueOnce(collisionId);
 
       const startAt = futureSaturday(8, '08:00');
-      const result = await saveLead(basePayload(email, startAt.toISOString()));
+      const result = await saveLead(basePayload(email, startAt.toISOString(), privacyVersionId, termsVersionId));
 
       // NAPRAWA WYCIEKU (fix/b2c-savelead-error-leak): `saveLead` nie zwraca już treści
       // surowego błędu Prismy (mogła nieść PII/nazwy ograniczeń bazy) do niezalogowanego
@@ -248,6 +304,8 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
 
       const email = testEmail('krok-adres');
       cleanupEmails.push(email);
+      const { privacyVersionId, termsVersionId } = await createConsentVersions();
+      cleanupVersionIds.push(privacyVersionId, termsVersionId);
 
       const collisionId = actualRandomUUID();
       await prisma.adresy.create({ data: { id: collisionId, ulica_miasto: 'kolidujący' } });
@@ -264,7 +322,7 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
         .mockReturnValueOnce(collisionId);
 
       const startAt = futureSaturday(9, '08:00');
-      const result = await saveLead(basePayload(email, startAt.toISOString()));
+      const result = await saveLead(basePayload(email, startAt.toISOString(), privacyVersionId, termsVersionId));
 
       // NAPRAWA WYCIEKU (fix/b2c-savelead-error-leak) — patrz komentarz w teście „krok
       // KLIENT" powyżej: `result` już nie niesie treści surowego błędu Prismy, więc nie da
@@ -297,6 +355,8 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
 
       const email = testEmail('krok-lead');
       cleanupEmails.push(email);
+      const { privacyVersionId, termsVersionId } = await createConsentVersions();
+      cleanupVersionIds.push(privacyVersionId, termsVersionId);
 
       const collisionId = actualRandomUUID();
       await prisma.leady.create({ data: { id: collisionId } });
@@ -309,7 +369,7 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
         .mockReturnValueOnce(collisionId);
 
       const startAt = futureSaturday(10, '08:00');
-      const result = await saveLead(basePayload(email, startAt.toISOString()));
+      const result = await saveLead(basePayload(email, startAt.toISOString(), privacyVersionId, termsVersionId));
 
       // NAPRAWA WYCIEKU (fix/b2c-savelead-error-leak) — patrz komentarz w teście „krok
       // KLIENT" powyżej: `result` już nie niesie treści surowego błędu Prismy, więc nie da
@@ -343,12 +403,14 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
       const emailA = testEmail('race-pool1-a');
       const emailB = testEmail('race-pool1-b');
       cleanupEmails.push(emailA, emailB);
+      const { privacyVersionId, termsVersionId } = await createConsentVersions();
+      cleanupVersionIds.push(privacyVersionId, termsVersionId);
 
       const startAt = futureSaturday(11, '08:00');
 
       const [resultA, resultB] = await Promise.all([
-        saveLead(basePayload(emailA, startAt.toISOString())),
-        saveLead(basePayload(emailB, startAt.toISOString())),
+        saveLead(basePayload(emailA, startAt.toISOString(), privacyVersionId, termsVersionId)),
+        saveLead(basePayload(emailB, startAt.toISOString(), privacyVersionId, termsVersionId)),
       ]);
 
       const successes = [resultA, resultB].filter((r) => r.success);
@@ -385,12 +447,14 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
       const emailA = testEmail('race-pool2-a');
       const emailB = testEmail('race-pool2-b');
       cleanupEmails.push(emailA, emailB);
+      const { privacyVersionId, termsVersionId } = await createConsentVersions();
+      cleanupVersionIds.push(privacyVersionId, termsVersionId);
 
       const startAt = futureSaturday(12, '08:00');
 
       const [resultA, resultB] = await Promise.all([
-        saveLead(basePayload(emailA, startAt.toISOString())),
-        saveLead(basePayload(emailB, startAt.toISOString())),
+        saveLead(basePayload(emailA, startAt.toISOString(), privacyVersionId, termsVersionId)),
+        saveLead(basePayload(emailB, startAt.toISOString(), privacyVersionId, termsVersionId)),
       ]);
 
       expect(resultA.success).toBe(true);
@@ -426,12 +490,14 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
 
       const email = testEmail('double-click');
       cleanupEmails.push(email);
+      const { privacyVersionId, termsVersionId } = await createConsentVersions();
+      cleanupVersionIds.push(privacyVersionId, termsVersionId);
 
       const firstStart = futureSaturday(13, '08:00');
       const secondStart = futureSaturday(13, '11:00');
 
-      const first = await saveLead(basePayload(email, firstStart.toISOString()));
-      const second = await saveLead(basePayload(email, secondStart.toISOString()));
+      const first = await saveLead(basePayload(email, firstStart.toISOString(), privacyVersionId, termsVersionId));
+      const second = await saveLead(basePayload(email, secondStart.toISOString(), privacyVersionId, termsVersionId));
 
       expect(first.success).toBe(true);
       expect(second.success).toBe(true);

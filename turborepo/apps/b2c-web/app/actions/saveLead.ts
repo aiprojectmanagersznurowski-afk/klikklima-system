@@ -56,6 +56,17 @@ const triageDataSchema = z.record(z.string(), z.unknown());
 // nie są częścią kontraktu wejścia i są po prostu nieodczytywane niżej — nigdy nie trafiają
 // do `prepareBookingCandidates`/`writeBookingCandidate` (te wołania budują własne argumenty
 // wyłącznie z serwerowych wartości, B2C-BOOKING-SLOT AC5/AC7).
+// B2C-CONSENT-RODO, AC1/AC2: zgoda jest zagnieżdżonym obiektem DWÓCH wskazań wersji
+// (polityka prywatności + regulamin), oba UUID, wymagane. `.strict()` NA TYM obiekcie
+// (nie na całym `saveLeadSchema`) — odrzuca nadmiarowy klucz w polu zgody bez włączania
+// globalnej `.strict()`.
+const consentSchema = z
+  .object({
+    privacyPolicyConsentVersionId: z.string().uuid(),
+    termsConsentVersionId: z.string().uuid(),
+  })
+  .strict();
+
 const saveLeadSchema = z.object({
   name: requiredContactField,
   email: requiredContactField,
@@ -66,6 +77,7 @@ const saveLeadSchema = z.object({
   lat: z.union([z.number(), z.string()]).optional(),
   lng: z.union([z.number(), z.string()]).optional(),
   status: z.never().optional(),
+  consent: consentSchema,
 });
 
 // Typ publiczny WOLNY od `zod` — `triageData: any` zachowuje kompatybilność z wołającymi
@@ -80,6 +92,10 @@ export interface SaveLeadData {
   triageData: any;
   lat?: number | string;
   lng?: number | string;
+  consent: {
+    privacyPolicyConsentVersionId: string;
+    termsConsentVersionId: string;
+  };
 }
 
 // FLD-GEO-COORDS: normalizuje współrzędne do number|null przed insertem na `adresy`.
@@ -181,6 +197,34 @@ export async function saveLead(data: SaveLeadData) {
       }
     }
 
+    // 0b. B2C-CONSENT-RODO, AC5: obie wersje zgody muszą istnieć, być OBOWIĄZUJĄCE
+    // (isCurrent: true — nie szkic, nie zastąpiona) i właściwego rodzaju dokumentu.
+    // Zgodność rodzaju NIE jest wymuszona przez FK (kolumna wskazuje dowolny wiersz
+    // `legal_document_versions`) — sprawdza ją WYŁĄCZNIE ta Server Action. Odczyt PRZED
+    // `prepareBookingCandidates`/transakcją (AC2: zero zapisów, rezerwacja niewołana).
+    // Kolejność (privacy, potem terms) jest częścią kontraktu z testem jednostkowym.
+    const privacyVersion = await prisma.legalDocumentVersion.findUnique({
+      where: { id: input.consent.privacyPolicyConsentVersionId },
+    });
+    if (!privacyVersion || privacyVersion.isCurrent !== true || privacyVersion.documentKind !== "B2C_PRIVACY_POLICY") {
+      return {
+        success: false,
+        code: "CONSENT_VERSION_INVALID",
+        message: "Wskazana wersja polityki prywatności nie jest obowiązującą wersją tego dokumentu.",
+      };
+    }
+
+    const termsVersion = await prisma.legalDocumentVersion.findUnique({
+      where: { id: input.consent.termsConsentVersionId },
+    });
+    if (!termsVersion || termsVersion.isCurrent !== true || termsVersion.documentKind !== "B2C_TERMS") {
+      return {
+        success: false,
+        code: "CONSENT_VERSION_INVALID",
+        message: "Wskazana wersja regulaminu nie jest obowiązującą wersją tego dokumentu.",
+      };
+    }
+
     // 1. Rozwiąż koszyk AUDIT (kod -> UUID) po stronie serwera — klient nie przysyła ani
     // koszyka, ani `bookedBy` (D-3, AC5). Jawnie POZA transakcją (część przygotowawcza).
     const auditBasket = await prisma.visitDurationBasket.findFirst({
@@ -250,6 +294,10 @@ export async function saveLead(data: SaveLeadData) {
           // 3c. Lead — powiązanie klient_id/adres_id WEWNĄTRZ tej samej transakcji (AC3),
           // status z kontraktu lejka (AC7, nie literał), data_rezerwacji w TYM SAMYM
           // create() (P-4) — wartość to żądany startAt, dokładnie scheduled_start rezerwacji.
+          // B2C-CONSENT-RODO, AC1/AC3: wskazania wersji DOKŁADNIE takie, jak przysłane w
+          // żądaniu (zwalidowane w kroku 0b); moment zgody ustawiany przez SERWER (`new
+          // Date()`), nigdy z żądania — dla obu dokumentów osobno, w TEJ SAMEJ transakcji
+          // co reszta leada.
           const { leady } = tx;
           await leady.create({
             data: {
@@ -260,6 +308,10 @@ export async function saveLead(data: SaveLeadData) {
               estymowana_wycena: estimatedQuote,
               status: START_STATE,
               data_rezerwacji: startAtDate,
+              privacyPolicyConsentVersionId: input.consent.privacyPolicyConsentVersionId,
+              privacyPolicyConsentGrantedAt: new Date(),
+              termsConsentVersionId: input.consent.termsConsentVersionId,
+              termsConsentGrantedAt: new Date(),
             },
           });
 

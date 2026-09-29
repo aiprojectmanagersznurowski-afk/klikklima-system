@@ -39,6 +39,7 @@ const {
   prepareBookingCandidatesSpy,
   writeBookingCandidateSpy,
   visitDurationBasketFindFirstMock,
+  legalDocumentVersionFindUniqueMock,
 } = vi.hoisted(() => {
   const klienciCreateSpy = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ ...data }));
   const adresyCreateSpy = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({ ...data }));
@@ -82,6 +83,11 @@ const {
     pool: 'AUDITOR',
   }));
 
+  // Zgoda B2C (WO B2C-CONSENT-RODO, AC2/AC5): domyślnie OBIE wersje istnieją, są aktualne —
+  // ten plik nie testuje merytorycznie samej zgody (patrz `saveLead.consent.test.ts`), więc
+  // atrapa musi po prostu przepuszczać poprawny payload z `basePayload()`.
+  const legalDocumentVersionFindUniqueMock = vi.fn(async (_args: { where: { id: string } }) => null as unknown);
+
   return {
     transactionSpy,
     klienciCreateSpy,
@@ -91,6 +97,7 @@ const {
     prepareBookingCandidatesSpy,
     writeBookingCandidateSpy,
     visitDurationBasketFindFirstMock,
+    legalDocumentVersionFindUniqueMock,
   };
 });
 
@@ -108,11 +115,35 @@ vi.mock('@repo/scheduling', () => ({
 vi.mock('@repo/database', () => ({
   prisma: {
     visitDurationBasket: { findFirst: visitDurationBasketFindFirstMock },
+    legalDocumentVersion: { findUnique: legalDocumentVersionFindUniqueMock },
     $transaction: transactionSpy,
   },
 }));
 
 const { saveLead } = await import('../../app/actions/saveLead');
+
+// Zgoda B2C (WO B2C-CONSENT-RODO) — kontrakt wejścia i mock wersji patrz
+// `saveLead.consent.test.ts`. Ten plik nie testuje zgody merytorycznie, więc payload musi
+// tylko przejść walidację/AC5 bez wpływu na asercje geokodowania (cel tego pliku).
+const PRIVACY_VERSION_ID = 'aaaaaaaa-1111-4111-8111-111111111111';
+const TERMS_VERSION_ID = 'bbbbbbbb-2222-4222-8222-222222222222';
+
+function currentVersionRow(id: string, documentKind: string) {
+  return {
+    id,
+    documentKind,
+    versionNo: 1,
+    content: 'Treść ITEST',
+    isCurrent: true,
+    publishedAt: new Date('2026-08-01T00:00:00.000Z'),
+  };
+}
+
+legalDocumentVersionFindUniqueMock.mockImplementation(async ({ where }: { where: { id: string } }) => {
+  if (where.id === PRIVACY_VERSION_ID) return currentVersionRow(PRIVACY_VERSION_ID, 'B2C_PRIVACY_POLICY');
+  if (where.id === TERMS_VERSION_ID) return currentVersionRow(TERMS_VERSION_ID, 'B2C_TERMS');
+  return null;
+});
 
 const basePayload = () => ({
   name: 'Jan Kowalski',
@@ -121,6 +152,10 @@ const basePayload = () => ({
   address: 'Marszałkowska 1, Warszawa',
   startAtIso: '2026-11-16T08:00:00.000+01:00',
   triageData: {},
+  consent: {
+    privacyPolicyConsentVersionId: PRIVACY_VERSION_ID,
+    termsConsentVersionId: TERMS_VERSION_ID,
+  },
 });
 
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
