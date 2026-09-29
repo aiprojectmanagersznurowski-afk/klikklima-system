@@ -1,6 +1,7 @@
 "use server";
 
 import { supabase } from "@/lib/supabaseClient";
+import { getAdminClient } from "../../lib/supabaseAdminClient";
 
 export interface Feature {
   iconName: string;
@@ -38,7 +39,9 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
       .select('*')
       .eq('type', 'SINGLE');
 
-    const { data: cennik, error: cenError } = await supabase
+    // cennik_uslug nie ma polityki anon SELECT (D-R1, migracja
+    // 20260929100000_b2c_rls_public_catalog.sql), więc wymaga dedykowanego klienta serwisowego.
+    const { data: cennik, error: cenError } = await getAdminClient()
       .from('cennik_uslug')
       .select('koszt_b2c_netto')
       .eq('nazwa_uslugi', 'Montaż wzorcowy')
@@ -67,7 +70,7 @@ export async function getBestsellers(): Promise<BestsellerProduct[]> {
         hasWifi ? { iconName: "Wifi", label: "WIFI w standardzie" } : null,
         hasPresence ? { iconName: "Eye", label: "Czujnik obecności" } : null,
         hasSilent ? { iconName: "Wind", label: "Tryb cichy" } : null,
-      ].filter(Boolean) as any;
+      ].filter((f): f is Feature => f !== null);
 
       // Zbuduj surowy obiekt z zagregowanymi cechami
       const rawAggregated = {

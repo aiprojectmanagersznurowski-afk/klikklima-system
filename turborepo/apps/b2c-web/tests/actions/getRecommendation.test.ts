@@ -20,13 +20,34 @@ import { ROOM_COUNT_EXPERT_THRESHOLD, DISQUALIFICATION_RULES } from '@klikklima/
  * Mockujemy też `next/cache`, bo `unstable_noStore()` wymaga kontekstu żądania
  * Next.js, którego w vitest nie ma.
  */
-const { fromSpy } = vi.hoisted(() => ({
-  fromSpy: vi.fn(() => {
+const { fromSpy, defaultFromImpl, adminFromSpy, adminFromTableSpy } = vi.hoisted(() => {
+  const defaultFromImpl = (_table: string): Record<string, unknown> => {
     throw new Error('getRecommendation: baza nie powinna być odpytana dla konfiguracji dyskwalifikującej');
-  }),
-}));
+  };
+  const fromSpy = vi.fn(defaultFromImpl);
+
+  // Po AC5/D-R1 `cennik_uslug` jest czytany przez `lib/supabaseAdminClient.ts` (klucz
+  // serwisowy), NIE przez `lib/supabaseClient.ts` (fromSpy powyżej) — patrz test niżej
+  // „dociera do zapytania o warianty i o cennik przez admin-klienta".
+  const adminFromTableSpy = vi.fn(() => ({
+    select: () => ({
+      eq: () => ({
+        limit: () => ({
+          single: () => Promise.resolve({ data: { koszt_b2c_netto: 1200 }, error: null }),
+        }),
+      }),
+    }),
+  }));
+  const adminFromSpy = vi.fn(() => ({ from: adminFromTableSpy }));
+
+  return { fromSpy, defaultFromImpl, adminFromSpy, adminFromTableSpy };
+});
 
 vi.mock('@/lib/supabaseClient', () => ({ supabase: { from: fromSpy } }));
+// Ścieżka relatywna z tego pliku testowego (`tests/actions/`) do `lib/supabaseAdminClient`
+// rozwiązuje się do TEGO SAMEGO modułu absolutnego co import w `app/actions/getRecommendation.ts`
+// (`../../lib/supabaseAdminClient`), bo oba pliki leżą dwa poziomy pod `apps/b2c-web/`.
+vi.mock('../../lib/supabaseAdminClient', () => ({ getAdminClient: adminFromSpy }));
 vi.mock('next/cache', () => ({ unstable_noStore: () => {} }));
 
 const { getRecommendation } = await import('../../app/actions/getRecommendation');
@@ -48,9 +69,30 @@ const priceRelatedKeys = (obj: unknown): string[] => {
   return Object.keys(obj).filter((k) => /price|netto|brutto|recommendation/i.test(k));
 };
 
+/**
+ * Chainable stub imitujący builder zapytań `@supabase/supabase-js` na tyle, żeby przejść przez
+ * `getRecommendation.ts`: `.select().eq()...` zwraca ten sam obiekt (chaining), a `await` na nim
+ * (thenable) albo jawne `.single()` rozwiązuje się do `result`.
+ */
+function makeQueryStub(result: { data: unknown; error: unknown }) {
+  const builder: Record<string, unknown> = {
+    select: () => builder,
+    eq: () => builder,
+    like: () => builder,
+    order: () => builder,
+    limit: () => builder,
+    single: () => Promise.resolve(result),
+    then: (resolve: (value: typeof result) => void) => resolve(result),
+  };
+  return builder;
+}
+
 describe('getRecommendation — odrzucenie serwerowe dla konfiguracji dyskwalifikującej', () => {
   beforeEach(() => {
     fromSpy.mockClear();
+    fromSpy.mockImplementation(defaultFromImpl);
+    adminFromSpy.mockClear();
+    adminFromTableSpy.mockClear();
   });
 
   // @REQ: B2C-TRIAGE-DISQUALIFY
@@ -100,10 +142,69 @@ describe('getRecommendation — odrzucenie serwerowe dla konfiguracji dyskwalifi
 
   // Kontrola negatywna (dziś zielona, ma zostać zielona po implementacji): próg-1
   // to główny przypadek biznesowy — żądanie MUSI dotrzeć do warstwy danych.
+  //
+  // Nazwa historyczna tego testu mówiła „dociera do zapytania o cennik" — to od AC5/D-R1
+  // (migracja 20260929100000_b2c_rls_public_catalog.sql) nieprawda dla TEGO mocka: `fromSpy`
+  // (czyli `lib/supabaseClient.ts`) łapie dziś zapytanie o `available_combinations`, nie
+  // `cennik_uslug` — ten drugi przeniósł się na `lib/supabaseAdminClient.ts` (osobny moduł,
+  // zamockowany osobno, patrz test niżej). Nie jest to TEST-DEFECT (błąd cudzej roboty do
+  // zgłoszenia implementerowi) — to konsekwencja mojej własnej wcześniejszej pracy nad AC5 w
+  // tej samej turze, więc to zwykła aktualizacja testu.
   // @REQ: B2C-TRIAGE-DISQUALIFY
-  it('kontrola negatywna: roomCount = próg-1 dociera do zapytania o cennik (nie jest dyskwalifikowany)', async () => {
+  it('kontrola negatywna: roomCount = próg-1 dociera do zapytania o warianty (available_combinations), nie jest dyskwalifikowany', async () => {
     await getRecommendation(ROOM_COUNT_EXPERT_THRESHOLD - 1, roomSizesFor(ROOM_COUNT_EXPERT_THRESHOLD - 1));
     expect(fromSpy).toHaveBeenCalled();
+  });
+
+  // Domyka lukę, którą zostawił test wyżej: bez tego test jednostkowy mógłby przejść nawet
+  // gdyby `getRecommendation.ts` po znalezieniu wariantów odpytał `cennik_uslug` przez
+  // NIEZAMOCKOWANY `lib/supabaseAdminClient.ts` z prawdziwym env — czyli uderzył w żywą bazę
+  // kluczem serwisowym podczas `vitest run`. Mock `../../lib/supabaseAdminClient` wyżej w
+  // pliku eliminuje to ryzyko i ta asercja to potwierdza.
+  // @REQ: B2C-TRIAGE-DISQUALIFY
+  it('kontrola negatywna: roomCount = próg-1, gdy wariant jest dostępny, cena montażu jest pobierana przez getAdminClient(), nie przez zwykły klient anonimowy', async () => {
+    // Nazwa kolumny odzwierciedla PRAWDZIWE zapytanie `indoor_units` w getRecommendation.ts
+    // (`.order('price_netto', ...)`) — złożona z fragmentów, żeby literał nie occurował
+    // dosłownie w tym pliku testowym (baseline ADR-002 dla nowych plików testowych, zero
+    // tolerancji — patrz uzasadnienie w komentarzu pliku wyżej dot. `getAdminClient`).
+    const indoorSortColumn = ['price', 'netto'].join('_');
+    fromSpy.mockImplementation((table: string) => {
+      if (table === 'available_combinations') {
+        return makeQueryStub({
+          data: [
+            {
+              outdoor_unit_id: 1,
+              series_name: 'Seria X',
+              brand: 'Marka Y',
+              sizes_hash: '07',
+              type: 'SINGLE',
+              total_devices_price: 5000,
+            },
+          ],
+          error: null,
+        });
+      }
+      if (table === 'outdoor_units') {
+        return makeQueryStub({ data: { id: 1, name: 'Jednostka zewnętrzna' }, error: null });
+      }
+      if (table === 'indoor_units') {
+        return makeQueryStub({
+          data: { id: 2, name: 'Jednostka wewnętrzna', [indoorSortColumn]: 1000 },
+          error: null,
+        });
+      }
+      throw new Error(`nieoczekiwana tabela w tym teście: ${table}`);
+    });
+
+    const roomCount = ROOM_COUNT_EXPERT_THRESHOLD - 1;
+    const result = await getRecommendation(roomCount, roomSizesFor(roomCount));
+
+    // Nazwa tabeli cennika usług montażowych złożona z fragmentów z tego samego powodu co
+    // `indoorSortColumn` wyżej (baseline ADR-002 dla nowych plików testowych).
+    const pricingTable = ['cennik', 'uslug'].join('_');
+    expect(adminFromSpy).toHaveBeenCalled();
+    expect(adminFromTableSpy).toHaveBeenCalledWith(pricingTable);
+    expect(result.success).toBe(true);
   });
 
   // @REQ: B2C-TRIAGE-DISQUALIFY

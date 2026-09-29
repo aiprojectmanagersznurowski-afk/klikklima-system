@@ -2,6 +2,7 @@
 
 import { unstable_noStore as noStore } from 'next/cache';
 import { supabase } from "@/lib/supabaseClient";
+import { getAdminClient } from "../../lib/supabaseAdminClient";
 import { isExpertScreen } from "@klikklima/contracts";
 
 interface RoomConfig {
@@ -67,8 +68,9 @@ async function buildSet(seriesName: string, rooms: RoomConfig[]) {
         return null;
     }
 
-    // Get install price
-    const { data: cennik } = await supabase
+    // Get install price — cennik_uslug nie ma polityki anon SELECT (D-R1, migracja
+    // 20260929100000_b2c_rls_public_catalog.sql), więc wymaga dedykowanego klienta serwisowego.
+    const { data: cennik } = await getAdminClient()
       .from('cennik_uslug')
       .select('koszt_b2c_netto')
       .eq('nazwa_uslugi', 'Montaż wzorcowy')
