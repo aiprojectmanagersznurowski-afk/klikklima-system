@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-28T21:32:56.686Z",
+  "generatedAt": "2026-09-29T06:51:33.567Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -251,7 +251,7 @@
     "insert_6000_leads_part3.sql::adr002-pl-columns": 12,
     "insert_6000_leads_part3.sql::adr002-pl-tables": 12,
     "packages/database/prisma/schema.prisma::adr002-pl-columns": 56,
-    "packages/database/prisma/schema.prisma::adr002-pl-tables": 60,
+    "packages/database/prisma/schema.prisma::adr002-pl-tables": 62,
     "packages/scheduling/src/available-slots.ts::adr002-pl-tables": 2,
     "packages/scheduling/tests/create-booking-split.test.ts::adr002-pl-tables": 2,
     "setup_combinations.sql::adr002-pl-columns": 6,
@@ -279,7 +279,8 @@
     "supabase/migrations/20260925090000_price_list_and_quotes.sql::adr002-pl-tables": 3,
     "supabase/migrations/20260925091000_documents_contracts_signatures.sql::adr002-pl-tables": 7,
     "supabase/migrations/20260925092000_invoices_and_installation_photos.sql::adr002-pl-tables": 8,
+    "supabase/migrations/20260929091000_b2c_lead_consent_columns.sql::adr002-pl-tables": 12,
     "test_price_update.sql::adr002-pl-columns": 4
   },
-  "total": 2798
+  "total": 2812
 }
