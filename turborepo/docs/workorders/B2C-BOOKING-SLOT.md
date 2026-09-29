@@ -1,5 +1,18 @@
 # WO: B2C-BOOKING-SLOT — atomowa rezerwacja terminu audytu przez klienta (B2C)
 
+> **STATUS DOKUMENTU: DONE, zaimplementowane i zmergowane do `main`.** Wymaganie
+> `B2C-BOOKING-SLOT` ma status `DONE` w kontrakcie od 2026-09-14 (`contracts/requirements.contract.mjs:596`,
+> commit `74bd07c`), z dowodem z żywego CI dopisanym 2026-09-15 (commit `4d9a7d0`, zielony przebieg
+> itestu współbieżności). Implementacja na `main`: commit `0e9aa1a` „feat(b2c): replace Google
+> Calendar with bookings as the audit-slot source of truth (B2C-BOOKING-SLOT)" —
+> `apps/b2c-web/app/actions/auditSlots.ts`, przepisany `saveLead.ts`. Testy na `main`:
+> `apps/b2c-web/tests/actions/auditSlots.test.ts`, `saveLead.booking.test.ts`,
+> `booking-concurrency.itest.ts`, `saveLead.atomic.test.ts`, `saveLead-atomic.itest.ts`.
+> Poniższa treść (nagłówek „Wersja 2", decyzje D-1...D-6, kontekst kodu, kryteria akceptacji,
+> sekcja „Kolejność ról") opisuje pracę, która **została już wykonana** — pozostaje jako zapis
+> decyzji i uzasadnień architektonicznych, nie jako plan do zrealizowania. Nie traktować sformułowań
+> w stylu „jeszcze nie ma" / „gotowe do RED" poniżej jako aktualnego stanu.
+
 > **Wersja 2 — przepisany w całości 2026-09-14.** Zastępuje szkic z tej samej daty (wersja 1),
 > który był zablokowany na D-1/D-2 i celował w martwy `app/api/calendar/slots/route.ts`.
 >
