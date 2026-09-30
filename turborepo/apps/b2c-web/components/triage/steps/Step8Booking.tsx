@@ -7,6 +7,7 @@ import { useTriageStore } from '@/store/triageStore';
 import { StepWrapper } from '../StepWrapper';
 import { saveLead } from '@/app/actions/saveLead';
 import { getAuditSlots, type AuditDay, type AuditSlot } from '@/app/actions/auditSlots';
+import { getCurrentB2cLegalVersions, type CurrentB2cLegalVersions } from '@/app/actions/legalVersions';
 import { CheckCircle2, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameMonth, startOfToday, isBefore } from 'date-fns';
@@ -55,10 +56,15 @@ export const Step8Booking = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [availableDays, setAvailableDays] = useState<AuditDay[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
-  const [error, setError] = useState<'date' | 'terms' | null>(null);
+  const [error, setError] = useState<'date' | 'terms' | 'legal' | null>(null);
   const [bookingError, setBookingError] = useState<{ message: string; alternativeLabels: string[] } | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  // B2C-CONSENT-RODO, AC6: identyfikatory OBOWIĄZUJĄCYCH wersji dokumentów, pobrane z serwera
+  // przy montowaniu kroku — to samo źródło, które renderuje odnośniki `/regulamin` i
+  // `/polityka-prywatnosci` poniżej. `null` w danym polu (w tym stan przed odpowiedzią serwera)
+  // oznacza brak obowiązującej wersji — wysyłka jest wtedy zablokowana (patrz `handleSubmit`).
+  const [legalVersions, setLegalVersions] = useState<CurrentB2cLegalVersions | null>(null);
   const [formDataState, setFormDataState] = useState({ name: '', phone: '', email: '' });
   const [coordinates, setCoordinates] = useState<{lat: number, lng: number} | null>(null);
   const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
@@ -91,6 +97,10 @@ export const Step8Booking = () => {
       setAvailableDays(result.days);
       setIsLoadingSlots(false);
     });
+  }, []);
+
+  useEffect(() => {
+    getCurrentB2cLegalVersions().then(setLegalVersions);
   }, []);
 
   useEffect(() => {
@@ -176,7 +186,19 @@ export const Step8Booking = () => {
       hasErrors = true;
     }
 
+    // B2C-CONSENT-RODO, AC6: brak obowiązującej wersji (jednej albo obu) blokuje wysyłkę —
+    // nie wolno wysłać z pustą/domyślną zgodą.
+    const privacyPolicyVersionId = legalVersions?.privacyPolicyVersionId ?? null;
+    const termsVersionId = legalVersions?.termsVersionId ?? null;
+    if (!privacyPolicyVersionId || !termsVersionId) {
+      setError('legal');
+      hasErrors = true;
+    }
+
     if (hasErrors) return;
+    // Zawężenie typu dla kompilatora — powyżej `hasErrors` gwarantuje już, że oba pola są
+    // niepuste, ale TypeScript nie wnioskuje tego z osobnej zmiennej `hasErrors`.
+    if (!privacyPolicyVersionId || !termsVersionId) return;
 
     setBookingError(null);
 
@@ -188,7 +210,11 @@ export const Step8Booking = () => {
       lat: coordinates?.lat,
       lng: coordinates?.lng,
       startAtIso: selectedSlot as string,
-      triageData: triageData
+      triageData: triageData,
+      consent: {
+        privacyPolicyConsentVersionId: privacyPolicyVersionId,
+        termsConsentVersionId: termsVersionId,
+      },
     };
 
     const result = await saveLead(leadData);
@@ -501,6 +527,23 @@ export const Step8Booking = () => {
                   <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="text-xs text-rose-500 font-medium mt-2 pl-8">
                     Zgoda jest wymagana.
                   </motion.p>
+                )}
+              </AnimatePresence>
+              {/* B2C-CONSENT-RODO, AC6: brak obowiązującej wersji regulaminu i/lub polityki
+                  prywatności blokuje wysyłkę — komunikat, nie cichy fallback. */}
+              <AnimatePresence>
+                {error === 'legal' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    className="overflow-hidden w-full"
+                  >
+                    <div className="p-4 bg-rose-50 text-rose-600 rounded-xl text-sm font-medium border border-rose-100 flex items-center gap-2">
+                      <AlertCircle size={18} className="shrink-0" />
+                      Formularz jest chwilowo niedostępny — spróbuj ponownie za chwilę.
+                    </div>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>
