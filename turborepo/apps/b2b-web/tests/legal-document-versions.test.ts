@@ -162,6 +162,15 @@ vi.mock('@repo/database', () => ({
       update: draftUpdateMock,
     },
   },
+  // Wartość runtime, nie tylko typ — actions.ts liczy dozwolone rodzaje przez
+  // Object.values(LegalDocumentKind) zamiast ręcznie utrzymywanej listy (naprawa
+  // B2C-CONSENT-RODO: panel wcześniej w ogóle nie znał B2C_PRIVACY_POLICY/B2C_TERMS).
+  LegalDocumentKind: {
+    RODO_CONSENT: 'RODO_CONSENT',
+    EMPLOYEE_TERMS: 'EMPLOYEE_TERMS',
+    B2C_PRIVACY_POLICY: 'B2C_PRIVACY_POLICY',
+    B2C_TERMS: 'B2C_TERMS',
+  },
 }));
 vi.mock('next/cache', () => ({ revalidatePath: revalidatePathMock }));
 vi.mock('../src/utils/supabase/server', () => ({
