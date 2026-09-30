@@ -358,6 +358,10 @@ export async function saveLead(data: SaveLeadData) {
     };
   } catch (err: any) {
     console.error("saveLead Error:", err);
-    return { success: false, error: err.message };
+    return {
+      success: false,
+      code: "INTERNAL_ERROR",
+      message: "Wystąpił nieoczekiwany błąd. Spróbuj ponownie za chwilę.",
+    };
   }
 }
