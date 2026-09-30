@@ -1,7 +1,6 @@
 "use server"
 
-import { prisma } from "@repo/database"
-import type { LegalDocumentKind } from "@repo/database"
+import { prisma, LegalDocumentKind } from "@repo/database"
 import { revalidatePath } from "next/cache"
 import { can, ROLES } from "@klikklima/contracts"
 import { getCurrentActorRole, getCurrentUser } from "../../../utils/supabase/server"
@@ -73,7 +72,10 @@ export async function createLegalDocumentVersionDraftAction(
     return { success: false, error: "Brak uprawnień do utworzenia wersji dokumentu." }
   }
 
-  const LEGAL_DOCUMENT_KINDS: readonly string[] = ['RODO_CONSENT', 'EMPLOYEE_TERMS']
+  // Wszystkie rodzaje z enuma bazy, nie ręcznie utrzymywana kopia — B2C_PRIVACY_POLICY
+  // i B2C_TERMS (B2C-CONSENT-RODO) zostały dopisane do enuma migracją, ta lista musi
+  // się z nim zgadzać automatycznie, inaczej panel nie pozwala opublikować ich wersji.
+  const LEGAL_DOCUMENT_KINDS: readonly string[] = Object.values(LegalDocumentKind)
   if (!LEGAL_DOCUMENT_KINDS.includes(documentKind)) {
     return { success: false, error: "Nieprawidłowy rodzaj dokumentu." }
   }
