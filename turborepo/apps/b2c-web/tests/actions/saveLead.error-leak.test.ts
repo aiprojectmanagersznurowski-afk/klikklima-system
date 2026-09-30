@@ -29,7 +29,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * bez żadnej pośredniej obsługi domenowej mogącej go przechwycić inaczej.
  */
 
-const { transactionSpy, calendarSpy, visitDurationBasketFindFirstMock, prepareBookingCandidatesSpy, writeBookingCandidateSpy } =
+const {
+  transactionSpy,
+  calendarSpy,
+  visitDurationBasketFindFirstMock,
+  prepareBookingCandidatesSpy,
+  writeBookingCandidateSpy,
+  legalDocumentVersionFindUniqueMock,
+} =
   vi.hoisted(() => {
     const transactionSpy = vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback({}));
     const calendarSpy = vi.fn(async () => ({ success: true, eventLink: 'stub' }));
@@ -58,12 +65,18 @@ const { transactionSpy, calendarSpy, visitDurationBasketFindFirstMock, prepareBo
       pool: 'AUDITOR',
     }));
 
+    // Zgoda B2C (WO B2C-CONSENT-RODO) — ten plik nie testuje zgody merytorycznie
+    // (patrz `saveLead.consent.test.ts`), atrapa musi tylko przepuszczać poprawny
+    // payload z `basePayload()` bez wpływu na scenariusz wycieku błędu.
+    const legalDocumentVersionFindUniqueMock = vi.fn(async (_args: { where: { id: string } }) => null as unknown);
+
     return {
       transactionSpy,
       calendarSpy,
       visitDurationBasketFindFirstMock,
       prepareBookingCandidatesSpy,
       writeBookingCandidateSpy,
+      legalDocumentVersionFindUniqueMock,
     };
   });
 
@@ -80,12 +93,37 @@ vi.mock('@repo/scheduling', () => ({
 vi.mock('@repo/database', () => ({
   prisma: {
     visitDurationBasket: { findFirst: visitDurationBasketFindFirstMock },
+    legalDocumentVersion: { findUnique: legalDocumentVersionFindUniqueMock },
     $transaction: transactionSpy,
   },
   Prisma: {},
 }));
 
 const { saveLead } = await import('../../app/actions/saveLead');
+
+// Zgoda B2C (WO B2C-CONSENT-RODO) — kontrakt wejścia i mock wersji patrz
+// `saveLead.consent.test.ts`/`saveLead.test.ts`. Ten plik nie testuje zgody
+// merytorycznie, payload musi tylko przejść walidację/AC5 bez wpływu na asercje
+// wycieku błędu (cel tego pliku).
+const PRIVACY_VERSION_ID = 'aaaaaaaa-1111-4111-8111-111111111111';
+const TERMS_VERSION_ID = 'bbbbbbbb-2222-4222-8222-222222222222';
+
+function currentVersionRow(id: string, documentKind: string) {
+  return {
+    id,
+    documentKind,
+    versionNo: 1,
+    content: 'Treść ITEST',
+    isCurrent: true,
+    publishedAt: new Date('2026-08-01T00:00:00.000Z'),
+  };
+}
+
+legalDocumentVersionFindUniqueMock.mockImplementation(async ({ where }: { where: { id: string } }) => {
+  if (where.id === PRIVACY_VERSION_ID) return currentVersionRow(PRIVACY_VERSION_ID, 'B2C_PRIVACY_POLICY');
+  if (where.id === TERMS_VERSION_ID) return currentVersionRow(TERMS_VERSION_ID, 'B2C_TERMS');
+  return null;
+});
 
 const basePayload = () => ({
   name: 'Jan Kowalski',
@@ -94,6 +132,10 @@ const basePayload = () => ({
   address: 'Marszałkowska 1, Warszawa',
   startAtIso: '2026-11-16T08:00:00.000+01:00',
   triageData: {},
+  consent: {
+    privacyPolicyConsentVersionId: PRIVACY_VERSION_ID,
+    termsConsentVersionId: TERMS_VERSION_ID,
+  },
 });
 
 // Realistyczny kształt surowego komunikatu Postgresa przy naruszeniu ograniczenia
