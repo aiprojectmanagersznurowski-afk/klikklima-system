@@ -167,14 +167,22 @@ async function countByEmail(email: string): Promise<{ klienci: number; adresy: n
 }
 
 async function cleanupByEmail(email: string): Promise<void> {
-  const client = await prisma.klienci.findFirst({ where: { email } });
-  if (!client) return;
+  // `findMany`, nie `findFirst` — test "podwójne kliknięcie" (i każdy przyszły test tej
+  // rodziny) tworzy DWÓCH klientów z TYM SAMYM adresem e-mail (dwa niezależne komplety,
+  // ten sam kontakt). `findFirst` czyścił tylko pierwszego znalezionego, zostawiając
+  // drugiego klienta/lead/rezerwację osierocone — bez wpływu dopóki nic nie miało FK
+  // z powrotem do tych wierszy; ujawnione dopiero przez sprzątanie `LegalDocumentVersion`
+  // (FK RESTRICT z `leady`), które teraz poprawnie odrzuca usunięcie wersji wciąż
+  // wskazywanej przez osieroconego drugiego leada.
+  const clients = await prisma.klienci.findMany({ where: { email } });
+  if (clients.length === 0) return;
+  const clientIds = clients.map((c) => c.id);
   await prisma.booking.deleteMany({
-    where: { lead: { klient_id: client.id } },
+    where: { lead: { klient_id: { in: clientIds } } },
   });
-  await prisma.leady.deleteMany({ where: { klient_id: client.id } });
-  await prisma.adresy.deleteMany({ where: { klient_id: client.id } });
-  await prisma.klienci.deleteMany({ where: { id: client.id } });
+  await prisma.leady.deleteMany({ where: { klient_id: { in: clientIds } } });
+  await prisma.adresy.deleteMany({ where: { klient_id: { in: clientIds } } });
+  await prisma.klienci.deleteMany({ where: { id: { in: clientIds } } });
 }
 
 let cleanupEmails: string[] = [];
