@@ -191,10 +191,12 @@ export default async function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="w-48 sm:w-72 md:w-80">
+            <div className="w-44 sm:w-64 md:w-72">
               <GlobalSearch />
             </div>
-            <SearchDialog />
+            <div className="w-40 sm:w-56 md:w-60">
+              <SearchDialog />
+            </div>
             <Separator orientation="vertical" className="h-4" />
             <ThemeSwitcher />
             <NotificationsButton />
