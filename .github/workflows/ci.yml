@@ -18,10 +18,11 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/klikklima_ci_placeholder
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/klikklima_ci_placeholder
       # Od B2C-RLS-PUBLIC AC5 (PR #31) apps/b2c-web/lib/supabaseClient.ts rzuca fail-closed
-      # przy imporcie, jeśli tych dwóch brakuje — "Budowanie projektu" poniżej biegnie PRZED
-      # "Start lokalnego stacku Supabase", więc żadna prawdziwa instancja jeszcze nie istnieje.
-      # Wartości nie są sekretem (NEXT_PUBLIC_* i tak trafiają do przeglądarki) — wystarczy,
-      # żeby konstruktor klienta nie rzucił; żadne zapytanie faktycznie nie leci w tym kroku.
+      # przy imporcie, jeśli tych dwóch brakuje. Krok "Budowanie projektu" biegnie DZIŚ
+      # PO starcie Supabase (przeniesiony 2026-09-30 — patrz komentarz przy tym kroku),
+      # więc te wartości są tu wyłącznie fallbackiem dla wcześniejszych kroków (np. lint),
+      # zanim `GITHUB_ENV` nadpisze je prawdziwymi z lokalnego stacku. Wartości nie są
+      # sekretem (NEXT_PUBLIC_* i tak trafiają do przeglądarki).
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-build-placeholder-not-a-real-key
 
@@ -40,20 +41,16 @@ jobs:
       - name: Linter (Turborepo)
         run: npm run lint
 
-      - name: Budowanie projektu (Turborepo)
-        run: npm run build
-
       # Krok 3a planu Field App (2026-09-10): realny Postgres + PostgREST + Auth,
       # nie goły kontener bazy — migracje w supabase/migrations/ używają auth.email()
       # i ról anon/authenticated, których zwykły `postgres:16` nie ma. `supabase start`
-      # aplikuje wszystkie 17 migracji automatycznie przy starcie.
+      # aplikuje wszystkie migracje automatycznie przy starcie.
       #
-      # ZNANA LUKA (do zamknięcia osobno, przez contract-steward w oknie kontraktowym):
-      # widok zmaterializowany `available_combinations`, którego odpytuje
-      # getRecommendation.ts, nie ma śledzonej definicji w żadnej migracji — powstał
-      # na produkcji poza repozytorium. Testy dotykające katalogu/rekomendacji
-      # (catalog.spec.ts, triage.spec.ts i inne) będą padać, dopóki ta definicja nie
-      # zostanie odtworzona jako migracja. To nie jest awaria tego kroku.
+      # ZAMKNIĘTE (2026-09-10, migracja 20260910090000_b2c_catalog_view_tracked.sql):
+      # widok zmaterializowany `available_combinations` jest teraz śledzoną migracją —
+      # ten komentarz opisywał stan SPRZED tamtej migracji, zostawiony wcześniej
+      # nieaktualny. Katalog/dane produktów pochodzą z fuji_seed.sql (podpięty pod
+      # supabase/config.toml `db.seed.sql_paths`, patrz commit fix(e2e) #35).
       #
       # ZNANA LUKA (decyzja biznesowa, nie techniczna): booking-validation.spec.ts
       # klika w prawdziwy kalendarz, czyli woła Google Calendar przez konto serwisowe.
@@ -77,6 +74,21 @@ jobs:
             echo "DATABASE_URL=$(node -pe 'require("/tmp/supabase-status.json").DB_URL')"
             echo "DIRECT_URL=$(node -pe 'require("/tmp/supabase-status.json").DB_URL')"
           } >> "$GITHUB_ENV"
+
+      # PRZENIESIONE tutaj, PO starcie Supabase i eksporcie zmiennych (2026-09-30,
+      # diagnoza żywym zapytaniem jako rola anon, PR diagnostyczny #36): Next.js
+      # wpieka NEXT_PUBLIC_* w bundel przeglądarki W CZASIE BUILDA, nie w czasie
+      # uruchomienia. Playwright serwuje ten build przez `npm run start`
+      # (playwright.config.ts, produkcyjny `next start`, nie `next dev`) — build
+      # wykonany PRZED startem Supabase miał wpieczony placeholder/nieprawidłowy
+      # klucz anon, więc KAŻDE zapytanie przeglądarki do Supabase (katalog,
+      # rekomendacje, ceny w modalu urządzenia) failowało cicho przez błąd
+      # autoryzacji, niezależnie od tego, czy dane w bazie istniały. Sprawdzone
+      # bezpośrednim zapytaniem SQL jako rola `anon` na dokładnie tych samych
+      # danych z fuji_seed.sql — zwraca poprawne wyniki, więc problem był
+      # wyłącznie w kolejności kroków tego workflow, nie w danych ani w RLS.
+      - name: Budowanie projektu (Turborepo)
+        run: npm run build
 
       - name: Instalacja przeglądarek dla Playwright
         run: npx playwright install --with-deps
