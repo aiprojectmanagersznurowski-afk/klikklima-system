@@ -215,12 +215,20 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
       const startAt = futureSaturday(8, '08:00');
       const result = await saveLead(basePayload(email, startAt.toISOString()));
 
-      expect(result.success).toBe(false);
-      // Przyczyna błędu musi dotyczyć modelu `klienci` (Prisma formatuje nagłówek błędu
-      // P2002 jako `Invalid \`prisma.<model>.<action>()\` invocation`, niezależnie od
-      // nazwy zmiennej użytej przy wywołaniu w kodzie produkcyjnym — zawsze z nazwą
-      // modelu z DMMF, więc jest to niezawodny sposób odróżnienia kroku).
-      expect((result as { error?: string }).error).toMatch(/klienci\.create/);
+      // NAPRAWA WYCIEKU (fix/b2c-savelead-error-leak): `saveLead` nie zwraca już treści
+      // surowego błędu Prismy (mogła nieść PII/nazwy ograniczeń bazy) do niezalogowanego
+      // klienta B2C — odpowiedź niesie WYŁĄCZNIE ustalony, bezpieczny kształt. Kolizja PK
+      // na kroku klient/adres/lead nie jest jednym z rozpoznanych kodów domenowych
+      // (BASKET_NOT_FOUND/SLOT_TAKEN/BOOKING_WRITE_REJECTED.*), więc trafia do zewnętrznego
+      // catch-a jako `INTERNAL_ERROR`, `error` już nie istnieje w wyniku — WIĘC ten test już
+      // nie może rozróżniać kroku KLIENT/ADRES/LEAD po treści `result`. Odróżnia je fixture
+      // (wiersz kolidujący wstawiony na innym modelu) i `countByEmail` niżej — to jest
+      // właściwy dowód atomowości, niezależny od treści komunikatu błędu.
+      expect(result).toEqual({
+        success: false,
+        code: 'INTERNAL_ERROR',
+        message: 'Wystąpił nieoczekiwany błąd. Spróbuj ponownie za chwilę.',
+      });
 
       const counts = await countByEmail(email);
       expect(counts).toEqual({ klienci: 0, adresy: 0, leady: 0 });
@@ -258,12 +266,18 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
       const startAt = futureSaturday(9, '08:00');
       const result = await saveLead(basePayload(email, startAt.toISOString()));
 
-      expect(result.success).toBe(false);
-      // Przyczyna błędu musi dotyczyć modelu `adresy` (kolizja na kroku ADRES), NIE
-      // `klienci` — inaczej ten test dowodziłby dokładnie tego samego co „krok KLIENT"
-      // (BLOCKER 2).
-      expect((result as { error?: string }).error).toMatch(/adresy\.create/);
-      expect((result as { error?: string }).error).not.toMatch(/klienci\.create/);
+      // NAPRAWA WYCIEKU (fix/b2c-savelead-error-leak) — patrz komentarz w teście „krok
+      // KLIENT" powyżej: `result` już nie niesie treści surowego błędu Prismy, więc nie da
+      // się nim odróżnić kroku ADRES od kroku KLIENT (dawny cel BLOCKERA 2). Ten test nadal
+      // dowodzi czegoś innego niż „krok KLIENT": fixture wstawia kolidujący wiersz na
+      // `adresy` (nie `klienci`) i wymusza kolizję DOPIERO na DRUGIM wywołaniu
+      // `randomUUID()` — czyli sprawdza inny punkt w kodzie (rollback po nieudanym kroku
+      // adresu, nie tylko klienta), nawet jeśli finalna asercja na wyniku jest identyczna.
+      expect(result).toEqual({
+        success: false,
+        code: 'INTERNAL_ERROR',
+        message: 'Wystąpił nieoczekiwany błąd. Spróbuj ponownie za chwilę.',
+      });
 
       const counts = await countByEmail(email);
       expect(counts).toEqual({ klienci: 0, adresy: 0, leady: 0 });
@@ -297,13 +311,18 @@ describe('saveLead — atomowość na żywym Postgresie (WO B2C-LEAD-ATOMIC, AC2
       const startAt = futureSaturday(10, '08:00');
       const result = await saveLead(basePayload(email, startAt.toISOString()));
 
-      expect(result.success).toBe(false);
-      // Przyczyna błędu musi dotyczyć modelu `leady` (kolizja na kroku LEAD), NIE
-      // `klienci`/`adresy` — inaczej ten test dowodziłby zachowania wcześniejszego kroku
-      // (BLOCKER 2).
-      expect((result as { error?: string }).error).toMatch(/leady\.create/);
-      expect((result as { error?: string }).error).not.toMatch(/klienci\.create/);
-      expect((result as { error?: string }).error).not.toMatch(/adresy\.create/);
+      // NAPRAWA WYCIEKU (fix/b2c-savelead-error-leak) — patrz komentarz w teście „krok
+      // KLIENT" powyżej: `result` już nie niesie treści surowego błędu Prismy, więc nie da
+      // się nim odróżnić kroku LEAD od kroków KLIENT/ADRES (dawny cel BLOCKERA 2). Ten test
+      // nadal dowodzi czegoś innego: fixture wstawia kolidujący wiersz na `leady` i wymusza
+      // kolizję DOPIERO na TRZECIM wywołaniu `randomUUID()` — sprawdza rollback po nieudanym
+      // kroku leada (klient i adres muszą się cofnąć), inny punkt w kodzie niż poprzednie dwa
+      // testy, nawet jeśli finalna asercja na wyniku jest identyczna.
+      expect(result).toEqual({
+        success: false,
+        code: 'INTERNAL_ERROR',
+        message: 'Wystąpił nieoczekiwany błąd. Spróbuj ponownie za chwilę.',
+      });
 
       const counts = await countByEmail(email);
       expect(counts).toEqual({ klienci: 0, adresy: 0, leady: 0 });
