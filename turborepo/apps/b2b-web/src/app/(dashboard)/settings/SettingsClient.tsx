@@ -1,7 +1,8 @@
 "use client"
 import React, { useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Plus, X, Trash2, MoreHorizontal, UserCog } from "lucide-react"
+import { Plus, X, Trash2, MoreHorizontal, UserCog, Users, Layers, Tag, CalendarDays, ExternalLink } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -92,14 +93,30 @@ export function SettingsClient({ users, actorRole }: { users: User[]; actorRole?
       
       <div className="flex gap-8 items-start">
         <div className="w-64 shrink-0 space-y-1 hidden md:block">
-          {["Ogólne", "Zarządzanie Dostępem", "Integracje (Stripe)"].map((item, i) => (
-            <button key={item} className={cn(
-              "w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
-              i === 1 ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-            )}>
-              {item}
-            </button>
-          ))}
+          {[
+            { label: "Użytkownicy i Uprawnienia", href: "/settings", icon: Users, active: true },
+            { label: "Montaż standardowy", href: "/settings/standard-installation", icon: Layers, active: false },
+            { label: "Cennik wyceny", href: "/settings/pricing", icon: Tag, active: false },
+            { label: "Kalendarz i wizyty", href: "/settings/calendar", icon: CalendarDays, active: false },
+            { label: "Exit Intent", href: "/settings/exit-intent", icon: ExternalLink, active: false },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2.5 w-full text-left px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  item.active
+                    ? "bg-secondary text-foreground font-semibold shadow-2xs"
+                    : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                )}
+              >
+                <Icon className="size-4 shrink-0" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </div>
 
         <Card className="flex-1">

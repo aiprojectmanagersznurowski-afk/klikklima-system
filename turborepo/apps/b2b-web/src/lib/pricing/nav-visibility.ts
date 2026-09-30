@@ -9,3 +9,18 @@ export function isPricingNavItemVisible(actorRole: Role | null): boolean {
   if (!actorRole) return false;
   return can(actorRole, 'price_list_items', 'read') === 'yes';
 }
+
+/**
+ * WO: docs/workorders/STD-INSTALL-CONFIG.md
+ * // @REQ: STD-INSTALL-CONFIG
+ *
+ * Pozycja /settings/standard-installation w nawigacji jest widoczna dla ról z prawem
+ * odczytu konfiguracji systemowej (admin).
+ */
+export function isStandardInstallationNavItemVisible(actorRole: Role | null): boolean {
+  if (!actorRole) return false;
+  return (
+    can(actorRole, 'system_config', 'read') === 'yes' ||
+    can(actorRole, 'price_list_items', 'read') === 'yes'
+  );
+}

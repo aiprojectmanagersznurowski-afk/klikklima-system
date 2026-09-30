@@ -20,7 +20,11 @@ import { CalendarDays, BookOpen } from "lucide-react";
 import type { Role } from "@klikklima/contracts";
 import { isScheduleNavItemVisible } from "../../lib/schedule/nav-visibility";
 import { isDocsNavItemVisible } from "../../lib/docs/nav-visibility";
-import { isPricingNavItemVisible } from "../../lib/pricing/nav-visibility";
+import {
+  isPricingNavItemVisible,
+  isStandardInstallationNavItemVisible,
+} from "../../lib/pricing/nav-visibility";
+import { getCurrentActorRole } from "../../utils/supabase/server";
 import { AppSidebar } from "./_components/sidebar/app-sidebar";
 import { DashboardBreadcrumbs } from "./_components/header/breadcrumbs";
 import { GlobalSearch } from "@/components/global-search/global-search";
@@ -120,21 +124,40 @@ export function buildNavItems(actorRole: Role | null): NavItem[] {
   const itemsWithDocs: NavItem[] = docsNavItem ? [...itemsWithSchedule, docsNavItem] : itemsWithSchedule;
 
   const showPricing = isPricingNavItemVisible(actorRole);
+  const showStandardInstallation = isStandardInstallationNavItemVisible(actorRole);
   return itemsWithDocs.map((item) => {
     if (item.id === 'settings' && item.subItems) {
-      const filtered = item.subItems.filter((s) => s.href !== '/settings/pricing');
+      let updated = item.subItems.filter(
+        (s) => s.href !== '/settings/pricing' && s.href !== '/settings/standard-installation'
+      );
       if (showPricing) {
-        const calIndex = filtered.findIndex((s) => s.href === '/settings/calendar');
+        const calIndex = updated.findIndex((s) => s.href === '/settings/calendar');
         const pricingItem = { id: 'pricing_settings', label: 'Cennik wyceny', href: '/settings/pricing' };
-        const updated = [...filtered];
         if (calIndex !== -1) {
           updated.splice(calIndex + 1, 0, pricingItem);
         } else {
           updated.push(pricingItem);
         }
-        return { ...item, subItems: updated };
       }
-      return { ...item, subItems: filtered };
+      if (showStandardInstallation) {
+        const priceIndex = updated.findIndex((s) => s.href === '/settings/pricing');
+        const standardItem = {
+          id: 'standard_installation',
+          label: 'Montaż standardowy',
+          href: '/settings/standard-installation',
+        };
+        if (priceIndex !== -1) {
+          updated.splice(priceIndex + 1, 0, standardItem);
+        } else {
+          const calIndex = updated.findIndex((s) => s.href === '/settings/calendar');
+          if (calIndex !== -1) {
+            updated.splice(calIndex + 1, 0, standardItem);
+          } else {
+            updated.push(standardItem);
+          }
+        }
+      }
+      return { ...item, subItems: updated };
     }
     return item;
   });
@@ -147,11 +170,17 @@ export default async function DashboardLayout({
 }) {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
+  let actorRole: Role | null = null;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    // Brak aktywnej sesji
+  }
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <Suspense fallback={<div className="w-16 h-screen bg-sidebar border-r border-sidebar-border shrink-0" />}>
-        <AppSidebar />
+        <AppSidebar initialRole={actorRole} />
       </Suspense>
       <SidebarInset className="overflow-hidden flex flex-col h-screen">
         <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 lg:px-6 shadow-2xs">
