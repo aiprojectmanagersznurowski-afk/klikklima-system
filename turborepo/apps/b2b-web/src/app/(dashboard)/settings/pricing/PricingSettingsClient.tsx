@@ -30,12 +30,15 @@ import {
 import {
   createPriceListItemSchema,
   updatePriceSchema,
+  updatePriceListItemSchema,
   type CreatePriceListItemInput,
   type UpdatePriceInput,
+  type UpdatePriceListItemInput,
 } from "../../../../lib/pricing/pricing-schema"
 import {
   createPriceListItemAction,
   updatePriceAction,
+  updatePriceListItemAction,
   togglePriceListItemActiveAction,
   importPriceListAction,
 } from "./actions"
@@ -93,9 +96,9 @@ export function PricingSettingsClient({ items, actorRole }: PricingSettingsClien
   const [isImportOpen, setIsImportOpen] = useState(false)
   const [csvFileContent, setCsvFileContent] = useState<string>("")
 
-  // Formularz edycji ceny
-  const editForm = useForm<UpdatePriceInput>({
-    resolver: zodResolver(updatePriceSchema),
+  // Formularz edycji pozycji cennika (wszystkie pola)
+  const editForm = useForm<UpdatePriceListItemInput>({
+    resolver: zodResolver(updatePriceListItemSchema),
   })
 
   // Formularz dodania nowej pozycji
@@ -112,24 +115,29 @@ export function PricingSettingsClient({ items, actorRole }: PricingSettingsClien
     setErrorMessage(null)
     setSuccessMessage(null)
     setEditingItem(item)
-    const currentVer = item.versions[0]
+    const currentVer = item.versions.find((v) => v.isCurrent) ?? item.versions[0]
     editForm.reset({
       itemId: item.id,
+      name: item.name,
+      unit: (item.unit as "mb" | "szt" | "m") || "szt",
+      scope: (item.scope as "ROOM" | "INSTALLATION") || "ROOM",
+      category: (item.category as "MATERIAL" | "LABOR" | "MATERIAL_LABOR" | null) ?? null,
+      description: item.description ?? "",
       salePriceNet: currentVer ? String(currentVer.salePriceNet) : "0.00",
       crewCostNet: currentVer && currentVer.crewCostNet !== null ? String(currentVer.crewCostNet) : "",
     })
   }
 
-  const handleEditSubmit = (data: UpdatePriceInput) => {
+  const handleEditSubmit = (data: UpdatePriceListItemInput) => {
     setErrorMessage(null)
     setSuccessMessage(null)
     startTransition(async () => {
-      const res = await updatePriceAction(data)
+      const res = await updatePriceListItemAction(data)
       if (res.success) {
-        setSuccessMessage("Zaktualizowano cenę pozycji.")
+        setSuccessMessage("Pomyślnie zaktualizowano pozycję cennika.")
         setEditingItem(null)
       } else {
-        setErrorMessage(res.error || "Błąd podczas zmiany ceny.")
+        setErrorMessage(res.error || "Błąd podczas zapisu zmian w pozycji.")
       }
     })
   }
@@ -312,10 +320,10 @@ export function PricingSettingsClient({ items, actorRole }: PricingSettingsClien
                               size="sm"
                               onClick={() => openEditDialog(item)}
                               disabled={isPending}
-                              title="Zmień cenę"
+                              title="Edytuj pozycję"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
-                              <span className="sr-only">Edytuj cenę</span>
+                              <span className="sr-only">Edytuj pozycję</span>
                             </Button>
                             <Button
                               variant="ghost"
@@ -345,51 +353,116 @@ export function PricingSettingsClient({ items, actorRole }: PricingSettingsClien
         </div>
       </div>
 
-      {/* Dialog zmiany ceny (AC3, AC5) */}
+      {/* Dialog edycji pozycji (wszystkie pola + ceny) */}
       <Dialog open={editingItem !== null} onOpenChange={(open) => !open && setEditingItem(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Zmiana ceny pozycji</DialogTitle>
+            <DialogTitle>Edycja pozycji w cenniku</DialogTitle>
           </DialogHeader>
           {editingItem && (
             <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-4">
-              <div className="text-sm font-medium">{editingItem.name}</div>
-              <p className="text-xs text-muted-foreground">
-                Każda zmiana kwoty tworzy nową wersję w cenniku. Ceny historyczne w istniejących
-                ofertach pozostaną niezmienione.
-              </p>
-
               <input type="hidden" {...editForm.register("itemId")} />
 
               <div className="space-y-1.5">
-                <Label htmlFor="salePriceNet">Cena sprzedaży netto (zł) *</Label>
+                <Label htmlFor="edit-name">Nazwa pozycji *</Label>
                 <Input
-                  id="salePriceNet"
-                  placeholder="np. 140,50"
-                  {...editForm.register("salePriceNet")}
+                  id="edit-name"
+                  placeholder="np. Przejście przez ścianę żelbetową"
+                  {...editForm.register("name")}
                 />
-                {editForm.formState.errors.salePriceNet && (
-                  <p className="text-xs text-destructive">
-                    {editForm.formState.errors.salePriceNet.message}
-                  </p>
+                {editForm.formState.errors.name && (
+                  <p className="text-xs text-destructive">{editForm.formState.errors.name.message}</p>
                 )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-unit">Jednostka *</Label>
+                  <select
+                    id="edit-unit"
+                    className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+                    {...editForm.register("unit")}
+                  >
+                    <option value="szt">szt</option>
+                    <option value="mb">mb</option>
+                    <option value="m">m</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-scope">Zasięg *</Label>
+                  <select
+                    id="edit-scope"
+                    className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+                    {...editForm.register("scope")}
+                  >
+                    <option value="ROOM">Pomieszczenie (ROOM)</option>
+                    <option value="INSTALLATION">Układ / cała instalacja (INSTALLATION)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="crewCostNet">Koszt ekipy netto (zł, opcjonalny)</Label>
-                <Input
-                  id="crewCostNet"
-                  placeholder="np. 30,00 (puste = brak danych)"
-                  {...editForm.register("crewCostNet")}
-                />
-                {editForm.formState.errors.crewCostNet && (
-                  <p className="text-xs text-destructive">
-                    {editForm.formState.errors.crewCostNet.message}
-                  </p>
-                )}
+                <Label htmlFor="edit-category">Kategoria</Label>
+                <select
+                  id="edit-category"
+                  className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+                  {...editForm.register("category")}
+                >
+                  <option value="">(Brak kategorii)</option>
+                  <option value="LABOR">Robocizna (LABOR)</option>
+                  <option value="MATERIAL">Materiał (MATERIAL)</option>
+                  <option value="MATERIAL_LABOR">Materiał i robocizna (MATERIAL_LABOR)</option>
+                </select>
               </div>
 
-              <DialogFooter>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-description">Opis (widoczny w ofercie)</Label>
+                <textarea
+                  id="edit-description"
+                  rows={2}
+                  className="w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="Opcjonalny opis pozycji dla klienta..."
+                  {...editForm.register("description")}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-salePriceNet">Cena sprzedaży netto (zł) *</Label>
+                  <Input
+                    id="edit-salePriceNet"
+                    placeholder="np. 140,50"
+                    {...editForm.register("salePriceNet")}
+                  />
+                  {editForm.formState.errors.salePriceNet && (
+                    <p className="text-xs text-destructive">
+                      {editForm.formState.errors.salePriceNet.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-crewCostNet">Koszt ekipy netto (zł)</Label>
+                  <Input
+                    id="edit-crewCostNet"
+                    placeholder="np. 30,00"
+                    {...editForm.register("crewCostNet")}
+                  />
+                  {editForm.formState.errors.crewCostNet && (
+                    <p className="text-xs text-destructive">
+                      {editForm.formState.errors.crewCostNet.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground pt-1">
+                Zmiana kwot automatycznie tworzy nową wersję w cenniku. Ceny historyczne w istniejących
+                ofertach i rozliczeniach pozostają zamrożone i bezpieczne.
+              </p>
+
+              <DialogFooter className="pt-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -400,7 +473,7 @@ export function PricingSettingsClient({ items, actorRole }: PricingSettingsClien
                 </Button>
                 <Button type="submit" disabled={isPending}>
                   {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
-                  Zapisz nową cenę
+                  Zapisz zmiany
                 </Button>
               </DialogFooter>
             </form>

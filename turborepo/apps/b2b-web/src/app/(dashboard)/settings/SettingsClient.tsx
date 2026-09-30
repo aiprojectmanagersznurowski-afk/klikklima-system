@@ -14,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/format-date"
 import { can, ROLES, type Role } from "@klikklima/contracts"
 import {
@@ -87,43 +86,40 @@ export function SettingsClient({ users, actorRole }: { users: User[]; actorRole?
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto animate-in fade-in duration-300">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground mb-8">Ustawienia platformy</h1>
-      
-      <div className="flex gap-8 items-start">
-        <div className="w-64 shrink-0 space-y-1 hidden md:block">
-          {["Ogólne", "Zarządzanie Dostępem", "Integracje (Stripe)"].map((item, i) => (
-            <button key={item} className={cn(
-              "w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
-              i === 1 ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-            )}>
-              {item}
-            </button>
-          ))}
+    <div className="p-8 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-5">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Użytkownicy i Uprawnienia</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Zarządzaj dostępem do platformy KlikKlima B2B, rolami oraz kontami pracowników.
+          </p>
+        </div>
+        <Button onClick={() => setShowInviteModal(true)} className="gap-2 shrink-0">
+          <Plus size={16} /> Dodaj pracownika
+        </Button>
+      </div>
+
+      <Card className="w-full">
+        <div className="p-5 border-b border-border flex items-center justify-between bg-card rounded-t-xl">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">Lista pracowników</h2>
+            <p className="text-xs text-muted-foreground">Aktywne konta z dostępem do panelu ({users.length}).</p>
+          </div>
         </div>
 
-        <Card className="flex-1">
-          <div className="p-6 border-b border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card rounded-t-xl">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Konta Pracowników</h2>
-              <p className="text-sm text-muted-foreground">Zarządzaj dostępem do platformy KlikKlima B2B.</p>
-            </div>
-            <Button onClick={() => setShowInviteModal(true)} className="gap-2"><Plus size={16}/> Dodaj pracownika</Button>
+        {successMessage && (
+          <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-md border border-primary/20 bg-primary/10 px-4 py-2.5 text-sm text-primary" role="status">
+            <span>{successMessage}</span>
+            <button
+              type="button"
+              onClick={() => setSuccessMessage(null)}
+              className="rounded-full p-1 text-primary hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label="Zamknij komunikat"
+            >
+              <X className="size-4" />
+            </button>
           </div>
-
-          {successMessage && (
-            <div className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-md border border-primary/20 bg-primary/10 px-4 py-2.5 text-sm text-primary" role="status">
-              <span>{successMessage}</span>
-              <button
-                type="button"
-                onClick={() => setSuccessMessage(null)}
-                className="rounded-full p-1 text-primary hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                aria-label="Zamknij komunikat"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-          )}
+        )}
 
           <div className="w-full overflow-x-auto">
             <table className="w-full text-sm text-left">
@@ -189,7 +185,6 @@ export function SettingsClient({ users, actorRole }: { users: User[]; actorRole?
             </table>
           </div>
         </Card>
-      </div>
 
       {showInviteModal && (
         <div className="fixed inset-0 bg-foreground/40 backdrop-blur-xs flex items-center justify-center z-50 animate-in fade-in px-4">

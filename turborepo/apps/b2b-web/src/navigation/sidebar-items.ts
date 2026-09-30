@@ -14,7 +14,10 @@ import {
 import type { Role } from '@klikklima/contracts';
 import { isScheduleNavItemVisible } from '../lib/schedule/nav-visibility';
 import { isDocsNavItemVisible } from '../lib/docs/nav-visibility';
-import { isPricingNavItemVisible } from '../lib/pricing/nav-visibility';
+import {
+  isPricingNavItemVisible,
+  isStandardInstallationNavItemVisible,
+} from '../lib/pricing/nav-visibility';
 
 export interface NavSubItem {
   id: string;
@@ -110,21 +113,40 @@ export function getNavItemsForRole(actorRole: Role | null): NavItem[] {
     : itemsWithSchedule;
 
   const showPricing = isPricingNavItemVisible(actorRole);
+  const showStandardInstallation = isStandardInstallationNavItemVisible(actorRole);
   return itemsWithDocs.map((item) => {
     if (item.id === 'settings' && item.subItems) {
-      const filtered = item.subItems.filter((s) => s.href !== '/settings/pricing');
+      let updated = item.subItems.filter(
+        (s) => s.href !== '/settings/pricing' && s.href !== '/settings/standard-installation'
+      );
       if (showPricing) {
-        const calIndex = filtered.findIndex((s) => s.href === '/settings/calendar');
+        const calIndex = updated.findIndex((s) => s.href === '/settings/calendar');
         const pricingItem: NavSubItem = { id: 'pricing_settings', label: 'Cennik wyceny', href: '/settings/pricing' };
-        const updated = [...filtered];
         if (calIndex !== -1) {
           updated.splice(calIndex + 1, 0, pricingItem);
         } else {
           updated.push(pricingItem);
         }
-        return { ...item, subItems: updated };
       }
-      return { ...item, subItems: filtered };
+      if (showStandardInstallation) {
+        const priceIndex = updated.findIndex((s) => s.href === '/settings/pricing');
+        const standardItem: NavSubItem = {
+          id: 'standard_installation',
+          label: 'Montaż standardowy',
+          href: '/settings/standard-installation',
+        };
+        if (priceIndex !== -1) {
+          updated.splice(priceIndex + 1, 0, standardItem);
+        } else {
+          const calIndex = updated.findIndex((s) => s.href === '/settings/calendar');
+          if (calIndex !== -1) {
+            updated.splice(calIndex + 1, 0, standardItem);
+          } else {
+            updated.push(standardItem);
+          }
+        }
+      }
+      return { ...item, subItems: updated };
     }
     return item;
   });

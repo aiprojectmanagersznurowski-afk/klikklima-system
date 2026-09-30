@@ -9,9 +9,11 @@ import { importPriceList } from "../../../../lib/pricing/price-list"
 import {
   createPriceListItemSchema,
   updatePriceSchema,
+  updatePriceListItemSchema,
   togglePriceListItemActiveSchema,
   type CreatePriceListItemInput,
   type UpdatePriceInput,
+  type UpdatePriceListItemInput,
   type TogglePriceListItemActiveInput,
 } from "../../../../lib/pricing/pricing-schema"
 
@@ -387,5 +389,170 @@ export async function togglePriceListItemActiveAction(rawInput: unknown): Promis
   } catch (error) {
     console.error("Failed to toggle item active status:", error)
     return { success: false, error: "Nie udało się zmienić statusu pozycji." }
+  }
+}
+
+/**
+ * Pełna edycja pozycji cennika wycen (wszystkie pola: nazwa, jednostka, zasięg, kategoria, opis, ceny).
+ * Jeśli cena ulega zmianie, tworzy nową wersję w `PriceListItemVersion` z zachowaniem historii audytowej.
+ */
+export async function updatePriceListItemAction(rawInput: unknown): Promise<PriceListMutationResult> {
+  let actorRole
+  try {
+    actorRole = await getCurrentActorRole()
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error)
+    return { success: false, error: "Brak uprawnień do edycji pozycji cennika." }
+  }
+  if (!actorRole || can(actorRole, "price_list_items", "update") !== "yes") {
+    return { success: false, error: "Brak uprawnień do edycji pozycji cennika." }
+  }
+
+  const parsed = updatePriceListItemSchema.safeParse(rawInput)
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0]
+    return { success: false, error: issue?.message || "Nieprawidłowe dane pozycji cennika." }
+  }
+
+  let actorEmail: string | undefined
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    actorEmail = user?.email
+  } catch (error) {
+    console.error("Failed to resolve actor email:", error)
+    return { success: false, error: "Nie udało się ustalić tożsamości użytkownika." }
+  }
+  if (!actorEmail) {
+    return { success: false, error: "Nie udało się ustalić tożsamości użytkownika." }
+  }
+
+  const input = parsed.data
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const item = await tx.priceListItem.findUnique({
+        where: { id: input.itemId },
+        include: {
+          versions: {
+            where: { isCurrent: true },
+          },
+        },
+      })
+
+      if (!item) {
+        return { success: false, error: "Pozycja cennika nie istnieje." }
+      }
+
+      // Sprawdzenie czy nowa nazwa nie koliduje z inną pozycją
+      if (input.name !== item.name) {
+        const duplicate = await tx.priceListItem.findFirst({
+          where: { name: input.name, id: { not: input.itemId } },
+        })
+        if (duplicate) {
+          return { success: false, error: "Pozycja o tej nazwie już istnieje w cenniku." }
+        }
+      }
+
+      const currentVersion = item.versions[0]
+      const newSalePrice = Number(input.salePriceNet)
+      const newCrewCost = input.crewCostNet ? Number(input.crewCostNet) : null
+
+      let isPriceChanged = false
+      if (currentVersion) {
+        const currentSalePrice = Number(currentVersion.salePriceNet)
+        const currentCrewCost = currentVersion.crewCostNet !== null ? Number(currentVersion.crewCostNet) : null
+
+        const isSameSalePrice = Math.abs(currentSalePrice - newSalePrice) < 0.001
+        const isSameCrewCost =
+          (currentCrewCost === null && newCrewCost === null) ||
+          (currentCrewCost !== null && newCrewCost !== null && Math.abs(currentCrewCost - newCrewCost) < 0.001)
+
+        isPriceChanged = !isSameSalePrice || !isSameCrewCost
+      } else {
+        isPriceChanged = true
+      }
+
+      // Aktualizacja pól pozycji
+      await tx.priceListItem.update({
+        where: { id: input.itemId },
+        data: {
+          name: input.name,
+          unit: input.unit,
+          scope: input.scope,
+          category: input.category ?? null,
+          description: input.description ?? null,
+        },
+      })
+
+      // Jeśli cena się zmieniła, tworzymy nową wersję
+      if (isPriceChanged) {
+        await tx.priceListItemVersion.updateMany({
+          where: { priceListItemId: input.itemId, isCurrent: true },
+          data: { isCurrent: false },
+        })
+
+        await tx.priceListItemVersion.create({
+          data: {
+            priceListItemId: input.itemId,
+            salePriceNet: input.salePriceNet,
+            crewCostNet: input.crewCostNet ?? null,
+            isCurrent: true,
+          },
+        })
+      }
+
+      // Zestawienie zmian dla audytu
+      const changes: string[] = []
+      if (item.name !== input.name) changes.push(`nazwa: "${item.name}" → "${input.name}"`)
+      if (item.unit !== input.unit) changes.push(`jednostka: ${item.unit} → ${input.unit}`)
+      if (item.scope !== input.scope) changes.push(`zasięg: ${item.scope} → ${input.scope}`)
+      if (item.category !== (input.category ?? null)) {
+        changes.push(`kategoria: ${item.category ?? "(brak)"} → ${input.category ?? "(brak)"}`)
+      }
+      if (item.description !== (input.description ?? null)) {
+        changes.push("zaktualizowano opis")
+      }
+      if (isPriceChanged) {
+        const beforeSale = currentVersion ? formatMoney(Number(currentVersion.salePriceNet)) : "(brak)"
+        const afterSale = formatMoney(newSalePrice)
+        const beforeCrew =
+          currentVersion && currentVersion.crewCostNet !== null
+            ? formatMoney(Number(currentVersion.crewCostNet))
+            : "(brak)"
+        const afterCrew = newCrewCost !== null ? formatMoney(newCrewCost) : "(brak)"
+        changes.push(`cena sprzedaży: ${beforeSale} → ${afterSale}, koszt ekipy: ${beforeCrew} → ${afterCrew}`)
+      }
+
+      const justification =
+        changes.length > 0
+          ? `Edycja pozycji cennika "${input.name}": ${changes.join("; ")}.`
+          : `Zatwierdzono edycję pozycji cennika "${input.name}" bez zmian wartości.`
+
+      await tx.auditLog.create({
+        data: {
+          operation: "field_update",
+          resource: "price_list_items",
+          recordId: input.itemId,
+          actorEmail,
+          actorRole,
+          justification,
+          legalBasis: OTHER_LEGAL_BASIS,
+        },
+      })
+
+      return { success: true }
+    })
+
+    if (result.success) {
+      revalidatePath("/settings/pricing")
+      revalidatePath("/settings/standard-installation")
+    }
+    return result
+  } catch (error) {
+    console.error("Failed to update price list item:", error)
+    return { success: false, error: "Nie udało się zaktualizować pozycji cennika." }
   }
 }

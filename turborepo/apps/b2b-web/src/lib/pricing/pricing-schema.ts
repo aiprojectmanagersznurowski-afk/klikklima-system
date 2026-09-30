@@ -61,3 +61,20 @@ export const togglePriceListItemActiveSchema = z.object({
 });
 
 export type TogglePriceListItemActiveInput = z.infer<typeof togglePriceListItemActiveSchema>;
+
+export const updatePriceListItemSchema = z.object({
+  itemId: z.string().min(1, "Identyfikator pozycji jest wymagany."),
+  name: z.string().trim().min(1, "Nazwa pozycji jest wymagana."),
+  unit: z.enum(["mb", "szt", "m"], {
+    errorMap: () => ({ message: "Jednostka musi być jedną z: mb, szt, m." }),
+  }),
+  scope: z.enum(["ROOM", "INSTALLATION"], {
+    errorMap: () => ({ message: "Zasięg musi być: ROOM lub INSTALLATION." }),
+  }),
+  category: z.enum(["MATERIAL", "LABOR", "MATERIAL_LABOR"]).optional().nullable(),
+  description: z.string().trim().optional().nullable(),
+  salePriceNet: priceAmountSchema,
+  crewCostNet: optionalCrewCostSchema.optional(),
+});
+
+export type UpdatePriceListItemInput = z.infer<typeof updatePriceListItemSchema>;
