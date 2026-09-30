@@ -58,5 +58,42 @@ describe('DIAGNOSTYKA (tymczasowa, do usunięcia)', () => {
       'SELECT count(*)::bigint AS count FROM available_combinations',
     );
     console.log('DIAG available_combinations count AFTER manual REFRESH:', acCountAfterRefresh[0]?.count?.toString());
+
+    // Dokładnie to samo zapytanie, ktore robi getRecommendation.ts, ale jako rola anon
+    // (Step7Success idzie przez lib/supabaseClient.ts, ktory od AC5 jest anon-only).
+    const anonResult = await prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe('SET LOCAL ROLE anon');
+      return tx.$queryRawUnsafe<Record<string, unknown>[]>(
+        "SELECT type, sizes_hash, room_count, is_available, outdoor_unit_id, series_name, brand FROM available_combinations WHERE room_count = 1 AND sizes_hash = '07' AND is_available = true LIMIT 5",
+      );
+    });
+    console.log('DIAG SAME QUERY AS ROLE ANON (room_count=1, sizes_hash=07):', JSON.stringify(anonResult));
+
+    const anonIndoorLookup = await prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe('SET LOCAL ROLE anon');
+      return tx.$queryRawUnsafe<Record<string, unknown>[]>(
+        "SELECT id, model_code, series_name, brand FROM indoor_units WHERE series_name = 'KJCAL' AND brand = 'Fuji Electric' AND model_code LIKE '%07%' ORDER BY price_netto ASC LIMIT 1",
+      );
+    });
+    console.log('DIAG anon indoor_units lookup (series_name=KJCAL, model_code LIKE %07%):', JSON.stringify(anonIndoorLookup));
+
+    const anonOutdoorLookup = await prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe('SET LOCAL ROLE anon');
+      const combo = anonResult[0];
+      if (!combo) return null;
+      return tx.$queryRawUnsafe<Record<string, unknown>[]>(
+        'SELECT id, model_code FROM outdoor_units WHERE id = $1::uuid',
+        combo.outdoor_unit_id,
+      );
+    });
+    console.log('DIAG anon outdoor_units lookup by id from combo:', JSON.stringify(anonOutdoorLookup));
+
+    const anonCennikLookup = await prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe('SET LOCAL ROLE anon');
+      return tx.$queryRawUnsafe<Record<string, unknown>[]>(
+        "SELECT koszt_b2c_netto FROM cennik_uslug WHERE nazwa_uslugi = 'Montaż wzorcowy' LIMIT 1",
+      );
+    });
+    console.log('DIAG anon cennik_uslug lookup (expected EMPTY - RLS revoked, admin client used instead):', JSON.stringify(anonCennikLookup));
   });
 });
