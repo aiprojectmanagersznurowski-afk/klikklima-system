@@ -4,8 +4,8 @@ import { prisma } from "@repo/database";
 import { can } from "@klikklima/contracts";
 import { getCurrentActorRole } from "../../../../utils/supabase/server";
 import { StandardInstallationClient } from "./StandardInstallationClient";
-import { STANDARD_INSTALLATION_CONFIG_TYPE } from "./actions";
 import {
+  STANDARD_INSTALLATION_CONFIG_TYPE,
   standardInstallationConfigSchema,
   type StandardInstallationConfig,
 } from "../../../../lib/pricing/standard-installation-schema";

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const STANDARD_INSTALLATION_CONFIG_TYPE = 'standard_installation';
+
 /**
  * WO: docs/workorders/STD-INSTALL-CONFIG.md
  * // @REQ: STD-INSTALL-CONFIG

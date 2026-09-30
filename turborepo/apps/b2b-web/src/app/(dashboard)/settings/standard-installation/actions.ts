@@ -6,11 +6,10 @@ import { can } from "@klikklima/contracts";
 import { getCurrentActorRole, getCurrentUser } from "../../../../utils/supabase/server";
 import {
   updateStandardInstallationConfigSchema,
+  STANDARD_INSTALLATION_CONFIG_TYPE,
   type UpdateStandardInstallationConfigInput,
   type StandardInstallationConfig,
 } from "../../../../lib/pricing/standard-installation-schema";
-
-export const STANDARD_INSTALLATION_CONFIG_TYPE = "standard_installation";
 
 export type UpdateStandardInstallationConfigResult = {
   success: boolean;
