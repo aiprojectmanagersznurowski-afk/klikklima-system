@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-29T17:43:31.917Z",
+  "generatedAt": "2026-09-30T11:49:08.749Z",
   "counts": {
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-columns": 27,
     "apps/b2b-web/src/app/(dashboard)/analytics/actions.ts::adr002-pl-tables": 16,
@@ -228,7 +228,7 @@
     "apps/b2c-web/tests/actions/booking-concurrency.itest.ts::adr002-pl-tables": 5,
     "apps/b2c-web/tests/actions/getFomoSlots.test.ts::adr002-pl-tables": 1,
     "apps/b2c-web/tests/actions/saveLead-atomic.itest.ts::adr002-pl-columns": 4,
-    "apps/b2c-web/tests/actions/saveLead-atomic.itest.ts::adr002-pl-tables": 36,
+    "apps/b2c-web/tests/actions/saveLead-atomic.itest.ts::adr002-pl-tables": 30,
     "apps/b2c-web/tests/actions/saveLead-consent.itest.ts::adr002-pl-columns": 4,
     "apps/b2c-web/tests/actions/saveLead-consent.itest.ts::adr002-pl-tables": 24,
     "apps/b2c-web/tests/actions/saveLead.atomic.test.ts::adr002-pl-columns": 8,
@@ -284,6 +284,7 @@
     "supabase/migrations/20260925092000_invoices_and_installation_photos.sql::adr002-pl-tables": 8,
     "supabase/migrations/20260929091000_b2c_lead_consent_columns.sql::adr002-pl-tables": 12,
     "supabase/migrations/20260929100000_b2c_rls_public_catalog.sql::adr002-pl-tables": 5,
+    "supabase/migrations/20260930120000_security_revoke_anon_insert_leady_klienci_adresy.sql::adr002-pl-tables": 6,
     "test_price_update.sql::adr002-pl-columns": 4
   },
   "total": 2851
