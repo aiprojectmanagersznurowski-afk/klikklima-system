@@ -87,20 +87,35 @@ function testEmail(marker: string): string {
   return `itest-b2c-consent-rodo-${marker}-${randomUUID()}@example.invalid`;
 }
 
-/** Wersja OBOWIĄZUJĄCA (isCurrent: true, publishedAt ustawiony — CHECK legal_document_versions_current_is_published wymaga tego skojarzenia). */
+/**
+ * Wersja OBOWIĄZUJĄCA (isCurrent: true, publishedAt ustawiony — CHECK
+ * legal_document_versions_current_is_published wymaga tego skojarzenia).
+ * Częściowy indeks unikalny (legal_document_versions_current_per_kind_key) dopuszcza
+ * DOKŁADNIE JEDNĄ wersję isCurrent na dany documentKind — kolejne wywołanie dla tego
+ * samego rodzaju w obrębie jednego przebiegu testów MUSI najpierw zdjąć flagę z
+ * poprzedniej, inaczej INSERT pada na P2002 (dokładnie ten wzorzec, jakim
+ * publishLegalDocumentVersionAction/skrypt publikacji na produkcji już to robią).
+ */
 async function createCurrentVersion(kind: 'B2C_PRIVACY_POLICY' | 'B2C_TERMS'): Promise<{ id: string }> {
-  const last = await prisma.legalDocumentVersion.findFirst({ where: { documentKind: kind }, orderBy: { versionNo: 'desc' } });
-  const versionNo = (last?.versionNo ?? 0) + 1;
-  const version = await prisma.legalDocumentVersion.create({
-    data: {
-      documentKind: kind,
-      versionNo,
-      content: `Treść ITEST ${kind} v${versionNo}`,
-      publishedAt: new Date(),
-      isCurrent: true,
-    },
+  return prisma.$transaction(async (tx) => {
+    const last = await tx.legalDocumentVersion.findFirst({ where: { documentKind: kind }, orderBy: { versionNo: 'desc' } });
+    const versionNo = (last?.versionNo ?? 0) + 1;
+
+    await tx.legalDocumentVersion.updateMany({
+      where: { documentKind: kind, isCurrent: true },
+      data: { isCurrent: false },
+    });
+
+    return tx.legalDocumentVersion.create({
+      data: {
+        documentKind: kind,
+        versionNo,
+        content: `Treść ITEST ${kind} v${versionNo}`,
+        publishedAt: new Date(),
+        isCurrent: true,
+      },
+    });
   });
-  return version;
 }
 
 /** Wersja SZKICU — nigdy obowiązująca (AC5, nie centralny do tego pliku, ale użyty w AC4). */
