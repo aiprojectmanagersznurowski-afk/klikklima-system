@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from 'react'
-import { Bot, User, Sparkles, AlertCircle, Copy, Check, BookOpen, Layers, RotateCcw, Zap } from 'lucide-react'
+import { Bot, User, Sparkles, AlertCircle, Copy, Check, BookOpen, Layers, RotateCcw, Zap, BotMessageSquare } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { PromptInput, type PromptInputMeta } from '@/components/ui/ai-chat-input'
 import ReactMarkdown from 'react-markdown'
@@ -76,7 +76,8 @@ export default function ChatPage() {
     {
       id: 'initial',
       role: 'assistant',
-      content: 'Cześć! Jestem Twoim Asystentem AI w systemie KlikKlima. Posiadam bezpośredni dostęp do bazy wiedzy w PostgreSQL (`pgvector`), w tym kontraktów SLA, maszyny stanów lejka, modeli rozliczeniowych i definicji montażu standardowego. \n\nW czym mogę Ci pomóc?'
+      content: 'Cześć! Jestem Twoim Asystentem AI w systemie KlikKlima. Posiadam bezpośredni dostęp do bazy wiedzy w PostgreSQL (`pgvector`), w tym kontraktów SLA, maszyny stanów lejka, modeli rozliczeniowych i definicji montażu standardowego. \n\nAktualnie korzystasz z silnika **Groq (Llama 3.3 70B)** o ultra-niskim czasie odpowiedzi na procesorach LPU. W każdej chwili możesz przełączyć silnik na **Google Gemini** za pomocą przełącznika modelu. \n\nW czym mogę Ci dzisiaj pomóc?',
+      provider: 'groq'
     }
   ])
   const [input, setInput] = useState('')
@@ -95,7 +96,8 @@ export default function ChatPage() {
       {
         id: 'initial',
         role: 'assistant',
-        content: 'Cześć! Jestem Twoim Asystentem AI w systemie KlikKlima. Posiadam bezpośredni dostęp do bazy wiedzy w PostgreSQL (`pgvector`), w tym kontraktów SLA, maszyny stanów lejka, modeli rozliczeniowych i definicji montażu standardowego. \n\nW czym mogę Ci pomóc?'
+        content: 'Cześć! Jestem Twoim Asystentem AI w systemie KlikKlima. Posiadam bezpośredni dostęp do bazy wiedzy w PostgreSQL (`pgvector`), w tym kontraktów SLA, maszyny stanów lejka, modeli rozliczeniowych i definicji montażu standardowego. \n\nAktualnie korzystasz z silnika **Groq (Llama 3.3 70B)** o ultra-niskim czasie odpowiedzi na procesorach LPU. W każdej chwili możesz przełączyć silnik na **Google Gemini** za pomocą przełącznika modelu. \n\nW czym mogę Ci dzisiaj pomóc?',
+        provider: selectedProvider
       }
     ])
     setInput('')
@@ -189,25 +191,21 @@ export default function ChatPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center size-10 rounded-xl bg-primary shadow-sm text-primary-foreground">
-            {selectedProvider === 'groq' ? (
-              <Zap className="size-5 text-primary-foreground" />
-            ) : (
-              <Sparkles className="size-5 animate-pulse text-primary-foreground" />
-            )}
+            <BotMessageSquare className="size-5 text-primary-foreground" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight text-foreground">Asystent AI</h1>
-              <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
                 {selectedProvider === 'groq' ? (
                   <>
-                    <Zap className="size-3" />
-                    Groq Llama 3.3
+                    <Zap className="size-3 text-amber-500 fill-amber-500" />
+                    <span>Groq Llama 3.3</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="size-3" />
-                    Google Gemini
+                    <Sparkles className="size-3 text-blue-500" />
+                    <span>Google Gemini</span>
                   </>
                 )}
               </span>
@@ -518,8 +516,51 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Dolna belka z nowym komponentem PromptInput i sugerowanymi promptami POD polem wprowadzania */}
+        {/* Dolna belka z wyborem silnika, komponentem PromptInput i sugerowanymi promptami */}
         <div className="p-4 bg-card/70 border-t border-border/50 flex flex-col items-center gap-3">
+          {/* Wybór aktywnego silnika LLM nad polem wprowadzania */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground text-[11px] font-medium flex items-center gap-1">
+              <BotMessageSquare className="size-3.5 text-primary" />
+              <span>Silnik LLM:</span>
+            </span>
+            <div className="inline-flex p-0.5 rounded-lg border border-border/70 bg-background shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setSelectedProvider('groq')}
+                disabled={isLoading}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer",
+                  selectedProvider === 'groq'
+                    ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                )}
+                title="Groq LPU (Llama 3.3 70B) — ultra-szybkie odpowiedzi (domyślny)"
+              >
+                <Zap className="size-3 text-amber-500 fill-amber-500" />
+                <span>Groq Llama 3.3</span>
+                <span className="text-[10px] opacity-75 font-mono px-1 py-0.2 rounded bg-primary-foreground/20 hidden sm:inline">
+                  domyślny
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedProvider('gemini')}
+                disabled={isLoading}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer",
+                  selectedProvider === 'gemini'
+                    ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                )}
+                title="Google Gemini — zaawansowany model analityczny"
+              >
+                <Sparkles className="size-3 text-blue-500" />
+                <span>Google Gemini</span>
+              </button>
+            </div>
+          </div>
+
           {/* Nowoczesny PromptInput z 21stdev */}
           <div className="w-full flex justify-center">
             <PromptInput

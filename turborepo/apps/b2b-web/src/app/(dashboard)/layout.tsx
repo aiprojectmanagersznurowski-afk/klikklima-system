@@ -6,7 +6,7 @@ import {
   FolderKanban,
   Box,
   BarChart3,
-  Sparkles,
+  BotMessageSquare,
   Bell,
   Settings,
 } from "lucide-react";
@@ -91,7 +91,7 @@ export const navItems: NavItem[] = [
       { id: 'auditors_analytics', label: 'Audyty & Audytorzy', href: '/analytics/auditors' },
     ],
   },
-  { id: 'chat', label: 'Asystent AI', icon: Sparkles, href: '/chat' },
+  { id: 'chat', label: 'Asystent AI', icon: BotMessageSquare, href: '/chat' },
   { id: 'notifications', label: 'Centrum Powiadomień', icon: Bell, href: '/notifications', comingSoon: true },
   {
     id: 'settings',
