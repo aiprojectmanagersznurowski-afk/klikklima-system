@@ -76,7 +76,7 @@ export default function ChatPage() {
     {
       id: 'initial',
       role: 'assistant',
-      content: 'Cześć! Jestem Twoim Asystentem AI w systemie KlikKlima. Posiadam bezpośredni dostęp do bazy wiedzy w PostgreSQL (`pgvector`), w tym kontraktów SLA, maszyny stanów lejka, modeli rozliczeniowych i definicji montażu standardowego. \n\nAktualnie korzystasz z silnika **Groq (Llama 3.3 70B)** o ultra-niskim czasie odpowiedzi na procesorach LPU. W każdej chwili możesz przełączyć silnik na **Google Gemini** za pomocą przełącznika modelu. \n\nW czym mogę Ci dzisiaj pomóc?',
+      content: 'Jak mogę pomóc ?',
       provider: 'groq'
     }
   ])
@@ -96,7 +96,7 @@ export default function ChatPage() {
       {
         id: 'initial',
         role: 'assistant',
-        content: 'Cześć! Jestem Twoim Asystentem AI w systemie KlikKlima. Posiadam bezpośredni dostęp do bazy wiedzy w PostgreSQL (`pgvector`), w tym kontraktów SLA, maszyny stanów lejka, modeli rozliczeniowych i definicji montażu standardowego. \n\nAktualnie korzystasz z silnika **Groq (Llama 3.3 70B)** o ultra-niskim czasie odpowiedzi na procesorach LPU. W każdej chwili możesz przełączyć silnik na **Google Gemini** za pomocą przełącznika modelu. \n\nW czym mogę Ci dzisiaj pomóc?',
+        content: 'Jak mogę pomóc ?',
         provider: selectedProvider
       }
     ])
