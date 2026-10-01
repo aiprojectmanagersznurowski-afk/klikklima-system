@@ -18,3 +18,20 @@ export {
   type CalculatedQuoteItem,
   type CalculatedQuoteVariant,
 } from "./quote-calc";
+
+export {
+  calculateStandardInstallation,
+  STANDARD_INSTALLATION_CONFIG_TYPE,
+  standardInstallationMultiplierSchema,
+  standardInstallationItemSchema,
+  updateStandardInstallationConfigSchema,
+  standardInstallationConfigSchema,
+  type StandardInstallationMultiplier,
+  type StandardInstallationItemConfig,
+  type UpdateStandardInstallationConfigInput,
+  type StandardInstallationConfig,
+  type PricingItemForStandardCalculation,
+  type CalculatedItemBreakdown,
+  type StandardInstallationCalculationResult,
+} from "./standard-installation";
+

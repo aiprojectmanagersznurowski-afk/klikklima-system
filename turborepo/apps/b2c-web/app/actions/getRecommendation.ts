@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { getAdminClient } from "../../lib/supabaseAdminClient";
 import { DISQUALIFICATION_RULES, disqualifyingRules, BUILDING_TYPE_IDS, type TriageAnswers } from "@klikklima/contracts";
 
+import { getStandardInstallationPriceNetto } from "../../lib/pricing/standard-installation-service";
+
 export interface RoomSizes {
   [key: number]: string;
 }
@@ -90,15 +92,21 @@ export async function getRecommendation(
 
     // Cena montażu — cennik_uslug nie ma polityki anon SELECT (D-R1, migracja
     // 20260929100000_b2c_rls_public_catalog.sql), więc wymaga dedykowanego klienta serwisowego.
-    const { data: cennik, error: cennikError } = await getAdminClient()
-      .from('cennik_uslug')
-      .select('koszt_b2c_netto')
-      .eq('nazwa_uslugi', 'Montaż wzorcowy')
-      .limit(1)
-      .single();
+    try {
+      await getAdminClient()
+        .from('cennik_uslug')
+        .select('koszt_b2c_netto')
+        .eq('nazwa_uslugi', 'Montaż wzorcowy')
+        .limit(1)
+        .single();
+    } catch {
+      // Ignorujemy ewentualne błędy zapytania legacy
+    }
 
-    const installPricePerRoomNetto = (cennik && !cennikError) ? Number(cennik.koszt_b2c_netto) : 1200;
-    const totalInstallNetto = installPricePerRoomNetto * roomCount;
+    // Dynamiczna wycena montażu standardowego z cennika i system_config
+    // @REQ: B2C-TRIAGE-PRICE-FROM-PRICE-LIST
+    // @REQ: B2C-PRICE-FROM
+    const totalInstallNetto = await getStandardInstallationPriceNetto(roomCount);
 
     // Sortowanie by preferowana seria była na szczycie (jeśli podano)
     let sortedCombinations = [...combinations];
