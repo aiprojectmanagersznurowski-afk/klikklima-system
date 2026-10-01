@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { SLA, NOTIFICATIONS } from "@klikklima/contracts"
+import { SLA, NOTIFICATIONS, QUEUE_POLICY } from "@klikklima/contracts"
+import { isWithinSendWindow, calculateInitialAttemptTime } from "../src/lib/notifications/window"
+
+// @REQ: CRM-UST-AC1
+// @REQ: NTF-I7-SLA
+// @REQ: CRM-UST-AC3
 
 const {
   incidentCreateMock,
@@ -195,9 +200,12 @@ describe("CRM-UST-AC1 & NTF-I7-SLA: createIncidentAction", () => {
       })
     )
 
-    // NTF-I7-SLA: Powiadomienie PUSH I7 dla dyspozytora
+    // NTF-I7-SLA: Powiadomienie PUSH I7 dla dyspozytora w tej samej transakcji
     const i7Def = NOTIFICATIONS.find((n) => n.templateKey === "internal.incident_critical")
     expect(i7Def).toBeDefined()
+    expect(i7Def?.channels).toContain("PUSH")
+    expect(i7Def?.recipient).toBe("DISPATCHER")
+
     expect(notificationQueueCreateMock).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -207,5 +215,42 @@ describe("CRM-UST-AC1 & NTF-I7-SLA: createIncidentAction", () => {
         }),
       })
     )
+  })
+
+  it("CRM-UST-AC1: Powiadomienie PUSH omija okno godzinowe kolejki (CRITICAL 24/7)", () => {
+    // Sprawdzamy okno wysyłki w nocy (np. 23:30 i 03:00), poza oknem SMS 08:00-18:00
+    const nightTime1 = new Date("2026-06-15T23:30:00+02:00")
+    const nightTime2 = new Date("2026-06-16T03:00:00+02:00")
+
+    expect(isWithinSendWindow("PUSH", nightTime1)).toBe(true)
+    expect(isWithinSendWindow("PUSH", nightTime2)).toBe(true)
+
+    // Brak odroczenia — PUSH ma natychmiastową gotowość do wysyłki (initialAttemptTime === null)
+    expect(calculateInitialAttemptTime("PUSH", nightTime1)).toBeNull()
+    expect(calculateInitialAttemptTime("PUSH", nightTime2)).toBeNull()
+  })
+
+  it("NTF-I7-SLA: Zegar liczony jest od created_at usterki, a nie od daty powiadomienia", async () => {
+    const { calculateIncidentSla } = await import(
+      "../src/app/(dashboard)/incidents/sla"
+    )
+
+    // Usterka utworzona 47h temu
+    const createdAt = new Date("2026-09-08T10:00:00Z")
+    const now47h = new Date("2026-09-10T09:00:00Z")
+    const slaStatus47h = calculateIncidentSla(createdAt, "NOWE", "KRYTYCZNY", now47h)
+
+    expect(slaStatus47h.hoursElapsed).toBe(47)
+    expect(slaStatus47h.isBreached).toBe(false)
+
+    // Usterka osiąga próg SLA po 48h (SLA.INCIDENT_RESPONSE.bands[0].afterHours)
+    const slaHoursLimit = SLA.INCIDENT_RESPONSE.bands[0]?.afterHours ?? 48
+    const now49h = new Date(createdAt.getTime() + (slaHoursLimit + 1) * 60 * 60 * 1000)
+    const slaStatus49h = calculateIncidentSla(createdAt, "NOWE", "KRYTYCZNY", now49h)
+
+    expect(slaStatus49h.hoursElapsed).toBe(slaHoursLimit + 1)
+    expect(slaStatus49h.isBreached).toBe(true)
+    expect(slaStatus49h.uiBadgeClass).toContain("destructive")
+    expect(slaStatus49h.label).toContain("Przekroczono SLA")
   })
 })

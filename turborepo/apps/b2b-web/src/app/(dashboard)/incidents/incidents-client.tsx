@@ -145,7 +145,11 @@ export function IncidentsClient({
                   return (
                     <tr 
                       key={incident.id} 
-                      className="hover:bg-muted/30 transition-colors group"
+                      className={`transition-colors group ${
+                        incident.sla?.isBreached
+                          ? "border-l-4 border-destructive bg-destructive/5 hover:bg-destructive/10"
+                          : "hover:bg-muted/30"
+                      }`}
                     >
                       {/* ID / Powiązana instalacja */}
                       <td className="px-5 py-4 whitespace-nowrap align-top">
