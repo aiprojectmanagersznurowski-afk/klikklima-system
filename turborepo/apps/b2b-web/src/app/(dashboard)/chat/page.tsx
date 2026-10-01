@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useRef, useEffect } from 'react'
 import { Bot, User, Sparkles, AlertCircle, Copy, Check, BookOpen, Layers, RotateCcw, Zap } from 'lucide-react'
 import { Card } from '@/components/ui/card'
