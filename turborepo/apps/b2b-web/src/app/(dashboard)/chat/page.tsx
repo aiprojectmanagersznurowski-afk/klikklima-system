@@ -1,7 +1,5 @@
-"use client"
-
 import { useState, useRef, useEffect } from 'react'
-import { Bot, User, Sparkles, AlertCircle, Copy, Check, BookOpen, Layers, RotateCcw } from 'lucide-react'
+import { Bot, User, Sparkles, AlertCircle, Copy, Check, BookOpen, Layers, RotateCcw, Zap } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { PromptInput, type PromptInputMeta } from '@/components/ui/ai-chat-input'
 import ReactMarkdown from 'react-markdown'
@@ -11,12 +9,13 @@ import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import { cn } from '@/lib/utils'
 import { MermaidDiagram } from '../dokumentacja/mermaid-diagram'
-import { askAiAssistantAction } from './actions'
+import { askAiAssistantAction, type AiProvider } from './actions'
 
 type ChatMessage = {
   id: string
   role: 'user' | 'assistant'
   content: string
+  provider?: AiProvider
   sources?: Array<{
     file: string
     header: string
@@ -79,6 +78,7 @@ export default function ChatPage() {
     }
   ])
   const [input, setInput] = useState('')
+  const [selectedProvider, setSelectedProvider] = useState<AiProvider>('groq')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -114,7 +114,8 @@ export default function ChatPage() {
     const emptyAssistantMessage: ChatMessage = {
       id: assistantId,
       role: 'assistant',
-      content: ''
+      content: '',
+      provider: selectedProvider
     }
 
     const updatedHistory = [...messages, userMessage]
@@ -128,7 +129,8 @@ export default function ChatPage() {
         updatedHistory.map(m => ({
           role: m.role,
           content: m.content
-        }))
+        })),
+        selectedProvider
       )
 
       if (!result.success) {
@@ -136,14 +138,25 @@ export default function ChatPage() {
         setMessages(prev =>
           prev.map(msg =>
             msg.id === assistantId
-              ? { ...msg, content: `⚠️ **Błąd:** ${result.error || 'Nie udało się wygenerować odpowiedzi.'}` }
+              ? {
+                  ...msg,
+                  content: `⚠️ **Błąd:** ${result.error || 'Nie udało się wygenerować odpowiedzi.'}`,
+                  provider: selectedProvider
+                }
               : msg
           )
         )
       } else {
         setMessages(prev =>
           prev.map(msg =>
-            msg.id === assistantId ? { ...msg, content: result.content, sources: result.sources } : msg
+            msg.id === assistantId
+              ? {
+                  ...msg,
+                  content: result.content,
+                  sources: result.sources,
+                  provider: result.provider || selectedProvider
+                }
+              : msg
           )
         )
       }
@@ -151,10 +164,15 @@ export default function ChatPage() {
       console.error('Chat error:', err)
       const errMessage = err instanceof Error ? err.message : 'Wystąpił nieoczekiwany błąd podczas pobierania odpowiedzi.'
       setError(errMessage)
+      const keyName = selectedProvider === 'groq' ? 'GROQ_API_KEY' : 'GOOGLE_GENERATIVE_AI_API_KEY'
       setMessages(prev =>
         prev.map(msg =>
           msg.id === assistantId && msg.content === ''
-            ? { ...msg, content: 'Przepraszam, wystąpił problem podczas komunikacji z modelem AI. Upewnij się, że klucz GROQ_API_KEY jest poprawny.' }
+            ? {
+                ...msg,
+                content: `Przepraszam, wystąpił problem podczas komunikacji z modelem AI. Upewnij się, że klucz ${keyName} jest poprawny.`,
+                provider: selectedProvider
+              }
             : msg
         )
       )
@@ -169,13 +187,27 @@ export default function ChatPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center size-10 rounded-xl bg-primary shadow-sm text-primary-foreground">
-            <Sparkles className="size-5 animate-pulse" />
+            {selectedProvider === 'groq' ? (
+              <Zap className="size-5 text-primary-foreground" />
+            ) : (
+              <Sparkles className="size-5 animate-pulse text-primary-foreground" />
+            )}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight text-foreground">Asystent AI</h1>
-              <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                Groq Llama 3.3
+              <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
+                {selectedProvider === 'groq' ? (
+                  <>
+                    <Zap className="size-3" />
+                    Groq Llama 3.3
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="size-3" />
+                    Google Gemini
+                  </>
+                )}
               </span>
               <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 pgvector RAG
@@ -187,18 +219,57 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {messages.length > 1 && (
-          <button
-            type="button"
-            onClick={handleResetChat}
-            disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/70 bg-card hover:bg-secondary text-muted-foreground hover:text-foreground text-xs font-medium transition-colors shadow-2xs self-start sm:self-auto cursor-pointer disabled:opacity-50"
-            title="Rozpocznij nowy wątek"
-          >
-            <RotateCcw className="size-3.5" />
-            <span>Nowa rozmowa</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          {/* Przełącznik wyboru silnika LLM */}
+          <div className="inline-flex p-1 rounded-xl border border-border/70 bg-card shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setSelectedProvider('groq')}
+              disabled={isLoading}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer",
+                selectedProvider === 'groq'
+                  ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+              )}
+              title="Groq LPU (Llama 3.3 70B) — ultra-szybkie wnioskowanie (domyślny)"
+            >
+              <Zap className="size-3.5" />
+              <span>Groq Llama 3.3</span>
+              <span className="text-[10px] opacity-75 font-mono px-1 py-0.2 rounded bg-primary-foreground/20 hidden md:inline">
+                domyślny
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedProvider('gemini')}
+              disabled={isLoading}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer",
+                selectedProvider === 'gemini'
+                  ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+              )}
+              title="Google Gemini — zaawansowany model analityczny"
+            >
+              <Sparkles className="size-3.5" />
+              <span>Google Gemini</span>
+            </button>
+          </div>
+
+          {messages.length > 1 && (
+            <button
+              type="button"
+              onClick={handleResetChat}
+              disabled={isLoading}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/70 bg-card hover:bg-secondary text-muted-foreground hover:text-foreground text-xs font-medium transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+              title="Rozpocznij nowy wątek"
+            >
+              <RotateCcw className="size-3.5" />
+              <span className="hidden sm:inline">Nowa rozmowa</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Główny obszar wiadomości */}
@@ -242,6 +313,21 @@ export default function ChatPage() {
                       <span className="flex items-center gap-1.5 font-medium text-foreground/80 text-[11px]">
                         <Bot className="size-3.5 text-primary" />
                         <span>KlikKlima AI</span>
+                        {m.provider && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-secondary text-muted-foreground border border-border/60 font-mono flex items-center gap-1">
+                            {m.provider === 'groq' ? (
+                              <>
+                                <Zap className="size-2.5 text-amber-500" />
+                                <span>Groq</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="size-2.5 text-blue-500" />
+                                <span>Gemini</span>
+                              </>
+                            )}
+                          </span>
+                        )}
                       </span>
                       {m.content && <CopyButton text={m.content} />}
                     </div>
