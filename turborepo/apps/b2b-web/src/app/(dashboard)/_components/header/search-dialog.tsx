@@ -10,6 +10,7 @@ import {
   FolderKanban,
   Box,
   BarChart3,
+  BotMessageSquare,
   Sparkles,
   Settings,
   CalendarDays,
@@ -52,7 +53,7 @@ export const ALL_NAVIGATION_ITEMS: NavigationItem[] = [
     label: "Asystent AI",
     description: "Czat ze sztuczną inteligencją KlikKlima",
     href: "/chat",
-    icon: Sparkles,
+    icon: BotMessageSquare,
     keywords: ["ai", "bot", "pomoc", "czat", "asystent", "sztuczna inteligencja"],
   },
   {
