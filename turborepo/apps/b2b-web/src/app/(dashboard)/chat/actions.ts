@@ -1,6 +1,6 @@
 "use server"
 
-import { google } from '@ai-sdk/google'
+import { groq } from '@ai-sdk/groq'
 import { generateText } from 'ai'
 import { prisma } from '@repo/database'
 
@@ -84,55 +84,60 @@ async function searchKnowledgeBase(
 export async function askAiAssistantAction(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>
 ): Promise<AskAiActionResult> {
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
+  const groqApiKey = process.env.GROQ_API_KEY
+  const geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
 
-  if (!apiKey) {
-    console.error('Błąd: Brak zmiennej GOOGLE_GENERATIVE_AI_API_KEY')
+  if (!groqApiKey) {
+    console.error('Błąd: Brak zmiennej GROQ_API_KEY')
     return {
       success: false,
       content: '',
-      error: 'Brak klucza GOOGLE_GENERATIVE_AI_API_KEY w konfiguracji środowiska. Upewnij się, że zmienna jest ustawiona w Vercel.'
+      error: 'Brak klucza GROQ_API_KEY w konfiguracji środowiska. Upewnij się, że zmienna jest ustawiona w Vercel lub w pliku .env.'
     }
   }
 
   try {
     const latestUserMessage = [...messages].reverse().find(m => m.role === 'user')?.content || ''
 
-    // Wyszukiwanie wektorowe pgvector w bazie wiedzy z filtrem uprawnień
-    const matchedChunks = await searchKnowledgeBase(latestUserMessage, apiKey, [
-      'public',
-      'internal_dispatcher',
-      'internal_admin'
-    ])
-
     let context = ''
     const sources: SourceItem[] = []
 
-    if (matchedChunks.length > 0) {
-      context += 'Poniżej znajdują się najbardziej dopasowane fragmenty oficjalnej dokumentacji i procedur KlikKlima z bazy wektorowej:\n\n'
-      for (const match of matchedChunks) {
-        const file = match.metadata?.file || 'dokument'
-        const header = match.metadata?.header || 'Główna'
-        const category = match.metadata?.category || 'ogólne'
-        const simPercent = Math.round((match.similarity || 0) * 100)
+    // Wyszukiwanie wektorowe pgvector w bazie wiedzy z filtrem uprawnień (jeśli dostępny klucz embeddingów)
+    if (geminiApiKey) {
+      const matchedChunks = await searchKnowledgeBase(latestUserMessage, geminiApiKey, [
+        'public',
+        'internal_dispatcher',
+        'internal_admin'
+      ])
 
-        context += `--- ŹRÓDŁO: ${file} | Sekcja: ${header} (Trafność: ${simPercent}%) ---\n`
-        context += `${match.content}\n\n`
+      if (matchedChunks.length > 0) {
+        context += 'Poniżej znajdują się najbardziej dopasowane fragmenty oficjalnej dokumentacji i procedur KlikKlima z bazy wektorowej:\n\n'
+        for (const match of matchedChunks) {
+          const file = match.metadata?.file || 'dokument'
+          const header = match.metadata?.header || 'Główna'
+          const category = match.metadata?.category || 'ogólne'
+          const simPercent = Math.round((match.similarity || 0) * 100)
 
-        if (!sources.some(s => s.file === file && s.header === header)) {
-          sources.push({
-            file,
-            header,
-            category,
-            similarity: match.similarity
-          })
+          context += `--- ŹRÓDŁO: ${file} | Sekcja: ${header} (Trafność: ${simPercent}%) ---\n`
+          context += `${match.content}\n\n`
+
+          if (!sources.some(s => s.file === file && s.header === header)) {
+            sources.push({
+              file,
+              header,
+              category,
+              similarity: match.similarity
+            })
+          }
         }
+      } else {
+        context = 'Brak bezpośrednich dopasowań w bazie wiedzy dla tego zapytania.'
       }
     } else {
-      context = 'Brak bezpośrednich dopasowań w bazie wiedzy dla tego zapytania.'
+      context = 'Brak klucza do przeszukiwania wektorowego pgvector. Odpowiadaj na podstawie ogólnej wiedzy o systemie KlikKlima i procedurach montażowych.'
     }
 
-    const systemPrompt = `Jesteś zaawansowanym, profesjonalnym asystentem AI dla administratorów i dyspozytorów systemu KlikKlima (panel B2B).
+    const systemPrompt = `Jesteś zaawansowanym, profesjonalnym asystentem AI dla administratorów i dyspozytorów systemu KlikKlima (panel B2B), napędzanym przez model Groq (Llama 3.3).
 Twoim celem jest dostarczanie precyzyjnych, wyczerpujących i estetycznie sformatowanych informacji na podstawie wewnętrznej bazy wiedzy, procedur i kontraktów.
 
 ZASADY FORMATOWANIA ODPOWIEDZI (BARDZO WAŻNE):
@@ -145,14 +150,16 @@ ZASADY FORMATOWANIA ODPOWIEDZI (BARDZO WAŻNE):
    - Używaj standardowego formatu LaTeX/KaTeX: bloki wzorów zamykaj w $$ ... $$, a symbole w tekście w $ ... $.
    - Zawsze używaj \\text{...} dla polskich słów wewnątrz wzoru, np. $$\\text{Cena} = \\text{Stawka} \\times n$$.
    - Pod wzorem ZAWSZE wyjaśnij znaczenie zmiennych w czytelnej liście punktowanej oraz podaj jasny przykład liczbowy.
-7. Rzetelność: Odpowiadaj wyłącznie na podstawie poniższej bazy wiedzy KlikKlima. Jeśli czegoś w niej nie ma, zaznacz to otwarcie. Pisz zawsze w języku polskim.
+7. Rzetelność: Odpowiadaj profesjonalnie, precyzyjnie i w języku polskim na podstawie poniższej bazy wiedzy KlikKlima. Jeśli czegoś w niej nie ma, zaznacz to otwarcie.
 
 FRAGMENTY BAZY WIEDZY (PGVECTOR):
 ${context}
 `
 
+    const modelName = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+
     const { text } = await generateText({
-      model: google('gemini-3.6-flash'),
+      model: groq(modelName),
       system: systemPrompt,
       messages: messages.map(m => ({
         role: m.role,
@@ -165,12 +172,14 @@ ${context}
       content: text,
       sources
     }
-  } catch (err: any) {
-    console.error('Błąd wywołania Gemini API w askAiAssistantAction:', err)
+  } catch (err: unknown) {
+    console.error('Błąd wywołania Groq API w askAiAssistantAction:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Wystąpił błąd podczas komunikacji z modelem Groq API.'
     return {
       success: false,
       content: '',
-      error: err?.message || 'Wystąpił błąd podczas komunikacji z modelem Google Gemini.'
+      error: errorMessage
     }
   }
 }
+

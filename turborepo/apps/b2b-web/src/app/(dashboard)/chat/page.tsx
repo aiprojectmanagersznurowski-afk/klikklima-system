@@ -154,7 +154,7 @@ export default function ChatPage() {
       setMessages(prev =>
         prev.map(msg =>
           msg.id === assistantId && msg.content === ''
-            ? { ...msg, content: 'Przepraszam, wystąpił problem podczas komunikacji z modelem AI. Upewnij się, że klucz GOOGLE_GENERATIVE_AI_API_KEY jest poprawny.' }
+            ? { ...msg, content: 'Przepraszam, wystąpił problem podczas komunikacji z modelem AI. Upewnij się, że klucz GROQ_API_KEY jest poprawny.' }
             : msg
         )
       )
@@ -175,7 +175,7 @@ export default function ChatPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight text-foreground">Asystent AI</h1>
               <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                Gemini 3.6 Flash
+                Groq Llama 3.3
               </span>
               <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 pgvector RAG
