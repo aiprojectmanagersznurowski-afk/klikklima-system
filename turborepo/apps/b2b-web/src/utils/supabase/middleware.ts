@@ -54,22 +54,23 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Check if user is in AuthorizedUser table
+  // Check if user is in AuthorizedUser table (SEC-SSO-GUARD, SEC-EMAIL-CASE-NORMALIZE)
   if (user && !isPublicRoute) {
-    const { data: authorizedUser } = await supabase
+    const normalizedEmail = user.email ? user.email.toLowerCase().trim() : ''
+    const { data: authorizedUser, error: authUserError } = await supabase
       .from('AuthorizedUser')
       .select('email, role')
-      .eq('email', user.email)
+      .eq('email', normalizedEmail)
       .single()
 
-    if (!authorizedUser) {
+    if (authUserError || !authorizedUser) {
       // User is logged in but not authorized.
-      // We will clear the session and redirect them to login with a denied flag.
+      // We clear the session server-side and redirect them to login with a denied flag.
+      // No email parameter is leaked in the URL to prevent identity or existence enumeration.
       await supabase.auth.signOut()
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       url.searchParams.set('denied', 'true')
-      url.searchParams.set('email', user.email || '')
       return NextResponse.redirect(url)
     }
 
@@ -88,7 +89,7 @@ export async function updateSession(request: NextRequest) {
       const { data: blockedAuditor, error: blockedAuditorError } = await supabase
         .from('audytorzy')
         .select('id')
-        .eq('email', user.email)
+        .eq('email', normalizedEmail)
         .eq('is_active', false)
         .maybeSingle()
 
@@ -101,7 +102,6 @@ export async function updateSession(request: NextRequest) {
         url.pathname = '/login'
         url.searchParams.set('denied', 'true')
         url.searchParams.set('blocked', 'true')
-        url.searchParams.set('email', user.email || '')
         return NextResponse.redirect(url)
       }
     }
