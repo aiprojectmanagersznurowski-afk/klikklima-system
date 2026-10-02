@@ -47,3 +47,12 @@ export {
   type ReassignBookingErrorCode,
   type ReassignBookingResult,
 } from "./reassign-booking"
+
+export {
+  createCrewAbsence,
+  VALID_ABSENCE_REASONS,
+  type AbsenceReason,
+  type CreateCrewAbsenceParams,
+  type CreateCrewAbsenceResult,
+  type ConflictingBookingReport,
+} from "./absence"
