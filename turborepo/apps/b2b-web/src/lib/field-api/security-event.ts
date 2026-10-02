@@ -1,5 +1,11 @@
 import { prisma } from '@repo/database';
+import { can, ROLES } from '@klikklima/contracts';
+import type { Role } from '@klikklima/contracts';
 import type { SecurityEventParams } from './types';
+
+function isRole(role: unknown): role is Role {
+  return typeof role === 'string' && (ROLES as readonly string[]).includes(role);
+}
 
 /**
  * recordAccessDenied — Zapisuje fakt odmowy dostępu uwierzytelnionemu aktorowi
@@ -33,3 +39,58 @@ export async function recordAccessDenied(params: SecurityEventParams): Promise<v
     console.error('Błąd podczas zapisywania zdarzenia bezpieczeństwa w security_events:', error);
   }
 }
+
+export interface GetSecurityEventsParams {
+  actorRole: string | null | undefined;
+  limit?: number;
+  offset?: number;
+}
+
+export interface SecurityEventItem {
+  id: string;
+  actorEmail: string;
+  actorRole: string;
+  resource: string;
+  attemptedCapability: string;
+  decision: string;
+  endpoint: string | null;
+  occurredAt: Date;
+}
+
+export type GetSecurityEventsResult =
+  | { success: true; data: SecurityEventItem[] }
+  | { success: false; error: string };
+
+/**
+ * getSecurityEvents — Pobiera wpisy z dziennika security_events.
+ * Zgodnie z kryterium 6 SEC-ACCESS-DENIED-LOG oraz macierzą RBAC,
+ * odczyt dziennika ma WYŁĄCZNIE administrator (can(actorRole, 'security_events', 'read') === 'yes').
+ */
+export async function getSecurityEvents(
+  params: GetSecurityEventsParams
+): Promise<GetSecurityEventsResult> {
+  const { actorRole, limit = 50, offset = 0 } = params;
+
+  if (!actorRole || !isRole(actorRole) || can(actorRole, 'security_events', 'read') !== 'yes') {
+    return {
+      success: false,
+      error: 'Brak uprawnień do odczytu dziennika zdarzeń bezpieczeństwa (wymagana rola administratora).',
+    };
+  }
+
+  try {
+    const events = await prisma.securityEvent.findMany({
+      take: limit,
+      skip: offset,
+      orderBy: { occurredAt: 'desc' },
+    });
+    return { success: true, data: events };
+  } catch (error) {
+    console.error('Błąd podczas odczytu zdarzeń bezpieczeństwa z security_events:', error);
+    return {
+      success: false,
+      error: 'Błąd bazy danych podczas odczytu zdarzeń bezpieczeństwa.',
+    };
+  }
+}
+
