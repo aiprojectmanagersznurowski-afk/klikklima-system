@@ -5,13 +5,16 @@ import { revalidatePath } from "next/cache"
 import { can } from "@klikklima/contracts"
 import { getCurrentActorRole, createClient } from "../../../utils/supabase/server"
 import { crewSchema } from "./schema"
-import type { ZodError } from "zod"
+import { z, type ZodError } from "zod"
 import { deleteJustificationSchema, type DeleteJustificationInput } from "../../../lib/audit/delete-justification-schema"
 import {
   availabilityRuleSchema,
   writeAvailabilityRuleRaw,
   getEffectiveAvailability,
   type EffectiveAvailabilityDay,
+  createCrewAbsence,
+  type CreateCrewAbsenceResult,
+  type ConflictingBookingReport,
 } from "@repo/scheduling"
 
 class CrewBlockedError extends Error {
@@ -874,6 +877,102 @@ export async function getCrewDetailsAction(
       scheduledWorks,
       completedWorks,
     },
+  };
+}
+
+const createCrewAbsenceInputSchema = z
+  .object({
+    startsAt: z.coerce.date(),
+    endsAt: z.coerce.date(),
+    reason: z.enum(["VACATION", "SICK_LEAVE", "VEHICLE_FAILURE", "OTHER"]),
+    note: z
+      .string()
+      .trim()
+      .optional()
+      .nullable()
+      .transform((v) => (v === undefined || v === "" ? null : v)),
+  })
+  .refine((data) => data.endsAt.getTime() > data.startsAt.getTime(), {
+    message: "Data zakończenia musi być późniejsza niż data rozpoczęcia.",
+    path: ["endsAt"],
+  });
+
+export type CreateCrewAbsenceInput = z.input<typeof createCrewAbsenceInputSchema>;
+
+export type CreateCrewAbsenceActionResult = {
+  success: boolean;
+  error?: string;
+  absence?: {
+    id: string;
+    crewId: string | null;
+    startsAt: Date;
+    endsAt: Date;
+    reason: string;
+    note: string | null;
+  };
+  conflictingBookings?: ConflictingBookingReport[];
+};
+
+/**
+ * CRM-ZESP-AC3 (Kryteria 1, 2, 3):
+ * Rejestracja absencji/blokady kalendarza ekipy (np. awaria auta VEHICLE_FAILURE lub urlop).
+ * - Uprawnienia RBAC: can(actorRole, 'absences', 'create') === 'yes'
+ * - Istniejące rezerwacje w oknie absencji są raportowane dyspozytorowi, a NIE kasowane po cichu
+ */
+export async function createCrewAbsenceAction(
+  crewId: string,
+  input: unknown,
+): Promise<CreateCrewAbsenceActionResult> {
+  let actorRole;
+  try {
+    actorRole = await getCurrentActorRole();
+  } catch (error) {
+    console.error("Failed to resolve actor role:", error);
+    return { success: false, error: "Brak autoryzacji do wykonania tej operacji." };
+  }
+
+  if (!actorRole || can(actorRole, "absences", "create") !== "yes") {
+    return { success: false, error: "Brak uprawnień do rejestracji absencji ekipy." };
+  }
+
+  const parsed = createCrewAbsenceInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: formatZodError(parsed.error) };
+  }
+
+  let createdBy: string | null = null;
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    createdBy = user?.email ?? null;
+  } catch (error) {
+    console.warn("Failed to resolve user session for absence createdBy:", error);
+  }
+
+  const result = await createCrewAbsence({
+    crewId,
+    startsAt: parsed.data.startsAt,
+    endsAt: parsed.data.endsAt,
+    reason: parsed.data.reason,
+    note: parsed.data.note,
+    createdBy,
+  });
+
+  if (!result.ok) {
+    return {
+      success: false,
+      error: result.error ?? "Nie udało się zarejestrować absencji.",
+    };
+  }
+
+  revalidatePath("/crews");
+
+  return {
+    success: true,
+    absence: result.absence,
+    conflictingBookings: result.conflictingBookings,
   };
 }
 
